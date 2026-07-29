@@ -250,8 +250,9 @@ def main() -> int:
     target_fields = fields
     try:
         scale = work_record_scale(current_items_root, item_path)
-    except ValueError:
-        scale = "legacy"
+    except ValueError as exc:
+        print(f"{args.item}: {exc}; run stage-migrate", file=sys.stderr)
+        return 1
     if scale == "action":
         parent_path = hierarchy_parent_record_path(current_items_root, item_path)
         if parent_path is None or not parent_path.is_file():

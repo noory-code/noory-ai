@@ -1,0 +1,184 @@
+---
+id: W-00000082
+title: 드라이버가 카드 하나를 직접 받게 한다
+kind: development
+venue: codex
+source:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000086
+promotion: not_applicable
+review: not_required
+scope: stage/scripts/drive.py, stage/scripts/tests/, stage/skills/stage-drive/, stage/docs/SCHEMA_V4.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000082 드라이버가 카드 하나를 직접 받게 한다
+
+## Purpose
+
+드라이버가 부모만 받아 그 자식을 고르므로, 카드 하나를 돌리려면 껍데기 부모를 만들어야 한다. 도구의 제약이 기록을 오염시킨다.
+
+## Scope
+
+드라이버는 대상을 **부모로만** 받는다. 그 자식 중에서 돌릴 카드를 고른다. 그래서 카드 하나를
+돌리려면 그 카드를 자식으로 두는 부모가 있어야 하고, 없으면 만들어야 한다.
+
+이 저장소에서 실제로 그랬다. 오늘 만든 부모 셋 중 하나(지금은 지운 W-00000082 의 앞 사용분)는
+자식이 하나뿐이었고 코드도 안 고쳤다. 하는 일이라곤 "자식이 끝났다" 고 적는 것뿐인데 그건
+자식의 회고가 이미 담는다. **도구를 부르려고 만든 카드**였다.
+
+기록은 실제 일의 단위를 담아야 한다. 드라이버를 부르는 방법 때문에 없던 단위가 생기면 안 된다.
+
+### 정해진 설계
+
+새 옵션을 만들지 않는다. 대상으로 받은 항목을 보고 판단한다.
+
+- 대상에 아직 안 끝난 자식이 있으면 → 지금처럼 부모로 보고 자식 중에서 고른다.
+- 대상에 안 끝난 자식이 없고 그 자신이 돌릴 수 있는 상태면(안 끝났고 `acceptance` 가 비어
+  있지 않음) → 그 카드를 돌린다.
+- 둘 다 아니면 → 지금처럼 고를 것이 없다고 알린다.
+
+두 경우는 겹치지 않는다. 자식이 있으면서 동시에 말단일 수는 없다.
+
+무인 모드도 같은 방식으로 맞춘다. 지금은 하위 전체를 훑는데, 대상 자신이 말단이면 그것만
+돌린다.
+
+제약:
+
+- **커밋하지 않는다.** 작업 트리에 변경만 남기고 멈춘다.
+- 저장소 산출물은 영어로 쓴다. `.stage/` 안의 글만 한국어다.
+- 두 `plugin.json` 의 version 을 올리고 `stage/CHANGELOG.md` 에 항목을 추가한다.
+- scope 밖은 건드리지 않는다.
+
+## Success criteria
+
+- 말단 카드 하나를 대상으로 주면 그 카드를 돌린다. 껍데기 부모 없이 된다.
+- 부모를 주면 지금과 똑같이 동작한다 — 기존 테스트가 그대로 통과해야 한다.
+- 두 경우를 각각 확인하는 테스트가 있고, 첫 번째는 고치기 전 코드에서 실패한다.
+- 무인 모드도 같은 방식으로 동작하고, 그것을 확인하는 테스트가 있다.
+- `stage-drive` 스킬이 대상으로 부모와 카드 둘 다 줄 수 있다고 말한다.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과.
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과.
+
+## Related truth
+
+- 선택 규칙: `stage/docs/SCHEMA_V4.md` — `### Supervised driver and executor settings`.
+- 현재 선택 함수: `drive.py` 의 `select_next_ready_leaf`, `select_next_unattended_leaf`.
+
+**위험**: 대상 자신을 돌리게 되면 "부모는 자식만 돌린다" 는 기존 보장이 흐려진다. 자식이 있는
+항목을 실수로 직접 돌리는 일이 없도록, 자식이 하나라도 안 끝났으면 반드시 부모로 다뤄야 한다.
+그 경계를 테스트로 못 박을 것.
+
+## Progress
+
+### 순서상 뒤 (2026-07-26)
+
+등록은 했으나 급하지 않다. 실제로 터진 것은 껍데기 카드를 한 장 만든 것뿐이고, 앞으로도 그렇게
+넘길 수 있다. W-00000081 과 W-00000083 은 오늘 실제로 사고가 났으므로 그쪽이 먼저다.
+
+이 판단 자체가 W-00000084 가 만들려는 기준을 미리 적용한 것이다 — 이게 실제로 언제 터지나,
+그 상황이 오나.
+
+### 다음 행동
+
+앞의 셋이 끝난 뒤에 본다. 설계는 위 `## Scope` 에 정해 뒀으므로 그대로 드라이버로 돌리면 된다.
+
+
+## Verification
+
+실행은 Codex 에 드라이버 없이 위임했고(드라이버로 이 카드를 돌리려면 바로 이 카드가 없애려는
+껍데기 부모가 필요하다), 검증과 리뷰는 반대 venue 인 Claude 가 했다. DE-00000032 방식.
+
+### 기준 판정 (2026-07-26)
+
+- 말단 카드를 대상으로 주면 그 카드를 돌린다 — 채움. 감독·무인·dry run 모두. 새 옵션 없이
+  대상을 보고 판단한다(안 끝난 자식이 있으면 부모, 없고 자신이 돌릴 수 있으면 자신).
+- 부모를 주면 지금과 똑같다 — 채움. 기존 테스트가 전부 그대로 통과한다(354/327).
+- 두 경우의 테스트가 있고 첫째는 고치기 전 실패한다 — 채움. 저장소 밖 사본(0.43.12 코드)에서
+  직접 재현: 새 기능을 검사하는 넷은 실패(RED)하고, "안 끝난 자식이 있으면 직접 못 돈다" 는
+  경계 테스트 둘은 고치기 전에도 통과해 기존 보장을 못 박는다. 돌릴 수 없는 자식(acceptance
+  없음)이 남아 있어도 대상을 숨긴다는 경계까지 테스트가 있다.
+- 무인 모드 같은 방식 + 테스트 — 채움.
+- `stage-drive` 스킬이 대상으로 부모와 말단 카드 둘 다 줄 수 있다고 말한다 — 채움.
+- 테스트 두 벌 통과, 감사 errors=0 — 채움.
+- 제약 준수 — Codex 커밋 없음, scope 안 8개 파일, 산출물 영어, 버전 0.43.13, CHANGELOG 항목.
+
+### 그 밖에 본 것 (기준 밖 관찰)
+
+- 없음. 차단할 지적 없음.
+
+### Executed at close — 2026-07-26
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (28 earlier lines omitted)
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1785041403 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1785041403
+[W-00000003] completed on stage/driver/W-00000001-1785041403
+Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1785041403. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785041404 (base: main)
+[W-00000001] completed on stage/driver/W-00000001-1785041404
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785041404. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785041404 (base: main)
+Outcome: blocked — cannot commit pre-close lifecycle for W-00000002: simulated lifecycle commit failure
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1785041405 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785041405. Human review + merge required; the base branch was not modified.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 354 tests in 41.713s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.965s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+R-00000086. 핵심: 도구를 부르려고 없던 작업 단위를 만들게 하던 제약이 사라졌고, "부모는
+자식만 돌린다" 는 보장은 경계 테스트로 그대로 못 박혔다.
+
+## Promotion decision
+
+official 로 올릴 산출물 없음(promotion: not_applicable). 카드와 회고는 아카이브로 간다.

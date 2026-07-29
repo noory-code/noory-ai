@@ -27,7 +27,7 @@ class SettingsCommentsTest(unittest.TestCase):
                 """
 {
   // This comment describes the schema marker.
-  "schema_version": 4,
+  "schema_version": 5,
   /* Comment markers inside strings are data, not comments. */
   "url": "https://example.com/stage/*/settings",
   "path": "C://stage//settings"
@@ -47,22 +47,22 @@ class SettingsCommentsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stage_root = Path(tmp)
             settings_path = stage_root / "settings.json"
-            settings_path.write_text('{"schema_version": 4}\n', encoding="utf-8")
+            settings_path.write_text('{"schema_version": 5}\n', encoding="utf-8")
 
             resolved_path, settings, error = stage_paths.read_settings(stage_root)
 
         self.assertEqual(settings_path, resolved_path)
         self.assertIsNone(error)
-        self.assertEqual({"schema_version": 4}, settings)
+        self.assertEqual({"schema_version": 5}, settings)
 
     def test_both_settings_names_fail_instead_of_selecting_one(self):
         with tempfile.TemporaryDirectory() as tmp:
             stage_root = Path(tmp)
             (stage_root / "settings.json").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
             (stage_root / "settings.jsonc").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
 
             _resolved_path, settings, error = stage_paths.read_settings(stage_root)

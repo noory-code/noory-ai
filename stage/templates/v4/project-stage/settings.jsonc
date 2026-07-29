@@ -1,6 +1,6 @@
 {
   // Selects the Stage responsibility topology and migration contract.
-  "schema_version": 4,
+  "schema_version": 5,
   // Selects the language for human-readable project Stage documents.
   "language": "en",
   // Lists template-backed guidance files intentionally owned by this project.

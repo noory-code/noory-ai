@@ -9,7 +9,7 @@ from typing import Any
 
 import stage_topology
 
-# Schema-v4 authorization-zone constants. Read-only consumers can still inspect
+# Current authorization-zone constants. Read-only consumers can still inspect
 # schema-v3 projects so audit and migration never strand an older harness.
 STAGE_OFFICIAL_ROOT = ".stage/official"
 STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
@@ -178,7 +178,8 @@ def read_settings(
 def active_topology(stage_root: Path) -> str:
     """Return the topology selected by this project's settings.
 
-    Schema v4 is active only when the project carries the exact integer v4
+    The current topology is active only when the project carries the exact
+    enforced schema marker.
     marker. Missing, unreadable, malformed, and older markers keep read-only
     consumers on the legacy resolver; mutation gates separately fail closed
     with the stage-migrate banner.
@@ -679,7 +680,7 @@ def resolve_independent_review_command(
 # Version 3: backlog entries are planned W work cards (the B family retired).
 # Version 4: the official authorization zone and responsibility-family roots
 # replace the time-wrapper topology. Migrate v3 projects with stage-migrate.
-STAGE_SCHEMA_VERSION = 4
+STAGE_SCHEMA_VERSION = 5
 
 
 def configured_write_tools(stage_root: Path) -> set[str]:

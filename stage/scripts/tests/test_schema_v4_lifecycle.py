@@ -117,7 +117,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
 
             self.assertEqual(2, without_milestone.returncode)
             self.assertEqual(2, with_milestone.returncode)
-            self.assertIn("plugin requires v4", without_milestone.stderr)
+            self.assertIn("plugin requires v5", without_milestone.stderr)
             self.assertIn("stage-migrate", without_milestone.stderr)
             self.assertIn("stage-migrate", with_milestone.stderr)
             first = root / ".stage/present/work/items/W-00000001.md"
@@ -128,7 +128,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertFalse(second.exists())
             self.assertNotIn("W-00000001", active)
             self.assertFalse((root / ".stage/work/current").exists())
-            self.assertEqual(4, stage_paths.STAGE_SCHEMA_VERSION)
+            self.assertEqual(5, stage_paths.STAGE_SCHEMA_VERSION)
             audited = run_cli(AUDIT, root)
             self.assertEqual(0, audited.returncode)
             self.assertIn("SCHEMA001", audited.stdout)

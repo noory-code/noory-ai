@@ -1,0 +1,101 @@
+---
+id: W-00000037
+title: C7: v3->v4 migration command + stage-migrate skill + v4 activation
+kind: development
+venue: codex
+source:
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000036
+promotion: not_applicable
+review: not_required
+scope: stage/scripts/,stage/skills/,stage/hooks/,stage/CHANGELOG.md,stage/.claude-plugin/plugin.json,stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
+---
+
+# W-00000037 C7: v3->v4 migration command + stage-migrate skill + v4 activation
+
+## Purpose
+
+C7 per SCHEMA_V4.md Migration contract: extend migrate_stage.py to relocate a v3 .stage to v4 (past/->official/, present//future/ wrappers -> responsibility roots) via the registry V3_TO_V4_RELOCATIONS map, expose it as a user-facing stage-migrate skill, and FLIP the enforced contract version STAGE_SCHEMA_VERSION 3->4 (activation). No-stranding invariant: activation and migration skill ship together; a v3 project under the v4-enforcing plugin fails closed with a banner naming stage-migrate. Preflight (dirty-tree, symlink, case-collision, zero pending intents/claims, mixed-topology hard error), maintenance marker, git-mv + journal, durable-field/link rewrite, index patch-or-merge-file, stage-only (no auto-commit), post-relocation verification then stamp schema_version:4, strict audit with v3-marker restore on failure, abort mode. Highest stakes: activates v4.
+
+## Scope
+
+
+## Success criteria
+
+
+## Related truth
+
+
+## Progress
+
+- 2026-07-13 — Implemented the coherent schema-v4 activation release: the registry-driven,
+  fail-closed v3->v4 transaction (preflight, maintenance marker, git-mv journal, durable
+  field/link rewrites, structural root-index patch/proposal, marker-last strict audit,
+  staged-only completion, deterministic abort), the user-facing `stage-migrate` skill, v4
+  initialization/enforcement, actionable no-stranding gates, and the 0.31.0 release metadata.
+- Existing tests changed, and why:
+  - `stage/hooks/tests/test_stage_guard.py` — current-project fixtures now carry schema v4 and
+    v4 responsibility paths; configured write/promotion cases use `official/`; added the v4
+    official-archive intent and v3/v4 maintenance-marker regressions required by activation.
+  - `stage/scripts/tests/test_audit_link_pin.py` — pinned link-order fixtures now use v4 current,
+    retrospective, decision, state, and official paths.
+  - `stage/scripts/tests/test_audit_stage.py` — default/current fixtures and expected paths now
+    follow v4 initialization; the three catalog-sync cases that intentionally exercise the
+    legacy catalog use an explicit v3 fixture rather than treating v3 as current.
+  - `stage/scripts/tests/test_close_work.py` — current cards, retrospectives, decisions, review
+    links, and settings now exercise the enforced v4 lifecycle without weakening close gates.
+  - `stage/scripts/tests/test_migrate_stage.py` — legacy v1/v2 compatibility fixtures are now
+    clean Git-backed v3 trees that continue through the v4 relocation; the current-project
+    no-op assertion now correctly names fresh v4 initialization.
+  - `stage/scripts/tests/test_register_work.py` — current registration fixtures, planned/current
+    paths, active/index links, and settings now track the v4 contract.
+  - `stage/scripts/tests/test_roadmap_v4.py` — the v3 refusal assertion now requires the
+    actionable `stage-migrate` activation banner.
+  - `stage/scripts/tests/test_schema_v4_consumers.py` — v3 is preserved as a read-only resolver
+    fixture while governed/Stage writes and commits now fail closed and name `stage-migrate`.
+  - `stage/scripts/tests/test_schema_v4_lifecycle.py` — v3 registration now asserts fail-closed
+    activation behavior and contract version 4; topology-independent argument validation runs
+    against the current v4 fixture.
+  - `stage/scripts/tests/test_template_v4.py` — template assertions now pin v4 as the active
+    `stage-init` source while retaining the v3 tree as migration input.
+  - `stage/scripts/tests/test_work_cards.py` — live card flow paths/links now use v4; the backlog
+    compatibility fixture is an explicit clean Git-backed v2/v3 tree and verifies its final v4
+    planned layout and clean audit.
+- Added `stage/scripts/tests/test_migrate_stage_v4.py` with 16 migration/activation cases:
+  complete artifact relocation and verbatim payload, durable fields/links and indexes, all
+  specified preflight refusals, customized-index proposal, empty-directory rename, leftover
+  reference refusal, strict-audit marker restore, restart refusal, abort, dry-run, skill facade,
+  and v3/missing-marker no-stranding behavior.
+- Verification: `python3 -m unittest discover -s stage/scripts/tests -q` (250 passed),
+  `python3 -m unittest discover -s stage/hooks/tests -q` (300 passed), and `py_compile` over
+  Stage scripts/hooks/skill CLIs (passed).
+- Dogfood rehearsal (copy only; the repository's real `.stage` was not migrated): copied the
+  full real harness to `/tmp/stage-v4-dogfood.5aw3yj`, committed it as a clean temporary v3 Git
+  project, then ran dry-run and real migration. Before: 145 non-runtime files (`official` 95,
+  `present` 33, `future` 14). After: 148 non-runtime files (`official` 95, `work` 12,
+  `decisions` 15, `state` 12, `proposals` 4, `roadmap` 7), including the three new required
+  indexes; zero legacy roots; 148 migration paths staged; `schema_version: 4`; strict audit
+  `errors=0, warnings=0`.
+
+## Verification
+
+
+### Executed at close — 2026-07-13
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root . --strict
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+
+## Promotion decision

@@ -1,9 +1,9 @@
 """Stage topology registry.
 
-This module is the tooling SSOT for the active schema-v4 zones and the hierarchical
-work-path contract that schema v5 will activate. It intentionally has no filesystem
-side effects so hooks and scripts can import it on every supported host. Schema-v3
-paths remain resolve-only inputs for audit and the one-shot migration.
+This module is the tooling SSOT for the active schema-v5 responsibility zones and
+hierarchical work-path contract. It intentionally has no filesystem side effects
+so hooks and scripts can import it on every supported host. Schema-v3 paths remain
+resolve-only inputs for audit and the one-shot migration.
 """
 
 from __future__ import annotations
@@ -21,12 +21,12 @@ if _HOOKS_DIR not in sys.path:
 from stage_record_paths import record_path
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 SCHEMA_VERSION_KEY = "schema_version"
 LIFECYCLE_STATES = ("planned", "current", "official")
 SINGLE_CLASSIFICATION = True
 OFFICIAL_ROOT = "official"
-MAINTENANCE_MARKER = ".runtime/schema-v4-maintenance.json"
+MAINTENANCE_MARKER = ".runtime/schema-v5-maintenance.json"
 
 PLANNED_WORK_STATUSES = (
     "captured",

@@ -24,7 +24,8 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 - Nearly all workspace files are governed by default — planning documents, designs, and configuration included — with exclusions managed in `.stage/settings.json`.
 - A work card is one `W-*` artifact across its whole life, moving `work/planned` (planned) →
   `work/current` (started via `scripts/start_work.py`) → `official/work/archive` (closed) like a
-  kanban card. Cards form hierarchies (`parent`), may attribute to a roadmap milestone
+  kanban card. Cards form epic/story/action hierarchies through their folder paths and may
+  attribute to a roadmap milestone
   (`milestone`), and carry a work `kind`, so every kind of work stays classifiable.
 - The roadmap (`roadmap/themes`, `roadmap/milestones`) groups work toward goals and directions;
   a milestone's status is computed from its decision chain, and its closure freezes an immutable
@@ -77,11 +78,12 @@ Audit the Stage structure and work status:
 python3 stage/scripts/audit_stage.py --project-root .
 ```
 
-Migrate a `.stage/` from an older schema. The `stage-migrate` skill performs the one-shot
-schema-v3-to-v4 topology migration (past/present/future → official/work/decisions/state/
-proposals/roadmap) as a fail-closed git transaction: clean-tree preflight, registry-driven
-relocation via `git mv`, machine-field rewrite, staged (never auto-committed) with a
-deterministic abort, then a marker-last `schema_version: 4` stamp and strict audit:
+Migrate a `.stage/` from an older schema. The `stage-migrate` skill first performs the
+schema-v3-to-v4 responsibility relocation when needed, then moves every v4 flat work card into
+the schema-v5 epic/story/action hierarchy. The fail-closed transaction snapshots the durable
+Stage tree, installs a maintenance marker, rewrites indexes from actual record paths, stamps
+`schema_version: 5`, and runs strict audit. It never commits, and its journal supports an exact
+pre-commit abort:
 
 ```bash
 python3 stage/scripts/migrate_stage.py --project-root .
@@ -103,7 +105,8 @@ python3 stage/scripts/promote_intent.py --project-root . --type archive --work-i
 
 ## Design
 
-[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the current blueprint (schema v4).
-[docs/SCHEMA_V4.md](docs/SCHEMA_V4.md) is the schema-v4 design SSOT.
+[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the responsibility-topology blueprint introduced with schema v4.
+[docs/SCHEMA_V5.md](docs/SCHEMA_V5.md) is the current work-hierarchy contract.
+[docs/SCHEMA_V4.md](docs/SCHEMA_V4.md) is the historical schema-v4 topology design.
 [docs/DISCUSSION.md](docs/DISCUSSION.md) and [docs/IMPLEMENTATION_AUDIT.md](docs/IMPLEMENTATION_AUDIT.md) are historical v3 design records, kept as history.
 (The three docs above are user-facing and written in Korean by owner decision; all executable assets are English.)

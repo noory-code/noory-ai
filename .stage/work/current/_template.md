@@ -3,7 +3,7 @@ id: W-00000000
 title: Title
 kind:
 venue:
-parent:
+milestone:
 source:
 autonomous: false
 acceptance: []

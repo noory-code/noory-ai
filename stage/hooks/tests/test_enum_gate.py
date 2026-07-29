@@ -83,7 +83,7 @@ class PlannedEnumGateTest(unittest.TestCase):
         root = Path(tmp.name)
         (root / ".stage/work/planned").mkdir(parents=True)
         (root / ".stage/settings.json").write_text(
-            json.dumps({"schema_version": 4}), encoding="utf-8"
+            json.dumps({"schema_version": 5}), encoding="utf-8"
         )
         return tmp, root
 

@@ -1,0 +1,73 @@
+---
+id: W-00000006
+title: Stage lifecycle skills, one-gate archive fix, and false-learning correction
+kind: feature
+venue: claude
+source:
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000006
+promotion: not_applicable
+scope: stage/skills, stage/scripts, stage/hooks, stage/docs, stage/templates, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, .stage/work/retrospectives/R-00000005.md
+promotes:
+decision_refs:
+---
+
+# W-00000006 Stage lifecycle skills, one-gate archive fix, and false-learning correction
+
+## Purpose
+
+Every Stage lifecycle action (register work, close, archive, hand off between LLM windows)
+currently forces the operator to re-read hook source and hunt for the right script each session.
+The archive of W-00000001..W-00000004 made the cost concrete: a session wrongly concluded that
+`official/work/archive/` writes need a *new* open work item (a "registration gate") on top of the
+archive intent, and created W-00000005 to satisfy a gate that does not fire.
+
+Verified: `DEFAULT_EXCLUDED_PREFIXES` excludes `.stage` from `is_source_path`, so
+`source_registration_blocker` returns empty for any `.stage/official/...` target. Archive writes pass
+exactly ONE gate — the per-path archive intent. The double-gate belief in R-00000005 is false.
+
+This work encodes the correct flows as skills and a script so they are executed, not re-derived,
+and corrects the false record and the ambiguous context wording that caused the mistake.
+
+## Scope
+
+- Correct the false "two gates" learning in `.stage/work/retrospectives/R-00000005.md`.
+- New skills: `stage-work` (plan -> confirm -> register), `stage-archive` (one-shot archive of
+  completed items via archive intents only), `stage-handoff` (cross-window venue handoff).
+- New script: one-shot archive helper under `stage/scripts/`.
+- Regression test locking "`.stage/official/work/archive` writes need only an archive intent, never a
+  registration/commit gate".
+- Clarify the SessionStart context wording so "a completed work item" reads as the promotion/
+  archive *target*, not a fresh one.
+- Fold the true `Next changes` from R-00000001..R-00000004 into `operations/` where durable.
+- Version bump + CHANGELOG for the `stage` plugin.
+
+## Success criteria
+
+- `stage-work`, `stage-archive`, `stage-handoff` skills exist with runnable, literal-path steps.
+- Archiving a completed item requires no new work item and is driven by the skill/script.
+- A test asserts the one-gate archive behavior and passes.
+- R-00000005 no longer asserts a registration gate on archive.
+- `stage/hooks/tests` and `stage/scripts/tests` pass; `audit_stage.py` errors=0.
+- Both plugin manifests bumped; CHANGELOG updated.
+
+## Verification
+
+- `python3 -m unittest discover -s stage/hooks/tests -q` — 240 tests OK.
+- `python3 -m unittest discover -s stage/scripts/tests -q` — 89 tests OK.
+- `python3 stage/scripts/audit_stage.py` — errors=0, warnings=0.
+- The one-gate archive behavior and the `git commit` redirection fix each have a regression test;
+  the parser fix was also reproduced directly before and after.
+
+## Retrospective
+
+See [R-00000006](../retrospectives/R-00000006.md). Key: the reported archive "two gates" were a
+myth (`.stage` is excluded from `is_source_path`), so the fix was to encode the correct flow in
+skills and correct the false record — not to change enforcement.
+
+## Promotion decision
+
+`promotion: not_applicable` — changes live in the `stage/` plugin package and present-flow
+records, not this repo's `.stage/official/` canon.

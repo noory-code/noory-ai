@@ -77,6 +77,12 @@ class StageRecordPathsTests(unittest.TestCase):
         flat = root / "W-00000001.md"
         self.assertEqual(flat, stage_record_paths.top_level_item_path(root, flat))
 
+    def test_work_record_scale_rejects_the_retired_flat_shape(self):
+        stage_record_paths = importlib.import_module("stage_record_paths")
+        root = Path("work/current")
+        with self.assertRaisesRegex(ValueError, "no valid epic/story/action"):
+            stage_record_paths.work_record_scale(root, root / "W-00000001.md")
+
     def test_record_path_consumers_do_not_own_markdown_record_scans(self):
         production_roots = (HOOKS, STAGE / "scripts", STAGE / "skills")
         consumers = sorted(
@@ -102,6 +108,9 @@ class StageRecordPathsTests(unittest.TestCase):
             },
             STAGE / "scripts" / "stage_schema_v4_migration.py": {
                 '.glob("*/index.md")',
+            },
+            STAGE / "scripts" / "stage_schema_v5_migration.py": {
+                '.glob("W-*.md")',
             },
         }
         for path in consumers:

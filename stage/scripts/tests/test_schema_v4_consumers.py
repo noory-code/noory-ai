@@ -49,7 +49,6 @@ def active_card(item_id: str, *, decision_refs: str = "") -> str:
         "title: Schema dispatch fixture\n"
         "kind: development\n"
         "venue: codex\n"
-        "parent:\n"
         "source:\n"
         "status: active\n"
         "verification: pending\n"
@@ -121,7 +120,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             )
             self.assertEqual("deny", permission_decision(write_result))
             write_reason = write_result["hookSpecificOutput"]["permissionDecisionReason"]
-            self.assertIn("plugin requires v4", write_reason)
+            self.assertIn("plugin requires v5", write_reason)
             self.assertIn("stage-migrate", write_reason)
             commit_result = stage_guard.validate_pre_tool(
                 {
@@ -157,22 +156,28 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             shutil.copytree(V4_TEMPLATE_ROOT, stage_root)
 
             current_id = "W-00000092"
-            current_path = stage_root / "work" / "current" / f"{current_id}.md"
+            current_path = (
+                stage_root / "work" / "current" / current_id / "_story.md"
+            )
+            current_path.parent.mkdir()
             current_path.write_text(
                 active_card(current_id, decision_refs="DE-00000092"), encoding="utf-8"
             )
             with (stage_root / "work" / "active.md").open("a", encoding="utf-8") as handle:
                 handle.write(
                     f"| {current_id} | development | codex | Fixture | active | test | "
-                    f"[current/{current_id}.md](current/{current_id}.md) |\n"
+                    f"[current/{current_id}/_story.md](current/{current_id}/_story.md) |\n"
                 )
 
             planned_id = "W-00000093"
-            planned_path = stage_root / "work" / "planned" / f"{planned_id}.md"
+            planned_path = (
+                stage_root / "work" / "planned" / planned_id / "_story.md"
+            )
+            planned_path.parent.mkdir()
             planned_path.write_text(
                 (
                     f"---\nid: {planned_id}\ntitle: Planned fixture\nkind: development\n"
-                    "venue: codex\nparent:\nstatus: selected\npriority: high\n---\n"
+                    "venue: codex\nstatus: selected\npriority: high\n---\n"
                     f"# {planned_id} Planned fixture\n"
                 ),
                 encoding="utf-8",
@@ -182,7 +187,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             ) as handle:
                 handle.write(
                     f"| {planned_id} | Planned fixture | development | selected | high | | "
-                    f"[{planned_id}.md]({planned_id}.md) |\n"
+                    f"[{planned_id}/_story.md]({planned_id}/_story.md) |\n"
                 )
 
             decision_path = stage_root / "decisions" / "pending" / "DE-00000092.md"
@@ -244,7 +249,8 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             shutil.copytree(V4_TEMPLATE_ROOT, stage_root)
             item_id = "W-00000094"
             target = ".stage/official/canon/principles.md"
-            item_path = stage_root / "work" / "current" / f"{item_id}.md"
+            item_path = stage_root / "work" / "current" / item_id / "_story.md"
+            item_path.parent.mkdir()
             item_path.write_text(
                 active_card(item_id)
                 .replace("status: active", "status: completed")
@@ -276,12 +282,15 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             shutil.copytree(V4_TEMPLATE_ROOT, stage_root)
             item_id = "W-00000095"
             item_text = active_card(item_id)
-            current_path = stage_root / "work" / "current" / f"{item_id}.md"
+            current_path = (
+                stage_root / "work" / "current" / item_id / "_story.md"
+            )
+            current_path.parent.mkdir()
             current_path.write_text(item_text, encoding="utf-8")
             with (stage_root / "work" / "active.md").open("a", encoding="utf-8") as handle:
                 handle.write(
                     f"| {item_id} | development | codex | Fixture | active | test | "
-                    f"[current/{item_id}.md](current/{item_id}.md) |\n"
+                    f"[current/{item_id}/_story.md](current/{item_id}/_story.md) |\n"
                 )
 
             legacy_targets = {
@@ -334,7 +343,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                     )
                     self.assertEqual("deny", permission_decision(result))
                     reason = result["hookSpecificOutput"]["permissionDecisionReason"]
-                    self.assertIn("plugin requires v4", reason)
+                    self.assertIn("plugin requires v5", reason)
                     self.assertIn("stage-migrate", reason)
 
     def test_v4_context_renders_registry_derived_lifecycle_view(self):
@@ -409,7 +418,7 @@ class ActiveTopologyTest(unittest.TestCase):
             stage_root = Path(tmp) / ".stage"
             stage_root.mkdir()
             (stage_root / "settings.json").write_text(
-                json.dumps({"schema_version": 4}), encoding="utf-8"
+                json.dumps({"schema_version": 5}), encoding="utf-8"
             )
             self.assertEqual("v4", stage_paths.active_topology(stage_root))
 

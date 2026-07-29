@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.54.0 — 2026-07-29
+
+- Activate schema v5 as the only runtime work-card shape and remove the schema-v4 flat-card
+  scanner branch.
+- Add a fail-closed v4-to-v5 migration with exact abort, parent-chain placement, retrospective
+  relocation, actual-path index rewrites, and marker-last schema activation.
+- Chain v3 projects through the existing responsibility migration into v5 without leaving
+  `parent` frontmatter, while keeping retired B-card scanning migration-only.
+- Migrate the repository's work archive and live cards into epic/story/action folders, refresh
+  schema-v5 guidance, and document the current contract.
+
 ## 0.53.0 — 2026-07-29
 
 - Drive epic and story targets through runnable descendant actions, pass each executor the

@@ -41,7 +41,12 @@ from stage_paths import (  # noqa: E402
     schema_migration_banner,
 )
 from stage_runtime import delete_pending_intents_for_work_item  # noqa: E402
-from stage_work import WorkItem, load_all_work_items, non_terminal_children  # noqa: E402
+from stage_work import (  # noqa: E402
+    WorkItem,
+    load_all_work_items,
+    load_work_items,
+    non_terminal_children,
+)
 
 TERMINAL_STATUSES = {"completed", "rejected"}
 
@@ -131,19 +136,20 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]
 
 
 def completed_ids_from_review(stage_root: Path) -> list[str]:
-    current_root, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
+    _, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
     review = stage_root / review_relative
     if not review.exists():
         return []
+    current_items = {item.item_id: item for item in load_work_items(stage_root)}
     ids: list[str] = []
     for line in table_rows(review.read_text(encoding="utf-8")):
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if not cells or not cells[0].startswith("W-"):
             continue
-        item_path = record_path(stage_root / current_root, cells[0])
-        if not item_path.exists():
+        item = current_items.get(cells[0])
+        if item is None:
             continue
-        if frontmatter_field(item_path.read_text(encoding="utf-8"), "status") in TERMINAL_STATUSES:
+        if item.status in TERMINAL_STATUSES:
             ids.append(cells[0])
     return ids
 

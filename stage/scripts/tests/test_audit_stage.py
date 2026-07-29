@@ -62,13 +62,31 @@ class StageAuditTest(unittest.TestCase):
         else:
             base = root / ".stage" / "official" / "work" / "archive" / "items"
         base.mkdir(parents=True, exist_ok=True)
-        path = base / f"{item_id}.md"
+        if parent:
+            try:
+                parent_path = self.find_work_item(root, parent)
+            except AssertionError:
+                parent_path = base / parent / "_epic.md"
+            if parent_path.name == "_story.md" and parent_path.parent.parent == base:
+                epic_path = parent_path.with_name("_epic.md")
+                parent_path.replace(epic_path)
+                parent_path = epic_path
+            if parent_path.name == "_epic.md":
+                path = parent_path.parent / item_id / "_story.md"
+            elif parent_path.name == "_story.md":
+                path = parent_path.parent / f"{item_id}.md"
+            else:
+                raise AssertionError(
+                    f"action cannot parent another fixture: {parent_path}"
+                )
+        else:
+            path = base / item_id / "_story.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (
                 "---\n"
                 f"id: {item_id}\n"
                 "title: Test work\n"
-                f"parent: {parent}\n"
                 f"status: {status}\n"
                 f"verification: {verification}\n"
                 f"retrospective: {retrospective}\n"
@@ -82,6 +100,19 @@ class StageAuditTest(unittest.TestCase):
             encoding="utf-8",
         )
         return path
+
+    def find_work_item(self, root: Path, item_id: str) -> Path:
+        for base in (
+            root / ".stage/work/current",
+            root / ".stage/work/planned",
+            root / ".stage/official/work/archive/items",
+        ):
+            if not base.is_dir():
+                continue
+            for path in base.rglob("*.md"):
+                if f"id: {item_id}\n" in path.read_text(encoding="utf-8"):
+                    return path
+        raise AssertionError(f"fixture work item not found: {item_id}")
 
     def write_archive_retrospective(self, root: Path, *, retro_id: str = "R-0001", work_item: str = "W-0001") -> Path:
         path = root / ".stage" / "official" / "work" / "archive" / "retrospectives" / f"{retro_id}.md"
@@ -112,12 +143,27 @@ class StageAuditTest(unittest.TestCase):
         )
         return path
 
-    def write_backlog_item(self, root: Path, *, item_id: str = "B-0001", status: str = "captured", parent: str = "", frontmatter: bool = True) -> Path:
-        path = root / ".stage" / "work" / "planned" / f"{item_id}-test.md"
+    def write_backlog_item(self, root: Path, *, item_id: str = "W-0001", status: str = "captured", parent: str = "", frontmatter: bool = True) -> Path:
+        base = root / ".stage" / "work" / "planned"
+        if parent:
+            try:
+                parent_path = self.find_work_item(root, parent)
+            except AssertionError:
+                parent_path = base / parent / "_epic.md"
+            if parent_path.name == "_story.md" and parent_path.parent.parent == base:
+                epic_path = parent_path.with_name("_epic.md")
+                parent_path.replace(epic_path)
+                parent_path = epic_path
+            if parent_path.name == "_epic.md":
+                path = parent_path.parent / item_id / "_story.md"
+            else:
+                path = parent_path.parent / f"{item_id}.md"
+        else:
+            path = base / item_id / "_story.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         if frontmatter:
             path.write_text(
-                f"---\nid: {item_id}\ntitle: Test\nkind:\nparent: {parent}\nstatus: {status}\npriority:\n---\n# {item_id}\n",
+                f"---\nid: {item_id}\ntitle: Test\nkind:\nstatus: {status}\npriority:\n---\n# {item_id}\n",
                 encoding="utf-8",
             )
         else:
@@ -141,13 +187,21 @@ class StageAuditTest(unittest.TestCase):
 
     def append_active_index(self, root: Path, item_id: str) -> None:
         path = root / ".stage" / "work" / "active.md"
+        target = self.find_work_item(root, item_id)
+        link = target.relative_to(path.parent).as_posix()
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | test | active | ai | [item](current/{item_id}.md) |\n")
+            handle.write(
+                f"| {item_id} | test | active | ai | [item]({link}) |\n"
+            )
 
     def append_review_index(self, root: Path, item_id: str, status: str = "review") -> None:
         path = root / ".stage" / "work" / "review.md"
+        target = self.find_work_item(root, item_id)
+        link = target.relative_to(path.parent).as_posix()
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | passed | completed | {status} | [item](current/{item_id}.md) |\n")
+            handle.write(
+                f"| {item_id} | passed | completed | {status} | [item]({link}) |\n"
+            )
 
     def test_initialized_stage_passes_audit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -534,8 +588,13 @@ class StageAuditTest(unittest.TestCase):
 
     def append_archive_index(self, root: Path, item_id: str, final: str) -> None:
         path = root / ".stage" / "official" / "work" / "archive" / "index.md"
+        try:
+            target = self.find_work_item(root, item_id)
+            link = target.relative_to(path.parent).as_posix()
+        except AssertionError:
+            link = f"items/{item_id}/_story.md"
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | {final} | [item](items/{item_id}.md) |\n")
+            handle.write(f"| {item_id} | {final} | [item]({link}) |\n")
 
     def archived_item(self, root: Path, **overrides) -> None:
         fields = dict(
@@ -649,7 +708,7 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_backlog_item(root)
-            self.append_index_row(root, "work/planned/index.md", "B-0001")
+            self.append_index_row(root, "work/planned/index.md", "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -771,7 +830,7 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             (root / ".stage" / "settings.json").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
 
             findings = audit_stage.Audit(root).run()
@@ -1268,8 +1327,8 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root)
-            source = root / ".stage" / "work" / "current" / "W-0001.md"
-            copy = root / ".stage" / "work" / "current" / "W-0001-copy.md"
+            source = self.find_work_item(root, "W-0001")
+            copy = source.parent / "W-0001-copy.md"
             copy.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
             self.append_active_index(root, "W-0001")
 
@@ -1599,7 +1658,14 @@ class VenueRoutingAuditTest(unittest.TestCase):
         settings_path.write_text(json.dumps(data), encoding="utf-8")
 
     def write_item(self, root: Path, *, kind: str, venue: str, decision_refs: str = "") -> Path:
-        path = root / ".stage" / "work" / "current" / "W-0001.md"
+        path = (
+            root
+            / ".stage"
+            / "work"
+            / "current"
+            / "W-0001"
+            / "_story.md"
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             (

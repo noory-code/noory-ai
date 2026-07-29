@@ -188,7 +188,9 @@ class V3ToV4MigrationTest(unittest.TestCase):
 
             self.assertEqual(0, code, output)
             self.assertTrue((stage_root / "official/canon/principles.md").is_file())
-            self.assertTrue((stage_root / "work/current/W-00000001.md").is_file())
+            self.assertTrue(
+                (stage_root / "work/current/W-00000001/_story.md").is_file()
+            )
             self.assertTrue((stage_root / "work/planned/index.md").is_file())
             self.assertTrue((stage_root / "decisions/index.md").is_file())
             self.assertTrue((stage_root / "roadmap/themes/index.md").is_file())
@@ -196,7 +198,18 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertFalse((stage_root / "past").exists())
             self.assertFalse((stage_root / "present").exists())
             self.assertFalse((stage_root / "future").exists())
-            self.assertTrue(expected_destinations.issubset(result_files))
+            stable_destinations = {
+                path
+                for path in expected_destinations
+                if not path.startswith(
+                    (
+                        "work/current/",
+                        "work/planned/",
+                        "official/work/archive/items/",
+                    )
+                )
+            }
+            self.assertTrue(stable_destinations.issubset(result_files))
             self.assertEqual(
                 b"verbatim relocation payload\x00\xff",
                 (stage_root / "proposals/verbatim.txt").read_bytes(),
@@ -209,7 +222,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertIn("scope: src; .stage/proposals/", fields)
             self.assertIn("[principles](../official/canon/principles.md)", fields)
             self.assertIn("`state/questions.md`", fields)
-            self.assertEqual(4, settings["schema_version"])
+            self.assertEqual(5, settings["schema_version"])
             self.assertEqual(
                 [],
                 [finding for finding in findings if finding.code != "TEMPLATE004"],
@@ -243,7 +256,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
 
         self.assertEqual(0, code, output)
         self.assertIn("// Keep this user-authored explanation.", migrated_text)
-        self.assertIn('"schema_version": 4', migrated_text)
+        self.assertIn('"schema_version": 5', migrated_text)
         self.assertIn('"https://example.com/stage//settings"', migrated_text)
 
     def test_dirty_relocation_source_is_refused(self):
@@ -390,7 +403,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
                 (stage_root / "settings.json").read_text(encoding="utf-8")
             )
             marker_exists = (
-                stage_root / ".runtime/schema-v4-maintenance.json"
+                stage_root / ".runtime/schema-v5-maintenance.json"
             ).is_file()
             rerun_code, rerun_output = self.run_migrate(root)
 
@@ -401,7 +414,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
         self.assertEqual(1, rerun_code)
         self.assertIn("abort", rerun_output.lower())
 
-    def test_strict_audit_failure_restores_v3_schema_marker(self):
+    def test_strict_audit_failure_leaves_abortable_v5_transaction(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             stage_root = self.make_v3_project(root)
@@ -419,8 +432,9 @@ class V3ToV4MigrationTest(unittest.TestCase):
             )
 
         self.assertEqual(1, code)
-        self.assertEqual(3, settings["schema_version"])
-        self.assertIn("restored to the schema-v3 marker", output)
+        self.assertEqual(5, settings["schema_version"])
+        self.assertIn("maintenance marker remains", output)
+        self.assertIn("--abort", output)
 
     def test_abort_restores_the_clean_v3_tree(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -510,7 +524,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
             "deny", gate["hookSpecificOutput"]["permissionDecision"]
         )
         self.assertIn("schema v3", reason)
-        self.assertIn("requires v4", reason)
+        self.assertIn("requires v5", reason)
         self.assertIn("stage-migrate", reason)
         self.assertEqual(1, len(schema_findings))
         self.assertIn("stage-migrate", schema_findings[0].message)

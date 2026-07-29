@@ -40,14 +40,13 @@ ACTIVE_INDEX = (
     "| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
     "|---|---|---|---|---|---|---|\n"
     "| W-00000001 | development | codex | Stop safely | active | codex | "
-    "[current/W-00000001.md](current/W-00000001.md) |\n"
+    "[current/W-00000001/_story.md](current/W-00000001/_story.md) |\n"
 )
 WORK_ITEM = """---
 id: W-00000001
 title: Stop safely
 kind: development
 venue: codex
-parent:
 status: {status}
 verification: pending
 retrospective: pending
@@ -73,9 +72,11 @@ class EscalateWorkTest(unittest.TestCase):
         (stage_root / "decisions/pending").mkdir(parents=True)
         (stage_root / "official/decisions/records").mkdir(parents=True)
         (stage_root / "settings.json").write_text(
-            json.dumps({"schema_version": 4}), encoding="utf-8"
+            json.dumps({"schema_version": 5}), encoding="utf-8"
         )
-        (stage_root / "work/current/W-00000001.md").write_text(
+        item = stage_root / "work/current/W-00000001/_story.md"
+        item.parent.mkdir(parents=True)
+        item.write_text(
             WORK_ITEM.format(status=status), encoding="utf-8"
         )
         (stage_root / "work/active.md").write_text(ACTIVE_INDEX, encoding="utf-8")
@@ -119,7 +120,7 @@ class EscalateWorkTest(unittest.TestCase):
             result = self.run_cli(root, reason)
 
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            item = (root / ".stage/work/current/W-00000001.md").read_text(encoding="utf-8")
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8")
             decision_path = root / ".stage/decisions/pending/DE-00000008.md"
             decision = decision_path.read_text(encoding="utf-8")
             active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
@@ -138,7 +139,7 @@ class EscalateWorkTest(unittest.TestCase):
     def test_non_open_item_is_refused_without_changes(self):
         tmp, root = self.make_project(status="completed")
         with tmp:
-            item_path = root / ".stage/work/current/W-00000001.md"
+            item_path = root / ".stage/work/current/W-00000001/_story.md"
             before = item_path.read_text(encoding="utf-8")
 
             result = self.run_cli(root, "Need a decision.")
@@ -159,10 +160,7 @@ class EscalateWorkTest(unittest.TestCase):
         tmp, root = self.make_project()
         with tmp:
             stage_root = root / ".stage"
-            flat = stage_root / "work/current/W-00000001.md"
-            flat.unlink()
             story_dir = stage_root / "work/current/W-00000001"
-            story_dir.mkdir()
             story = story_dir / "_story.md"
             story.write_text(
                 WORK_ITEM.format(status="active").replace(

@@ -62,7 +62,8 @@ class ClosureGuardFixture(unittest.TestCase):
             "Release checks passed.\n",
             encoding="utf-8",
         )
-        archive = stage_root / "official/work/archive/items/W-00000001.md"
+        archive = stage_root / "official/work/archive/items/W-00000001/_story.md"
+        archive.parent.mkdir()
         archive.write_text(
             "---\n"
             "id: W-00000001\n"
@@ -76,7 +77,8 @@ class ClosureGuardFixture(unittest.TestCase):
         return tmp, root
 
     def write_promoter(self, root: Path, target: str) -> None:
-        path = root / ".stage/work/current/W-00000099.md"
+        path = root / ".stage/work/current/W-00000099/_story.md"
+        path.parent.mkdir()
         path.write_text(
             "---\n"
             "id: W-00000099\n"
@@ -102,7 +104,7 @@ class ClosureGuardFixture(unittest.TestCase):
             "tool_name": "Edit",
             "cwd": str(root),
             "tool_input": {
-                "file_path": ".stage/official/work/archive/items/W-00000001.md",
+                "file_path": ".stage/official/work/archive/items/W-00000001/_story.md",
                 "old_string": "milestone: M-00000001",
                 "new_string": "milestone: M-00000002",
             },
@@ -128,7 +130,7 @@ class ReattributionGateTest(ClosureGuardFixture):
                 "tool_input": {
                     "command": (
                         "sed -i 's/milestone: M-00000001/milestone: M-00000002/' "
-                        ".stage/official/work/archive/items/W-00000001.md"
+                        ".stage/official/work/archive/items/W-00000001/_story.md"
                     )
                 },
             }
@@ -142,10 +144,10 @@ class ReattributionGateTest(ClosureGuardFixture):
     def test_allows_when_same_patch_adds_chain_member_superseding_closure(self):
         tmp, root = self.make_fixture()
         with tmp:
-            target = ".stage/official/work/archive/items/W-00000001.md"
+            target = ".stage/official/work/archive/items/W-00000001/_story.md"
             self.write_promoter(root, target)
             patch = """*** Begin Patch
-*** Update File: .stage/official/work/archive/items/W-00000001.md
+*** Update File: .stage/official/work/archive/items/W-00000001/_story.md
 @@
 -milestone: M-00000001
 +milestone: M-00000002
@@ -197,7 +199,7 @@ class ReattributionGateTest(ClosureGuardFixture):
                 ),
                 encoding="utf-8",
             )
-            target = ".stage/official/work/archive/items/W-00000001.md"
+            target = ".stage/official/work/archive/items/W-00000001/_story.md"
             self.write_promoter(root, target)
 
             result = stage_guard.handle_event("pre-tool-use", self.edit_payload(root))
@@ -233,7 +235,7 @@ class PromotionGateTest(ClosureGuardFixture):
         with tmp:
             target = ".stage/official/decisions/records/DE-00000001.md"
             self.write_promoter(root, target)
-            card = root / ".stage/official/work/archive/items/W-00000001.md"
+            card = root / ".stage/official/work/archive/items/W-00000001/_story.md"
             card.write_text(
                 card.read_text(encoding="utf-8").replace(
                     "terminal_disposition: accepted",
@@ -258,7 +260,7 @@ class PromotionGateTest(ClosureGuardFixture):
         with tmp:
             target = ".stage/official/decisions/records/DE-00000001.md"
             self.write_promoter(root, target)
-            (root / ".stage/official/work/archive/items/W-00000001.md").unlink()
+            (root / ".stage/official/work/archive/items/W-00000001/_story.md").unlink()
 
             result = stage_guard.handle_event("pre-tool-use", self.promotion_payload(root))
 
@@ -273,7 +275,12 @@ class PromotionGateTest(ClosureGuardFixture):
         with tmp:
             target = ".stage/official/decisions/records/DE-00000001.md"
             self.write_promoter(root, target)
-            (root / ".stage/official/work/archive/items/W-00000002.md").write_text(
+            second = (
+                root
+                / ".stage/official/work/archive/items/W-00000002/_story.md"
+            )
+            second.parent.mkdir()
+            second.write_text(
                 "---\n"
                 "id: W-00000002\n"
                 "milestone: M-00000001\n"
@@ -297,7 +304,7 @@ class PromotionGateTest(ClosureGuardFixture):
             target = ".stage/official/decisions/records/DE-00000001.md"
             self.write_promoter(root, target)
             patch = """*** Begin Patch
-*** Update File: .stage/official/work/archive/items/W-00000001.md
+*** Update File: .stage/official/work/archive/items/W-00000001/_story.md
 @@
 -terminal_disposition: accepted
 +terminal_disposition: rejected

@@ -24,7 +24,7 @@ PATHS_SPEC.loader.exec_module(stage_paths)
 
 class StageTopologyTests(unittest.TestCase):
     def test_cross_family_contract(self):
-        self.assertEqual(4, stage_topology.SCHEMA_VERSION)
+        self.assertEqual(5, stage_topology.SCHEMA_VERSION)
         self.assertEqual(("planned", "current", "official"), stage_topology.LIFECYCLE_STATES)
         self.assertTrue(stage_topology.SINGLE_CLASSIFICATION)
         self.assertEqual("official", stage_topology.OFFICIAL_ROOT)

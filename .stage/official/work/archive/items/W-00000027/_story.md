@@ -1,0 +1,96 @@
+---
+id: W-00000027
+title: register_work --backlog appends index rows outside the table
+kind: fix
+venue: codex
+priority: high
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000026
+promotion: not_applicable
+scope: stage/skills/stage-work/,stage/scripts/tests/,stage/CHANGELOG.md,stage/.claude-plugin/plugin.json,stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
+---
+
+# W-00000027 register_work --backlog appends index rows outside the table
+
+## Purpose
+
+register_work.py --backlog appends the new row to the end of the backlog index file, after the Status values section, so renderers exclude it from the Current backlog table (observed 2026-07-13 with W-00000025/26; caught by codex review P3). Insert the row into the table body instead; add a test with a populated index that has trailing sections.
+
+## Source
+
+
+## User value
+
+
+## Scope
+
+### Included
+
+
+### Excluded
+
+
+## Dependencies
+
+
+## Risks
+
+
+## Success criteria
+
+
+## Next action
+
+## Progress
+
+- 2026-07-13: 채워진 백로그 표 뒤에 `## Status values`가 있는 회귀 테스트로 새 행이
+  섹션 뒤에 추가되는 실패를 먼저 재현했다. 첫 Markdown 표의 구분선과 연속 데이터 행을
+  찾아 표 본문 끝에 삽입하는 공통 경로를 구현하고, 빈 표·채워진 표·후속 섹션 및 직접
+  활성 작업 등록을 테스트했다. 다른 행 작성기도 점검했다. `start_work.py`의 `active.md`,
+  `close_work.py`의 `review.md`, `archive_work.py`의 보관 인덱스 작성은 파일 끝에 추가하지만
+  각 정식 템플릿이 표에서 끝나 현재 구조에서는 행이 표 밖으로 밀리는 동일 결함이
+  재현되지 않았다. 최종 검증은 hooks 281개와 scripts 190개 테스트 통과, Stage 감사
+  `errors=0, warnings=0`, `git diff --check` 통과다.
+
+## Verification
+
+### Executed at close — 2026-07-13
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+----------------------------------------------------------------------
+Ran 190 tests in 6.558s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root . --strict
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+## Promotion decision

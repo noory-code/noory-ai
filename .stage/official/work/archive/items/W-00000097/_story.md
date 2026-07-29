@@ -1,0 +1,150 @@
+---
+id: W-00000097
+title: 로그에 남은 항목이 다음 바퀴의 입력이 된다
+kind: development
+venue: codex
+priority: 3
+autonomous: true
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000095
+promotion: approved
+review: passed
+scope: stage/scripts/drive.py, stage/scripts/tests/test_drive.py, stage/scripts/tests/test_drive_unattended.py, stage/skills/stage-retrospective/close_work.py, stage/scripts/tests/test_close_work.py, stage/skills/stage-drive/SKILL.md, .stage/settings.json, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000097 로그에 남은 항목이 다음 바퀴의 입력이 된다
+
+## Purpose
+
+DE-00000034 의 셋째 층. 루프인데 바퀴 사이에 아무것도 안 흐른다. 리뷰어가 무엇이 모자랐는지
+말해도 다음 바퀴 작업자는 카드만 다시 받고 처음부터 판단한다.
+
+리뷰어가 로그에 남긴 실패 항목이 다음 바퀴 작업자의 입력이 된다. 작업자는 지적마다 받는다 /
+안 받는다 / 미룬다 를 근거와 함께 로그에 쓴다. 기준이 전부 통과하면 끝. 상한까지 갔는데도
+남으면 커밋하지 않고 사람에게 올린다.
+
+## Source
+
+DE-00000034(decided). 지적을 무비판적으로 받으면 없던 결함이 생긴다는 학습(R 계열 회고,
+2026-07-26)이 "받을지 작업자가 정한다"의 근거다.
+
+## User value
+
+작업이 한 번 부르고 끝나는 게 아니라 목적에 닿을 때까지 돈다. 사람이 손으로 이어 붙이지
+않아도 된다.
+
+## Scope
+
+### Included
+
+- 리뷰어가 로그에 남긴 실패 항목을 드라이버가 다음 바퀴 작업자에게 넘긴다.
+- 작업자가 지적마다 받는다/안 받는다/미룬다 + 근거를 로그에 쓰게 한다 (DE-00000032 가 정한
+  처리를 루프 안으로 옮긴다).
+- 왕복 상한. 지금의 카드별 시도 상한이 왕복 상한이 된다.
+- 상한에 닿으면 커밋하지 않고 사람에게 올린다.
+- 도구 세션을 이어갈 수 있으면 이어간다. 못 이어가면 로그를 읽혀 복구한다.
+
+### Excluded
+
+- 도구가 죽었는지 미리 보고 살아 있는지 지켜보는 일은 W-00000092 가 갖는다. 다만 도구가
+  죽어서 실패한 시도를 왕복 상한에 태우지 않는다는 규칙은 이 카드에 속한다.
+
+## Dependencies
+
+W-00000096 이 먼저 들어가야 한다. 로그가 있어야 남은 항목이 흐른다.
+
+## Risks
+
+- 왕복이 수렴하지 않으면 상한까지 태우고 사람에게 온다. 기준 밖 지적을 차단에서 빼는
+  규칙(DE-00000034)이 수렴을 만든다 — 그 규칙이 실제로 지켜지는지 이 카드에서 확인한다.
+- 세션 이어가기는 도구마다 방식이 다르다. 계약에 도구 이름이 들어가지 않게 설정으로 뺀다.
+
+## Success criteria
+
+- 리뷰어가 실패로 판정한 항목이 다음 바퀴 작업자 입력에 들어간다. 확인 테스트가 있다.
+- 작업자가 지적을 안 받겠다고 했을 때 근거가 로그에 없으면 실패한다. 확인 테스트가 있다.
+- 기준이 전부 통과하면 왕복을 멈추고 커밋한다.
+- 상한에 닿으면 커밋하지 않고 사람에게 올린다. 그때 로그에 왕복 기록이 다 남아 있다.
+- 도구가 죽어서 난 실패는 왕복 상한에 세지 않는다. 확인 테스트가 있다.
+- 인수 검사 두 개 통과, 버전 범프, CHANGELOG.
+
+## Next action
+
+W-00000096 이 닫힌 뒤 시작한다.
+
+## Progress
+
+## Verification
+
+### Executed at close — 2026-07-27
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (112 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] review infrastructure failure; retry without spending attempt 0/1
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785127181
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785127181. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785127181 (base: main)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785127181. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785127182 (base: main)
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785127182
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785127182. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785127183 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785127183. Human review + merge required; the base branch was not modified.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 387 tests in 53.748s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.952s
+
+OK
+```
+
+### Independent review at close — 2026-07-27
+
+```
+Criterion verdicts: .stage/.runtime/driver/logs/W-00000097.md
+```
+
+## Retrospective
+
+## Promotion decision

@@ -1,0 +1,176 @@
+---
+id: W-00000087
+title: codex 리뷰 명령에도 기준 판정 계약을 넘긴다
+kind: development
+venue: codex
+priority:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000089
+promotion: not_applicable
+scope: .stage/settings.json
+promotes:
+decision_refs:
+---
+
+# W-00000087 codex 리뷰 명령에도 기준 판정 계약을 넘긴다
+
+## Purpose
+
+W-00000085 가 리뷰 계약(카드 기준 판정 + 기준 밖 관찰 분리)을 프롬프트가 있는 리뷰 명령 둘
+(claude, red-team)에는 반영했지만, codex 기본 리뷰(`review --wait`)는 프롬프트 자리가 없어
+계약을 못 받았다. codex 리뷰어가 실제로 쓰이는 경로 — claude venue 카드를 드라이버로 돌려
+반대편 리뷰가 codex 로 가는 경우 — 가 돌기 시작하면 이 구멍이 열린다.
+
+## Source
+
+W-00000085 검증의 기준 밖 관찰 (처리: 미룬다). 계약의 SSOT 는 DE-00000032.
+
+
+## User value
+
+
+## User value
+
+계획·설계·문서 카드(venue: claude)를 드라이버로 돌리면 반대편 리뷰는 Codex 몫이 된다. 지금
+그 리뷰어는 카드를 모른 채 diff 만 보므로, 그 방향의 카드부터 리뷰가 다시 끝없는 지적으로
+돌아간다. 양방향 모두 카드 기준으로 판정해야 계약이 완성된다.
+
+## Scope
+
+### Included
+
+- `.stage/settings.json` 의 codex 리뷰 명령(`review.reviewers.codex`)을 계약을 실을 수 있는
+  형태로 바꾼다. 확인된 사실(2026-07-26): 기본 `review` 하위 명령은 지시문 인자가 없고,
+  `adversarial-review` 는 끝에 지시문(focus text)을 받으며 red-team 강도 명령이 이미 그
+  형태로 계약 문구를 싣고 있다. 그 형태를 가져온다.
+- `review.strengths.standard`(같은 기본 `review` 명령)도 같은 판단으로 다룬다 — 다만 이
+  명령은 close_work 의 단계별 리뷰가 쓰므로, 카드 경로가 없는 호출(W-00000091 전)에서도
+  깨지지 않는 문구여야 한다.
+
+### Excluded
+
+- close_work 가 카드 경로를 환경에 넣는 일 — W-00000091.
+- 래퍼의 fail-closed 판정 — W-00000089 (이 카드 앞에 닫힘).
+
+## Dependencies
+
+- W-00000089 뒤에 한다 — 같은 파일(`.stage/settings.json`)의 같은 명령들을 고친다.
+
+## Risks
+
+- `adversarial-review` 가 기본 `review` 보다 지적을 세게 낼 수 있다 — 계약이 "차단은 기준
+  실패에서만" 을 강제하므로 세기는 관찰로 흡수된다. 기준 판정이 없는 것보다 낫다.
+- 계약 문구가 카드 경로를 참조하는데 close_work 경로에서는 그 값이 비어 있다(W-00000091
+  전) — 문구가 "카드를 읽을 수 없으면 그 사실을 밝히고 diff 만으로 판정하라" 를 포함해야
+  빈 값에도 무너지지 않는다.
+
+## Success criteria
+
+- codex 리뷰 명령이 카드(`STAGE_WORK_ITEM_PATH`)를 읽고 `## Success criteria` 기준마다
+  PASS/FAIL 을 내며, 기준 밖 관찰을 분리해 내고, 차단(P1)은 기준 실패에서만 낸다는 지시문을
+  싣고 있다.
+- 카드 경로가 비어 있어도 명령이 깨지지 않는다 — 지시문이 그 경우의 행동을 정한다.
+- W-00000089 가 만든 fail-closed 판정(표식 없으면 차단)이 그대로 유지된다.
+- `.stage/settings.json` 이 유효한 JSON 이다.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과.
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과.
+
+제약:
+
+- **커밋하지 않는다.**
+- scope 밖은 건드리지 않는다. 플러그인 소스는 안 바뀌므로 버전 범프는 없다 — 이 카드는
+  프로젝트 정책(`.stage/settings.json`)만 고친다.
+
+## Next action
+
+W-00000089 가 닫힌 뒤 `start_work.py` 로 시작한다. scope: `.stage/settings.json`.
+
+## Progress
+
+- `.stage/settings.json` 의 `review.reviewers.codex` 와 `review.strengths.standard` 를
+  `adversarial-review --wait --base HEAD~1 "<focus text>"` 형태로 바꿨다. 두 지시문 모두
+  카드의 `## Success criteria` 항목별 PASS/FAIL, 실패한 기준에만 `[P1]`, 전부 통과하면
+  `APPROVED`, 기준 밖 관찰의 별도 비차단 보고를 요구한다. 카드 경로가 비거나 읽을 수
+  없으면 그 사실을 밝히고 diff 만 판정하도록 명시했다.
+- CLI 부분만 스텁으로 바꾸고 `STATUS=$?` 부터 `esac` 까지 래퍼 로직을 그대로 둔 셸 검증:
+  - CLI 종료 코드 7 → 래퍼 종료 코드 1,
+    `BLOCK: codex review command failed with exit code 7`.
+  - 종료 코드 0 + `[P1] failed criterion` → 래퍼 종료 코드 1,
+    `BLOCK: codex review reported a P1 blocker`.
+  - 종료 코드 0 + `APPROVED` → 래퍼 종료 코드 0.
+  - 종료 코드 0 + `CRITERIA VERDICT: PASS`(판정 표식 없음) → 래퍼 종료 코드 1,
+    `BLOCK: codex review produced no verdict`.
+- `python3 -m json.tool .stage/settings.json` 통과.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과(356 tests).
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과(327 tests).
+- 설정 diff 에서 위 두 명령만 바뀌었고 `guidance_overrides` 를 포함한 다른 설정은
+  그대로임을 확인했다.
+
+## Verification
+
+### 기준 판정 — 반대 venue (Claude), DE-00000032 방식 (2026-07-26)
+
+- codex 리뷰 명령이 계약 지시문을 싣는다 — 채움. `reviewers.codex` 와 `strengths.standard`
+  둘 다 `adversarial-review` + focus text 로 바뀌었고, 카드 기준별 PASS/FAIL·[P1] 은 기준
+  실패에만·APPROVED·기준 밖 관찰 분리를 지시한다.
+- 카드 경로가 비어도 안 무너진다 — 채움. "경로가 비거나 읽을 수 없으면 그 사실을 밝히고
+  diff 만 판정하라" 가 지시문에 있다 (W-00000091 전의 close_work 경로 대비).
+- W-00000089 의 fail-closed 유지 — 채움. 실제 래퍼 문자열 넷 × 네 경우 = 16개를 독립
+  재현했고 전부 기대대로.
+- JSON 유효, 테스트 두 벌(356/327) 통과, `guidance_overrides` 등 다른 절 무변경 — 채움.
+- 플러그인 소스 무변경(버전 범프 없음) — 채움. 이 카드는 프로젝트 정책 파일만 고쳤다.
+
+### 그 밖에 본 것 (기준 밖 관찰)
+
+- 없음. 차단할 지적 없음.
+
+### Executed at close — 2026-07-26
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 /private/tmp/claude-501/-Users-woogis-Workspace-repo-noory-ai/8498db6e-3b2c-4487-b49c-b670c4555420/scratchpad/verify_wrappers.py .stage/settings.json
+[exit 0]
+guidance_overrides: ['official/canon/vocabulary.md', 'operations/verification.md', 'index.md', 'state/current.md']
+reviewers.codex / cli_error: rc=1 expected=1 OK | BLOCK: codex review command failed with exit code 7
+reviewers.codex / no_marker: rc=1 expected=1 OK | BLOCK: codex review produced no verdict
+reviewers.codex / p1: rc=1 expected=1 OK | BLOCK: codex review reported a P1 blocker
+reviewers.codex / approved: rc=0 expected=0 OK | CRITERIA VERDICT: all PASS. APPROVED
+reviewers.claude / cli_error: rc=1 expected=1 OK | BLOCK: claude review command failed with exit code 7
+reviewers.claude / no_marker: rc=1 expected=1 OK | BLOCK: claude review produced no verdict
+reviewers.claude / p1: rc=1 expected=1 OK | BLOCK: claude review reported a P1 blocker
+reviewers.claude / approved: rc=0 expected=0 OK | CRITERIA VERDICT: all PASS. APPROVED
+strengths.standard / cli_error: rc=1 expected=1 OK | BLOCK: codex review command failed with exit code 7
+strengths.standard / no_marker: rc=1 expected=1 OK | BLOCK: codex review produced no verdict
+strengths.standard / p1: rc=1 expected=1 OK | BLOCK: codex review reported a P1 blocker
+strengths.standard / approved: rc=0 expected=0 OK | CRITERIA VERDICT: all PASS. APPROVED
+strengths.red-team / cli_error: rc=1 expected=1 OK | BLOCK: codex review command failed with exit code 7
+strengths.red-team / no_marker: rc=1 expected=1 OK | BLOCK: codex review produced no verdict
+strengths.red-team / p1: rc=1 expected=1 OK | BLOCK: codex review reported a P1 blocker
+strengths.red-team / approved: rc=0 expected=0 OK | CRITERIA VERDICT: all PASS. APPROVED
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.959s
+
+OK
+```
+
+## Retrospective
+
+R-00000089. 핵심: 리뷰 계약이 이제 양방향 모두에 실렸다 — Codex 가 리뷰어로 나설 차례
+(claude venue 카드)가 와도 카드 기준으로 판정한다.
+
+## Promotion decision
+
+official 로 올릴 산출물 없음(promotion: not_applicable). 카드와 회고는 아카이브로 간다.

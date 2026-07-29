@@ -1,0 +1,76 @@
+---
+id: W-00000008
+title: Stage execution scripts (register/close) + PreToolUse enum-validity gate
+kind: feature
+venue: claude
+source:
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000008
+promotion: not_applicable
+scope: stage/hooks, stage/scripts, stage/skills, stage/templates, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
+---
+
+# W-00000008 Stage execution scripts + enum-validity gate
+
+## Purpose
+
+Script the two repetitive lifecycle dances (register, close) so the enum/index bookkeeping that
+manual edits get wrong is done once and correctly, and add real enforcement of work-item field
+validity. Design was red-teamed before implementation; findings are folded in.
+
+## Scope
+
+- `stage/skills/stage-work/register_work.py` — scaffold a work item + `active.md` link-row.
+  Atomic O_EXCL id allocation (dual-venue safe); re-run reconciles the index; link-form row.
+- `stage/skills/stage-retrospective/close_work.py` — run caller-supplied `--check` argv (shell=False,
+  mandatory timeout), and only on all-pass set `verification: passed`, embed bounded/fenced output,
+  require `retrospective: completed` AND `promotion ∈ FINAL`, then move the row to `review.md`.
+  Honest scope: it executes and captures evidence; it does not judge check sufficiency.
+- `stage/hooks/` — a narrow PreToolUse block that rejects a work-item write whose PROJECTED
+  frontmatter has an invalid `status`/`verification`/`retrospective`/`promotion` enum, reusing the
+  existing `projected_file_text`/`projected_patch_text` projection. Replaces the rejected
+  (non-blocking, SSOT-breaking) PostToolUse-warning idea.
+- Tests + CHANGELOG + version bump.
+
+## Success criteria
+
+- Both scripts exist with tests; `close_work.py` refuses to pass a failing/absent check and refuses
+  to complete without a completed retrospective and a final promotion decision.
+- The PreToolUse enum gate blocks an invalid-enum work-item write and is covered by a test.
+- `stage/hooks/tests` and `stage/scripts/tests` pass; `audit_stage.py` errors=0.
+
+## Verification
+
+Executed this session:
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 243 tests in 0.499s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 102 tests in 2.982s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+## Promotion decision
+
+`promotion: not_applicable` — changes live in the `stage/` plugin package.

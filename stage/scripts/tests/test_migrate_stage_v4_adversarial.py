@@ -248,7 +248,7 @@ class MigrationAbortAdversarialTest(MigrationAdversarialFixture):
             self.assertEqual(1, code)
             self.assertIn("injected interruption", output)
             self.assertTrue(
-                (stage_root / ".runtime/schema-v4-maintenance.json").is_file()
+                (stage_root / ".runtime/schema-v5-maintenance.json").is_file()
             )
             self.assertTrue((stage_root / "official").is_dir())
 
@@ -266,7 +266,7 @@ class MigrationAbortAdversarialTest(MigrationAdversarialFixture):
             for retired in ("official", "work", "decisions", "state", "proposals", "roadmap"):
                 self.assertFalse((stage_root / retired).exists(), retired)
             self.assertFalse(
-                (stage_root / ".runtime/schema-v4-maintenance.json").exists()
+                (stage_root / ".runtime/schema-v5-maintenance.json").exists()
             )
             self.assertFalse(
                 (stage_root / ".runtime/schema-v4-migration-journal.json").exists()
@@ -370,7 +370,7 @@ class MigrationContentAdversarialTest(MigrationAdversarialFixture):
 
             self.migrate_successfully(root)
 
-            migrated_work = stage_root / "work/current/W-00000001.md"
+            migrated_work = stage_root / "work/current/W-00000001/_story.md"
             work_text = migrated_work.read_text(encoding="utf-8")
             resolved_legacy = stage_records.resolve_decision_ref(
                 root, stage_root, legacy_id

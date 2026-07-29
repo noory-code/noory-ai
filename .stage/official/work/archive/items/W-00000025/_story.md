@@ -1,0 +1,91 @@
+---
+id: W-00000025
+title: Close/archive ordering guard: refuse closure with uncommitted scope changes
+kind: development
+venue: codex
+priority: high
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000025
+promotion: not_applicable
+scope: stage/skills/stage-retrospective/,stage/skills/stage-archive/,stage/scripts/tests/,stage/operations/,stage/CHANGELOG.md,stage/.claude-plugin/plugin.json,stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
+---
+
+# W-00000025 Close/archive ordering guard: refuse closure with uncommitted scope changes
+
+## Purpose
+
+Prevent the archive-before-commit trap observed on W-00000019: close_work.py (and archive_work.py) refuse to complete or archive a card while uncommitted git changes exist inside the card's scope, with a message stating the required order (commit source first, then close, then archive). Skills document the ordering explicitly. Fail Fast: the tool denies the wrong order instead of the human remembering it.
+
+## Source
+
+
+## User value
+
+
+## Scope
+
+### Included
+
+
+### Excluded
+
+
+## Dependencies
+
+
+## Risks
+
+
+## Success criteria
+
+
+## Next action
+
+## Progress
+
+- 2026-07-13: close/archive 공용 git 작업 트리 가드를 구현하고, scope 내부 변경 거부,
+  scope 외부 변경 허용, `.stage/` 전용 변경 허용, 비-git 프로젝트 허용 회귀 테스트를
+  두 CLI 테스트 모듈에 추가했다. 운영 순서 계약과 0.25.0 릴리스 메타데이터도 갱신했다.
+
+## Verification
+
+### Executed at close — 2026-07-13
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+----------------------------------------------------------------------
+Ran 187 tests in 6.354s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root . --strict
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+## Promotion decision

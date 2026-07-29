@@ -117,7 +117,7 @@ class ContextDirectiveTest(unittest.TestCase):
         stage_root = root / ".stage"
         (stage_root / "work/current/W-00000001/W-00000002").mkdir(parents=True)
         (stage_root / "settings.json").write_text(
-            '{"schema_version": 4}\n', encoding="utf-8"
+            '{"schema_version": 5}\n', encoding="utf-8"
         )
         records = (
             (

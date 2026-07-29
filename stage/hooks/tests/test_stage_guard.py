@@ -133,8 +133,8 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(output["hookEventName"], "SessionStart")
         self.assertIn("Global time axis", output["additionalContext"])
 
-    def test_schema_v4_maintenance_marker_denies_v3_and_v4_mutations(self):
-        for schema_version in (3, 4):
+    def test_schema_v5_maintenance_marker_denies_all_schema_mutations(self):
+        for schema_version in (3, 4, 5):
             with self.subTest(schema_version=schema_version), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 self.write_stage_file(
@@ -149,7 +149,7 @@ class StageGuardTest(unittest.TestCase):
                 )
                 self.write_stage_file(
                     root,
-                    ".runtime/schema-v4-maintenance.json",
+                    ".runtime/schema-v5-maintenance.json",
                     "{}\n",
                 )
                 payload = {
@@ -637,7 +637,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                '{"schema_version":4,"governance":{"paths":["link"]}}',
+                '{"schema_version":5,"governance":{"paths":["link"]}}',
             )
             payload = {
                 "tool_name": "Write",
@@ -1257,7 +1257,7 @@ class StageGuardTest(unittest.TestCase):
     def test_v4_allows_archive_intent_including_official_index_update(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.write_stage_file(root, "settings.json", json.dumps({"schema_version": 4}))
+            self.write_stage_file(root, "settings.json", json.dumps({"schema_version": 5}))
             self.write_work_item(
                 root,
                 status="completed",
@@ -1387,7 +1387,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"schema_version": 4, "governance": {"paths": ["designs"]}}),
+                json.dumps({"schema_version": 5, "governance": {"paths": ["designs"]}}),
             )
             payload = {
                 "tool_name": "Write",
@@ -1406,7 +1406,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"schema_version": 4, "governance": {"paths": ["designs"]}}),
+                json.dumps({"schema_version": 5, "governance": {"paths": ["designs"]}}),
             )
             self.write_work_item(root, status="active", scope="designs")
             payload = {
@@ -1425,7 +1425,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"schema_version": 4, "governance": {"extensions": [".md"]}}),
+                json.dumps({"schema_version": 5, "governance": {"extensions": [".md"]}}),
             )
             payload = {
                 "tool_name": "Write",
@@ -1608,7 +1608,7 @@ class StageGuardTest(unittest.TestCase):
     def test_hierarchy_gate_uses_planned_folder_parent_without_parent_field(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.write_stage_file(root, "settings.json", '{"schema_version": 4}\n')
+            self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
             self.write_stage_file(
                 root,
                 "work/planned/W-00000001/_epic.md",
@@ -1633,7 +1633,7 @@ class StageGuardTest(unittest.TestCase):
     def test_hierarchy_gate_blocks_action_without_story_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.write_stage_file(root, "settings.json", '{"schema_version": 4}\n')
+            self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
             payload = {
                 "tool_name": "Write",
                 "cwd": str(root),
@@ -2804,7 +2804,7 @@ class StageGuardTest(unittest.TestCase):
             self.write_stage_file(
                 root,
                 "settings.json",
-                json.dumps({"schema_version": 4, "governance": {"paths": ["src"]}}),
+                json.dumps({"schema_version": 5, "governance": {"paths": ["src"]}}),
             )
             (root / "src").mkdir()
             (root / "outside.txt").write_text("x", encoding="utf-8")
@@ -2896,7 +2896,7 @@ class StageGuardTest(unittest.TestCase):
                 root,
                 "settings.json",
                 json.dumps(
-                    {"schema_version": 4, "governance": {"exclude_paths": ["generated"]}}
+                    {"schema_version": 5, "governance": {"exclude_paths": ["generated"]}}
                 ),
             )
             (root / "generated").mkdir()
@@ -4570,7 +4570,7 @@ class ConfiguredWriteToolTest(unittest.TestCase):
 
     def write_settings(self, root: Path, data: dict) -> Path:
         return self.write_stage_file(
-            root, "settings.json", json.dumps({"schema_version": 4, **data})
+            root, "settings.json", json.dumps({"schema_version": 5, **data})
         )
 
     def payload(self, root: Path, target: str) -> dict:

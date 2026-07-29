@@ -1,0 +1,93 @@
+---
+id: W-00000032
+title: C4a: schema_version dispatch — consumers registry-driven on v4, v3 unchanged
+kind: development
+venue: codex
+source:
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000031
+promotion: not_applicable
+review: not_required
+scope: stage/hooks/,stage/scripts/,stage/CHANGELOG.md,stage/.claude-plugin/plugin.json,stage/.codex-plugin/plugin.json
+promotes:
+decision_refs:
+---
+
+# W-00000032 C4a: schema_version dispatch — consumers registry-driven on v4, v3 unchanged
+
+## Purpose
+
+C4 (part a) per SCHEMA_V4.md: make the Stage consumers (stage_guard, stage_work, stage_context, stage_records, audit_stage) able to operate on a schema-v4 project by deriving topology paths from stage_topology when the PROJECT's settings.json declares schema_version==4, while keeping schema-v3 behavior byte-for-byte identical and NOT flipping the plugin's enforced contract version (stays 3). Split from the design's single C4 row for risk isolation; C4b adds legacy-root denial and lifecycle views.
+
+## Scope
+
+
+## Success criteria
+
+
+## Related truth
+
+
+## Progress
+
+- 2026-07-13 구현: 프로젝트 `settings.json`의 정확한 정수 `schema_version: 4`만 v4
+  토폴로지를 선택하는 단일 디스패치 helper를 `stage_paths.py`에 추가했다.
+  `STAGE_SCHEMA_VERSION`은 변경하지 않았으며 계속 3이다. 기존 테스트 assertion은 하나도
+  수정하지 않았다. `stage_guard`, `stage_work`, `stage_context`, `stage_records`,
+  `audit_stage`의 토폴로지 경로 파생만 명시적인 v3/v4 분기로 재배선했다. v3 분기는 기존
+  상수와 로직을 유지하며, `init_stage.py`로 만든 v3 fixture에서 write/commit gate, record
+  scan, audit, context를 검증했다. 변경 전 테스트 전체(hooks 284개, scripts 199개)는 assertion
+  변경 없이 통과했고, v4 template fixture도 `official/`, `work/current`, `work/planned`,
+  `decisions/pending`, `state/`, `roadmap/` 경로에서 같은 소비자 흐름과 audit 오류 0을
+  검증했다.
+
+
+## Verification
+
+
+### Executed at close — 2026-07-13
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 284 tests in 0.512s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+----------------------------------------------------------------------
+Ran 204 tests in 6.904s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root . --strict
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+
+## Promotion decision

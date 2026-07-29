@@ -1,0 +1,98 @@
+---
+id: W-00000110
+title: 카드 백 장을 v5 로 옮긴다
+kind: development
+venue: codex
+priority: 6
+autonomous: false
+acceptance:
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: not_required
+scope: stage/, .stage/
+promotes:
+decision_refs:
+---
+
+# W-00000110 카드 백 장을 v5 로 옮긴다
+
+## Purpose
+
+옛 카드와 새 폴더가 같은 스캐너 안에서 같이 살 수 없다. 카드를 훑는 코드가 하나이기 때문이다.
+그래서 스키마를 v5 로 올리고 보관된 카드 백여 장과 진행 중·계획 카드를 전부 새 모양으로 옮긴다.
+스캐너는 새 모양 하나만 안다.
+
+## Source
+
+DE-00000035 — v5 로 올리고 전부 옮긴다. 스캐너에 분기를 남기지 않는다.
+
+## User value
+
+옛 카드도 새 구조 안에서 읽힌다. 그리고 이후의 모든 변경이 한 모양만 맞추면 된다.
+
+## Scope
+
+### Included
+
+- v4 → v5 마이그레이션 스크립트. v3 → v4 때 쓴 `stage_schema_v4_migration.py` 와
+  `stage-migrate` 스킬이 이미 그 자리를 닦아 놨으므로 같은 자리를 따른다.
+- 옛 카드는 **독립 스토리**로 옮긴다. 보관된 카드 하나하나에 에픽을 지어 붙이는 것은 사실을
+  지어내는 것이므로 안 한다. 이미 `parent` 를 가진 카드는 그 부모의 폴더 밑으로 들어간다.
+- 이 저장소(`.stage/`)의 카드를 실제로 옮긴다.
+- `docs/SCHEMA_V5.md`, `README.md`, `CHANGELOG.md`.
+
+### Excluded
+
+없다. 이 카드가 이 에픽의 마지막이다.
+
+## Dependencies
+
+W-00000106 (새 모양이 있어야 옮길 곳이 있다), W-00000109 (계층 위를 도는 것들이 맞아야 옮긴 뒤
+감사가 통과한다).
+
+W-00000106 이 끝나면 코드는 새 구조를 알지만 저장소의 카드는 옛 모양이다. 그 사이가 길면
+저장소가 깨진 채로 있게 된다. 106 과 이 카드를 붙여서 한 덩어리로 내보내야 할 수도 있다 —
+106 을 할 때 그 판단을 한다.
+
+## Risks
+
+- 마이그레이션이 중간에 끊기면 어떻게 되나. v3 → v4 스크립트가 이 자리를 어떻게 다뤘는지
+  확인하고 같은 자리를 따른다. **확인 전에는 안전하다고 적지 않는다.**
+- 보관된 카드는 이미 official 이다. 옮기려면 승격 의도(`promote_intent.py`)를 거쳐야 한다.
+  카드 백 장에 대해 그것이 어떻게 도는지 미리 확인한다.
+
+## Success criteria
+
+- v4 → v5 마이그레이션이 있고, 중단됐을 때의 동작이 v3 → v4 와 같은 자리를 따른다.
+- 이 저장소의 카드가 전부 새 모양이고, 스캐너에 v4 분기가 남지 않았다.
+- 옛 카드가 독립 스토리로 있고, `parent` 를 갖던 카드는 부모 폴더 밑에 있다.
+- 은퇴한 B 카드를 훑는 자리(`migrate_stage.py:232` 의 `glob("B-*.md")`)가 새 구조에서 어떻게
+  되는지 한 번 보고 정한다. 작업 카드는 아니지만 레코드 성격이 있다.
+- 인덱스 링크가 카드의 실제 위치를 가리킨다. 지금 경로를 만드는 함수가 루트의 절대·상대 여부로
+  갈려서, 실제 카드는 찾아서 얻고 인덱스 링크는 평평하게 조립한다. 카드가 중첩 폴더로 가면 둘이
+  어긋난다 (`close_work.py:115`/`:119`, `:483`/`:487`, `start_work.py:155`/`:250`,
+  `archive_work.py:169`/`:257`).
+- 옛 스키마에서 올라온 프로젝트가 `parent:` 없는 카드로 착지한다. 지금 v3 마이그레이션이 그
+  필드를 써 넣는다 (`test_work_cards.py:340` 이 그대로 단언한다).
+- 이 저장소의 감사 경고가 0 이다. 지금 12개가 난다 — `_epic.md`·`_story.md` 가 안 깔려서 6개,
+  `README.md`·`_template.md` 가 옛 내용이라 6개.
+- 보관함이 백 장을 넘은 상태에서 보관·닫기가 느려지지 않는다. 카드를 찾을 때마다 트리를 다시
+  훑고 `archive_work.py:136` 이 루프 안에서 부른다. 옮긴 뒤 재어 보고 정한다.
+- 두 테스트 모음 통과, 감사 errors=0, 플러그인 버전 + CHANGELOG.
+
+## Next action
+
+`stage_schema_v4_migration.py` 가 중단 처리를 어떻게 했는지 읽는다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

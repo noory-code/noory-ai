@@ -152,7 +152,7 @@ class UnattendedTest(unittest.TestCase):
         stage_root = root / ".stage"
         stage_root.mkdir()
         settings: dict[str, object] = {
-            "schema_version": 4,
+            "schema_version": 5,
             "review": {"reviewers": {"codex": "echo SELF", "claude": "echo APPROVED"}},
             "executors": {"codex": executor},
         }
@@ -174,7 +174,26 @@ class UnattendedTest(unittest.TestCase):
         acceptance: tuple[str, ...] = ("echo ok",),
         scope: str = "driver-work.txt",
     ) -> None:
-        path = stage_root / "work" / "current" / f"{item_id}.md"
+        current_root = stage_root / "work/current"
+        if not parent:
+            path = current_root / item_id / "_story.md"
+        else:
+            parent_path = self.card_path(stage_root, parent)
+            if (
+                parent_path.name == "_story.md"
+                and parent_path.parent.parent == current_root
+            ):
+                epic_path = parent_path.with_name("_epic.md")
+                parent_path.replace(epic_path)
+                parent_path = epic_path
+            if parent_path.name == "_epic.md":
+                path = parent_path.parent / item_id / "_story.md"
+            elif parent_path.name == "_story.md":
+                path = parent_path.parent / f"{item_id}.md"
+            else:
+                raise AssertionError(
+                    f"action cannot parent another fixture: {parent_path}"
+                )
         path.parent.mkdir(parents=True, exist_ok=True)
         rendered = "[]"
         if acceptance:
@@ -184,7 +203,6 @@ class UnattendedTest(unittest.TestCase):
             f"id: {item_id}\n"
             "kind: development\n"
             "venue: codex\n"
-            f"parent: {parent}\n"
             f"status: {status}\n"
             "verification: pending\n"
             "retrospective: pending\n"
@@ -199,6 +217,15 @@ class UnattendedTest(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def card_path(self, stage_root: Path, item_id: str) -> Path:
+        current_root = stage_root / "work/current"
+        for path in current_root.rglob("*.md"):
+            if path.name == f"{item_id}.md":
+                return path
+            if f"id: {item_id}\n" in path.read_text(encoding="utf-8"):
+                return path
+        return current_root / item_id / "_story.md"
+
     def args(self, root: Path, target: str) -> argparse.Namespace:
         return argparse.Namespace(
             project_root=str(root), target=target, timeout=30, unattended=True, execute=False
@@ -206,7 +233,7 @@ class UnattendedTest(unittest.TestCase):
 
     def install_stubs(self, drive, calls: list):
         def set_status(root: str, item_id: str, status: str) -> None:
-            path = Path(root) / ".stage" / "work" / "current" / f"{item_id}.md"
+            path = self.card_path(Path(root) / ".stage", item_id)
             text = path.read_text(encoding="utf-8")
             path.write_text(
                 drive.set_frontmatter_field(text, "status", status), encoding="utf-8"
@@ -442,7 +469,7 @@ class UnattendedTest(unittest.TestCase):
             environment = json.loads(marker.read_text(encoding="utf-8"))
             self.assertEqual("W-00000002", environment["STAGE_WORK_ITEM"])
             self.assertEqual(
-                str((stage_root / "work/current/W-00000002.md").resolve()),
+                str(self.card_path(stage_root, "W-00000002").resolve()),
                 environment["STAGE_WORK_ITEM_PATH"],
             )
             self.assertEqual(str(root.resolve()), environment["STAGE_PROJECT_ROOT"])
@@ -495,7 +522,7 @@ class UnattendedTest(unittest.TestCase):
                             "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
                         )
                     return False, "independent review did not pass"
-                path = stage_root / "work/current" / f"{item_id}.md"
+                path = self.card_path(stage_root, item_id)
                 path.write_text(
                     drive.set_frontmatter_field(
                         path.read_text(encoding="utf-8"),
@@ -557,7 +584,7 @@ class UnattendedTest(unittest.TestCase):
 
         def stub_escalate(project_root, item_id, reason, timeout):
             escalation_reasons.append(reason)
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             path.write_text(
                 drive.set_frontmatter_field(
                     path.read_text(encoding="utf-8"),
@@ -623,7 +650,7 @@ class UnattendedTest(unittest.TestCase):
                             "OUT-OF-CRITERIA OBSERVATIONS:\n- None\n"
                         )
                     return False, "independent review did not pass"
-                path = stage_root / "work/current" / f"{item_id}.md"
+                path = self.card_path(stage_root, item_id)
                 path.write_text(
                     drive.set_frontmatter_field(
                         path.read_text(encoding="utf-8"),
@@ -667,7 +694,7 @@ class UnattendedTest(unittest.TestCase):
             close_calls.append(item_id)
             if len(close_calls) == 1:
                 return False, "close_work timed out after 31s"
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             path.write_text(
                 drive.set_frontmatter_field(
                     path.read_text(encoding="utf-8"),
@@ -1007,7 +1034,7 @@ class UnattendedTest(unittest.TestCase):
         def stub_escalate_and_commit(project_root, item_id, reason, timeout):
             escalation_reasons.append(reason)
             calls.append(("escalate", item_id))
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             text = path.read_text(encoding="utf-8")
             path.write_text(
                 drive.set_frontmatter_field(text, "status", "blocked"),
@@ -1063,7 +1090,7 @@ class UnattendedTest(unittest.TestCase):
         stage_root.mkdir()
         # No `executors` section at all -> resolve fails closed.
         settings = {
-            "schema_version": 4,
+            "schema_version": 5,
             "review": {"reviewers": {"codex": "echo SELF", "claude": "echo APPROVED"}},
             "limits": limits,
         }
@@ -1116,7 +1143,8 @@ class UnattendedTest(unittest.TestCase):
 
         self.assertEqual(0, rc)
         branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
-        committed = git_out(root, "show", f"{branch}:.stage/work/current/W-00000002.md")
+        card_relative = self.card_path(stage_root, "W-00000002").relative_to(root)
+        committed = git_out(root, "show", f"{branch}:{card_relative.as_posix()}")
         self.assertIn("status: completed", committed)
 
     def test_lifecycle_commit_excludes_ignored_runtime_directory(self):
@@ -1128,7 +1156,7 @@ class UnattendedTest(unittest.TestCase):
         runtime_file = stage_root / ".runtime/driver/state.json"
         runtime_file.parent.mkdir(parents=True)
         runtime_file.write_text("{}\n", encoding="utf-8")
-        card_path = stage_root / "work/current/W-00000001.md"
+        card_path = self.card_path(stage_root, "W-00000001")
         card_path.write_text(
             card_path.read_text(encoding="utf-8").replace(
                 "status: active", "status: blocked"
@@ -1143,7 +1171,9 @@ class UnattendedTest(unittest.TestCase):
         committed_paths = git_out(
             root, "show", "--format=", "--name-only", "HEAD"
         ).splitlines()
-        self.assertIn(".stage/work/current/W-00000001.md", committed_paths)
+        self.assertIn(
+            ".stage/work/current/W-00000001/_story.md", committed_paths
+        )
         self.assertNotIn(".stage/.runtime/driver/state.json", committed_paths)
         self.assertTrue(runtime_file.exists())
 
@@ -1182,7 +1212,7 @@ class UnattendedTest(unittest.TestCase):
             return False, "simulated close failure"
 
         def stub_escalate(project_root, item_id, reason, timeout):
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             path.write_text(
                 drive.set_frontmatter_field(
                     path.read_text(encoding="utf-8"),
@@ -1226,7 +1256,7 @@ class UnattendedTest(unittest.TestCase):
 
         def stub_escalate_and_commit(project_root, item_id, reason, timeout):
             escalation_reasons.append(reason)
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             text = path.read_text(encoding="utf-8")
             path.write_text(
                 drive.set_frontmatter_field(text, "status", "blocked"),
@@ -1276,7 +1306,7 @@ class UnattendedTest(unittest.TestCase):
 
         def stub_escalate_and_commit(project_root, item_id, reason, timeout):
             escalation_reasons.append(reason)
-            path = stage_root / "work/current" / f"{item_id}.md"
+            path = self.card_path(stage_root, item_id)
             text = path.read_text(encoding="utf-8")
             path.write_text(
                 drive.set_frontmatter_field(text, "status", "blocked"),
@@ -1339,7 +1369,7 @@ class UnattendedTest(unittest.TestCase):
             acceptance=(acceptance_command,),
             scope="parent-checks.txt",
         )
-        item_path = stage_root / "work/current/W-00000001.md"
+        item_path = self.card_path(stage_root, "W-00000001")
         item_path.write_text(
             item_path.read_text(encoding="utf-8").replace(
                 "## Progress\n",
@@ -1408,7 +1438,7 @@ class UnattendedTest(unittest.TestCase):
         calls: list = []
 
         def set_status(r: str, iid: str, st: str) -> None:
-            p = Path(r) / ".stage" / "work" / "current" / f"{iid}.md"
+            p = self.card_path(Path(r) / ".stage", iid)
             p.write_text(
                 drive.set_frontmatter_field(p.read_text(encoding="utf-8"), "status", st),
                 encoding="utf-8",

@@ -361,6 +361,11 @@ class Audit:
                 scale = work_record_scale(audited_item.items_root, path)
             except ValueError:
                 scale = "invalid"
+                self.error(
+                    "WORK026",
+                    "Work record is outside the schema-v5 epic/story/action hierarchy.",
+                    path,
+                )
             if scale in {"epic", "story"}:
                 expected_id = path.parent.name
         if item.item_id != expected_id:
@@ -626,6 +631,12 @@ class Audit:
                     scale = work_record_scale(graph.backlog_root, path)
                 except ValueError:
                     scale = "invalid"
+                    self.error(
+                        "BACKLOG008",
+                        "Planned work record is outside the schema-v5 "
+                        "epic/story/action hierarchy.",
+                        path,
+                    )
                 if scale in {"epic", "story"}:
                     expected_id = path.parent.name
             if expected_id != item_id:

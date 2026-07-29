@@ -1,0 +1,141 @@
+---
+id: W-00000072
+title: 실행자 환경 변수 — Windows 예시와 무인 모드 테스트
+kind: fix
+venue: codex
+source:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000070
+promotion: not_applicable
+review: not_required
+scope: stage/docs/SCHEMA_V4.md, stage/scripts/tests/, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000072 실행자 환경 변수 — Windows 예시와 무인 모드 테스트
+
+## Purpose
+
+독립 리뷰가 지적한 두 가지를 닫는다. 사양 문서의 executors 예시가 POSIX 셸 형태라 Windows에서 확장되지 않고, 실행자 환경 변수 테스트가 감독 모드만 덮어 무인 모드 경로는 검증되지 않는다.
+
+## Scope
+
+W-00000071 에 대한 독립 리뷰(claude venue, APPROVED)가 남긴 비차단 지적 둘을 닫는다.
+
+### 1. 사양 문서의 예시가 Windows 에서 확장되지 않는다
+
+`stage/docs/SCHEMA_V4.md` 의 `### Supervised driver and executor settings` 에 있는 `executors`
+예시가 `$STAGE_WORK_ITEM` 형태다. 드라이버는 명령을 `shell=True` 로 실행하므로 Windows 에서는
+`cmd.exe` 가 그 문자열을 확장하지 않고 그대로 넘긴다. 예시를 그대로 복사한 Windows 운영자는
+실행자에게 엉뚱한 값이 들어가는 것을 눈치채지 못한다.
+
+`CLAUDE.md` 의 교차 플랫폼 규칙(모든 코드는 macOS·Linux·Windows 에서 동작)이 문서에도 적용된다.
+플랫폼별 형태를 함께 보이거나, 셸에 따라 확장 형태가 다르다는 사실을 예시 옆에 명시한다.
+
+### 2. 무인 모드에는 환경 변수 테스트가 없다
+
+`stage/scripts/tests/test_drive.py` 의 새 테스트는 감독 모드(`--execute`) 만 덮는다. 무인
+모드(`--unattended`) 의 실행자 호출 자리도 같은 값을 주입하지만 확인하는 테스트가 없다.
+사람 없이 도는 쪽이 오히려 안 덮여 있다.
+
+무인 모드 테스트는 `stage/scripts/tests/test_drive_unattended.py` 에 있다. 실행자가 세 환경
+변수를 읽어 기록하고, 그 값이 선택된 항목과 일치하는지 확인하는 테스트를 그쪽에 더한다.
+
+제약:
+
+- **커밋하지 않는다.** 작업 트리에 변경만 남기고 멈춘다.
+- 저장소 산출물은 영어로 쓴다. `.stage/` 안의 글만 한국어다.
+- 두 `plugin.json` 의 version 을 0.42.2 → 0.42.3 으로 올리고 `stage/CHANGELOG.md` 에 항목을
+  추가한다.
+- scope 밖은 건드리지 않는다. `drive.py` 는 이미 옳게 동작하므로 손대지 않는다.
+
+## Success criteria
+
+- 사양 문서의 `executors` 예시를 Windows 운영자가 그대로 따라 해도 값이 실제로 전달된다.
+- 무인 모드 실행자가 세 환경 변수를 받고 값이 선택 항목과 일치하는 것을 확인하는 테스트가
+  `test_drive_unattended.py` 에 있다.
+- 그 테스트는 무인 모드의 주입 코드를 제거하면 실패한다 (실제로 그 동작을 검사한다).
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과.
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과.
+
+## Related truth
+
+- 앞선 작업: W-00000071 (R-00000069) — 환경 변수 세 개를 도입한 수정.
+- 드라이버 사양: `stage/docs/SCHEMA_V4.md` — `### Supervised driver and executor settings`.
+- 교차 플랫폼 규칙: 저장소 루트 `CLAUDE.md` 의 `## Cross-Platform Compatibility`.
+
+**위험**: 무인 모드 테스트는 격리 브랜치를 만들고 커밋까지 하는 무거운 경로다. 기존
+`test_drive_unattended.py` 의 준비 코드를 그대로 따라갈 것 — 새로 짜면 작업 트리를 더럽히거나
+실제 브랜치를 남길 수 있다.
+
+## Progress
+
+
+## Verification
+
+
+### Executed at close — 2026-07-25
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (10 earlier lines omitted)
+Unattended run on isolated branch: stage/driver/W-00000001-1784987901 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1784987901
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1784987901. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1784987901 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1784987901. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1784987901 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1784987901
+Outcome: blocked — parent aggregation-close failed: W-00000001: parent close failed: boom; handoff on stage/driver/W-00000001-1784987901
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1784987902 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1784987902
+[W-00000003] completed on stage/driver/W-00000001-1784987902
+Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1784987902. Human review + merge required; the base branch was not modified.
+Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 316 tests in 30.928s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.949s
+
+OK
+```
+
+## Retrospective
+
+
+## Promotion decision

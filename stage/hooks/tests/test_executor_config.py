@@ -26,7 +26,7 @@ class ExecutorConfigTest(unittest.TestCase):
             (stage_root / "settings.json").write_text(
                 json.dumps(
                     {
-                        "schema_version": 4,
+                        "schema_version": 5,
                         "review": {"reviewers": {"claude": "echo APPROVED"}},
                         "executors": {"codex": "true"},
                     }

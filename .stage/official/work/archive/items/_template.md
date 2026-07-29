@@ -2,7 +2,7 @@
 id: W-00000000
 title: Title
 kind:
-parent:
+milestone:
 source:
 status: archived
 verification: passed
@@ -26,4 +26,3 @@ decision_refs:
 
 
 ## Retrospective link
-

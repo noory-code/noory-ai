@@ -479,14 +479,12 @@ class BacklogMigrationTest(unittest.TestCase):
         with tmp:
             code = migrate_stage.migrate(root, False)
             stage_root = root / ".stage"
-            names = sorted(
-                p.name
-                for p in (stage_root / "work" / "planned").glob("*.md")
-                if p.name not in ("README.md", "_template.md", "index.md")
-            )
+            planned_root = stage_root / "work" / "planned"
             converted = {
-                p.name: p.read_text(encoding="utf-8")
-                for p in (stage_root / "work" / "planned").glob("W-*.md")
+                p.parent.name: p.read_text(encoding="utf-8")
+                for p in planned_root.rglob("*.md")
+                if p.name in {"_epic.md", "_story.md"}
+                if p.parent.name.startswith("W-")
             }
             index = (stage_root / "work" / "planned" / "index.md").read_text(encoding="utf-8")
             settings = json.loads(
@@ -495,15 +493,12 @@ class BacklogMigrationTest(unittest.TestCase):
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual(0, code)
-        self.assertEqual(
-            ["W-00000001.md", "W-00000002.md", "_epic.md", "_story.md"],
-            names,
-        )
+        self.assertEqual(["W-00000001", "W-00000002"], sorted(converted))
         bodies = "\n".join(converted.values())
         self.assertIn("Keep me.", bodies)
         self.assertIn("Child.", bodies)
         self.assertNotIn("realized_by", bodies)
-        self.assertIn("parent: W-00000001", converted["W-00000002.md"])
+        self.assertNotIn("parent:", converted["W-00000002"])
         self.assertNotIn("B-00000001", index)
         self.assertIn("| W-00000001 |", index)
         self.assertEqual(migrate_stage.STAGE_SCHEMA_VERSION, settings["schema_version"])

@@ -25,6 +25,11 @@ relocation through ``stage_topology.V3_TO_V4_RELOCATIONS``. The transaction
 uses git moves, a runtime maintenance marker and journal, marker-last schema
 stamping, an audit that allows guidance-drift warnings to remain visible for
 the explicit refresh command, and a deterministic pre-commit ``--abort`` path.
+
+v5 (DE-00000035): move every flat work card into the single
+epic/story/action filesystem shape, remove ``parent`` frontmatter, rebuild
+index links from actual record paths, and keep the same marker+journal+abort
+failure boundary.
 """
 
 from __future__ import annotations
@@ -53,6 +58,10 @@ from stage_paths import (  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
 import stage_schema_v4_migration as v4_migration  # noqa: E402
+import stage_schema_v5_migration as v5_migration  # noqa: E402
+
+
+V4_SCHEMA_VERSION = 4
 
 # The project policy surface and plain directory docs are never treated as
 # shadows of plugin-owned common docs.
@@ -341,7 +350,7 @@ def strict_audit_findings(project_root: Path):
     return [
         finding
         for finding in audit_stage.Audit(project_root).run()
-        if finding.code != "TEMPLATE004"
+        if finding.code not in {"TEMPLATE002", "TEMPLATE004"}
     ]
 
 
@@ -350,7 +359,40 @@ def abort(project_root: Path) -> int:
     if not stage_root.exists():
         print(f"Stage root not found: {stage_root}")
         return 1
-    return v4_migration.abort(project_root, stage_root)
+    v5_journal = stage_root / v5_migration.JOURNAL_RELATIVE
+    v4_journal = stage_root / v4_migration.JOURNAL_RELATIVE
+    restored = False
+    v5_original_head = ""
+    if v5_journal.exists():
+        v5_data = v5_migration._load_json(v5_journal)
+        if isinstance(v5_data, dict):
+            value = v5_data.get("original_head")
+            if isinstance(value, str):
+                v5_original_head = value
+        if v5_migration.abort(project_root, stage_root) != 0:
+            return 1
+        restored = True
+    if v4_journal.exists():
+        v4_data = v5_migration._load_json(v4_journal)
+        v4_original_head = (
+            v4_data.get("original_head") if isinstance(v4_data, dict) else None
+        )
+        same_transaction = (
+            not restored
+            or (
+                isinstance(v4_original_head, str)
+                and bool(v5_original_head)
+                and v4_original_head == v5_original_head
+            )
+        )
+        if same_transaction:
+            if v4_migration.abort(project_root, stage_root) != 0:
+                return 1
+            restored = True
+    if restored:
+        return 0
+    print("No schema migration journal exists; there is nothing to abort.")
+    return 1
 
 
 def migrate(project_root: Path, dry_run: bool) -> int:
@@ -375,6 +417,13 @@ def migrate(project_root: Path, dry_run: bool) -> int:
     if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
         print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
         return 0
+    if schema_version == V4_SCHEMA_VERSION:
+        return v5_migration.migrate(
+            project_root,
+            dry_run,
+            audit=not dry_run,
+            audit_findings=strict_audit_findings,
+        )
 
     try:
         checked = v4_migration.preflight(
@@ -395,7 +444,8 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         for origin, destination in checked.moves:
             print(f"  move   .stage/{origin} -> .stage/{destination}")
         print("  patch  .stage/index.md (recognized topology section only)")
-        print(f"  stamp  settings.json schema_version = {STAGE_SCHEMA_VERSION} (marker-last)")
+        print(f"  stamp  settings.json schema_version = {V4_SCHEMA_VERSION} (marker-last)")
+        print("  continue with the schema-v4 to schema-v5 hierarchy migration")
         print("Migration plan complete (dry run); no files or git state changed.")
         return 0
 
@@ -435,26 +485,9 @@ def migrate(project_root: Path, dry_run: bool) -> int:
                 "machine-readable field or live document link: " + ", ".join(leftovers)
             )
 
-        stamp_schema_version(
-            stage_root, settings, STAGE_SCHEMA_VERSION, False
-        )
-        print(f"  stamp  settings.json schema_version = {STAGE_SCHEMA_VERSION}")
+        stamp_schema_version(stage_root, settings, V4_SCHEMA_VERSION, False)
+        print(f"  stamp  settings.json schema_version = {V4_SCHEMA_VERSION}")
         v4_migration.stage_changes(project_root)
-
-        findings = strict_audit_findings(project_root)
-        if findings:
-            stamp_schema_version(stage_root, settings, 3, False)
-            v4_migration.stage_changes(project_root)
-            detail = "; ".join(
-                f"{finding.severity.upper()} {finding.code}"
-                + (f" [{finding.path}]" if finding.path else "")
-                + f": {finding.message}"
-                for finding in findings[:20]
-            )
-            raise v4_migration.MigrationError(
-                "Strict post-migration audit failed; settings.json was restored to the "
-                f"schema-v3 marker. Findings: {detail}"
-            )
 
         v4_migration.finish(stage_root, journal)
     except (v4_migration.MigrationError, OSError, ValueError) as exc:
@@ -466,19 +499,13 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         )
         return 1
 
-    print(
-        "Schema-v4 migration complete with no blocking audit findings. Guidance drift remains "
-        "a non-blocking audit warning until the explicit refresh command is run."
+    print("Schema-v4 responsibility relocation complete; continuing to schema v5.")
+    return v5_migration.migrate(
+        project_root,
+        False,
+        audit=True,
+        audit_findings=strict_audit_findings,
     )
-    print(
-        "All migration changes are staged; this command does not commit. Review them, then "
-        "commit with: git commit -m \"chore(stage): migrate project harness to schema v4\""
-    )
-    print(
-        "Before committing, `migrate_stage.py --abort` restores the staged/working tree. "
-        "After committing, rollback means `git revert <migration-commit>`."
-    )
-    return 0
 
 
 def main() -> None:

@@ -56,13 +56,13 @@ class RegisterWorkTest(unittest.TestCase):
         (root / ".stage/official/work/archive/items").mkdir(parents=True)
         (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
         (root / ".stage/settings.json").write_text(
-            '{"schema_version": 4}\n', encoding="utf-8"
+            '{"schema_version": 5}\n', encoding="utf-8"
         )
         return tmp, root
 
     def declare_routing(self, root: Path) -> None:
         (root / ".stage/settings.json").write_text(
-            '{"schema_version": 4, "venue_routing": '
+            '{"schema_version": 5, "venue_routing": '
             '{"design": "claude", "development": "codex", "feature": "split"}}',
             encoding="utf-8",
         )

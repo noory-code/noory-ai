@@ -3,7 +3,7 @@
 Stage provides lifecycle entry skills including:
 
 - `stage-init`: creates or repairs `.stage/`.
-- `stage-migrate`: performs the one-shot schema-v3 to schema-v4 migration and pre-commit abort.
+- `stage-migrate`: migrates schema v3 or v4 projects to schema v5 and supports an exact pre-commit abort.
 - `stage-audit`: audits the `.stage/` structure and work status.
 - `stage-decision`: applies the principle-based decision gates.
 - `stage-retrospective`: performs the mandatory post-work retrospective.

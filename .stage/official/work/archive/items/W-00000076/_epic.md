@@ -1,0 +1,95 @@
+---
+id: W-00000076
+title: 무인 모드를 실전에 걸 수 있게 남은 결함을 닫는다
+kind: qa
+venue: codex
+source:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000076
+promotion: not_applicable
+review: not_required
+scope: .stage/settings.json
+promotes:
+decision_refs:
+---
+
+# W-00000076 무인 모드를 실전에 걸 수 있게 남은 결함을 닫는다
+
+## Purpose
+
+무인 드라이버는 코드로 완성돼 있으나 실전 투입을 막는 결함 둘이 열려 있다. 그 둘을 닫고, 닫는 과정에서 아직 확인되지 않은 코덱스 실행자 경로도 함께 검증한다.
+
+## Scope
+
+무인 모드(`drive.py --unattended`) 를 실전에 걸기 전에 닫아야 할 결함 둘을 자식으로 둔다.
+
+- W-00000073 — git 이 추적되지 않는 새 파일과 색인에 올린 변경을 보지 못해, 감독 모드 리뷰어와
+  진전 판정이 둘 다 멀어진다.
+- W-00000075 — 무인 루프가 기록 커밋 실패를 네 자리 중 셋에서 확인하지 않고, 부모에 acceptance
+  가 있으면 감사를 건너뛴다.
+
+이 카드 자체는 코드를 고치지 않는다. 두 자식을 드라이버로 실행하고 그 결과를 기록한다.
+
+**함께 확인하는 것**: 코덱스 venue 실행자. W-00000069 에서 읽기 전용 문제를 고쳤으나(`--write`)
+실제로 돌려보지 않았다. 두 자식이 모두 codex venue 이므로 이번 실행이 그 경로의 첫 검증이 된다.
+실행자가 동작하지 않으면 그 사실을 기록하고 기존 위임 방식으로 전환한다 — 우회를 숨기지 않는다.
+
+## Success criteria
+
+- 두 자식이 완료 상태가 된다.
+- 코덱스 실행자가 실제로 파일을 고치는지, 아니면 어디서 막히는지가 이 카드에 기록된다.
+- `python3 stage/scripts/audit_stage.py --project-root .` 오류 0.
+
+## Related truth
+
+- 드라이버 사양: `stage/docs/SCHEMA_V4.md` — `### Supervised driver and executor settings`.
+- 앞선 실전 실행: W-00000069 (R-00000072) — claude venue 실행자만 검증했다.
+
+**위험**: 두 자식이 같은 파일(`drive.py`)을 고친다. 드라이버는 한 번에 하나만 실행하므로
+순서대로 돌려야 하고, 앞 자식의 변경을 커밋한 뒤 다음을 시작해야 뒤엉키지 않는다.
+
+## Progress
+
+### 실행 결과 (2026-07-26)
+
+두 자식을 드라이버 감독 모드로 실행했다. 실행자는 코덱스, 리뷰어는 claude — W-00000069 와
+진영이 정반대다.
+
+| 자식 | 라운드 | 결과 |
+|---|---|---|
+| W-00000073 | 2 | 통과 (1차 BLOCK — 실패 경로 하나가 색인을 복원 안 함) |
+| W-00000075 | 2 | 통과 (1차는 통과 판정이었으나 지적 넷을 고치고 닫음) |
+
+**코덱스 실행자 검증 결과: 통했다.** 두 자식 모두 코덱스가 실제로 파일을 고쳤다. W-00000069
+에서 넣은 쓰기 옵션이 실전에서 확인됐다. 기존 위임 방식으로 전환할 일은 없었다.
+
+**리뷰어 검증 결과: 양방향으로 작동한다.** claude 리뷰어가 코덱스 산출물에서 진짜 결함을
+잡았다 — W-00000073 에서는 문서가 약속한 보장을 코드가 지키지 않는 것을, W-00000075 에서는
+사실과 다른 것을 고정하는 테스트를 짚었다.
+
+**추가로 드러난 것**: 막지 않는 지적을 손으로 고칠 때가 가장 위험하다. W-00000075 에서 두 번
+연속 겪었고 둘 다 닫기 단계 리뷰가 잡았다. 자세한 것은 R-00000076.
+
+
+## Verification
+
+
+### Executed at close — 2026-07-26
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+
+## Promotion decision

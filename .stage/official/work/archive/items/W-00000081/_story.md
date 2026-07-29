@@ -1,0 +1,263 @@
+---
+id: W-00000081
+title: 드라이버가 도는 중에 사람이 커밋하면 그 커밋이 되돌아간다
+kind: fix
+venue: codex
+source:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000082
+promotion: not_applicable
+review: not_required
+scope: stage/scripts/drive.py, stage/scripts/tests/, stage/skills/stage-drive/, stage/docs/SCHEMA_V4.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000081 드라이버가 도는 중에 사람이 커밋하면 그 커밋이 되돌아간다
+
+## Purpose
+
+드라이버가 실행을 시작할 때 인덱스 사본을 떠 두고 끝나면 되돌리는데, 그 사이에 사람이 커밋하면 되돌리는 순간 그 커밋이 없던 일이 된다. 실제로 이 저장소에서 커밋 하나가 되돌아갔다.
+
+## Scope
+
+### 실제로 일어난 일
+
+2026-07-26, 이 저장소에서 커밋 하나가 되돌아갔다.
+
+```
+09:00:28  카드 묶는 커밋
+09:00:3x  드라이버 시작 — 이때 인덱스를 사본으로 떠 둔다
+09:06:20  사람이 .plainly/style.md 를 커밋 (e7f02bc5)
+09:13:58  드라이버 끝 — 09:00 시점 사본을 인덱스에 되돌린다
+09:15:01  사람이 다음 커밋 → style.md 가 옛 내용으로 되돌아감 (4c5e80d5)
+```
+
+드라이버는 실행하는 쪽이 `git add` 한 것이 사람의 인덱스에 섞이지 않게 하려고 시작할 때
+인덱스 사본을 떠 두고 끝나면 되돌린다(`drive.py` 의 `original_index`, `restore_git_index`).
+그 사이에 사람이 커밋하면 인덱스가 그 커밋을 반영해 앞으로 나가는데, 되돌리는 순간 그보다
+이전 상태로 밀려난다. 다음 커밋이 그 차이를 "되돌림" 으로 기록한다.
+
+파일 내용은 잃지 않았다. 작업 트리에는 새 내용이 남고 인덱스와 커밋만 뒤로 간다. 그래서
+**조용하다** — 아무 오류도 안 나고, 커밋 로그를 뒤져 보기 전에는 모른다.
+
+W-00000073 카드에 이 위험을 미리 적어 뒀었다: "사람이 이미 올려 둔 변경을 함께 삼킬 수 있다.
+그러면 드라이버가 사람의 작업을 조용히 가져가는 도구가 된다." 그대로 일어났다.
+
+### 고칠 것 (방향 확정)
+
+**실행하는 쪽에도 처음부터 버리는 인덱스를 준다. 진짜 인덱스는 아예 안 건드린다.**
+
+드라이버는 이미 그 방법을 안다. 리뷰어에게 보여줄 때 `GIT_INDEX_FILE` 을 임시 파일로 가리켜
+따로 인덱스를 쓴다(`prepare_reviewer_index`, `drive.py:348` 부근). 실행하는 쪽에만 그걸 안
+쓰고 진짜 인덱스를 쓰게 두었다가 나중에 사본으로 되돌리는 방식이었다.
+
+실행하는 쪽 환경에도 `GIT_INDEX_FILE` 을 넣는다. 값은 진짜 인덱스를 복사해 만든 임시 파일이다
+(`executor_environment`, `drive.py:401` 이 이미 환경을 만들고 있으니 거기에 넣으면 된다).
+
+이러면:
+
+- 실행하는 쪽이 `git add` 를 해도 진짜 인덱스에 안 닿는다. 애초에 섞일 일이 없다.
+- 되돌리기가 필요 없다. 되돌리지 않으니 그 사이 사람이 한 일을 덮어쓸 일도 없다.
+- 실행하는 쪽이 보는 인덱스는 시작할 때 진짜와 똑같으므로 `git status` 나 `git diff` 가
+  평소와 다르게 보이지 않는다.
+- 리뷰어용 인덱스는 실행하는 쪽이 쓴 그 인덱스를 그대로 이어받으면 된다.
+
+지울 것: 진짜 인덱스를 사본 뜨고 되돌리는 코드(`original_index`, `restore_git_index`,
+`drive.py:1173` 부근). 그 코드가 있는 한 같은 사고가 다시 난다.
+
+**챙길 것:**
+
+- 진짜 인덱스 파일이 없는 저장소(커밋도 없는 상태)는 W-00000077 에서 이미 다뤘다. 그 처리를
+  깨지 말 것.
+- 실행하는 쪽이 커밋하면 그 임시 인덱스에서 커밋된다. 실행하는 쪽에는 커밋하지 말라고 이미
+  지시하고 있고 드라이버도 그 커밋에 기대지 않는다. 동작이 달라지지 않는지만 확인할 것.
+- 무인 모드는 실행 결과를 스스로 커밋한다. 그쪽이 진짜 인덱스를 어떻게 쓰는지 확인하고,
+  같은 사고가 나는지 판단해서 필요하면 함께 고칠 것.
+
+`stage-drive` 스킬에도 이 위험을 적는다. 지금은 "실행 중에 저장소를 건드리지 말라" 는 말이
+어디에도 없다.
+
+제약:
+
+- **커밋하지 않는다.** 작업 트리에 변경만 남기고 멈춘다.
+- 저장소 산출물은 영어로 쓴다. `.stage/` 안의 글만 한국어다.
+- 두 `plugin.json` 의 version 을 올리고 `stage/CHANGELOG.md` 에 항목을 추가한다.
+- scope 밖은 건드리지 않는다.
+
+## Success criteria
+
+- 드라이버가 한 스텝 도는 동안 진짜 인덱스 파일이 바뀌지 않는다. 실행하는 쪽이 `git add` 를
+  해도 마찬가지다.
+- 그 사실을 확인하는 테스트가 있다 — 실행하는 쪽이 파일을 `git add` 하게 하고, 스텝이 끝난
+  뒤 진짜 인덱스에 그 파일이 없는지 검사한다. 고치기 전 코드에서는 되돌리기가 그 결과를
+  만들어 내므로, **되돌리기 코드를 지운 상태**에서 이 테스트가 통과하는지로 판단할 것.
+- 드라이버가 도는 동안 사람이 인덱스를 앞으로 옮겨도 그 상태가 그대로 남는다. 이것을 확인하는
+  테스트가 있고, 고치기 전 코드에서 실패한다.
+- 리뷰어가 실행하는 쪽 산출물을 보는 동작이 그대로다 — 새로 만든 파일도 포함해서.
+  (W-00000073, W-00000077 에서 만든 테스트가 계속 통과하면 된다.)
+- 무인 모드의 같은 경로를 확인한 결과가 카드에 적혀 있다. 문제가 있으면 함께 고친다.
+- `stage-drive` 스킬이 실행 중에 저장소를 건드리지 말라고 말한다. 지금은 그 말이 없다.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과.
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과.
+
+## Related truth
+
+- 인덱스 사본과 되돌리기를 들여온 작업: W-00000073 (R-00000074).
+- 그 카드가 미리 적어 둔 위험이 그대로 실현됐다.
+
+**위험**: 실행하는 쪽 환경에 `GIT_INDEX_FILE` 을 넣으면 그 값이 자식 프로세스 전체에 물려
+내려간다. 실행하는 쪽이 부르는 다른 git 명령도 전부 그 임시 인덱스를 본다. 그게 이 수정의
+의도지만, 검증 명령과 리뷰 명령까지 같은 값을 물려받으면 안 된다 — 그쪽은 각자 쓰는 인덱스가
+따로 있다. 환경을 만드는 자리를 정확히 갈라 둘 것.
+
+그리고 되돌리기 코드를 지울 때 W-00000073 과 W-00000077 이 만든 테스트를 함께 지우지 말 것.
+그 테스트들이 지키는 것(리뷰어가 새 파일을 본다)은 이 수정 뒤에도 그대로 지켜져야 한다.
+
+## Progress
+
+### 이 카드는 드라이버로 돌리지 않는다 (2026-07-26)
+
+한 번 시도했다가 리뷰가 막았고, 지적이 맞다.
+
+드라이버는 시작할 때 자기 코드를 메모리에 올린다. 실행하는 쪽이 되돌리기 코드를 지워도 지금
+돌고 있는 드라이버는 옛 코드를 들고 있으므로, 스텝이 끝날 때 그대로 되돌린다. **고치는 커밋
+자체가 되돌아간다** — R-00000078 에 적힌 사고와 똑같다.
+
+그래서 `autonomous` 와 `acceptance` 를 되돌려 드라이버가 이 카드를 못 집게 했다. 이 카드는
+사람이 직접 고치거나, 드라이버가 관여하지 않는 별도 체크아웃에서만 돌린다.
+
+### 무인 모드는 이 문제가 없다 (확인 완료)
+
+카드에 열린 질문으로 남겼던 것에 답이 나왔다. 무인 경로(`drive.py:857-1040`)에는 인덱스를
+사본 뜨고 되돌리는 코드가 없다. 커밋은 드라이버가 직접 `git add -- <scope>` 로 한다
+(`drive.py:533`). 실행하는 쪽 환경에 `GIT_INDEX_FILE` 을 넣어도 무인 커밋은 안 깨진다.
+
+수정 후 재확인 (2026-07-26): 무인 모드도 실행하는 쪽에 같은 방식으로 임시 인덱스를 주도록
+함께 고쳤다. 실행하는 쪽이 `git add` 를 해도 진짜 인덱스는 그대로고, 그 뒤 드라이버 자신의
+`git add -- <scope>` 와 커밋은 진짜 인덱스로 정상 동작한다. 이것을 확인하는 테스트가
+`test_drive_unattended.py` 에 있다(`test_executor_staging_is_isolated_before_unattended_commit`).
+
+### 그 시도에서 새로 드러난 것
+
+실행하는 쪽이 **아무것도 못 했는데 성공으로 끝났다.** 코덱스가 플러그인 폴더를 못 찾아 카드도
+못 읽고 멈췄는데 종료 코드가 0 이었고, 드라이버는 그것을 성공으로 받아 검증과 리뷰까지
+진행했다. W-00000083 으로 등록했다.
+
+### 다음 행동
+
+`executor_environment`(`drive.py:401`)에 `GIT_INDEX_FILE` 을 넣어 실행하는 쪽에 임시 인덱스를
+준다. 값은 진짜 인덱스를 복사해 만든 임시 파일. 그다음 `original_index` 와
+`restore_git_index`(`drive.py:1173` 부근)를 지운다. 검증 명령과 리뷰 명령에는 그 값이 안
+넘어가게 갈라 둘 것.
+
+**드라이버로 돌리지 말 것.** 손으로 고치거나 별도 체크아웃에서 돌린다.
+
+
+## Verification
+
+실행은 Codex 에 드라이버 없이 직접 위임했고(위 Progress 의 제약대로), 검증과 리뷰는 반대
+venue 인 Claude 가 했다. DE-00000032 의 방식대로 기준 판정과 기준 밖 관찰을 가른다.
+
+### 기준 판정 (2026-07-26)
+
+- 진짜 인덱스가 스텝 동안 안 바뀐다 — 채움. 실행하는 쪽은 시작할 때 복사한 임시 인덱스를
+  `GIT_INDEX_FILE` 로 받고, 되돌리기 코드(`original_index`, `restore_git_index`)는 통째로
+  지워졌다. 실행 중과 종료 후의 진짜 인덱스 바이트가 같은지 검사하는 테스트가 있다
+  (`test_executor_staging_never_changes_the_real_index`).
+- 그 테스트가 고치기 전 코드에서 실패한다 — 확인. 저장소 밖 사본에 HEAD 시점 코드를 풀고
+  새 테스트만 얹어 돌렸더니 둘 다 실패했다(RED). 실패 내용도 사고 그대로 — 사람이 스테이징한
+  것이 사라진다.
+- 사람이 스텝 중에 인덱스를 앞으로 옮겨도 남는다 — 채움. 그 테스트
+  (`test_human_index_update_during_executor_is_preserved`)도 고치기 전 코드에서 실패한다.
+- 리뷰어 동작 그대로 — 채움. W-00000073·W-00000077 이 만든 테스트(리뷰어가 새 파일 내용을
+  본다, 인덱스 없는 저장소 처리)가 이름만 다듬어진 채 유지되고 통과한다. 리뷰어는 실행하는
+  쪽이 쓴 임시 인덱스를 그대로 이어받는다.
+- 검증 명령은 임시 인덱스를 안 받는다 — 채움. acceptance 는 환경 주입 없이 돈다. 카드가
+  경고한 경계 그대로고, `SCHEMA_V4.md` 가 이 경계를 명시한다.
+- 무인 모드 확인 결과가 카드에 있다 — 채움(위 Progress 절).
+- `stage-drive` 스킬이 실행 중 저장소를 건드리지 말라고 말한다 — 채움.
+- 테스트 두 벌 통과 — scripts 343개, hooks 327개, 전부 통과. 감사 errors=0.
+- 제약 준수 — 커밋·스테이징 없음, scope 안 8개 파일만 변경, 산출물 영어, 버전 0.43.9 로
+  올리고 CHANGELOG 항목 추가.
+
+### 그 밖에 본 것 (기준 밖 관찰)
+
+- 임시 인덱스 복사가 실패하면 이제 실행하는 쪽이 돌기 전에 멈춘다(전에는 실행 뒤 스냅숏
+  단계에서 드러났다). 더 일찍 막히는 쪽이 맞으므로 그대로 둔다 — 처리: 받지 않음(변경 불요).
+- 차단할 지적 없음. 받는다/미룬다로 분류할 항목도 없다.
+
+### Executed at close — 2026-07-26
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (23 earlier lines omitted)
+Unattended run on isolated branch: stage/driver/W-00000001-1785034944 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785034944. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785034944 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1785034944
+Outcome: blocked — parent aggregation-close failed: W-00000001: parent close failed: boom; handoff on stage/driver/W-00000001-1785034944
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1785034945 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1785034945
+[W-00000003] completed on stage/driver/W-00000001-1785034945
+Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1785034945. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785034945 (base: main)
+Outcome: blocked — cannot commit pre-close lifecycle for W-00000002: simulated lifecycle commit failure
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 343 tests in 35.248s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.929s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+R-00000082. 핵심: 드라이버 없이 위임해 사고 재발을 피했고, RED 와 실행자 보고를 전부 직접
+재확인했으며, DE-00000032 의 기준 판정 방식을 처음 적용했다.
+
+## Promotion decision
+
+official 로 올릴 산출물 없음(promotion: not_applicable). 카드와 회고는 아카이브로 간다.

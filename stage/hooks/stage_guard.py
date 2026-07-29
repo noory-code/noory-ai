@@ -459,42 +459,36 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
                 scale = work_record_scale(hierarchy_root, target_path)
             except ValueError as exc:
                 return f"Stage hierarchy gate violation: {exc}"
-            if scale == "legacy" and not target_path.exists():
-                return (
-                    "Stage hierarchy gate violation: an action cannot be top-level; "
-                    "create a story first and place the action inside its folder"
-                )
-            if scale != "legacy":
-                self_id, child_status = projected_by_path[target_path]
-                parent_path = hierarchy_parent_record_path(hierarchy_root, target_path)
-                if parent_path is None:
-                    continue
-                projected_parent = projected_by_path.get(parent_path)
-                disk_parent = item_by_path.get(parent_path)
-                if projected_parent is not None:
-                    parent_id, parent_status = projected_parent
-                elif disk_parent is not None:
-                    parent_id, parent_status = disk_parent.item_id, disk_parent.status
-                else:
-                    expected = "story" if scale == "action" else "epic"
-                    return (
-                        "Stage hierarchy gate violation: "
-                        f"{expected} record not found at folder parent: {parent_path}"
-                    )
-                if parent_id == self_id:
-                    return (
-                        "Stage hierarchy gate violation: a work item cannot be "
-                        f"its own folder parent: {parent_id}"
-                    )
-                if (
-                    parent_status in WORK_FINAL_STATUSES
-                    and child_status not in WORK_FINAL_STATUSES
-                ):
-                    return (
-                        "Stage hierarchy gate violation: cannot open a child under "
-                        f"a finalized folder parent ({parent_status}): {parent_id}"
-                    )
+            self_id, child_status = projected_by_path[target_path]
+            parent_path = hierarchy_parent_record_path(hierarchy_root, target_path)
+            if parent_path is None:
                 continue
+            projected_parent = projected_by_path.get(parent_path)
+            disk_parent = item_by_path.get(parent_path)
+            if projected_parent is not None:
+                parent_id, parent_status = projected_parent
+            elif disk_parent is not None:
+                parent_id, parent_status = disk_parent.item_id, disk_parent.status
+            else:
+                expected = "story" if scale == "action" else "epic"
+                return (
+                    "Stage hierarchy gate violation: "
+                    f"{expected} record not found at folder parent: {parent_path}"
+                )
+            if parent_id == self_id:
+                return (
+                    "Stage hierarchy gate violation: a work item cannot be "
+                    f"its own folder parent: {parent_id}"
+                )
+            if (
+                parent_status in WORK_FINAL_STATUSES
+                and child_status not in WORK_FINAL_STATUSES
+            ):
+                return (
+                    "Stage hierarchy gate violation: cannot open a child under "
+                    f"a finalized folder parent ({parent_status}): {parent_id}"
+                )
+            continue
 
         parent_id = frontmatter_field_from_text(projected, "parent")
         if not parent_id:
@@ -641,7 +635,7 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         maintenance_marker = stage_root / stage_topology.MAINTENANCE_MARKER
         if maintenance_marker.exists():
             return deny(
-                "Stage schema-v4 maintenance is active; all Stage mutations are denied while "
+                "Stage schema migration maintenance is active; all Stage mutations are denied while "
                 "the migration marker exists. Close other agent windows. The migration owner "
                 "must finish or run the stage-migrate abort path."
             )

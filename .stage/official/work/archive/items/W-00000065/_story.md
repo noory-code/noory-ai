@@ -1,0 +1,72 @@
+---
+id: W-00000065
+title: 훅이 무엇까지 막고 무엇은 못 막는지 밝힌다
+kind: documentation
+venue: claude
+source:
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000064
+promotion: not_applicable
+review: not_required
+scope: stage/operations/hooks.md, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, .stage/state/questions.md, .stage/state/questions/
+promotes:
+decision_refs:
+---
+
+# W-00000065 훅이 무엇까지 막고 무엇은 못 막는지 밝힌다
+
+## Purpose
+
+훅이 도구 호출만 본다는 사실이 어디에도 없어, 예약을 방어 수단으로 오해하게 된다
+
+## Scope
+
+`operations/hooks.md`에 훅이 무엇을 보는지 밝히는 절 하나. Q-00000002를 그 답으로 닫는다.
+훅 코드는 건드리지 않는다 — 답이 "막지 않는다"이므로 고칠 코드가 없다.
+
+## Success criteria
+
+- 훅 문서만 읽고도 예약이 선언이지 방어가 아니라는 것을 안다.
+- Q-00000002가 닫힌다.
+
+## Related truth
+
+Q-00000002의 곁가지(예약 찌꺼기)는 W-00000064에서 0.40.2로 고쳤다.
+
+## Progress
+
+오늘 결정 기록 25장을 스크립트로 옮겼는데 잠금장치가 한 번도 개입하지 않았다. 예약을 미리
+만들어 뒀지만 소비되지 않았다.
+
+답을 정하려고 훅 문서를 열었더니 이미 스스로 밝히고 있었다 — "훅은 Stage 원칙을 거들 뿐,
+승격 자체를 대신하지 않는다", "규칙 위반일 가능성이 높은 실행을 막는다". 벽이 아니라 실수
+방지 장치다. 그러니 답은 구멍을 막는 쪽이 아니라 경계를 밝히는 쪽이다.
+
+문서에 적은 것: 훅은 도구 호출 하나를 받아 판단하며 그것이 전부다. 프로그램이 돌기 시작한
+뒤에 하는 일은 그 표면 밖이다. 인라인 코드를 거부하는 것은 명령줄에 코드가 안 보이는 경우를
+막는 것이고, 일반적인 경우까지 막으려면 훅이 남의 프로그램을 해석해야 하는데 그건 시도하지
+않는다. 그래서 예약은 "어느 작업이 이 변경을 허가했는가"를 남기는 선언이고, 우회하면 기록이
+조용히 틀어지며 그걸 잡는 것은 감사다.
+
+## Verification
+
+
+### Executed at close — 2026-07-25
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
+## Retrospective
+
+
+## Promotion decision

@@ -1,0 +1,310 @@
+---
+id: W-00000107
+title: 액션은 혼자 못 선다 — 등록 진입점과 게이트
+kind: development
+venue: codex
+priority: 3
+autonomous: false
+acceptance:
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: completed
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000104
+promotion: not_applicable
+review: not_required
+scope: stage/skills/stage-work/, stage/scripts/start_work.py, stage/scripts/audit_stage.py, stage/scripts/stage_records.py, stage/hooks/stage_work.py, stage/hooks/stage_guard.py, stage/hooks/stage_record_paths.py, stage/hooks/tests/, stage/scripts/tests/, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs: DE-00000036
+---
+
+# W-00000107 액션은 혼자 못 선다 — 등록 진입점과 게이트
+
+## Purpose
+
+이 에픽의 핵심이다. 액션을 최상위로 못 만들게 막으면 "일단 카드 하나 만들자" 가 놓을 자리가
+없어서 막히고, 그 순간 규모를 판단하게 된다. 강제를 문서가 아니라 구조가 한다.
+
+진입점도 바뀐다. "이 일을 등록하자" 가 아니라 "이게 얼마짜리인가" 로 시작한다. 그리고 최상위를
+만들 때 어느 마일스톤인지 묻는다 — 지금은 열린 마일스톤이 없으면 아무것도 안 묻고 넘어가서 위가
+영영 안 생긴다. 실제로 마일스톤은 0 이다.
+
+## Source
+
+DE-00000035 — 액션은 혼자 못 선다, 진입점은 규모 판단, 최상위를 만들 때 마일스톤을 묻는다.
+
+## User value
+
+카드가 즉흥으로 늘어나는 것이 막힌다. 2026-07-26~27 이틀에 열 장 넘게 늘었고 대부분 즉흥이었다.
+
+## Scope
+
+### Included
+
+- 등록 진입점이 규모를 먼저 묻고, 액션을 최상위로 만들려는 시도를 거부한다.
+- 계획 → 진행 이동이 최상위 항목을 통째로 옮긴다.
+- 가드의 계층 게이트가 `parent` 필드가 아니라 폴더 경로를 근거로 판정한다.
+- 등록 없는 쓰기를 거부하는 메시지가 "카드를 등록하라" 에서 "스토리를 먼저 세워라" 로 바뀐다
+  (`stage_work.py:591, 596`).
+- 최상위를 만들 때 마일스톤을 묻는다. 열린 마일스톤이 없으면 만들지 물어본다.
+- `stage-work` 스킬 문서가 새 진입점을 서술한다.
+
+- 감사가 계층 폴더 안의 레코드를 읽는다. 원래 W-00000109 몫이었는데 DE-00000036 으로 여기
+  당겼다. 계층으로 등록하면 감사가 깨지는 상태를 다음 카드까지 두면, 그 사이에 등록되는 모든
+  카드가 오류를 안고 산다.
+
+### Excluded
+
+- 드라이버·보관·닫기 — W-00000109.
+
+## Dependencies
+
+W-00000106 — 폴더가 계층을 가진 뒤라야 그 위에서 막을 수 있다.
+
+## Risks
+
+**계층 게이트가 지금 비대칭이다.** 부모를 찾을 때 진행 중 + 보관만 뒤지고 계획 폴더는 안 본다
+(`hooks/stage_guard.py:416`, `load_work_items + load_archive_work_items`). 그래서 계획 카드는
+계획 카드를 부모로 못 갖는다 — 계획 단계에서 계층을 아예 못 세운다.
+
+이 에픽의 카드들도 이것 때문에 에픽을 먼저 진행으로 올려야 했다. 지난 아크(W-95~102)가
+`parent` 없이 평평하게 늘어선 것도 게을러서가 아니라 이 게이트가 막았기 때문이다. 이 카드가
+그것을 고친다.
+
+같은 비대칭이 완료 게이트에도 있다. 하위가 안 끝나면 상위를 못 닫게 하는 검사
+(`stage_work.py:297-302`)가 진행 중 카드만 세므로, 계획 상태의 하위는 상위 완료를 안 막는다.
+
+## Success criteria
+
+- 액션을 최상위로 등록하려는 시도가 거부되고, 거부 메시지가 무엇을 먼저 만들어야 하는지 말한다.
+- 계획 카드가 계획 부모를 가질 수 있다. 계층 게이트가 계획 폴더도 본다.
+- 완료 게이트가 계획 상태의 하위도 센다.
+- 최상위를 만들 때 마일스톤을 묻고, 열린 것이 없으면 만들지 물어본다.
+- 시작하는 카드에 빈 `parent:` 줄이 안 들어간다. `start_work.py` 의 필드 순서 목록(`:61`)과
+  마일스톤 삽입 위치(`:122`)가 그 이름을 기준으로 삼고 있어 두 자리를 같이 봐야 한다.
+- 계층 검사가 안 걸리는 구간이 닫힌다. W-00000106 이 템플릿에서 `parent` 를 없앴는데 가드는
+  아직 그 필드로 위반을 막는다(`stage_guard.py:436`). 그래서 새 카드에는 계층 검사가 아예
+  안 걸린다.
+- **규모를 안 밝히고는 카드를 못 만든다.** 지금은 `--scale` 이 선택이라 그것을 빼면 예전처럼
+  평평한 최상위 카드가 만들어지고 성공으로 끝난다. 리뷰가 재현했다. 이 카드의 목적("강제를
+  문서가 아니라 구조가 한다")이 정작 사람들이 쓰는 기본 경로에서 안 선다. 규모 판단을 스킬
+  문서의 산문이 담당해서는 안 된다.
+- **시작이 값 있는 `parent:` 를 안 지운다.** 지금은 값이 있어도 지운다. 이 저장소의
+  W-00000108·109·110 이 셋 다 `parent: W-00000104` 를 든 평평한 카드라, 시작하는 순간 링크가
+  사라지고 자식이 살아 있는데도 에픽을 완료할 수 있게 된다. 위의 완료 게이트 기준이 시작과
+  동시에 풀린다.
+- **시작이 `rejected` 하위를 되살리지 않는다.** 지금은 트리 안 모든 레코드에 `active` 를 찍는데,
+  최상위만 상태 검사를 받고 자식은 안 받는다.
+- **계층으로 등록한 프로젝트를 감사하면 오류가 0 이다.** 스킬 문서가 지시하는 대로 규모를 밝혀
+  에픽·스토리·액션을 만들고 시작한 뒤 감사를 돌리면 통과해야 한다. 지금은 `_epic.md`·`_story.md`
+  의 파일명이 id 와 다르다고, 인덱스 링크를 못 찾는다고 오류가 난다.
+
+  이 기준은 DE-00000036 으로 다시 썼다. 원래는 "예상 오류 코드를 문서에 나열하라"였는데 세
+  라운드 연속 같은 자리에서 실패했다. 감사 출력이 무엇인지는 감사 코드가 쥐는데 그것을 문서에
+  베껴 적게 했기 때문이다. 베낀 쪽은 반드시 낡는다.
+
+  따라서 스킬 문서의 감사 경계 절과 코드 나열은 **뺀다.** 등록 뒤 검증은 다시 오류 0 이다.
+  설명할 예외가 없으면 어긋날 산문도 없다.
+- **이미 있던 감사 단언을 약화시켜 통과시키지 않는다.** 마이그레이션 적대 테스트의
+  `assert_no_unexpected_hierarchy_audit` 이 `BACKLOG003`, `WORK002`, `INDEX003`, `INDEX004`,
+  `INDEX005` 를 통과시키게 넓어져서, 호출 지점 일곱 곳이 인덱스 무결성 회귀를 더 이상 안 잡는다.
+  검사를 통과시키려고 검사를 느슨하게 하면 그 검사는 없는 것과 같다. 새 계층 배치 때문에
+  불가피한 코드가 있다면 그것만 좁게 허용하고 왜 불가피한지 테스트 안에 적는다.
+- 두 테스트 모음 통과, 감사 errors=0, 플러그인 버전 + CHANGELOG.
+
+## Next action
+
+`hierarchy_blocker` 가 지금 부모를 어디서 찾는지 읽고, 계획 폴더를 넣었을 때 무엇이 같이
+바뀌어야 하는지 센다.
+
+## Progress
+
+등록이 규모 판단에서 시작한다. 규모를 안 밝히면 카드가 안 만들어지고, 부모 없는 액션은 무엇을
+먼저 만들어야 하는지 알려주며 거부된다. 가드가 직접 쓰기에도 같은 모양을 강제하므로 막는 것이
+문서가 아니라 구조다.
+
+계층 게이트가 `parent` 필드보다 폴더 경로를 먼저 본다. W-00000106 이 템플릿에서 그 필드를
+없애면서 생긴 구멍이 닫혔다. 계획 폴더의 부모도 찾으므로 이제 계획 단계에서 계층을 세울 수 있다.
+완료 게이트도 계획 상태 하위를 센다.
+
+최상위를 시작하면 트리가 통째로 움직이고, 값 있는 `parent` 와 `rejected` 하위 상태가 보존된다.
+
+감사가 계층 배치를 읽는다. DE-00000036 으로 W-00000109 에서 당겨온 몫이다.
+
+드라이버를 다섯 번 돌렸다. 첫 두 번은 작업과 무관하게 실패했다 — 실행자가 작업 로그를 정직하게
+목록에 넣었는데 그 로그가 git 이 안 보는 폴더에 있어서, 그리고 재시도 때 앞 시도의 변경이 관측에서
+빠져서다. 세 번째에서 상한에 닿아 사람에게 올라갔고, DE-00000036 으로 카드를 넓힌 뒤 마지막
+회차가 통과했다.
+
+## Verification
+
+실행자 codex, 리뷰어 claude (venue 가 서로 다름).
+
+- `python3 -m unittest discover -s stage/hooks/tests -q` — 339개 통과.
+- `python3 -m unittest discover -s stage/scripts/tests -q` — 399개 통과.
+- `python3 stage/scripts/audit_stage.py --project-root .` — errors=0, warnings=12.
+
+리뷰어가 완료 기준 열두 개를 전부 PASS 로 판정하고 APPROVED 를 냈다. 임시 프로젝트에서 등록·시작
+CLI 와 가드 훅을 직접 돌려 확인했고, 감사는 네 가지 등록 경로(계층 캡처 후, 시작 후, 진행에 직접
+등록, 최상위 스토리 캡처→시작)에서 각각 오류 0 을 재현했다.
+
+경고 12개는 W-00000106 이 남긴 템플릿 경고이고 W-00000110 이 해소한다.
+
+### 세 라운드가 같은 자리에서 실패한 이유
+
+기준 10 을 처음에 "예상 감사 오류 코드를 문서에 나열하라"로 썼다. 감사가 무엇을 내는지는 감사
+코드가 쥐는데 그것을 문서에 베껴 적게 한 것이라, 상태 조합이 늘 때마다 목록이 어긋났다. 매 라운드
+어긋나는 방향만 바뀌었다.
+
+DE-00000036 으로 기준을 "계층으로 등록한 프로젝트를 감사하면 오류가 0 이다"로 다시 쓰고 감사
+자체를 고치자 한 번에 통과했다. 문서에서 그 절을 통째로 뺐다 — 설명할 예외가 없으면 어긋날
+산문도 없다.
+
+### 기준 밖 지적의 처리
+
+- **`rejected` 스토리 밑 하위가 살아나 감사를 깨뜨린다** (재현, errors=1) — **미룸 →
+  W-00000109.** 상태 보존이 레코드 하나 단위라 하위 트리가 안 따라간다. 기준 9 는 레코드 자기
+  상태만 요구했으므로 판정은 통과지만, 트리 단위로 봐야 할 일이 남았다.
+- **`deferred` 하위가 시작하면 조용히 `active` 가 된다** (재현) — **미룸 → W-00000109.** 위와
+  같은 뿌리다. `started_fields` 가 `rejected` 만 예외로 두고 나머지를 전부 덮는다. 미룬다고
+  표시한 것이 시작 한 번에 풀리면 그 표시가 의미를 잃는다.
+- **에픽을 시작하면 모든 하위가 에픽의 `--scope` 를 받는다** — **미룸 → W-00000109.** 액션 단위
+  쓰기 제한이 에픽 단위로 넓어진다. 위 둘과 같은 자리(`start_work.py` 의 트리 처리)라 함께 본다.
+- **`load_all_work_items` 가 인덱스 파일을 유령 항목으로 싣는다** — **미룸 → W-00000109.** 지금은
+  무해하지만 완료 게이트 입력에 섞인다.
+- **`start_work.py` 가 인덱스 행을 파일 끝에 붙인다** — **안 받음.** 지금 인덱스가 표로 끝나서
+  동작한다. 표 뒤에 문단이 생기는 상황이 오려면 누가 인덱스 문서 구조를 바꿔야 하는데, 그때
+  등록 경로도 같이 손봐야 하므로 그 자리에서 함께 본다.
+- **`after="parent"` 앵커가 어느 템플릿에도 없다** — **안 받음.** 현재 템플릿이 `milestone:`·
+  `autonomous:` 를 다 갖고 있어 그 분기를 안 탄다. 죽은 코드를 지우는 것이 맞지만 이 카드가
+  넓어질 대로 넓어졌다.
+- **id 충돌 시 빈 디렉터리가 남는다** — **안 받음.** 번호를 이어 쓰는 구조라 충돌 자체가 동시
+  등록에서만 난다. 이 저장소는 등록이 직렬이다.
+- **거부 문구가 진단과 어긋날 수 있다** — **안 받음.** 최상위 평평 파일을 만들려는 시도에도
+  "액션은 최상위가 될 수 없다"가 나온다. 방향은 맞고 그 자리에서 사람이 할 일도 같다.
+- **감사 경계 테스트가 문자열만 본다** — **안 받음.** 리뷰어가 확인한 대로 `test_work_cards.py`
+  가 계층 시작 후 실제 감사를 돌려 오류 0 을 단언한다. 구조적 보호는 이미 있다.
+
+### Executed at close — 2026-07-29
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 339 tests in 1.028s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (112 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] review infrastructure failure; retry without spending attempt 0/1
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785250851
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785250851. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250851 (base: main)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785250851. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250853 (base: main)
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785250853
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785250853. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250854 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785250854. Human review + merge required; the base branch was not modified.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 399 tests in 60.563s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 339 tests in 0.975s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (112 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] review infrastructure failure; retry without spending attempt 0/1
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785250911
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785250911. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250911 (base: main)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785250911. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250913 (base: main)
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785250913
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785250913. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785250913 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785250913. Human review + merge required; the base branch was not modified.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 399 tests in 56.999s
+
+OK
+```
+
+## Retrospective
+
+[R-00000104](retrospectives/R-00000104.md) 가 본문을 쥔다.
+
+가장 큰 배움은 **기준 통과와 목적 달성이 갈릴 수 있다**는 것이다. 기준은 카드를 쓴 내가 정하므로
+좁게 쓰면 좁게 통과한다. 첫 리뷰가 기준 일곱 개를 다 통과시켰는데도 "일단 카드 하나 만들자"는
+여전히 됐고, 리뷰가 기준 밖에서 그것을 잡았다.
+
+두 번째는 **베껴 적은 진실은 반드시 낡는다**는 것이다. 감사 출력을 문서에 나열하게 한 기준이
+세 라운드를 죽였다. 감사를 고치자 한 번에 통과했다.
+
+## Promotion decision
+
+**official 로 안 올린다.** 계약은 DE-00000035 가, 이번 범위 변경은 DE-00000036 이 쥔다.
+카드와 회고는 보관으로 간다.

@@ -1,0 +1,149 @@
+---
+id: W-00000096
+title: 작업 로그가 세 역할의 공용 기록이 된다
+kind: development
+venue: codex
+priority: 2
+autonomous: true
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000094
+promotion: approved
+review: passed
+scope: stage/scripts/drive.py, stage/scripts/tests/test_drive.py, stage/scripts/tests/test_drive_unattended.py, stage/skills/stage-retrospective/close_work.py, stage/scripts/tests/test_close_work.py, .stage/settings.json, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000096 작업 로그가 세 역할의 공용 기록이 된다
+
+## Purpose
+
+DE-00000034 의 둘째 층. 지금은 작업자가 무엇을 왜 했는지 아무 데도 남지 않는다. 드라이버는
+작업자 출력에서 종료 코드만 보고, 리뷰어 출력에서는 통과/차단 단어만 찾고 나머지를 버린다.
+
+카드마다 로그 파일 하나를 드라이버가 만들고, 그 경로를 작업자와 리뷰어 양쪽에 넘긴다.
+작업자는 한 일과 바뀐 것을 쓰고, 리뷰어는 카드 기준마다 판정을 덧붙인다. 드라이버는 작업자가
+쓴 진술과 자기가 관찰한 목록을 대조한다.
+
+## Source
+
+DE-00000034(decided).
+
+## User value
+
+무엇을 왜 했는지, 왜 통과시켰는지가 남는다. 사람이 그 파일 하나만 열면 경위를 안다.
+
+## Scope
+
+### Included
+
+- 드라이버가 카드마다 로그 파일을 만들고 경로를 작업자·리뷰어에게 넘긴다.
+- 작업자 프롬프트: 한 일, 왜, 바뀐 파일을 로그에 쓰라는 계약.
+- 드라이버: 작업자가 쓴 진술과 자기 관찰을 대조한다. 어긋나면 리뷰 전에 실패.
+- 리뷰어 프롬프트: 로그와 카드를 읽고, 파일을 직접 열어 기준마다 판정을 로그에 쓰는 계약.
+- 로그와 카드의 책임 경계를 정한다 — 카드의 `## Progress`, `## Verification` 과 같은 사실을
+  두 군데 적지 않는다.
+- 리뷰어가 도는 자리는 셋이다(DE-00000034 의 자리 표). 로그를 읽고 쓰는 계약도 셋 모두에
+  적용한다 — 드라이버 스텝, 무인 항목 닫기, 단계 리뷰 닫기.
+
+### Excluded
+
+- 왕복과 상한은 W-00000097.
+
+## Dependencies
+
+W-00000095 가 먼저 들어가야 한다. 리뷰 입력이 드라이버 손으로 넘어온 다음에 로그를 얹는다.
+
+## Risks
+
+- 로그와 카드가 같은 사실을 두 군데 적으면 SSOT 가 깨진다. 경계를 먼저 정하고 구현한다.
+- 작업자나 리뷰어가 로그를 안 쓰면 다음 층(W-00000097)이 못 돈다. 안 썼으면 실패로 잡는다.
+
+## Success criteria
+
+- 드라이버가 로그를 만들고 양쪽에 경로를 넘긴다.
+- 작업자가 로그에 아무것도 안 쓰면 그 시도는 실패한다. 확인 테스트가 있다.
+- 작업자가 "A 를 고쳤다"고 썼는데 드라이버 관찰에 A 가 없으면 리뷰 전에 실패한다. 확인
+  테스트가 있다.
+- 리뷰어가 로그에 기준별 판정을 쓴다. 안 쓰면 차단된다 (W-00000089 의 보장을 잃지 않는다).
+- 로그와 카드의 책임 경계가 문서에 적혀 있고, 같은 사실이 두 군데 있지 않다.
+- 인수 검사 두 개 통과, 버전 범프, CHANGELOG.
+
+## Next action
+
+W-00000095 가 닫힌 뒤 시작한다.
+
+## Progress
+
+## Verification
+
+### Executed at close — 2026-07-27
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (34 earlier lines omitted)
+Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1785082464. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785082465 (base: main)
+[W-00000001] completed on stage/driver/W-00000001-1785082465
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785082465. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785082465 (base: main)
+Outcome: blocked — cannot commit pre-close lifecycle for W-00000002: simulated lifecycle commit failure
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1785082466 (base: main)
+[W-00000002] close failed (acceptance or independent review); close_work output:
+obsolete first review output; retry 1/2
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785082466. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785082466 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785082466. Human review + merge required; the base branch was not modified.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 366 tests in 43.293s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.910s
+
+OK
+```
+
+### Independent review at close — 2026-07-27
+
+```
+Criterion verdicts: .stage/.runtime/driver/logs/W-00000096.md
+```
+
+## Retrospective
+
+## Promotion decision

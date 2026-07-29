@@ -1,0 +1,114 @@
+---
+id: W-00000043
+title: acceptance 필드 — 기계 판정 종료 스키마
+kind: development
+venue: codex
+priority: 1
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000041
+promotion: approved
+scope: stage/templates/v4/, stage/skills/stage-work/, stage/skills/stage-retrospective/, stage/hooks/stage_work.py, stage/hooks/tests/, stage/scripts/, stage/docs/SCHEMA_V4.md, stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
+promotes:
+decision_refs: DE-00000018
+---
+
+# W-00000043 acceptance 필드 — 기계 판정 종료 스키마
+
+## Purpose
+
+자율 대상 항목에 기계 실행 가능한 acceptance 필드(모든 단계 exit 0)를 도입하고, 없으면 자율 등록을 거부한다. (DE-00000014)
+
+## Source
+
+parent: W-00000042 (자율 실행 드라이버 계약). 근거 결정 기록은 Purpose에 명시.
+
+## User value
+
+종료 판정이 결정적이어야 드라이버가 자율로 전진할 수 있다.
+
+## Scope
+
+### Included
+
+- work-item 스키마에 기계 실행 가능한 acceptance 필드 추가
+- register_work: 자율 대상 항목 등록 시 acceptance 필수 검사(없으면 거부)
+- close_work: acceptance 단계 실행 및 exit 0 종료 판정 경로
+
+### Excluded
+
+- 드라이버 루프(W-00000047), 독립 판정(W-00000044), 집계 롤업(W-00000045)
+
+## Dependencies
+
+없음 — 실행 순서상 첫 항목.
+
+## Risks
+
+기존 close_work --check 경로와의 호환; 비자율 항목 회귀 방지.
+
+## Success criteria
+
+- 자율 대상 항목이 acceptance 없이는 등록 거부됨
+- acceptance 전 단계 exit 0일 때만 종료 판정
+- 새 동작에 테스트 존재
+- audit_stage errors=0
+
+## Next action
+
+Codex 창에서 `start_work` W-00000043 → DE-00000014대로 acceptance 필드 구현.
+
+## Progress
+
+## Verification
+
+### Executed at close — 2026-07-23
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 304 tests in 0.850s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete and strict audit clean.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete and strict audit clean.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 264 tests in 23.485s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+WARNING KIND001 [.stage/official/work/archive/items/W-00000040.md]: Work kind `bug` has no `passed` criterion in operations/verification.md.
+Summary: errors=0, warnings=1
+```
+
+## Retrospective
+
+## Promotion decision

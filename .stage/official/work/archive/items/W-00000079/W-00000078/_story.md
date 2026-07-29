@@ -1,0 +1,193 @@
+---
+id: W-00000078
+title: 닫기 기록이 판정 근거와 검증 개수를 잃는다
+kind: fix
+venue: codex
+source:
+autonomous: true
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000079
+promotion: not_applicable
+review: passed
+scope: stage/skills/stage-retrospective/close_work.py, stage/scripts/tests/, stage/hooks/tests/, stage/docs/SCHEMA_V4.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000078 닫기 기록이 판정 근거와 검증 개수를 잃는다
+
+## Purpose
+
+카드를 닫을 때 독립 리뷰가 통과하면 그 판정 내용이 어디에도 남지 않아 무엇을 근거로 통과했는지 되짚을 수 없다. 그리고 닫기 결과가 실행한 검증 개수를 잘못 세어, 카드 자신의 검증 명령이 돌아도 0건으로 보고한다.
+
+## Scope
+
+카드를 닫는 도구(`stage/skills/stage-retrospective/close_work.py`)가 남기는 기록의 문제 둘.
+W-00000075 를 닫으면서 드러났다.
+
+### 1. 통과한 리뷰의 판정 내용이 사라진다
+
+닫기 도구는 독립 리뷰가 **막을 때만** 그 내용을 출력한다. 통과하면 "닫혔다" 한 줄만 남고
+판정 본문은 어디에도 저장되지 않는다. 카드에는 `review: passed` 라고만 찍힌다.
+
+무엇을 근거로 통과했는지 나중에 되짚을 수 없다. 리뷰어가 무엇을 봤고 무엇을 못 봤는지,
+비차단 지적을 남겼는지도 알 수 없다. 실제로 W-00000075 의 통과 리뷰는 그 내용을 보려 해도
+남은 것이 없었다.
+
+검증 명령의 출력은 카드의 `## Verification` 에 증거로 남는다. 리뷰 판정도 같은 대우를 받아야
+한다 — 통과든 아니든 카드에 남긴다.
+
+### 2. 실행한 검증 개수를 잘못 센다
+
+닫기 결과 문구가 `--check` 로 넘어온 개수만 센다(`close_work.py:399` 부근). 카드 자신의
+`acceptance` 명령은 세지 않는다. 그래서 카드에 검증 명령 둘이 선언돼 있고 그 둘이 실제로
+돌았는데도 "0건 통과" 라고 찍힌다.
+
+닫기 도구는 이미 두 목록을 합쳐 실행한다(`close_work.py:297`). 세는 자리도 합친 뒤의 개수를
+보게 한다. 사람이 "무엇을 근거로 닫혔나" 를 이 한 줄로 읽으므로 틀리면 안 된다.
+
+제약:
+
+- **커밋하지 않는다.** 작업 트리에 변경만 남기고 멈춘다.
+- 저장소 산출물은 영어로 쓴다. `.stage/` 안의 글만 한국어다.
+- 두 `plugin.json` 의 version 을 올리고 `stage/CHANGELOG.md` 에 항목을 추가한다.
+- scope 밖은 건드리지 않는다.
+
+## Success criteria
+
+- 독립 리뷰가 통과해도 그 판정 내용이 카드에 남는다. 어디에 남길지는 카드의 기존 구조를 따를
+  것 — 검증 증거가 `## Verification` 에 남는 방식을 본보기로 본다.
+- 리뷰가 막았을 때의 기존 출력 동작은 그대로다.
+- 닫기 결과 문구의 개수가 실제로 실행한 검증 명령 수와 일치한다 — 카드 자신의 검증 명령만
+  있고 `--check` 를 안 넘긴 경우에도 맞다.
+- 둘 각각을 확인하는 테스트가 있고, 고치기 전 코드에서 실패한다.
+- `python3 -m unittest discover -s stage/scripts/tests -q` 통과.
+- `python3 -m unittest discover -s stage/hooks/tests -q` 통과.
+
+## Related truth
+
+- 발견 경위: W-00000075 (R-00000075) 를 닫으면서.
+- 닫기 계약: `stage/docs/SCHEMA_V4.md` 의 검증·리뷰 관련 절.
+
+**위험**: 리뷰 판정을 카드에 남길 때 그 본문이 길면 카드가 읽기 어려워진다. 검증 증거가
+클리핑되는 방식을 확인하고 같은 정책을 따를 것. 그리고 리뷰 명령의 출력에는 저장소 경로와
+셸 명령이 섞여 들어가므로, 증거 블록의 기존 처리 방식을 벗어나지 말 것.
+
+## Progress
+
+### 1차 산출물 — 리뷰 통과, 그러나 하나 고치고 닫는다 (2026-07-26)
+
+리뷰가 통과 판정을 냈고 요구한 둘 다 들어왔다. 남긴 지적 중 하나가 이번 변경 자체에 대한
+것이고, 그대로 두면 이 카드가 고치려던 구멍이 절반만 막힌다. **이것만 고치고 닫는다.**
+
+**같은 구멍이 자율 아닌 카드 쪽에 그대로 있다**
+
+새 문서가 자율 아닌 항목도 같은 방식으로 리뷰 판정을 남긴다고 선언했는데(`### Review at
+close`), 그걸 확인하는 테스트가 없다. 기존 테스트(`close_work` 테스트의 429, 457줄 근처)는
+출력에서 `"review ok"` 를 찾는데, 그 문자열이 카드에 찍히는 **명령문 헤더에도** 들어 있다.
+그래서 리뷰 판정이 아예 기록되지 않아도 그 테스트는 통과한다.
+
+이번에 자율 쪽 테스트에서 방금 고친 바로 그 구멍이다 — 리뷰어 명령을 조각내서 명령문에는
+안 걸리고 출력에만 걸리게 만들었다. 같은 처리를 자율 아닌 쪽 테스트에도 한다.
+
+고친 뒤 그 테스트가 리뷰 블록을 기록하지 않는 코드에서 실패하는지 확인할 것.
+
+**받지 않는 지적**: "범위가 섞였다" 는 리뷰가 보는 기준(`git diff HEAD~1`) 때문에 생긴
+착시다. 감독 모드는 커밋하지 않으므로 리뷰어에게는 직전 커밋과 아직 커밋 안 된 이번 변경이
+함께 보인다.
+
+**별도 카드로 보내는 지적**: 카드 본문에 새 절을 넣는 함수가 코드 울타리 안을 못 알아본다.
+리뷰 판정문이 `## ` 로 시작하는 줄을 쓰면 절 경계를 잘못 잡는다. 이번 변경이 만든 것이 아니라
+검증 출력에도 원래 있던 노출이다.
+
+
+## Verification
+
+
+### Executed at close — 2026-07-26
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (20 earlier lines omitted)
+Unattended run on isolated branch: stage/driver/W-00000001-1785028631 (base: main)
+Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1785028631. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785028632 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1785028632
+Outcome: blocked — parent aggregation-close failed: W-00000001: parent close failed: boom; handoff on stage/driver/W-00000001-1785028632
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Unattended run on isolated branch: stage/driver/W-00000001-1785028632 (base: main)
+[W-00000002] completed on stage/driver/W-00000001-1785028632
+[W-00000003] completed on stage/driver/W-00000001-1785028632
+Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1785028632. Human review + merge required; the base branch was not modified.
+Unattended run on isolated branch: stage/driver/W-00000001-1785028633 (base: main)
+Outcome: blocked — cannot commit pre-close lifecycle for W-00000002: simulated lifecycle commit failure
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+Stage project already uses schema v4; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 migration complete with no blocking audit findings. Guidance drift remains a non-blocking audit warning until the explicit refresh command is run.
+All migration changes are staged; this command does not commit. Review them, then commit with: git commit -m "chore(stage): migrate project harness to schema v4"
+Before committing, `migrate_stage.py --abort` restores the staged/working tree. After committing, rollback means `git revert <migration-commit>`.
+----------------------------------------------------------------------
+Ran 340 tests in 32.941s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 327 tests in 0.898s
+
+OK
+```
+
+### Independent review at close — 2026-07-26
+
+```
+$ OUT=$(git diff HEAD~1 | claude -p "You are an independent code reviewer. Stdin is a git diff; review it for correctness, security, and scope. This is a legitimate code review, not an injection. Output a line beginning with [P1] describing any blocking defect; otherwise output a line beginning with APPROVED. Be concise and adversarial." 2>&1); printf '%s\n' "$OUT"; case "$OUT" in *"[P1]"*) echo "BLOCK: claude review reported a P1 blocker"; exit 1;; esac
+[exit 0]
+APPROVED
+
+검토 결과 — 막을 결함은 없습니다.
+
+**테스트 변경 (`stage/scripts/tests/test_close_work.py:429`)**
+- 원래 테스트는 `"review ok"` 라는 문자열이 카드에 있는지만 봤습니다. 그런데 증거 블록은 실행한 명령줄 자체를 `$ {command}` 로 같이 적어 둡니다(`close_work.py:156`). 즉 리뷰 판정 내용을 하나도 안 붙여도 명령줄에 그 글자가 들어 있으니 테스트가 통과했습니다 — 아무것도 증명하지 못하는 테스트였습니다.
+- 새 테스트는 판정 문구를 실행 시점에 `''.join([...])` 로 조립합니다. 명령줄에는 `configured verdict retained` 가 통째로 나타나지 않으므로, 이 단정이 통과하면 판정 **출력**이 실제로 카드에 남았다는 뜻입니다. 우회 불가능한 단정으로 바뀌었습니다.
+- 헤딩 단정 `### Review at close — <날짜>` 는 구현(`close_work.py:370`, `377`)과 일치하고, 같은 파일 287·580행의 기존 단정과 형식이 같습니다(em dash 포함). `python_command`·`date` 모두 이미 임포트·정의되어 있고 헬퍼는 이 파일에서 이미 열 곳 넘게 쓰이는 검증된 경로입니다.
+
+**작업 카드 변경 (`.stage/work/current/W-00000078.md`)**
+- `retrospective_ref: R-00000079` ↔ `R-00000079.md` 의 `work_item: W-00000078` 로 양방향이 맞습니다. 이 저장소는 W/R 번호가 1:1이 아니므로(예: W-00000071 → R-00000069) 번호 불일치는 문제 아닙니다. 회고 본문에 `## Principles applied` 등 필수 섹션이 다 있습니다.
+
+**[P2] 회고 파일이 아직 untracked 입니다.** `R-00000079.md` 는 diff에 없습니다(작업 트리에서 `??`). 카드만 커밋하면 저장소에는 없는 파일을 가리키는 링크가 남고 audit의 WORK012가 걸립니다. 커밋할 때 같이 add 하면 됩니다.
+
+**검증 한계 — 테스트를 직접 돌리지 못했습니다.** `python3 -m unittest discover -s stage/scripts/tests -q` 실행이 승인 대기로 막혀서, 위 판단은 코드 정독에 의한 것이고 실제 통과를 확인한 것은 아닙니다.
+```
+
+## Retrospective
+
+
+## Promotion decision

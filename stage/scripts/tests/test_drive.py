@@ -95,7 +95,21 @@ def write_card(
     venue: str = "codex",
     acceptance: tuple[str, ...] = (),
 ) -> None:
-    path = stage_root / "work/current" / f"{item_id}.md"
+    current_root = stage_root / "work/current"
+    if not parent:
+        path = current_root / item_id / "_story.md"
+    else:
+        parent_path = card_path(stage_root, parent)
+        if parent_path.name == "_story.md" and parent_path.parent.parent == current_root:
+            epic_path = parent_path.with_name("_epic.md")
+            parent_path.replace(epic_path)
+            parent_path = epic_path
+        if parent_path.name == "_epic.md":
+            path = parent_path.parent / item_id / "_story.md"
+        elif parent_path.name == "_story.md":
+            path = parent_path.parent / f"{item_id}.md"
+        else:
+            raise AssertionError(f"action cannot parent another fixture: {parent_path}")
     path.parent.mkdir(parents=True, exist_ok=True)
     rendered_acceptance = "[]"
     if acceptance:
@@ -107,13 +121,23 @@ def write_card(
             "---\n"
             f"id: {item_id}\n"
             f"venue: {venue}\n"
-            f"parent: {parent}\n"
             f"status: {status}\n"
             f"acceptance: {rendered_acceptance}\n"
             "---\n"
         ),
         encoding="utf-8",
     )
+
+
+def card_path(stage_root: Path, item_id: str) -> Path:
+    current_root = stage_root / "work/current"
+    for path in current_root.rglob("*.md"):
+        if path.name == f"{item_id}.md":
+            return path
+        text = path.read_text(encoding="utf-8")
+        if f"id: {item_id}\n" in text:
+            return path
+    return current_root / item_id / "_story.md"
 
 
 class DriveTest(unittest.TestCase):
@@ -130,7 +154,7 @@ class DriveTest(unittest.TestCase):
         stage_root = root / ".stage"
         stage_root.mkdir()
         settings: dict[str, object] = {
-            "schema_version": 4,
+            "schema_version": 5,
             "review": {
                 "reviewers": {
                     "codex": "echo SELF",
@@ -282,12 +306,13 @@ class DriveTest(unittest.TestCase):
                 stage_root / ".runtime/driver/logs/W-00000003.md",
                 items=items,
             )
+            expected_ancestors = [
+                str(card_path(stage_root, "W-00000001").resolve()),
+                str(card_path(stage_root, "W-00000002").resolve()),
+            ]
 
         self.assertEqual(
-            [
-                str((stage_root / "work/current/W-00000001.md").resolve()),
-                str((stage_root / "work/current/W-00000002.md").resolve()),
-            ],
+            expected_ancestors,
             json.loads(environment["STAGE_WORK_ITEM_ANCESTOR_PATHS"]),
         )
 
@@ -539,11 +564,11 @@ class DriveTest(unittest.TestCase):
                 initialize_git(root)
 
                 result = self.run_cli(root, "--execute")
+                expected_path = str(
+                    card_path(root / ".stage", "W-00000002").resolve()
+                )
 
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-            expected_path = str(
-                (root / ".stage/work/current/W-00000002.md").resolve()
-            )
             self.assertEqual(
                 f"executor\n{expected_path}",
                 executor_reaped.read_text(encoding="utf-8"),
@@ -787,12 +812,7 @@ class DriveTest(unittest.TestCase):
                 environment = json.loads(marker.read_text(encoding="utf-8"))
                 self.assertEqual("W-00000002", environment["STAGE_WORK_ITEM"])
                 self.assertEqual(
-                    str(
-                        (
-                            stage_root
-                            / "work/current/W-00000002.md"
-                        ).resolve()
-                    ),
+                    str(card_path(stage_root, "W-00000002").resolve()),
                     environment["STAGE_WORK_ITEM_PATH"],
                 )
                 self.assertEqual(
@@ -840,12 +860,7 @@ class DriveTest(unittest.TestCase):
                 )
                 environment = json.loads(marker.read_text(encoding="utf-8"))
                 self.assertEqual(
-                    str(
-                        (
-                            stage_root
-                            / "work/current/W-00000002.md"
-                        ).resolve()
-                    ),
+                    str(card_path(stage_root, "W-00000002").resolve()),
                     environment["STAGE_WORK_ITEM_PATH"],
                 )
 
@@ -1282,7 +1297,7 @@ class DriveTest(unittest.TestCase):
             baseline = drive.fingerprint(root, ["same acceptance"])
 
             (root / ".stage/settings.json").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
             git(root, "add", ".stage/settings.json")
             changed = drive.fingerprint(root, ["same acceptance"])
@@ -1301,7 +1316,7 @@ class DriveTest(unittest.TestCase):
             (root / "untracked.txt").unlink()
 
             (root / ".stage/settings.json").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
             git(root, "add", ".stage/settings.json")
             staged = drive.fingerprint(root, ["same acceptance"])

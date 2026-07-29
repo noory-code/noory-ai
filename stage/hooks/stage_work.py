@@ -249,17 +249,20 @@ def item_from_fields(
     parent = scalar("parent").strip()
     if items_root is not None:
         try:
-            scale = work_record_scale(items_root, path)
+            work_record_scale(items_root, path)
         except ValueError:
-            scale = "legacy"
-        if scale != "legacy":
+            parent = ""
+        else:
             parent = ""
             parent_path = hierarchy_parent_record_path(items_root, path)
-            if parent_path is not None and parent_path.is_file():
-                parent_fields = parse_frontmatter(parent_path)
-                parent_value = parent_fields.get("id")
-                if isinstance(parent_value, str):
-                    parent = parent_value.strip()
+            if parent_path is not None:
+                if parent_path.is_file():
+                    parent_fields = parse_frontmatter(parent_path)
+                    parent_value = parent_fields.get("id")
+                    if isinstance(parent_value, str):
+                        parent = parent_value.strip()
+                if not parent:
+                    parent = parent_path.parent.name
 
     return WorkItem(
         path=path,

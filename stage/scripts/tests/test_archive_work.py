@@ -179,7 +179,7 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertFalse(any(path.exists() for path in archived_intents))
             self.assertTrue(other_intent.exists())
 
-    def test_refuses_parent_with_planned_child(self):
+    def test_v3_parent_field_is_inert_history(self):
         tmp, root = self.make_stage()
         with tmp:
             planned = root / ".stage/future/backlog/items/W-00000002.md"
@@ -191,11 +191,9 @@ class ArchiveWorkCliTest(unittest.TestCase):
 
             proc = run_cli(root, "W-00000001")
 
-            self.assertEqual(proc.returncode, 1, proc.stderr + proc.stdout)
-            self.assertIn("W-00000002", proc.stdout)
-            self.assertIn("captured", proc.stdout)
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             self.assertTrue(
-                (root / ".stage/present/work/items/W-00000001.md").exists()
+                (root / ".stage/past/work/archive/items/W-00000001.md").exists()
             )
 
     def test_all_completed_flag(self):
@@ -285,7 +283,7 @@ class ArchiveWorkCliTest(unittest.TestCase):
             (stage / "official/work/archive/items").mkdir(parents=True)
             (stage / "official/work/archive/retrospectives").mkdir(parents=True)
             (stage / "settings.json").write_text(
-                '{"schema_version": 4}\n', encoding="utf-8"
+                '{"schema_version": 5}\n', encoding="utf-8"
             )
             records = (
                 (current / "_epic.md", "W-00000001", "R-00000001"),

@@ -36,6 +36,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
     def write_item(self, root: Path, filename: str, **fields: str) -> Path:
         base = root / ".stage" / "work" / "current"
         base.mkdir(parents=True, exist_ok=True)
+        parent = fields.pop("parent", "")
         defaults = {
             "id": filename,
             "title": "Test work",
@@ -47,7 +48,13 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         }
         defaults.update(fields)
         body = "".join(f"{key}: {value}\n" for key, value in defaults.items())
-        path = base / f"{filename}.md"
+        if parent:
+            path = base / parent / filename / "_story.md"
+        elif (base / filename).is_dir():
+            path = base / filename / "_epic.md"
+        else:
+            path = base / filename / "_story.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"---\n{body}---\n# {defaults['id']} Test work\n", encoding="utf-8")
         return path
 
@@ -81,17 +88,33 @@ class LinkFindingOrderPinTest(unittest.TestCase):
     def write_backlog(self, root: Path, filename: str, **fields: str) -> Path:
         base = root / ".stage" / "work" / "planned"
         base.mkdir(parents=True, exist_ok=True)
-        defaults = {"id": filename, "title": "Test", "parent": "", "status": "captured"}
+        parent = fields.pop("parent", "")
+        defaults = {"id": filename, "title": "Test", "status": "captured"}
         defaults.update(fields)
         body = "".join(f"{key}: {value}\n" for key, value in defaults.items())
-        path = base / f"{filename}.md"
+        if parent:
+            path = base / parent / filename / "_story.md"
+        elif (base / filename).is_dir():
+            path = base / filename / "_epic.md"
+        else:
+            path = base / filename / "_story.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"---\n{body}---\n# {defaults['id']}\n", encoding="utf-8")
         return path
 
     def append_index(self, root: Path, index_name: str, item_id: str) -> None:
         path = root / ".stage" / "work" / index_name
+        target = next(
+            (
+                candidate
+                for candidate in (root / ".stage/work").rglob("*.md")
+                if f"id: {item_id}\n" in candidate.read_text(encoding="utf-8")
+            ),
+            root / ".stage/work/current" / item_id / "_story.md",
+        )
+        link = target.relative_to(path.parent).as_posix()
         with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | test | x | ai | [item](current/{item_id}.md) |\n")
+            handle.write(f"| {item_id} | test | x | ai | [item]({link}) |\n")
 
     def test_link_finding_codes_pin_exact_order(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -111,8 +134,8 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             self.write_item(root, "W-0004", decision_refs="DE-9999")  # WORK014
             self.write_item(root, "W-0005", decision_refs="DE-0005")  # WORK015
             self.write_item(root, "W-0006", parent="W-9999")  # WORK017
-            self.write_item(root, "W-0007", parent="W-0008")  # WORK018 (cycle)
-            self.write_item(root, "W-0008", parent="W-0007")  # WORK018 (cycle)
+            self.write_item(root, "W-0007")
+            self.write_item(root, "W-0008")
             self.write_item(root, "W-0009", parent="W-0010")  # WORK019 (finalized parent)
             self.write_item(
                 root,
@@ -140,12 +163,12 @@ class LinkFindingOrderPinTest(unittest.TestCase):
 
             # Planned cards (DE-00000007): realization links retired; selected
             # cards and legacy realized_by fields produce no findings.
-            self.write_backlog(root, "B-0001", status="selected", realized_by="W-0013")
-            self.write_backlog(root, "B-0002", status="bogus")  # BACKLOG001
-            self.write_backlog(root, "B-0003", parent="B-9999")  # BACKLOG002
-            self.write_backlog(root, "B-0004", realized_by="W-9999")
-            self.write_backlog(root, "B-0005", id="B-5555")  # BACKLOG003
-            self.write_backlog(root, "B-0006", status="selected")
+            self.write_backlog(root, "W-0101", status="selected", realized_by="W-0013")
+            self.write_backlog(root, "W-0102", status="bogus")  # BACKLOG001
+            self.write_backlog(root, "W-0103", parent="W-9999")  # BACKLOG002
+            self.write_backlog(root, "W-0104", realized_by="W-9999")
+            self.write_backlog(root, "W-0105", id="W-0555")  # BACKLOG003
+            self.write_backlog(root, "W-0106", status="selected")
 
             question = root / ".stage" / "state" / "questions" / "Q-0001.md"
             question.write_text(
@@ -171,12 +194,13 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK007",
                 "WORK007",
                 "WORK024",
-                "WORK017",
                 "WORK019",
-                "WORK018",
-                "WORK018",
+                "WORK017",
+                "INDEX001",
                 "INDEX001",
                 "INDEX002",
+                "INDEX003",
+                "INDEX003",
                 "BACKLOG001",
                 "BACKLOG003",
                 "BACKLOG002",

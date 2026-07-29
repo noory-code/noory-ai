@@ -17,7 +17,7 @@ LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales"
 # this script must stay runnable standalone before any .stage exists.
 LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
 DEFAULT_LANGUAGE = "en"
-CURRENT_SCHEMA_VERSION = 4
+CURRENT_SCHEMA_VERSION = 5
 RUNTIME_IGNORE_ENTRY = ".stage/.runtime/"
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
@@ -82,8 +82,9 @@ def copy_templates(
                 else "missing/invalid"
             )
             raise RuntimeError(
-                f"this project is on schema {displayed}; the plugin requires v4 — run the "
-                "stage-migrate skill before stage-init so v3 and v4 roots are never mixed"
+                f"this project is on schema {displayed}; the plugin requires v5 — run the "
+                "stage-migrate skill before stage-init so flat and hierarchical work "
+                "records are never mixed"
             )
     created: list[Path] = []
     skipped: list[Path] = []

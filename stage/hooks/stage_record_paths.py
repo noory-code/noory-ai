@@ -89,9 +89,8 @@ def top_level_item_path(root: Path, record: Path) -> Path:
 def work_record_scale(root: Path, record: Path) -> str:
     """Return the scale encoded by one hierarchical work-record path.
 
-    A root-level Markdown file is the legacy flat shape. Callers may continue
-    reading that shape during the schema-v5 rollout, but new hierarchy-aware
-    writes can reject it explicitly.
+    Schema v5 has one work-record shape.  The v4 flat form is read only by the
+    one-shot migration module and is invalid everywhere else.
     """
 
     try:
@@ -99,8 +98,6 @@ def work_record_scale(root: Path, record: Path) -> str:
     except ValueError as exc:
         raise ValueError(f"record is outside its lifecycle root: {record}") from exc
     parts = relative.parts
-    if len(parts) == 1 and record.suffix == ".md":
-        return "legacy"
     if record.name == EPIC_RECORD_NAME and len(parts) == 2:
         return "epic"
     if record.name == STORY_RECORD_NAME and len(parts) in {2, 3}:
@@ -119,7 +116,7 @@ def hierarchy_parent_record_path(root: Path, record: Path) -> Path | None:
 
     scale = work_record_scale(root, record)
     relative = record.relative_to(root)
-    if scale in {"epic", "legacy"}:
+    if scale == "epic":
         return None
     if scale == "story":
         if len(relative.parts) == 2:

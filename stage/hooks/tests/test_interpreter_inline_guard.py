@@ -30,7 +30,7 @@ class InterpreterInlineGuardTest(unittest.TestCase):
         stage_root = root / ".stage"
         stage_root.mkdir()
         (stage_root / "settings.json").write_text(
-            '{"schema_version": 4}\n',
+            '{"schema_version": 5}\n',
             encoding="utf-8",
         )
         work_item = stage_root / "work" / "current" / "W-0001.md"

@@ -123,7 +123,7 @@ class RefreshGuidanceTest(unittest.TestCase):
             stage_root = root / ".stage"
             stage_root.mkdir()
             (stage_root / "settings.json").write_text(
-                json.dumps({"schema_version": 4, "language": "en"}),
+                json.dumps({"schema_version": 5, "language": "en"}),
                 encoding="utf-8",
             )
             target = stage_root / "double.md"

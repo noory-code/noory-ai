@@ -1,0 +1,142 @@
+---
+id: W-00000019
+title: Schema v4 topology registry (C2)
+kind: development
+venue: codex
+source:
+status: archived
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000019
+promotion: not_applicable
+review: not_required
+scope: stage/hooks/,stage/scripts/,stage/CHANGELOG.md,stage/.claude-plugin/plugin.json,stage/.codex-plugin/plugin.json
+promotes:
+decision_refs: DE-00000010
+---
+
+# W-00000019 Schema v4 topology registry (C2)
+
+## Purpose
+
+Implement stage_topology.py per stage/docs/SCHEMA_V4.md: family/zone table, schema marker ownership, canonical and legacy relocation maps, lifecycle resolvers, D-legacy reference compatibility, official-zone predicate rename in stage_paths, and the no-legacy-literals conformance test. Interface contract: SCHEMA_V4.md (W-00000018, DE-00000009).
+
+## Scope
+
+- New `stage/hooks/stage_topology.py`: family table (canon, model, decisions, work, state,
+  proposals, roadmap, operations) with per-zone records (canonical path, lifecycle state,
+  allowed statuses, record roots, index surfaces, template source, transition destination,
+  resolver policy, v3 relocation origin); artifact prefixes (W, DE with D legacy-resolve-only,
+  TH, M, O/Q/A/K, P; family-local counters); cross-family facts (lifecycle vocabulary,
+  single-classification rule, schema_version constant, v3→v4 relocation map incl.
+  past/→official/, maintenance-marker location); derivation helpers (card location by status,
+  retrospective locations, scan roots, legacy detection).
+- `stage/hooks/stage_paths.py`: authorization predicate root constant renames past/ →
+  official/ (mechanism unchanged); registry↔stage_paths parity test.
+- Conformance test: no past/, present/, future/ topology literals in production Python outside
+  stage_topology and stage_paths (templates, migration fixtures, historical docs exempt).
+- Unit tests for every public registry function. No consumer rewrites (C4-C5), no template
+  changes (C3), no migration behavior (C7) — the registry ships dormant alongside v3 behavior.
+- Version bump + CHANGELOG entry per repository plugin rule.
+
+## Success criteria
+
+- `python3 -m unittest discover -s stage/hooks/tests -q` and
+  `python3 -m unittest discover -s stage/scripts/tests -q` pass (existing suites stay green —
+  v3 behavior unchanged this card).
+- New registry tests cover: every zone resolvable, relocation map bijective over v3 paths,
+  legacy D reference resolution, parity with stage_paths constants, conformance literal scan.
+- All facts match `stage/docs/SCHEMA_V4.md`; any needed deviation goes to a decision record
+  first, not silent drift.
+
+## Related truth
+
+- Interface contract: `stage/docs/SCHEMA_V4.md` (commits 6a36a40a, 3b2085c3).
+- DE-00000009 (adoption + official-zone amendment); parent card W-00000018 (C1, archived).
+
+
+## Progress
+
+Completed context (verified): the schema v4 design is frozen and canonical in
+`stage/docs/SCHEMA_V4.md` (commits 6a36a40a, 3b2085c3, both pushed); DE-00000009 records the
+adoption and the official-zone rename; C1 (W-00000018) is closed and archived with
+R-00000018. Both unittest suites and the strict Stage audit are green on main.
+
+Remaining problem: the registry module does not exist yet; 146 files hardcode topology paths
+and `stage_paths.py` centralizes only the past-containment predicate. This card builds ONLY
+the dormant registry + predicate rename + conformance/parity tests — v3 runtime behavior must
+stay unchanged (consumers rewire in C4-C5).
+
+NEXT action (Codex window): read `stage/docs/SCHEMA_V4.md` sections "Topology registry" and
+"Root topology", then implement `stage/hooks/stage_topology.py` with its unit tests; run both
+unittest suites; bump plugin to 0.24.0 with a CHANGELOG entry; commit per repository rules.
+
+2026-07-13 implementation: added the dormant schema-v4 registry with family/zone records,
+lifecycle and W-status resolvers, family-local counters, stable DE and legacy-D reference
+resolution, retrospective and scan-root helpers, the v3-to-v4 relocation map, and the
+maintenance-marker/schema constants. Added v4 official-zone predicates to `stage_paths` while
+leaving all schema-v3 consumers unchanged. Registry tests (11), the full hooks suite (280), the
+full scripts suite (172), and strict Stage audit all pass.
+
+Resolved scope conflict: DE-00000010 records the repository owner's approval of a measured
+per-module legacy-literal baseline. C2 rejects new modules and count increases while permitting
+reductions; C4-C5 and C7 own removal to zero. This preserves v3 behavior without silently
+claiming the final zero-literal state early.
+
+
+## Verification
+
+Executed this session:
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 281 tests in 0.530s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+Migration complete.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 3
+Migration complete.
+----------------------------------------------------------------------
+Ran 172 tests in 5.551s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root . --strict
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 -m py_compile stage/hooks/stage_topology.py stage/hooks/stage_paths.py stage/hooks/tests/test_stage_topology.py
+[exit 0]
+
+```
+
+## Retrospective
+
+Completed in `retrospectives/R-00000019.md`. The principal learning is that conformance scans
+must start at the plugin root, and a zero-tolerance end-state needs an explicit ratchet when the
+same implementation phase must keep legacy consumers operational.
+
+## Promotion decision
+
+Not applicable: no `.stage/official/` truth is promoted by this development card. Archive the work
+item and retrospective after verification closes.
