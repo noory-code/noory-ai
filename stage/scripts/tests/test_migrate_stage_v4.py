@@ -230,8 +230,14 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertIn("TEMPLATE004", {finding.code for finding in findings})
             self.assertIn("R100", staged)
             self.assertIn("does not commit", output.lower())
-            self.assertIn("--abort", output)
-            self.assertIn("git revert", output)
+            self.assertIn("journal was removed", output)
+            self.assertIn("review the working tree", output.lower())
+            self.assertFalse(
+                (stage_root / migrate_stage.v4_migration.JOURNAL_RELATIVE).exists()
+            )
+            self.assertFalse(
+                (stage_root / migrate_stage.v5_migration.JOURNAL_RELATIVE).exists()
+            )
 
     def test_schema_stamp_preserves_jsonc_comments_and_double_slashes_in_strings(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -424,7 +430,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
             with patch.object(
                 migrate_stage,
                 "strict_audit_findings",
-                return_value=[finding],
+                side_effect=([], [finding]),
             ):
                 code, output = self.run_migrate(root)
             settings = json.loads(
@@ -436,7 +442,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
         self.assertIn("maintenance marker remains", output)
         self.assertIn("--abort", output)
 
-    def test_abort_restores_the_clean_v3_tree(self):
+    def test_successful_migration_cleans_journals_and_is_not_abortable(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             stage_root = self.make_v3_project(root)
@@ -456,10 +462,16 @@ class V3ToV4MigrationTest(unittest.TestCase):
             }
             status = git(root, "status", "--porcelain").stdout
 
-        self.assertEqual(0, abort_code, abort_output)
-        self.assertEqual(before, after)
-        self.assertEqual("", status)
-        self.assertIn("restored", abort_output.lower())
+        self.assertEqual(1, abort_code, abort_output)
+        self.assertNotEqual(before, after)
+        self.assertNotEqual("", status)
+        self.assertIn("nothing to abort", abort_output.lower())
+        self.assertFalse(
+            (stage_root / migrate_stage.v4_migration.JOURNAL_RELATIVE).exists()
+        )
+        self.assertFalse(
+            (stage_root / migrate_stage.v5_migration.JOURNAL_RELATIVE).exists()
+        )
 
     def test_dry_run_changes_nothing(self):
         with tempfile.TemporaryDirectory() as tmp:

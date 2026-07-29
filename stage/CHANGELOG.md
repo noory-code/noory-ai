@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.54.1 — 2026-07-29
+
+- Compare post-migration audit findings with the pre-migration baseline so existing project debt
+  remains visible without blocking the schema move.
+- Bind abort to the active migration transaction, ignore unrelated historical journals, and
+  remove completed journals after a successful migration.
+- Limit maintenance-marker locking to governed paths in the migrating project and its `.stage/`
+  tree so excluded scratchpads and other repositories remain writable.
+
 ## 0.54.0 — 2026-07-29
 
 - Activate schema v5 as the only runtime work-card shape and remove the schema-v4 flat-card

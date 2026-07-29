@@ -1,8 +1,11 @@
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 
 STAGE_ROOT = Path(__file__).resolve().parents[2]
@@ -11,6 +14,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import stage_schema_v5_migration as migration  # noqa: E402
+import audit_stage  # noqa: E402
 import migrate_stage  # noqa: E402
 
 
@@ -158,6 +162,50 @@ class SchemaV5MigrationTest(unittest.TestCase):
                 (stage_root / "settings.json").read_text(encoding="utf-8")
             )
             self.assertEqual(5, settings["schema_version"])
+            self.assertFalse(
+                (stage_root / migration.JOURNAL_RELATIVE).exists()
+            )
+
+    def test_preexisting_audit_warning_is_reported_but_does_not_block_migration(self):
+        temporary, project_root, stage_root = self.make_project()
+        with temporary:
+            write_card(
+                stage_root / "work/current/W-00000003.md",
+                "W-00000003",
+                status="active",
+            )
+            warning = audit_stage.Finding(
+                "warning",
+                "KIND001",
+                "Work kind `legacy` has no `passed` criterion.",
+                ".stage/work/current/W-00000003.md",
+            )
+            stale = stage_root / migrate_stage.v4_migration.JOURNAL_RELATIVE
+            stale.parent.mkdir(parents=True, exist_ok=True)
+            stale.write_text(
+                json.dumps(
+                    {
+                        "migration": "schema-v3-to-v4",
+                        "status": "complete",
+                        "original_head": "historical-transaction",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+
+            with patch.object(
+                migrate_stage,
+                "strict_audit_findings",
+                side_effect=([warning], [warning]),
+            ), redirect_stdout(output):
+                result = migrate_stage.migrate(project_root, dry_run=False)
+
+            self.assertEqual(0, result, output.getvalue())
+            self.assertIn("Pre-existing audit findings carried forward", output.getvalue())
+            self.assertIn("WARNING KIND001", output.getvalue())
+            self.assertFalse(stale.exists())
 
     def test_abort_restores_the_exact_pre_migration_tree_after_interruption(self):
         temporary, project_root, stage_root = self.make_project()
@@ -229,6 +277,42 @@ class SchemaV5MigrationTest(unittest.TestCase):
             self.assertEqual(0, result)
             self.assertEqual(before, migration.snapshot_tree(stage_root))
             self.assertTrue(stale.is_file())
+
+    def test_abort_ignores_a_stale_v4_journal_without_a_v5_transaction(self):
+        temporary, project_root, stage_root = self.make_project()
+        with temporary:
+            card = stage_root / "work/current/W-00000001.md"
+            write_card(card, "W-00000001", status="active")
+            before = migration.snapshot_tree(stage_root)
+            stale = stage_root / migrate_stage.v4_migration.JOURNAL_RELATIVE
+            stale.parent.mkdir(parents=True, exist_ok=True)
+            stale.write_text(
+                json.dumps(
+                    {
+                        "migration": "schema-v3-to-v4",
+                        "status": "complete",
+                        "original_head": "historical-transaction",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+
+            with patch.object(
+                migrate_stage.v4_migration,
+                "abort",
+                side_effect=AssertionError("stale journal must not own this abort"),
+            ), redirect_stdout(output):
+                result = migrate_stage.abort(project_root)
+
+            self.assertEqual(0, result, output.getvalue())
+            self.assertEqual(before, migration.snapshot_tree(stage_root))
+            self.assertTrue(stale.is_file())
+            self.assertIn(
+                "Ignoring unrelated schema-v4 migration journal",
+                output.getvalue(),
+            )
 
 
 if __name__ == "__main__":

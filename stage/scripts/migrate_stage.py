@@ -38,7 +38,9 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
+from typing import Any
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
@@ -110,8 +112,8 @@ def parse_args() -> argparse.Namespace:
         "--abort",
         action="store_true",
         help=(
-            "Restore migration-owned staged/working-tree changes before the migration "
-            "is committed. After commit, use git revert instead."
+            "Restore an active or failed migration transaction before commit. "
+            "A successful migration has no remaining abort journal."
         ),
     )
     return parser.parse_args()
@@ -354,6 +356,82 @@ def strict_audit_findings(project_root: Path):
     ]
 
 
+def audit_finding_signature(finding: Any) -> tuple[str, str, str]:
+    """Identify the same defect across a migration-owned path relocation."""
+
+    return (
+        str(getattr(finding, "severity", "")),
+        str(getattr(finding, "code", "")),
+        str(getattr(finding, "message", "")),
+    )
+
+
+def post_migration_audit_findings(
+    project_root: Path, baseline: list[Any]
+) -> list[Any]:
+    """Return only findings introduced by migration and report carried debt."""
+
+    current = strict_audit_findings(project_root)
+    remaining = Counter(audit_finding_signature(finding) for finding in baseline)
+    carried: list[Any] = []
+    introduced: list[Any] = []
+    for finding in current:
+        signature = audit_finding_signature(finding)
+        if remaining[signature]:
+            remaining[signature] -= 1
+            carried.append(finding)
+        else:
+            introduced.append(finding)
+    if carried:
+        print(f"Pre-existing audit findings carried forward ({len(carried)}):")
+        for finding in carried:
+            path = f" [{finding.path}]" if finding.path else ""
+            print(
+                f"  {finding.severity.upper()} {finding.code}{path}: "
+                f"{finding.message}"
+            )
+    return introduced
+
+
+def completed_journal(path: Path, migration: str) -> bool:
+    data = v5_migration._load_json(path)
+    return bool(
+        isinstance(data, dict)
+        and data.get("migration") == migration
+        and data.get("status") == "complete"
+    )
+
+
+def cleanup_completed_migration_journals(stage_root: Path) -> None:
+    candidates = (
+        (v4_migration.JOURNAL_RELATIVE, "schema-v3-to-v4"),
+        (v5_migration.JOURNAL_RELATIVE, "schema-v4-to-v5"),
+    )
+    for relative, migration in candidates:
+        path = stage_root / relative
+        if completed_journal(path, migration):
+            path.unlink()
+
+
+def migrate_to_v5(
+    project_root: Path, dry_run: bool, baseline: list[Any]
+) -> int:
+    audit_findings = (
+        None
+        if dry_run
+        else lambda root: post_migration_audit_findings(root, baseline)
+    )
+    result = v5_migration.migrate(
+        project_root,
+        dry_run,
+        audit=not dry_run,
+        audit_findings=audit_findings,
+    )
+    if result == 0 and not dry_run:
+        cleanup_completed_migration_journals(project_root / ".stage")
+    return result
+
+
 def abort(project_root: Path) -> int:
     stage_root = project_root / ".stage"
     if not stage_root.exists():
@@ -362,36 +440,63 @@ def abort(project_root: Path) -> int:
     v5_journal = stage_root / v5_migration.JOURNAL_RELATIVE
     v4_journal = stage_root / v4_migration.JOURNAL_RELATIVE
     restored = False
+    ignored = False
     v5_original_head = ""
     if v5_journal.exists():
         v5_data = v5_migration._load_json(v5_journal)
-        if isinstance(v5_data, dict):
+        v5_owned = bool(
+            isinstance(v5_data, dict)
+            and v5_data.get("migration") == "schema-v4-to-v5"
+            and v5_data.get("status") in {"active", "failed"}
+        )
+        if v5_owned:
             value = v5_data.get("original_head")
             if isinstance(value, str):
                 v5_original_head = value
-        if v5_migration.abort(project_root, stage_root) != 0:
-            return 1
-        restored = True
+            if v5_migration.abort(project_root, stage_root) != 0:
+                return 1
+            restored = True
+        else:
+            print("Ignoring unrelated schema-v5 migration journal.")
+            ignored = True
     if v4_journal.exists():
         v4_data = v5_migration._load_json(v4_journal)
         v4_original_head = (
             v4_data.get("original_head") if isinstance(v4_data, dict) else None
         )
-        same_transaction = (
+        v4_owned = bool(
+            isinstance(v4_data, dict)
+            and v4_data.get("migration") == "schema-v3-to-v4"
+        )
+        marker = v5_migration._load_json(
+            stage_root / v5_migration.MAINTENANCE_MARKER_RELATIVE
+        )
+        standalone_transaction = bool(
             not restored
-            or (
+            and v4_owned
+            and v4_data.get("status") in {"active", "failed"}
+            and isinstance(marker, dict)
+            and marker.get("migration") == "schema-v3-to-v4"
+        )
+        chained_transaction = bool(
+            restored
+            and v4_owned
+            and (
                 isinstance(v4_original_head, str)
                 and bool(v5_original_head)
                 and v4_original_head == v5_original_head
             )
         )
-        if same_transaction:
+        if standalone_transaction or chained_transaction:
             if v4_migration.abort(project_root, stage_root) != 0:
                 return 1
             restored = True
-    if restored:
+        else:
+            print("Ignoring unrelated schema-v4 migration journal.")
+            ignored = True
+    if restored or ignored:
         return 0
-    print("No schema migration journal exists; there is nothing to abort.")
+    print("No active or failed schema migration journal exists; there is nothing to abort.")
     return 1
 
 
@@ -415,15 +520,12 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         )
         return 1
     if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
+        cleanup_completed_migration_journals(stage_root)
         print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
         return 0
+    audit_baseline = [] if dry_run else strict_audit_findings(project_root)
     if schema_version == V4_SCHEMA_VERSION:
-        return v5_migration.migrate(
-            project_root,
-            dry_run,
-            audit=not dry_run,
-            audit_findings=strict_audit_findings,
-        )
+        return migrate_to_v5(project_root, dry_run, audit_baseline)
 
     try:
         checked = v4_migration.preflight(
@@ -500,12 +602,7 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         return 1
 
     print("Schema-v4 responsibility relocation complete; continuing to schema v5.")
-    return v5_migration.migrate(
-        project_root,
-        False,
-        audit=True,
-        audit_findings=strict_audit_findings,
-    )
+    return migrate_to_v5(project_root, False, audit_baseline)
 
 
 def main() -> None:

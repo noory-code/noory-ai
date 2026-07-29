@@ -54,6 +54,8 @@ relative link to that path.
   retrospective moves back to the live retrospective root.
 - Active, review, planned, and archive indexes are rebuilt with actual relative record paths.
 - Work guidance and templates are refreshed before schema activation.
+- Audit findings present before migration form a baseline. The migration lists carried findings
+  and fails only on findings introduced by the migration.
 
 The direct `glob("B-*.md")` in `migrate_stage.py` remains solely as v3 migration input. B cards
 are not work records in schema v5 and no runtime scanner recognizes them.
@@ -63,16 +65,20 @@ are not work records in schema v5 and no runtime scanner recognizes them.
 Before changing durable Stage files, the v4-to-v5 pass records the original `HEAD` and a
 byte-for-byte snapshot of the durable `.stage/` tree, excluding `.stage/.runtime/`. It then
 installs a maintenance marker. An interruption or verification failure leaves the marker and
-journal in place so other Stage writes fail closed.
+journal in place so governed writes in that project fail closed. Excluded project paths and
+paths outside that project remain writable. A successful migration removes its completed
+journal.
 
-Before commit:
+After an interrupted or failed migration and before commit:
 
 ```bash
 python3 stage/scripts/migrate_stage.py --project-root . --abort
 ```
 
 The abort restores the exact snapshot and preserves unrelated runtime state. A chained v3
-migration then restores its original git transaction as well. After commit, rollback uses
+migration then restores its matching original git transaction as well. Journals from unrelated
+older transactions are reported and ignored. A successful migration removes its journals and is
+not abortable; review its working-tree changes before committing. After commit, rollback uses
 `git revert`.
 
 The migration is a topology relocation of existing Stage truth, not a promotion of new official

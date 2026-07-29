@@ -689,13 +689,14 @@ def verify_new_shape(stage_root: Path) -> None:
 
 
 def finish(stage_root: Path, journal: dict[str, Any]) -> None:
-    try:
-        (stage_root / MAINTENANCE_MARKER_RELATIVE).unlink()
-    except FileNotFoundError:
-        pass
     journal["status"] = "complete"
     journal["completed_at"] = utc_now()
     save_journal(stage_root, journal)
+    for relative in (MAINTENANCE_MARKER_RELATIVE, JOURNAL_RELATIVE):
+        try:
+            (stage_root / relative).unlink()
+        except FileNotFoundError:
+            pass
 
 
 def migrate(
@@ -772,8 +773,8 @@ def migrate(
         "moved into the hierarchy."
     )
     print(
-        "This command does not commit. Before committing, --abort restores the "
-        "pre-migration Stage tree; after commit, use git revert."
+        "This command does not commit. Its successful transaction journal was removed; "
+        "review the working tree before committing."
     )
     return 0
 
@@ -784,6 +785,15 @@ def abort(project_root: Path, stage_root: Path) -> int:
         print(
             "No schema-v5 migration journal exists; there is no deterministic "
             "migration to abort."
+        )
+        return 1
+    if (
+        journal.get("migration") != "schema-v4-to-v5"
+        or journal.get("status") not in {"active", "failed"}
+    ):
+        print(
+            "Schema-v5 migration journal does not describe the active or failed "
+            "schema-v4-to-v5 transaction; abort is refused."
         )
         return 1
     original_head = journal.get("original_head")

@@ -626,18 +626,23 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         payload, name, workspace_root
     )
 
-    mutation_requested = (
-        name in write_tools
-        or bool(shell_write_targets)
-        or bool(command and command_has_git_commit(command))
+    schema_targets = explicit_paths if name in write_tools else shell_write_targets
+    follows_symlinks = name in {"Write", "Edit", "MultiEdit"} or (
+        name not in WRITE_TOOLS
+        and isinstance(tool_input(payload).get("content"), str)
     )
-    if stage_root.exists() and mutation_requested:
+    governed_mutation = bool(command and command_has_git_commit(command)) or any(
+        is_stage_internal_path(raw, workspace_root)
+        or is_source_path(raw, workspace_root, follows_symlinks)
+        for raw in schema_targets
+    )
+    if stage_root.exists() and governed_mutation:
         maintenance_marker = stage_root / stage_topology.MAINTENANCE_MARKER
         if maintenance_marker.exists():
             return deny(
-                "Stage schema migration maintenance is active; all Stage mutations are denied while "
-                "the migration marker exists. Close other agent windows. The migration owner "
-                "must finish or run the stage-migrate abort path."
+                "Stage schema migration maintenance is active; governed project and `.stage` "
+                "mutations are denied while the migration marker exists. Close other agent "
+                "windows. The migration owner must finish or run the stage-migrate abort path."
             )
 
     # An explicit `.stage` delete is always blocked; a strict-ancestor delete
@@ -657,16 +662,6 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         # excluded paths remain outside governance. A direct invocation of
         # stage-migrate/--abort has no shell write target and remains callable;
         # read-only commands likewise pass through.
-        schema_targets = explicit_paths if name in write_tools else shell_write_targets
-        follows_symlinks = name in {"Write", "Edit", "MultiEdit"} or (
-            name not in WRITE_TOOLS
-            and isinstance(tool_input(payload).get("content"), str)
-        )
-        governed_mutation = bool(command and command_has_git_commit(command)) or any(
-            is_stage_internal_path(raw, workspace_root)
-            or is_source_path(raw, workspace_root, follows_symlinks)
-            for raw in schema_targets
-        )
         if governed_mutation and schema_blocker:
             return deny(schema_blocker)
 

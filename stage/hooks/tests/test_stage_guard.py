@@ -133,7 +133,7 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(output["hookEventName"], "SessionStart")
         self.assertIn("Global time axis", output["additionalContext"])
 
-    def test_schema_v5_maintenance_marker_denies_all_schema_mutations(self):
+    def test_schema_v5_maintenance_marker_only_denies_governed_project_mutations(self):
         for schema_version in (3, 4, 5):
             with self.subTest(schema_version=schema_version), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
@@ -152,20 +152,41 @@ class StageGuardTest(unittest.TestCase):
                     ".runtime/schema-v5-maintenance.json",
                     "{}\n",
                 )
-                payload = {
-                    "tool_name": "Write",
-                    "cwd": str(root),
-                    "tool_input": {
-                        "file_path": "vendor/generated.txt",
-                        "content": "blocked\n",
-                    },
-                }
+                for target in ("src/app.py", ".stage/work/current/W-0001.md"):
+                    with self.subTest(target=target):
+                        payload = {
+                            "tool_name": "Write",
+                            "cwd": str(root),
+                            "tool_input": {
+                                "file_path": target,
+                                "content": "blocked\n",
+                            },
+                        }
 
-                result = stage_guard.handle_event("pre-tool-use", payload)
+                        result = stage_guard.handle_event("pre-tool-use", payload)
 
-                self.assertEqual(decision(result), "deny")
-                self.assertIn("maintenance", reason(result).lower())
-                self.assertIn("stage-migrate abort", reason(result))
+                        self.assertEqual(decision(result), "deny")
+                        self.assertIn("maintenance", reason(result).lower())
+                        self.assertIn("stage-migrate abort", reason(result))
+
+                other_root = root.parent / f"{root.name}-other"
+                for target in (
+                    "vendor/generated.txt",
+                    str(other_root / "scratchpad.md"),
+                ):
+                    with self.subTest(target=target):
+                        payload = {
+                            "tool_name": "Write",
+                            "cwd": str(root),
+                            "tool_input": {
+                                "file_path": target,
+                                "content": "allowed\n",
+                            },
+                        }
+
+                        result = stage_guard.handle_event("pre-tool-use", payload)
+
+                        self.assertEqual(decision(result), "allow")
 
     def test_dot_segment_reentry_hits_registration_gate(self):
         # F1: .stage/../src must not masquerade as .stage-internal (ungoverned).
