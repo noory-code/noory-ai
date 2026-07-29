@@ -10,8 +10,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000107
 promotion: pending
 review: not_required
 scope: stage/, .stage/
@@ -108,8 +108,53 @@ W-00000106 이 끝나면 코드는 새 구조를 알지만 저장소의 카드�
 
 ## Progress
 
+스키마가 v5 가 됐고 이 저장소의 기록 110장이 전부 새 모양으로 옮겨졌다. 옛 카드는 독립 스토리
+폴더로, 열려 있는 에픽 밑으로 완료된 자식 여섯이 다시 모였다. 스캐너는 한 모양만 알고,
+마이그레이션은 일지를 남기는 가역 방식이다. 감사가 처음으로 오류 0 · 경고 0.
+
+도중에 novel-workspace 가 v4 프로젝트에서 마이그레이션을 실전 실행하고 결함 셋(기존 빚에 갇힘,
+옛 일지가 abort 를 속임, 실패 표식이 전부 잠금)을 보고했다. 셋 다 기준으로 올려 이 카드에서
+닫았고 재현이 회귀 시험으로 들어갔다. 플러그인 0.54.1.
+
+드라이버 세 회차. 1회차는 45분 제한 초과(일은 완성, O-00000003 재발), 2회차는 실행자의 설치
+플러그인(0.53.0, v4 강제)이 v5 가 된 이 저장소의 쓰기를 전부 막아 정직하게 멈춤 — P-00000001
+계열의 새 얼굴이다. 선례대로 코덱스 쪽 플러그인을 한 회차 끄고 3회차에 통과, 직후 다시 켰다.
+
 ## Verification
+
+실행자 codex, 리뷰어 claude (venue 가 서로 다름).
+
+- `python3 -m unittest discover -s stage/hooks/tests -q` — 342개 통과.
+- `python3 -m unittest discover -s stage/scripts/tests -q` — 416개 통과.
+- `python3 stage/scripts/audit_stage.py --project-root .` — errors=0, **warnings=0**.
+
+리뷰가 기준 12개 전부 PASS + APPROVED. 리뷰어가 직접 재측정한 것 둘 — 보관함 101장 전체 스캔
+1회 3.3ms(성능 기준), 표식 잠금이 스키마 3/4/5 전부에서 governed·`.stage` 만 거부하고 다른
+저장소는 허용.
+
+### 기준 밖 지적의 처리
+
+- **감사 기준선이 메시지 문자열에 기대서, 경로가 메시지에 박히는 결함은 이동 후 "새 결함"으로
+  오인될 수 있다** — **미룸 → O-00000008.** 알려진 실전 사례(KIND001)는 메시지에 경로가 없어
+  안전하지만, 잠복 경계라 관측으로 남긴다.
+- **abort 가 무관한 일지만 무시하고 아무것도 복원 안 했을 때도 exit 0** — **안 받음.** 아무것도
+  할 일이 없던 abort 가 성공으로 끝나는 것은 멱등의 자연스러운 뜻이고, 그 exit 코드를 "복원됨"
+  으로 읽는 자동화가 이 저장소에 없다.
+- **abort 도중 스냅샷 항목 하나가 깨지면 반쯤 지운 트리에서 물러날 길이 없다** — **안 받음.**
+  일지는 자기 자신이 기록한 값이라 확률이 낮고, `.stage` 는 git 이 추적하므로 최악에도 checkout
+  으로 돌아온다.
+- **인라인 인터프리터 쓰기를 별도 게이트가 막는 것 확인** — 결함 아님, 확인 사실.
 
 ## Retrospective
 
+[R-00000107](../../retrospectives/R-00000107.md) 가 본문을 쥔다.
+
+같은 모양의 갇힘을 하루에 세 번 봤다 — 기존 빚이 마이그레이션을 막고 그 빚은 마이그레이션 없이
+못 고치는 것(보고 ①), 실패 표식이 복구 시도까지 막는 것(보고 ③), 설치 플러그인의 스키마 강제가
+앞서간 저장소를 잠그는 것(우리 2회차). 전부 "고치려면 X 가 필요한데 X 가 그 고침을 요구한다".
+탈출구 없는 fail-closed 는 안전이 아니라 감금이다.
+
 ## Promotion decision
+
+**official 로 안 올린다.** 계약은 DE-00000035 가 쥔다. 이 스토리는 에픽 W-00000104 가 닫힐 때
+에픽과 통째로 보관된다 — 이 카드가 만든 규칙의 첫 적용이다.
