@@ -31,3 +31,11 @@
 | DE-00000028 | promoted | 사용자 | [records/DE-00000028.md](records/DE-00000028.md) |
 | DE-00000029 | promoted | 사용자 | [records/DE-00000029.md](records/DE-00000029.md) |
 | DE-00000030 | promoted | 사용자 | [records/DE-00000030.md](records/DE-00000030.md) |
+| DE-00000031 | promoted | 사용자 | [records/DE-00000031.md](records/DE-00000031.md) |
+| DE-00000032 | promoted | 사용자 | [records/DE-00000032.md](records/DE-00000032.md) |
+| DE-00000033 | promoted | 사용자 | [records/DE-00000033.md](records/DE-00000033.md) |
+| DE-00000034 | promoted | 사용자 | [records/DE-00000034.md](records/DE-00000034.md) |
+| DE-00000035 | promoted | 사용자 | [records/DE-00000035.md](records/DE-00000035.md) |
+| DE-00000036 | promoted | 사용자 | [records/DE-00000036.md](records/DE-00000036.md) |
+| DE-00000037 | promoted | 사용자 | [records/DE-00000037.md](records/DE-00000037.md) |
+| DE-00000038 | promoted | 사용자 | [records/DE-00000038.md](records/DE-00000038.md) |
