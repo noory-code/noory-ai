@@ -17,7 +17,7 @@
   },
   "preflights": {
     "claude": null,
-    "codex": null
+    "codex": "python3 -c \"import json, pathlib, sys; v = json.load(open('stage/.codex-plugin/plugin.json'))['version']; hook = pathlib.Path.home() / '.codex/plugins/cache/noory-ai/stage' / v / 'hooks/stage_guard.py'; ok = hook.is_file(); print('codex stage plugin cache is stale for version ' + v + ': missing ' + str(hook) + ' - run one throwaway codex task to resync, then retry') if not ok else None; sys.exit(0 if ok else 1)\""
   },
   "reapers": {
     "claude": null,
