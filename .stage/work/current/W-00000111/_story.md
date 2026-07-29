@@ -81,6 +81,9 @@ decision_refs:
 
 ## Progress
 
+- 보관 인덱스는 계층 레코드마다가 아니라 최상위 이동 단위(에픽 또는 독립 스토리)마다 한 행을
+  소유한다. 계층 관계의 SSOT는 폴더 배치이고, 하위 행은 같은 사실의 중복이므로 적지 않는다.
+
 ## Verification
 
 ## Retrospective

@@ -2,6 +2,7 @@
 # test module keeps the same annotation-laziness contract as the scripts.
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,8 @@ from pathlib import Path
 # archive_work.py is owned by (and lives inside) the stage-archive skill; the
 # test stays in the central suite so one `unittest discover` covers everything.
 CLI_PATH = Path(__file__).resolve().parents[2] / "skills" / "stage-archive" / "archive_work.py"
+AUDIT_CLI_PATH = Path(__file__).resolve().parents[1] / "audit_stage.py"
+TEMPLATE_ROOT = Path(__file__).resolve().parents[2] / "templates" / "v4" / "project-stage"
 
 
 def run_cli(project_root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -34,6 +37,24 @@ promotion: not_applicable
 """
 
 RETRO = "---\nid: {ref}\nwork_item: {wid}\n---\n\n# {ref} Sample retro\n"
+
+V5_ITEM = """---
+id: {wid}
+title: Sample
+kind: development
+venue: codex
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: {ref}
+promotion: not_applicable
+review: not_required
+scope: src/
+decision_refs:
+---
+
+# {wid} Sample
+"""
 
 REVIEW = (
     "# Review Candidates\n\n"
@@ -276,15 +297,10 @@ class ArchiveWorkCliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
             current = stage / "work/current/W-00000001"
             story = current / "W-00000002"
             story.mkdir(parents=True)
-            (stage / "work/retrospectives").mkdir(parents=True)
-            (stage / "official/work/archive/items").mkdir(parents=True)
-            (stage / "official/work/archive/retrospectives").mkdir(parents=True)
-            (stage / "settings.json").write_text(
-                '{"schema_version": 5}\n', encoding="utf-8"
-            )
             records = (
                 (current / "_epic.md", "W-00000001", "R-00000001"),
                 (story / "_story.md", "W-00000002", "R-00000002"),
@@ -292,10 +308,8 @@ class ArchiveWorkCliTest(unittest.TestCase):
             )
             for path, item_id, retro_id in records:
                 path.write_text(
-                    ITEM.format(
+                    V5_ITEM.format(
                         wid=item_id,
-                        status="completed",
-                        retro="completed",
                         ref=retro_id,
                     ),
                     encoding="utf-8",
@@ -304,8 +318,9 @@ class ArchiveWorkCliTest(unittest.TestCase):
                     RETRO.format(ref=retro_id, wid=item_id),
                     encoding="utf-8",
                 )
-            (stage / "work/review.md").write_text(
-                "# Review Candidates\n"
+            review_path = stage / "work/review.md"
+            review_path.write_text(
+                review_path.read_text(encoding="utf-8")
                 + "".join(
                     f"| {item_id} | passed | completed | not_applicable | "
                     f"[{path.relative_to(stage / 'work').as_posix()}]"
@@ -314,8 +329,9 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            (stage / "work/active.md").write_text(
-                "# Active Work\n"
+            active_path = stage / "work/active.md"
+            active_path.write_text(
+                active_path.read_text(encoding="utf-8")
                 + "".join(
                     f"| {item_id} | development | codex | x | completed | codex | "
                     f"[{path.relative_to(stage / 'work').as_posix()}]"
@@ -324,11 +340,18 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            (stage / "official/work/archive/index.md").write_text(
-                INDEX, encoding="utf-8"
-            )
 
             proc = run_cli(root, "W-00000001")
+            audit_proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUDIT_CLI_PATH),
+                    "--project-root",
+                    str(root),
+                ],
+                capture_output=True,
+                text=True,
+            )
             archive_unit = stage / "official/work/archive/items/W-00000001"
             archived_texts = [
                 (archive_unit / "_epic.md").read_text(encoding="utf-8"),
@@ -355,6 +378,10 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertNotIn("W-00000002", active_text)
         self.assertNotIn("W-00000003", review_text)
         self.assertEqual(1, archive_index.count("| W-00000001 | completed |"))
+        self.assertNotIn("| W-00000002 |", archive_index)
+        self.assertNotIn("| W-00000003 |", archive_index)
+        self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
+        self.assertIn("Summary: errors=0", audit_proc.stdout)
 
 
 if __name__ == "__main__":
