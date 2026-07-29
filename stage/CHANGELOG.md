@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reject parallel card batches with overlapping declared scopes before creating any worktree,
+  report every conflicting card pair and path, exempt append-only changelog entries, and provide
+  an explicit reported override.
 - Bound parallel Stage drivers by worker count and per-driver timeout, preserve and verify hook
   project roots, reject dirty or missing-card starts, and provide cleanup that verifies Git
   worktree ownership and preserves unmerged commits.

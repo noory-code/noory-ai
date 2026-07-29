@@ -64,10 +64,19 @@ Merge or otherwise preserve those commits first. An absent worktree and branch a
 absent, never as removed. Cleanup leaves the shared worktree-root directory itself in place because
 the command cannot prove that it created that parent.
 
-Run only cards whose declared scopes do not overlap. Separate worktrees isolate repository
-observation; they do not make overlapping edits safe. The command rejects a duplicate ID inside
-one invocation, and an existing card-named path or branch makes a later invocation fail instead of
-reusing the same card. Scope-overlap rejection is a separate driver gate.
+Before creating the worktree root or any card worktree, the command compares every named card's
+declared `scope`. Two declarations overlap when they name the same path or one path contains the
+other. `CHANGELOG.md` declarations are excluded because card work appends independent entries to
+the Unreleased section. When an overlap remains, the command creates no worktree and prints every
+card pair and overlapping path. Narrow a card's scope, choose different cards, or run those cards
+sequentially.
+
+Separate worktrees isolate repository observation; they do not make overlapping edits safe. When
+the declared directories overlap but the actual files are known to be independent, pass
+`--allow-overlap`. The command prints the overridden card pairs and paths before continuing so the
+human decision remains visible. The command also rejects a duplicate ID inside one invocation,
+and an existing card-named path or branch makes a later invocation fail instead of reusing the
+same card.
 
 Each worktree has its own ignored `.stage/.runtime/` evidence. The tracked lifecycle indexes do not
 have that isolation after merge: `.stage/work/active.md` and `.stage/work/review.md` can conflict

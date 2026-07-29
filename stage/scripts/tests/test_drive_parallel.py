@@ -96,12 +96,24 @@ class DriveParallelTest(unittest.TestCase):
         )
         return driver
 
-    def add_current_cards(self, root: Path, targets: list[str]) -> None:
+    def add_current_cards(
+        self,
+        root: Path,
+        targets: list[str],
+        *,
+        scopes: dict[str, str] | None = None,
+    ) -> None:
         for target in targets:
             card_dir = root / ".stage/work/current" / target
             card_dir.mkdir(parents=True, exist_ok=True)
             (card_dir / "_story.md").write_text(
-                f"---\nid: {target}\n---\n\n# {target} test card\n",
+                (
+                    "---\n"
+                    f"id: {target}\n"
+                    f"scope: {(scopes or {}).get(target, '')}\n"
+                    "---\n\n"
+                    f"# {target} test card\n"
+                ),
                 encoding="utf-8",
             )
         git(root, "add", ".stage")
@@ -452,6 +464,152 @@ class DriveParallelTest(unittest.TestCase):
 
         self.assertEqual(2, result)
         create.assert_not_called()
+
+    def test_overlapping_scopes_are_rejected_before_creating_any_worktree(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        shared_path = "stage/scripts/drive_parallel.py"
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={target: shared_path for target in targets},
+        )
+        worktree_root = root.parent / "worktrees"
+        errors = io.StringIO()
+
+        with (
+            mock.patch.object(module, "create_worktree") as create,
+            contextlib.redirect_stderr(errors),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+            )
+
+        self.assertEqual(1, result)
+        create.assert_not_called()
+        self.assertFalse(worktree_root.exists())
+        self.assertIn("scope overlap", errors.getvalue())
+        self.assertIn(
+            f"{targets[0]} <-> {targets[1]}: {shared_path}",
+            errors.getvalue(),
+        )
+
+    def test_non_overlapping_scopes_run_without_an_override(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={
+                targets[0]: "stage/scripts/drive_parallel.py",
+                targets[1]: "plainly/tests/",
+            },
+        )
+        worktree_root = root.parent / "worktrees"
+
+        def successful_driver(spec, driver_path, *, timeout):
+            return module.DriverResult(spec, 0, "", "")
+
+        with (
+            mock.patch.object(module, "create_worktree", return_value="") as create,
+            mock.patch.object(module, "run_driver", side_effect=successful_driver),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+            )
+
+        self.assertEqual(0, result)
+        self.assertEqual(2, create.call_count)
+
+    def test_shared_changelog_scope_does_not_count_as_overlap(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={target: "stage/CHANGELOG.md" for target in targets},
+        )
+        worktree_root = root.parent / "worktrees"
+
+        def successful_driver(spec, driver_path, *, timeout):
+            return module.DriverResult(spec, 0, "", "")
+
+        with (
+            mock.patch.object(module, "create_worktree", return_value="") as create,
+            mock.patch.object(module, "run_driver", side_effect=successful_driver),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+            )
+
+        self.assertEqual(0, result)
+        self.assertEqual(2, create.call_count)
+
+    def test_allow_overlap_runs_and_reports_the_override(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        shared_path = "stage/scripts/drive_parallel.py"
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={target: shared_path for target in targets},
+        )
+        worktree_root = root.parent / "worktrees"
+        errors = io.StringIO()
+
+        def successful_driver(spec, driver_path, *, timeout):
+            return module.DriverResult(spec, 0, "", "")
+
+        with (
+            mock.patch.object(module, "create_worktree", return_value="") as create,
+            mock.patch.object(module, "run_driver", side_effect=successful_driver),
+            contextlib.redirect_stderr(errors),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+                allow_overlap=True,
+            )
+
+        self.assertEqual(0, result)
+        self.assertEqual(2, create.call_count)
+        self.assertIn("--allow-overlap", errors.getvalue())
+        self.assertIn(
+            f"{targets[0]} <-> {targets[1]}: {shared_path}",
+            errors.getvalue(),
+        )
+
+    def test_allow_overlap_is_available_from_the_command_line(self) -> None:
+        module = load_module()
+
+        with mock.patch.object(
+            sys,
+            "argv",
+            [
+                str(SCRIPT),
+                "--allow-overlap",
+                "W-00000001",
+                "W-00000002",
+            ],
+        ):
+            args = module.parse_args()
+
+        self.assertTrue(args.allow_overlap)
 
     def test_limits_concurrent_drivers_to_configured_worker_count(self) -> None:
         module = load_module()

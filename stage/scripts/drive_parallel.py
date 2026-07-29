@@ -22,9 +22,9 @@ for import_dir in (SCRIPTS_DIR, HOOKS_DIR):
         sys.path.insert(0, str(import_dir))
 
 from drive import resolve_reap_command  # noqa: E402
-from stage_paths import read_settings  # noqa: E402
+from stage_paths import normalize_path_text, read_settings  # noqa: E402
 from stage_record_paths import record_path  # noqa: E402
-from stage_work import parse_frontmatter  # noqa: E402
+from stage_work import parse_frontmatter, split_scope  # noqa: E402
 
 
 WORK_ID_RE = re.compile(r"W-\d{8}")
@@ -50,6 +50,12 @@ class CleanupResult(NamedTuple):
     removed: bool
     absent: bool
     errors: tuple[str, ...]
+
+
+class ScopeOverlap(NamedTuple):
+    first_target: str
+    second_target: str
+    path: str
 
 
 def positive_integer(value: str) -> int:
@@ -97,6 +103,11 @@ def parse_args() -> argparse.Namespace:
         "--cleanup",
         action="store_true",
         help="Remove the named parallel worktrees and branches instead of running drivers.",
+    )
+    parser.add_argument(
+        "--allow-overlap",
+        action="store_true",
+        help="Run even when named cards declare overlapping scopes.",
     )
     parser.add_argument("targets", nargs="+", help="Existing W-* work item IDs.")
     return parser.parse_args()
@@ -170,6 +181,92 @@ def validate_specs(project_root: Path, specs: list[WorktreeSpec]) -> str:
         if status != 1:
             return f"cannot inspect branch {spec.branch}: {output.strip()}"
     return ""
+
+
+def is_changelog_scope(path: str) -> bool:
+    return path == "CHANGELOG.md" or path.endswith("/CHANGELOG.md")
+
+
+def declared_scopes(project_root: Path, target: str) -> tuple[str, ...]:
+    card_path = record_path(project_root / ".stage/work/current", target)
+    raw_scope = parse_frontmatter(card_path).get("scope", "")
+    if not isinstance(raw_scope, str):
+        return ()
+
+    normalized: list[str] = []
+    for entry in split_scope(raw_scope):
+        path = normalize_path_text(entry).rstrip("/")
+        if path and not is_changelog_scope(path):
+            normalized.append(path)
+    return tuple(normalized)
+
+
+def overlapping_path(first: str, second: str) -> str:
+    if first == "*":
+        return second
+    if second == "*":
+        return first
+    if first == second:
+        return first
+    if first.startswith(second + "/"):
+        return first
+    if second.startswith(first + "/"):
+        return second
+    return ""
+
+
+def find_scope_overlaps(
+    project_root: Path,
+    specs: list[WorktreeSpec],
+) -> tuple[ScopeOverlap, ...]:
+    scopes = {
+        spec.target: declared_scopes(project_root, spec.target)
+        for spec in specs
+    }
+    overlaps: list[ScopeOverlap] = []
+    seen: set[ScopeOverlap] = set()
+    for first_index, first_spec in enumerate(specs):
+        for second_spec in specs[first_index + 1 :]:
+            for first_scope in scopes[first_spec.target]:
+                for second_scope in scopes[second_spec.target]:
+                    path = overlapping_path(first_scope, second_scope)
+                    overlap = ScopeOverlap(
+                        first_spec.target,
+                        second_spec.target,
+                        path,
+                    )
+                    if path and overlap not in seen:
+                        overlaps.append(overlap)
+                        seen.add(overlap)
+    return tuple(overlaps)
+
+
+def report_scope_overlaps(
+    overlaps: tuple[ScopeOverlap, ...],
+    *,
+    allowed: bool,
+) -> None:
+    if allowed:
+        print(
+            "WARNING: --allow-overlap overrides these declared scope overlaps:",
+            file=sys.stderr,
+        )
+    else:
+        print(
+            "ERROR: scope overlap detected; no worktree was created:",
+            file=sys.stderr,
+        )
+    for overlap in overlaps:
+        print(
+            f"  {overlap.first_target} <-> {overlap.second_target}: {overlap.path}",
+            file=sys.stderr,
+        )
+    if not allowed:
+        print(
+            "Narrow a card's scope, choose different cards, run the cards sequentially, "
+            "or pass --allow-overlap after confirming their actual edits are independent.",
+            file=sys.stderr,
+        )
 
 
 def create_worktree(project_root: Path, spec: WorktreeSpec) -> str:
@@ -440,6 +537,7 @@ def run_parallel(
     driver_path: Path = DRIVER,
     max_workers: int = DEFAULT_MAX_WORKERS,
     driver_timeout: int = DEFAULT_DRIVER_TIMEOUT,
+    allow_overlap: bool = False,
 ) -> int:
     project_root = project_root.resolve()
     worktree_root = worktree_root.resolve()
@@ -470,6 +568,12 @@ def run_parallel(
     if validation_error:
         print(f"ERROR: {validation_error}", file=sys.stderr)
         return 1
+
+    overlaps = find_scope_overlaps(project_root, specs)
+    if overlaps:
+        report_scope_overlaps(overlaps, allowed=allow_overlap)
+        if not allow_overlap:
+            return 1
 
     root_created = not worktree_root.exists()
     try:
@@ -588,6 +692,7 @@ def main() -> int:
         worktree_root=worktree_root,
         max_workers=args.max_workers,
         driver_timeout=args.driver_timeout,
+        allow_overlap=args.allow_overlap,
     )
 
 
