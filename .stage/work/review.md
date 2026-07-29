@@ -9,3 +9,4 @@
 | W-00000116 | passed | completed | not_applicable | [current/W-00000115/W-00000116/_story.md](current/W-00000115/W-00000116/_story.md) |
 | W-00000121 | passed | completed | not_applicable | [current/W-00000115/W-00000121/_story.md](current/W-00000115/W-00000121/_story.md) |
 | W-00000124 | passed | completed | not_applicable | [current/W-00000123/W-00000124/_story.md](current/W-00000123/W-00000124/_story.md) |
+| W-00000127 | passed | completed | not_applicable | [current/W-00000123/W-00000127/_story.md](current/W-00000123/W-00000127/_story.md) |
