@@ -7,11 +7,12 @@ milestone:
 source:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000152
+promotion: not_applicable
 review: not_required
 scope: stage/skills/stage-work/SKILL.md, stage/CHANGELOG.md, .stage/work/planned/
 promotes:
@@ -77,11 +78,38 @@ decision_refs:
 
 ## Progress
 
+규칙 셋을 등록 절차 문서에 넣고, 열려 있던 계획 카드 하나를 그 규칙대로 다시 썼다.
 
 ## Verification
 
+- 등록 절차 문서에 규칙 셋이 이유와 함께 있고, 네 가지 답을 어느 칸이 쥐는지 표로 적혀 있다.
+- 끝나는 조건 칸 설명에 "사람이 겪는 결과를 하나는 적는다"가 들어 있다.
+- 다시 쓴 계획 카드가 번호 대신 뜻으로 읽힌다 — "결정 기록 46이 정한 것" 대신 "카드에는 그 카드가
+  내린 결정을 적는 칸이 있고, 거기 무엇을 적는지가 어디에도 안 적혀 있다".
+- 변경 이력에 두 항목이 있고 매니페스트 버전은 그대로다.
+- `stage/hooks/tests` 347개 통과, 감사 0/0.
+
+### Executed at close — 2026-07-30
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 347 tests in 1.064s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
+[R-00000152](../../retrospectives/R-00000152.md) — 카드가 읽는 사람 몫을 자기가 안 지고 있었다.
 
 ## Promotion decision
+
+FINAL: not_applicable. 플러그인 문서 변경이고 승격할 산출물이 없다.

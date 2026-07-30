@@ -6,5 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000148 | fix | codex | 두 번째 바퀴의 리뷰를 좁힌 범위로 돌린다 | active | codex | [current/W-00000148/_story.md](current/W-00000148/_story.md) |
-| W-00000152 | documentation | claude |  | active | Claude | [current/W-00000152/_story.md](current/W-00000152/_story.md) |
