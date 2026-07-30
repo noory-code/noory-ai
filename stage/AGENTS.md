@@ -10,8 +10,8 @@ Execution stays free; purpose stays strict. Stage never tells the executor how t
 that work hangs from a purpose and that someone independent judges whether that purpose landed.
 
 Read [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) before changing gates, skills, or the work contract.
-It owns why Stage is shaped this way — who it is for, what counts as an achievement, why repair is
-not one, and why splitting work is design rather than bookkeeping. Changing a rule without reading
+It owns why Stage is shaped this way — who it is for, what counts as an achievement and what is
+only maintenance, and why choosing where to cut the work is the design. Changing a rule without reading
 it usually means re-deciding something already decided.
 
 ## Document language

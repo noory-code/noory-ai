@@ -8,9 +8,11 @@
   only the rules treats the harness as bookkeeping and fills the fields. `docs/PHILOSOPHY.md` now
   owns the reason: a stage the heroes can run wild on, but it has to have a purpose. It states who
   Stage serves and why that person needs it, why discussion is the road to a purpose rather than
-  the purpose itself, that every level is an achievement differing only in size, that repair is
-  maintenance and does not hang from one, that the promise is the purpose and not the scope, and
-  that splitting work is design the harness can make visible but never grade. `README.md`,
+  the purpose itself, that every level is an achievement differing only in size, that restoring
+  what broke is maintenance and hangs from nothing while making something newly possible is an
+  achievement whatever it looks like, that the promise is the purpose and not the scope, and
+  that choosing where to cut the work is the design — something the harness can make visible but
+  never grade. `README.md`,
   `CLAUDE.md`, and `AGENTS.md` carry the one sentence and point there; the blueprint hands over
   its mission branch.
 - Say which command a card should store. Nothing told the writer, so cards stored the whole test
