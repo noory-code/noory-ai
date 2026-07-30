@@ -10,8 +10,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000159
 promotion: pending
 review: not_required
 scope: stage/docs/PHILOSOPHY.md, stage/docs/BLUEPRINT.md, stage/README.md, stage/CLAUDE.md, stage/AGENTS.md, stage/CHANGELOG.md
