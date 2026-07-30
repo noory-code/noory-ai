@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000156 | documentation | claude | 규칙이 무엇을 쓰지 말라는 것만 말하고 누가 읽는지는 말하지 않는다 | active | claude | [current/W-00000156/_story.md](current/W-00000156/_story.md) |
