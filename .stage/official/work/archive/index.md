@@ -122,3 +122,4 @@
 | W-00000137 | completed | [items/W-00000137/_story.md](items/W-00000137/_story.md) |
 | W-00000138 | completed | [items/W-00000138/_story.md](items/W-00000138/_story.md) |
 | W-00000139 | completed | [items/W-00000139/_story.md](items/W-00000139/_story.md) |
+| W-00000140 | completed | [items/W-00000140/_story.md](items/W-00000140/_story.md) |
