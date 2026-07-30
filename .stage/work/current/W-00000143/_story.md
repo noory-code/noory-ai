@@ -8,11 +8,11 @@ priority:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000143
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: .stage/decisions/pending/, .stage/state/observations/, .stage/work/planned/
 promotes:
@@ -99,6 +99,22 @@ decision_refs: DE-00000047
 ## Progress
 
 ## Verification
+
+### Executed at close — 2026-07-30
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
