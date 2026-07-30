@@ -8,7 +8,8 @@
   only the rules treats the harness as bookkeeping and fills the fields. `docs/PHILOSOPHY.md` now
   owns the reason: a stage the heroes can run wild on, but it has to have a purpose. It states who
   Stage serves and why that person needs it, why discussion is the road to a purpose rather than
-  the purpose itself, that every level is an achievement differing only in size, that restoring
+  the purpose itself and that it runs between people, between a person and an agent, and between
+  agents alike, that every level is an achievement differing only in size, that restoring
   what broke is maintenance and hangs from nothing while making something newly possible is an
   achievement whatever it looks like, that the promise is the purpose and not the scope, and
   that choosing where to cut the work is the design — something the harness can make visible but
