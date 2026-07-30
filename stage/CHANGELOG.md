@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- State who reads a Stage document and at what level. The writing rules said only what not to
+  write, so the writer picked the audience, and bodies came out readable only to someone who had
+  already read the code. The rules now name a reader who has never opened the codebase, list what
+  that reader does and does not know, and carve out the terms whose meaning another location owns.
+  Four rules follow from the reader: write at that level, name a thing before using its name, one
+  new term per sentence, and never buy brevity by dropping a step. A fifth rejects a word
+  assembled by translating an English term piece by piece, in every language a body uses.
 - Extend safe guidance refresh and drift comparison from empty tables to empty list containers,
   preserving each bullet with its indented continuation lines, skipping project documents that
   lack the declared container, and refusing every combination of multiple empty containers.
