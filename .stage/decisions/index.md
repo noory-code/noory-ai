@@ -7,4 +7,5 @@
 | 결정 | 상태 | 소유자 | 링크 |
 |---|---|---|---|
 | DE-00000049 | decided | stage-roadmap | [pending/DE-00000049.md](pending/DE-00000049.md) |
+| DE-00000050 | decided | W-00000162 | [pending/DE-00000050.md](pending/DE-00000050.md) |
 
