@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Say which command a card should store. Nothing told the writer, so cards stored the whole test
+  suite, and the driver paid that cost on every round — twice over when a review sent the work
+  back. A card now stores the smallest command that fails when its own result breaks, and the full
+  suite runs once at the finish, where `close_work.py` already runs the stored commands together
+  with every check passed to it. The trade is stated where the rule is: a narrow command watches
+  nothing but this card, so breakage elsewhere surfaces only at close — still before the human
+  commits.
 - Carry out a rejection. Rejecting a planned card is a human decision that ends the work, and
   nothing could act on it: the archiver looked only in current work, the archive intent could not
   resolve a planned card, editing the card at its archive location demanded the archived status it

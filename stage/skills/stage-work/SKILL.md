@@ -120,6 +120,19 @@ next free number, writes the card, and updates the owning index:
   cannot be started: the driver refuses an item whose acceptance command is missing, and a human
   reading it has to redo the thinking that was skipped.
 
+- Store the smallest command that fails when this card's own result breaks — one test file, or one
+  test name. A card that only changes documents can store the audit alone. If the command can fail
+  for a reason unrelated to this card, it is still too wide.
+
+  The driver re-runs the stored command on every round, so its cost is paid again each time a
+  review sends the work back. The whole suite belongs at the finish instead: `close_work.py` runs
+  the stored commands **and** every `--check` passed to it, so a narrow card still meets the full
+  suite before it closes.
+
+  This buys speed with lateness. A narrow command watches this card's result and nothing else, so
+  a change that breaks something elsewhere passes every round and surfaces only at close — before
+  the human commits, which is what makes the trade safe.
+
 - Write the card so it stands on its own. **An identifier is not a meaning.** "Carry what
   DE-00000046 decided into the docs" tells a reader nothing until they open two other files; write
   what was decided, then cite the record. The same holds for audit codes, field names, and sibling
