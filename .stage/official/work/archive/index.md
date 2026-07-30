@@ -139,3 +139,6 @@
 | W-00000156 | completed | [items/W-00000156/_story.md](items/W-00000156/_story.md) |
 | W-00000092 | rejected | [items/W-00000092/_story.md](items/W-00000092/_story.md) |
 | W-00000155 | completed | [items/W-00000155/_story.md](items/W-00000155/_story.md) |
+| W-00000158 | completed | [items/W-00000158/_story.md](items/W-00000158/_story.md) |
+| W-00000160 | completed | [items/W-00000160/_story.md](items/W-00000160/_story.md) |
+| W-00000159 | completed | [items/W-00000159/_story.md](items/W-00000159/_story.md) |
