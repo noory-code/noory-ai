@@ -6,4 +6,4 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
-| W-00000139 | passed | completed | not_applicable | [current/W-00000139/_story.md](current/W-00000139/_story.md) |
+| W-00000141 | passed | completed | promoted | [current/W-00000141/_story.md](current/W-00000141/_story.md) |

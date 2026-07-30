@@ -6,3 +6,5 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000140 | fix | codex |  | active | Claude | [current/W-00000140/_story.md](current/W-00000140/_story.md) |
+| W-00000142 | fix | codex |  | active | Claude | [current/W-00000142/_story.md](current/W-00000142/_story.md) |
