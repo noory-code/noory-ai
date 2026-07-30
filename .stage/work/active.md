@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000158 | documentation | claude | 카드마다 전체 시험을 저장해서 드라이버가 한 바퀴 돌 때마다 80초를 낸다 | active | claude | [current/W-00000158/_story.md](current/W-00000158/_story.md) |
