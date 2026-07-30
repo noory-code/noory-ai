@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reap timed-out parallel work through the persisted executor or reviewer role instead of
+  inferring it from report headings, while reporting the legacy log-inference fallback when
+  older run state has no active role.
 - Keep supervised executor, acceptance, and reviewer infrastructure failures from spending a work
   attempt, using the same transport and tool-failure classification as unattended execution while
   continuing to count substantive executor, acceptance, and review failures.
