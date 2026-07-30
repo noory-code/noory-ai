@@ -13,12 +13,19 @@ from pathlib import Path
 
 STAGE_ROOT = Path(__file__).resolve().parents[2]
 HOOK_ROOT = STAGE_ROOT / "hooks"
+HOOK_TEST_ROOT = HOOK_ROOT / "tests"
 ROADMAP = STAGE_ROOT / "skills" / "stage-roadmap" / "manage_roadmap.py"
 REGISTER = STAGE_ROOT / "skills" / "stage-work" / "register_work.py"
 ARCHIVE = STAGE_ROOT / "skills" / "stage-archive" / "archive_work.py"
 V4_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "v4" / "project-stage"
-if str(HOOK_ROOT) not in sys.path:
-    sys.path.insert(0, str(HOOK_ROOT))
+for import_root in (HOOK_ROOT, HOOK_TEST_ROOT):
+    if str(import_root) not in sys.path:
+        sys.path.insert(0, str(import_root))
+
+from hook_test_environment import sanitize_current_hook_environment  # noqa: E402
+
+
+sanitize_current_hook_environment()
 
 import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402

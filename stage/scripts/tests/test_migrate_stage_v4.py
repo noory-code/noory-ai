@@ -16,8 +16,16 @@ from unittest.mock import patch
 
 STAGE_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_ROOT = STAGE_ROOT / "scripts"
+HOOK_TEST_ROOT = STAGE_ROOT / "hooks" / "tests"
 V3_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "project-stage"
 SKILL_CLI = STAGE_ROOT / "skills" / "stage-migrate" / "migrate_stage.py"
+if str(HOOK_TEST_ROOT) not in sys.path:
+    sys.path.insert(0, str(HOOK_TEST_ROOT))
+
+from hook_test_environment import sanitize_current_hook_environment  # noqa: E402
+
+
+sanitize_current_hook_environment()
 
 
 def load_module(name: str, path: Path):
