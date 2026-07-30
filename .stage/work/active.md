@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000143 | design | claude | 쌓이는 자리가 자동 갱신을 되찾는 길을 정한다 | active | claude | [current/W-00000143/_story.md](current/W-00000143/_story.md) |
