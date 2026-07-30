@@ -79,7 +79,11 @@ record never triggers the question.
 Prepare the inputs for `register_work.py`; the CLI selects the registry template, allocates the
 next free number, writes the card, and updates the owning index:
 
-- `id`, `title` — the outcome, not the steps.
+- `id`, `title` — name the work: what this card does, as an action. A reader who sees only the
+  title must be able to tell it is work to carry out, not a fact already true. Write "state what
+  `decision_refs` holds in the docs", never "the docs state what `decision_refs` holds" — the
+  second reads as a settled fact and hides that anything is pending. Keep it to the work itself,
+  not its steps; the outcome and the value belong in `## Purpose` and `## User value`.
 - `kind` — the project's work vocabulary (`feature`, `fix`, `chore`, `documentation`, …). Each
   kind's `passed` criterion lives in the project's `.stage/operations/verification.md`.
 - `venue` — the execution surface that should carry it out. When `settings.json` declares
@@ -97,7 +101,29 @@ next free number, writes the card, and updates the owning index:
   or an action inside a story.
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
   the human selected that active milestone.
-- `## Purpose`, `## Scope`, `## Success criteria` — concrete and checkable.
+- The body must answer four questions, each in its own section. A card that leaves any of them
+  empty is not a work item — it is a note, and whoever picks it up will invent the missing answer:
+
+  | Question | Section |
+  |---|---|
+  | 무엇을 하는가 | `## Actions` — the work itself, and `## Scope` for the paths it may touch |
+  | 왜 지금 하는가 | `## Purpose` — what is wrong today, with the evidence that it is wrong |
+  | 무엇을 이루려는가 | `## User value` — what someone can do afterwards that they cannot do now |
+  | 언제 끝나는가 | `## Success criteria` — checkable, and at least one of them names a result a person experiences, not only a structure that exists |
+
+  Capturing a card for later (`--backlog`) does not exempt it. A planned card with an empty body
+  cannot be started: the driver refuses an item whose acceptance command is missing, and a human
+  reading it has to redo the thinking that was skipped.
+
+- Write the card so it stands on its own. **An identifier is not a meaning.** "Carry what
+  DE-00000046 decided into the docs" tells a reader nothing until they open two other files; write
+  what was decided, then cite the record. The same holds for audit codes, field names, and sibling
+  cards: say what the thing is and why it matters, and put the identifier after that as the place
+  to verify it.
+
+- Leave out what the card does not need. Progress notes, tool output, and the order you happened to
+  do things belong in the shared work log; the card carries the work, its reason, its goal, and its
+  finish line. A card that records every step buries the four answers a reader came for.
 
 ## Confirm, then register
 

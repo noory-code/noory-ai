@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Require a work card's title to name the work as an action. Titles written as the finished state
+  ("the docs state what the field holds") read as settled facts, so a reader seeing only the title
+  cannot tell that anything is still pending; the outcome belongs in `## Purpose` instead.
+- State the four questions a work card must answer — what it does, why now, what it achieves, and
+  when it is finished — and which section owns each. A card missing any of them is a note, and
+  whoever picks it up invents the missing answer; capturing for later does not exempt it.
+
 ## 0.55.1 — 2026-07-30
 
 - Allow archive intents to reopen schema-v5 epic, story, and action records by deriving
