@@ -7,5 +7,4 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000161 | development | codex | 쓰기 직전에 무엇을 위한 일인지 다시 띄운다 | active | codex | [current/W-00000161/_story.md](current/W-00000161/_story.md) |
-| W-00000162 | design | claude | 무엇을 어느 자리에서 띄울지 정한다 | active | claude | [current/W-00000161/W-00000162.md](current/W-00000161/W-00000162.md) |
 | W-00000163 | development | codex | 정한 대로 쓰기 직전 훅에 싣는다 | active | codex | [current/W-00000161/W-00000163.md](current/W-00000161/W-00000163.md) |
