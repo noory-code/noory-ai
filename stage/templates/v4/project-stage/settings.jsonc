@@ -16,11 +16,17 @@
   },
   // Registers additional host tool names that can write files.
   "extra_write_tools": [],
-  // Executor commands are project-specific. Give both venue prompts these instructions:
+  // Executor commands are project-specific. Put each tool's explicit model option, such as
+  // --model <model>, directly in all executor and review command strings; do not rely on a
+  // user-home default. Give both venue prompts these instructions:
   // Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they are the whole instruction.
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
   // each exact criterion string in Review dispositions (JSON).
   // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
+  "executors": {
+    "claude": "",
+    "codex": ""
+  },
   // Optional venue checks run before an executor attempt. A missing venue warns; null explicitly
   // declares that the venue needs no check. Replace null with a non-empty command to enable one.
   "preflights": {

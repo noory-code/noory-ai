@@ -1137,6 +1137,28 @@ def append_failure_to_work_log(
         raise RuntimeError(f"cannot append failure to work log {log_path}: {exc}") from exc
 
 
+def append_driver_commands_to_work_log(
+    log_path: Path,
+    *,
+    executor_command: str,
+    reviewer_command: str,
+) -> None:
+    """Append the exact configured commands selected for one driver round."""
+
+    entry = (
+        "\n### Driver commands\n"
+        f"Executor command: {json.dumps(executor_command)}\n"
+        f"Reviewer command: {json.dumps(reviewer_command)}\n"
+    )
+    try:
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(entry)
+    except OSError as exc:
+        raise RuntimeError(
+            f"cannot append driver commands to work log {log_path}: {exc}"
+        ) from exc
+
+
 def append_reap_warning_to_work_log(
     log_path: Path,
     *,
@@ -1958,6 +1980,20 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             ):
                 return 1
             continue
+        review_config = load_review_config(stage_root)
+        reviewer_command, reviewer_error = resolve_independent_review_command(
+            review_config,
+            item.venue,
+        )
+        if reviewer_error or not reviewer_command:
+            if not escalate_and_commit(
+                project_root,
+                item.item_id,
+                reviewer_error or "independent reviewer command missing",
+                cmd_timeout,
+            ):
+                return 1
+            continue
         if not run_preflight(
             stage_root=stage_root,
             project_root=project_root,
@@ -2018,6 +2054,11 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         try:
             log_path = ensure_work_log(stage_root, item.item_id)
             verdict_file = review_verdict_path(stage_root, item.item_id)
+            append_driver_commands_to_work_log(
+                log_path,
+                executor_command=executor_command,
+                reviewer_command=reviewer_command,
+            )
             log_before = read_work_log(log_path)
             pending_findings = review_verdict_failures(verdict_file)
             repository_before = repository_fingerprint(project_root)
@@ -2240,7 +2281,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             )
 
         reviewer_venue = resolve_independent_reviewer_venue(
-            load_review_config(stage_root),
+            review_config,
             item.venue,
         )
         while True:
@@ -2678,6 +2719,11 @@ def main() -> int:
     try:
         log_path = ensure_work_log(stage_root, item.item_id)
         verdict_file = review_verdict_path(stage_root, item.item_id)
+        append_driver_commands_to_work_log(
+            log_path,
+            executor_command=executor_command,
+            reviewer_command=reviewer_command,
+        )
         log_before = read_work_log(log_path)
         previous_verdict, _previous_verdict_error = (
             load_driver_review_verdict(verdict_file)

@@ -830,6 +830,33 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
 
+    def test_execute_records_the_exact_executor_and_reviewer_commands_in_the_work_log(self):
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        reviewer = approving_reviewer_command()
+        tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("### Driver commands", log)
+        self.assertIn(f"Executor command: {json.dumps(executor)}", log)
+        self.assertIn(f"Reviewer command: {json.dumps(reviewer)}", log)
+
     def test_execute_reaps_executor_and_reviewer_turns_on_success(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker_root = Path(marker_tmp)

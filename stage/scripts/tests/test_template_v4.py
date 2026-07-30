@@ -111,6 +111,50 @@ class TemplateV4Test(unittest.TestCase):
 
         self.assertEqual(set(settings["executors"]), set(settings["preflights"]))
 
+    def test_project_pins_the_current_model_in_all_eight_driver_commands(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        commands = {
+            "executor.claude": settings["executors"]["claude"],
+            "executor.codex": settings["executors"]["codex"],
+            "reviewer.claude": settings["review"]["reviewers"]["claude"],
+            "reviewer.codex": settings["review"]["reviewers"]["codex"],
+            **{
+                f"strength.{name}": command
+                for name, command in settings["review"]["strengths"].items()
+                if command is not None
+            },
+        }
+
+        self.assertEqual(8, len(commands))
+        for name, command in commands.items():
+            with self.subTest(name=name):
+                expected_model = (
+                    "--model 'opus[1m]'"
+                    if name in {"executor.claude", "reviewer.claude"}
+                    else "--model gpt-5.6-sol"
+                )
+                self.assertIn(expected_model, command)
+
+    def test_v4_settings_template_exposes_all_eight_model_pinning_positions(self):
+        settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+        settings = json.loads(
+            "\n".join(
+                line
+                for line in settings_text.splitlines()
+                if not line.lstrip().startswith("//")
+            )
+        )
+        commands = list(settings["executors"].values())
+        commands += list(settings["review"]["reviewers"].values())
+        commands += [
+            command
+            for command in settings["review"]["strengths"].values()
+            if command is not None
+        ]
+
+        self.assertEqual(8, len(commands))
+        self.assertIn("--model", settings_text)
+
     def test_executor_prompts_share_ancestor_and_cumulative_reporting_instructions(self):
         ancestor_instruction = (
             "Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card "

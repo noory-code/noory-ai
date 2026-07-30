@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Pin all project driver executor and review commands to their existing models, expose the same
+  eight command positions in new-project settings, and record each supervised or unattended
+  round's exact executor and reviewer commands in its shared work log.
 - Require a work card's title to name the work as an action. Titles written as the finished state
   ("the docs state what the field holds") read as settled facts, so a reader seeing only the title
   cannot tell that anything is still pending; the outcome belongs in `## Purpose` instead.

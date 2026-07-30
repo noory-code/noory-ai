@@ -515,6 +515,34 @@ class UnattendedTest(unittest.TestCase):
         )
         self.assertEqual([], [call for call in calls if call[0] == "escalate"])
 
+    def test_unattended_records_the_exact_executor_and_reviewer_commands(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+
+        rc = drive.run_unattended(
+            self.args(root, "W-00000001"), root, stage_root, time.time()
+        )
+        log = (
+            stage_root / ".runtime/driver/logs/W-00000001.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, rc)
+        self.assertIn("### Driver commands", log)
+        self.assertIn(f"Executor command: {json.dumps(EXECUTOR_WRITE)}", log)
+        self.assertIn(
+            f"Reviewer command: {json.dumps('echo APPROVED')}",
+            log,
+        )
+
     def test_refuses_without_limits(self):
         root, stage_root = self.make(limits=None)
         self.card(stage_root, "W-00000001")
@@ -992,7 +1020,7 @@ class UnattendedTest(unittest.TestCase):
 
         self.assertEqual(0, rc)
         self.assertEqual(2, len(close_calls))
-        self.assertEqual(1, log.count("### Executor report"))
+        self.assertEqual(1, log.splitlines().count("### Executor report"))
         self.assertEqual(1, state["items"]["W-00000001"]["attempt_count"])
 
     def test_review_failure_with_timeout_text_is_not_an_infrastructure_retry(self):

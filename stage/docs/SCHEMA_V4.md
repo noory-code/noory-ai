@@ -217,7 +217,10 @@ decomposition.
 
 The review-sibling `executors` object in `.stage/settings.json` binds each item venue to its
 executor command. Variable expansion syntax is shell-specific because the driver runs these
-commands through the platform shell. On macOS and Linux, use POSIX syntax:
+commands through the platform shell. Every non-null command in `executors`,
+`review.reviewers`, and `review.strengths` must select its model inside the command string; the
+driver does not interpret tool-specific model syntax or inherit a project model setting. On macOS
+and Linux, use POSIX syntax:
 
 ```json
 {
@@ -238,6 +241,10 @@ On Windows, `shell=True` uses `cmd.exe`, so use percent-delimited variable synta
   }
 }
 ```
+
+For each supervised `--execute` or unattended round, the shared work log records the exact selected
+executor and reviewer command strings under `### Driver commands`. The strings are JSON-quoted so
+embedded shell quotes and line breaks remain readable without changing the command.
 
 Before the driver launches an executor in supervised execute mode or unattended mode, it copies
 the current process environment and sets:
