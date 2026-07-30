@@ -1163,6 +1163,85 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
+    def test_allows_archive_intent_for_planned_rejected_item_without_retrospective(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(
+                root,
+                "settings.json",
+                json.dumps({"schema_version": 5}),
+            )
+            self.write_stage_file(
+                root,
+                "work/planned/W-0001/_story.md",
+                (
+                    "---\n"
+                    "id: W-0001\n"
+                    "title: Rejected planned work\n"
+                    "status: rejected\n"
+                    "scope:\n"
+                    "promotes:\n"
+                    "---\n"
+                    "# W-0001 Rejected planned work\n"
+                ),
+            )
+            target = ".stage/official/work/archive/items/W-0001/_story.md"
+            self.write_promotion_intent(
+                root,
+                paths=[target],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": target,
+                    "content": "# W-0001\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+
+    def test_blocks_promotion_intent_for_planned_rejected_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(
+                root,
+                "settings.json",
+                json.dumps({"schema_version": 5}),
+            )
+            self.write_stage_file(
+                root,
+                "work/planned/W-0001/_story.md",
+                (
+                    "---\n"
+                    "id: W-0001\n"
+                    "title: Rejected planned work\n"
+                    "status: rejected\n"
+                    "scope:\n"
+                    "promotes: .stage/official/canon/principles.md\n"
+                    "---\n"
+                    "# W-0001 Rejected planned work\n"
+                ),
+            )
+            target = ".stage/official/canon/principles.md"
+            self.write_promotion_intent(root, paths=[target])
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": target,
+                    "content": "# Principles\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("work_item", reason(result))
+
     def test_blocks_archive_intent_for_rejected_item_without_retrospective(self):
         # Rejection reasons are learning assets: rejected items record their
         # completed retrospective before archiving, like completed ones.
@@ -1179,6 +1258,52 @@ class StageGuardTest(unittest.TestCase):
                 "cwd": str(root),
                 "tool_input": {
                     "file_path": ".stage/past/work/archive/items/W-0001.md",
+                    "content": "# W-0001\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("retrospective", reason(result).lower())
+
+    def test_v5_blocks_archive_intent_for_current_rejected_item_without_retrospective(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(
+                root,
+                "settings.json",
+                json.dumps({"schema_version": 5}),
+            )
+            self.write_stage_file(
+                root,
+                "work/current/W-0001/_story.md",
+                (
+                    "---\n"
+                    "id: W-0001\n"
+                    "title: Rejected current work\n"
+                    "status: rejected\n"
+                    "verification: pending\n"
+                    "retrospective: pending\n"
+                    "retrospective_ref:\n"
+                    "promotion: rejected\n"
+                    "scope:\n"
+                    "promotes:\n"
+                    "---\n"
+                    "# W-0001 Rejected current work\n"
+                ),
+            )
+            target = ".stage/official/work/archive/items/W-0001/_story.md"
+            self.write_promotion_intent(
+                root,
+                paths=[target],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": target,
                     "content": "# W-0001\n",
                 },
             }

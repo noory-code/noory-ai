@@ -245,6 +245,118 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertTrue((root / ".stage/present/work/items/W-00000001.md").exists())
             self.assertFalse((root / ".stage/past/work/archive/items/W-00000001.md").exists())
 
+    def test_refuses_current_rejected_item_without_retrospective(self):
+        tmp, root = self.make_stage(status="rejected", retro="pending")
+        with tmp:
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 1, proc.stderr + proc.stdout)
+            self.assertIn("retrospective is not completed", proc.stdout)
+            self.assertTrue((root / ".stage/present/work/items/W-00000001.md").exists())
+            self.assertFalse((root / ".stage/past/work/archive/items/W-00000001.md").exists())
+
+    def test_v5_refuses_current_rejected_story_without_retrospective(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            item_id = "W-00000001"
+            current_unit = stage / f"work/current/{item_id}"
+            current_unit.mkdir(parents=True)
+            current_item = current_unit / "_story.md"
+            current_item.write_text(
+                (
+                    "---\n"
+                    f"id: {item_id}\n"
+                    "title: Reject current work\n"
+                    "kind: fix\n"
+                    "venue: codex\n"
+                    "status: rejected\n"
+                    "verification: pending\n"
+                    "retrospective: pending\n"
+                    "retrospective_ref:\n"
+                    "promotion: rejected\n"
+                    "review: not_required\n"
+                    "scope: src/\n"
+                    "---\n\n"
+                    f"# {item_id} Reject current work\n"
+                ),
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, item_id)
+
+            self.assertEqual(1, proc.returncode, proc.stdout + proc.stderr)
+            self.assertIn("retrospective is not completed", proc.stdout)
+            self.assertTrue(current_item.exists())
+            self.assertFalse(
+                (stage / f"official/work/archive/items/{item_id}").exists()
+            )
+
+    def test_v5_archives_planned_rejected_story_without_retrospective(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            item_id = "W-00000001"
+            planned_unit = stage / f"work/planned/{item_id}"
+            planned_unit.mkdir(parents=True)
+            planned_item = planned_unit / "_story.md"
+            planned_item.write_text(
+                (
+                    "---\n"
+                    f"id: {item_id}\n"
+                    "title: Reject planned work\n"
+                    "kind: fix\n"
+                    "venue: codex\n"
+                    "status: rejected\n"
+                    "scope: src/\n"
+                    "---\n\n"
+                    f"# {item_id} Reject planned work\n\n"
+                    "Rejected because the premise no longer holds.\n"
+                ),
+                encoding="utf-8",
+            )
+            planned_index = stage / "work/planned/index.md"
+            planned_index.write_text(
+                planned_index.read_text(encoding="utf-8")
+                + f"| {item_id} | rejected | [Reject planned work]"
+                f"({item_id}/_story.md) |\n",
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, item_id)
+            self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+            audit_proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUDIT_CLI_PATH),
+                    "--project-root",
+                    str(root),
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            archived_item = (
+                stage / f"official/work/archive/items/{item_id}/_story.md"
+            )
+            archived_text = archived_item.read_text(encoding="utf-8")
+            archive_index = (
+                stage / "official/work/archive/index.md"
+            ).read_text(encoding="utf-8")
+            planned_index_text = planned_index.read_text(encoding="utf-8")
+            planned_unit_exists = planned_unit.exists()
+
+        self.assertFalse(planned_unit_exists)
+        self.assertIn("status: archived", archived_text)
+        self.assertIn("terminal_disposition: rejected", archived_text)
+        self.assertIn("Rejected because the premise no longer holds.", archived_text)
+        self.assertIn(f"| {item_id} | rejected |", archive_index)
+        self.assertNotIn(item_id, planned_index_text)
+        self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
+        self.assertIn("Summary: errors=0", audit_proc.stdout)
+
     def test_refuses_retrospective_id_collision_with_different_work_item(self):
         tmp, root = self.make_stage()
         with tmp:

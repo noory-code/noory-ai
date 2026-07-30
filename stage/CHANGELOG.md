@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Carry out a rejection. Rejecting a planned card is a human decision that ends the work, and
+  nothing could act on it: the archiver looked only in current work, the archive intent could not
+  resolve a planned card, editing the card at its archive location demanded the archived status it
+  was on the way to receiving, and starting a rejected card is invalid by design. So a rejected
+  card sat in the planned index with no exit. Archiving now reaches planned hierarchies, asks for
+  no retrospective from work that never started — its card body owns the rejection reason — and
+  drops the planned-index row. The audit grants the same narrow exemption, so the archived card no
+  longer reports a missing retrospective or the lifecycle fields a planned card never had. Current
+  rejected work still needs its completed retrospective, and a promotion intent still cannot name
+  a planned card.
 - State who reads a Stage document and at what level. The writing rules said only what not to
   write, so the writer picked the audience, and bodies came out readable only to someone who had
   already read the code. The rules now name a reader who has never opened the codebase, list what

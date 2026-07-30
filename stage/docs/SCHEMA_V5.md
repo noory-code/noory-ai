@@ -30,6 +30,21 @@ W-INDEPENDENT-STORY/
 Lifecycle moves operate on the top-level directory. A hierarchy is therefore started, closed,
 and archived as one move unit while each record keeps its own lifecycle fields and retrospective.
 
+## Rejected planned work
+
+`rejected` is a terminal status in both `work/planned/` and `work/current/`, but the two locations
+record different histories.
+
+- A hierarchy rejected in `work/planned/` never entered the current lifecycle. Every record in the
+  move unit must be `rejected`; its card body owns the rejection reason, and archiving requires no
+  retrospective.
+- A hierarchy rejected in `work/current/` was started. Every record still requires a completed
+  retrospective and its `retrospective_ref` before archiving.
+- An archive intent may name a rejected planned card. A promotion intent may not use a planned
+  card as its work item.
+- Starting a rejected planned card remains invalid. Its next lifecycle transition is direct
+  archival, not start.
+
 ## Runtime boundary
 
 `stage_record_paths.record_paths()` is the recursive filesystem boundary. Runtime work consumers

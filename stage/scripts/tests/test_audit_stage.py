@@ -769,12 +769,57 @@ class StageAuditTest(unittest.TestCase):
                 retrospective="pending",
                 promotion="rejected",
                 location="archive",
+                terminal_disposition="rejected",
             )
             self.append_archive_index(root, "W-0001", "rejected")
 
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("ARCHIVE003", finding_codes(findings))
+
+    def test_archived_planned_rejection_needs_no_current_lifecycle_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            archived = (
+                root
+                / ".stage"
+                / "official"
+                / "work"
+                / "archive"
+                / "items"
+                / "W-0001"
+                / "_story.md"
+            )
+            archived.parent.mkdir(parents=True, exist_ok=True)
+            archived.write_text(
+                (
+                    "---\n"
+                    "id: W-0001\n"
+                    "title: Rejected planned work\n"
+                    "kind: fix\n"
+                    "venue: codex\n"
+                    "status: archived\n"
+                    "terminal_disposition: rejected\n"
+                    "review: not_required\n"
+                    "---\n"
+                    "# W-0001 Rejected planned work\n\n"
+                    "Rejected before work started.\n"
+                ),
+                encoding="utf-8",
+            )
+            self.append_archive_index(root, "W-0001", "rejected")
+
+            findings = audit_stage.Audit(root).run()
+
+        unexpected_codes = {
+            finding.code
+            for finding in findings
+            if finding.path.endswith(
+                "official/work/archive/items/W-0001/_story.md"
+            )
+        } & {"ARCHIVE003", "WORK001", "WORK004", "WORK005", "WORK006"}
+        self.assertEqual(set(), unexpected_codes)
 
     def test_archive_index_row_requires_existing_item(self):
         with tempfile.TemporaryDirectory() as tmp:

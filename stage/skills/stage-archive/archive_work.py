@@ -135,6 +135,16 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]
     )
 
 
+def _planned_paths(stage_root: Path) -> tuple[str, str]:
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        paths = v4_lifecycle_paths()
+        return paths.planned_cards, paths.planned_index
+    return (
+        Path("future", "backlog", "items").as_posix(),
+        Path("future", "backlog", "index.md").as_posix(),
+    )
+
+
 def completed_ids_from_review(stage_root: Path) -> list[str]:
     _, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
     review = stage_root / review_relative
@@ -180,31 +190,42 @@ def archive_one(
         review_relative,
         index_relative,
     ) = _archive_paths(stage_root)
+    planned_root, planned_index_relative = _planned_paths(stage_root)
     current_items_root = stage_root / current_root
+    planned_items_root = stage_root / planned_root
     archive_items_root = stage_root / archive_root
-    present_item = record_path(current_items_root, item_id)
+    current_item = record_path(current_items_root, item_id)
+    planned_item = record_path(planned_items_root, item_id)
     archived_match = record_path(archive_items_root, item_id)
 
-    if archived_match.exists() and not present_item.exists():
+    source_matches = [path for path in (current_item, planned_item) if path.exists()]
+    if archived_match.exists() and not source_matches:
         return f"{item_id}: already archived (skipped)"
-    if not present_item.exists():
-        return f"{item_id}: ERROR no present item file"
+    if not source_matches:
+        return f"{item_id}: ERROR no current or planned item file"
+    if len(source_matches) != 1:
+        return f"{item_id}: ERROR work item exists in both current and planned"
+    source_item = source_matches[0]
+    source_items_root = (
+        planned_items_root if source_item == planned_item else current_items_root
+    )
+    source_is_planned = source_item == planned_item
 
-    present_unit = top_level_item_path(current_items_root, present_item)
-    if present_unit.is_dir() and present_item.parent != present_unit:
+    source_unit = top_level_item_path(source_items_root, source_item)
+    if source_unit.is_dir() and source_item.parent != source_unit:
         return (
             f"{item_id}: ERROR archive the top-level hierarchy "
-            f"{present_unit.name}, not a nested item"
+            f"{source_unit.name}, not a nested item"
         )
-    archive_unit = archive_items_root / present_unit.name
+    archive_unit = archive_items_root / source_unit.name
     if archive_unit.exists():
         return f"{item_id}: ERROR archive move unit already exists: {archive_unit}"
     records = (
-        (present_item, *record_paths(present_unit))
-        if present_unit.is_dir()
-        else (present_item,)
+        (source_item, *record_paths(source_unit))
+        if source_unit.is_dir()
+        else (source_item,)
     )
-    record_data: list[tuple[Path, str, str, str, Path]] = []
+    record_data: list[tuple[Path, str, str, str, Path | None]] = []
     dirty_paths: set[str] = set()
     for record in records:
         text = record.read_text(encoding="utf-8")
@@ -214,6 +235,11 @@ def archive_one(
             return (
                 f"{item_id}: ERROR hierarchy record {record_id} status `{status}` "
                 "is not completed/rejected"
+            )
+        if source_is_planned and status != "rejected":
+            return (
+                f"{item_id}: ERROR planned hierarchy record {record_id} status "
+                f"`{status}` is not rejected"
             )
         try:
             dirty_paths.update(
@@ -226,6 +252,9 @@ def archive_one(
             return (
                 f"{item_id}: ERROR cannot verify worktree state; refusing to archive: {exc}"
             )
+        if source_is_planned:
+            record_data.append((record, record_id, status, "", None))
+            continue
         if frontmatter_field(text, "retrospective") != "completed":
             return f"{item_id}: ERROR {record_id} retrospective is not completed"
         ref = frontmatter_field(text, "retrospective_ref")
@@ -248,35 +277,37 @@ def archive_one(
         return f"{item_id}: ERROR non-terminal children still name it as parent: {detail}"
 
     index_path = stage_root / index_relative
+    planned_index_path = stage_root / planned_index_relative
     active_path = stage_root / active_relative
     review_path = stage_root / review_relative
     for _record, record_id, _status, ref, _present_retro in record_data:
-        archive_retro = record_path(stage_root / archive_retro_root, ref)
-        if archive_retro.exists():
-            archived_work_item = frontmatter_field(
-                archive_retro.read_text(encoding="utf-8"), "work_item"
-            )
-            if archived_work_item and archived_work_item != record_id:
-                return (
-                    f"{item_id}: ERROR retrospective id collision: {ref}.md already "
-                    f"belongs to {archived_work_item}; refusing to overwrite it"
+        if ref:
+            archive_retro = record_path(stage_root / archive_retro_root, ref)
+            if archive_retro.exists():
+                archived_work_item = frontmatter_field(
+                    archive_retro.read_text(encoding="utf-8"), "work_item"
                 )
+                if archived_work_item and archived_work_item != record_id:
+                    return (
+                        f"{item_id}: ERROR retrospective id collision: {ref}.md already "
+                        f"belongs to {archived_work_item}; refusing to overwrite it"
+                    )
         failed_intents = delete_pending_intents_for_work_item(stage_root, record_id)
         if failed_intents:
             names = ", ".join(path.name for path in failed_intents)
             return f"{item_id}: ERROR cannot delete pending intent(s): {names}"
 
-    root_text = present_item.read_text(encoding="utf-8")
+    root_text = source_item.read_text(encoding="utf-8")
     root_status = frontmatter_field(root_text, "status")
     for record, _record_id, status, _ref, _present_retro in record_data:
         relative = (
-            record.relative_to(present_unit)
-            if present_unit.is_dir()
+            record.relative_to(source_unit)
+            if source_unit.is_dir()
             else Path(record.name)
         )
         target = (
             archive_unit / relative
-            if present_unit.is_dir()
+            if source_unit.is_dir()
             else archive_unit
         )
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -292,6 +323,8 @@ def archive_one(
             )
         target.write_text(archived_text, encoding="utf-8")
     for _record, _record_id, _status, ref, present_retro in record_data:
+        if not ref or present_retro is None:
+            continue
         archive_retro = record_path(stage_root / archive_retro_root, ref)
         archive_retro.parent.mkdir(parents=True, exist_ok=True)
         archive_retro.write_text(
@@ -312,33 +345,48 @@ def archive_one(
         ),
         encoding="utf-8",
     )
-    active_text = (
-        active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    )
-    review_text = (
-        review_path.read_text(encoding="utf-8") if review_path.exists() else ""
+    active_text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
+    review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
+    planned_index_text = (
+        planned_index_path.read_text(encoding="utf-8")
+        if planned_index_path.exists()
+        else ""
     )
     for record, record_id, _status, _ref, _present_retro in record_data:
-        record_link = relative_record_link(
-            active_relative,
-            record.relative_to(stage_root).as_posix(),
-        )
-        active_text = drop_table_row(active_text, record_id, record_link)
-        review_link = relative_record_link(
-            review_relative,
-            record.relative_to(stage_root).as_posix(),
-        )
-        review_text = drop_table_row(review_text, record_id, review_link)
-    if active_path.exists():
+        if source_is_planned:
+            planned_link = relative_record_link(
+                planned_index_relative,
+                record.relative_to(stage_root).as_posix(),
+            )
+            planned_index_text = drop_table_row(
+                planned_index_text,
+                record_id,
+                planned_link,
+            )
+        else:
+            record_link = relative_record_link(
+                active_relative,
+                record.relative_to(stage_root).as_posix(),
+            )
+            active_text = drop_table_row(active_text, record_id, record_link)
+            review_link = relative_record_link(
+                review_relative,
+                record.relative_to(stage_root).as_posix(),
+            )
+            review_text = drop_table_row(review_text, record_id, review_link)
+    if active_path.exists() and not source_is_planned:
         active_path.write_text(active_text, encoding="utf-8")
-    if review_path.exists():
+    if review_path.exists() and not source_is_planned:
         review_path.write_text(review_text, encoding="utf-8")
-    if present_unit.is_dir():
-        shutil.rmtree(present_unit)
+    if planned_index_path.exists() and source_is_planned:
+        planned_index_path.write_text(planned_index_text, encoding="utf-8")
+    if source_unit.is_dir():
+        shutil.rmtree(source_unit)
     else:
-        present_unit.unlink()
+        source_unit.unlink()
     for _record, _record_id, _status, _ref, present_retro in record_data:
-        present_retro.unlink()
+        if present_retro is not None:
+            present_retro.unlink()
     return (
         f"{item_id}: archived hierarchy ({len(record_data)} record(s), "
         f"final status {root_status})"

@@ -36,6 +36,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     item_is_completed,
     item_promotes_path,
     load_archive_work_items,
+    load_planned_work_items,
     load_work_items,
     parse_frontmatter,
     retrospective_ref_id,
@@ -418,24 +419,31 @@ def intent_validation_blocker(
     if not work_item_id:
         return "Stage promotion gate violation: the promotion intent has no work_item."
 
+    intent_type = str(intent.get("type") or "promotion").strip().lower()
     items = load_work_items(stage_root) + load_archive_work_items(stage_root)
+    if intent_type == "archive":
+        items += load_planned_work_items(stage_root)
     matched = [item for item in items if item.item_id == work_item_id or item.path.stem == work_item_id]
     if not matched:
         return f"Stage promotion gate violation: work_item `{work_item_id}` was not found."
 
     item = matched[0]
-    intent_type = str(intent.get("type") or "promotion").strip().lower()
     if intent_type == "archive":
         if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
             archive_zone = stage_topology.get_zone("work", "official")
             archive_root = archive_zone.canonical_path
             archive_items_root = stage_topology.card_location_for_status("archived")
             archive_index = archive_zone.index_surfaces[0]
+            planned_items_root = stage_topology.get_zone(
+                "work", "planned"
+            ).canonical_path
         else:
             archive_zone = stage_topology.get_zone("work", "official")
             archive_root = archive_zone.v3_relocation_origin or ""
             archive_items_root = f"{archive_root}/items"
             archive_index = f"{archive_root}/index.md"
+            planned_zone = stage_topology.get_zone("work", "planned")
+            planned_items_root = planned_zone.v3_relocation_origin or ""
         if not all(path_targets_stage_archive(path) for path in target_paths):
             return (
                 "Stage archive gate violation: an archive intent may only target "
@@ -475,20 +483,31 @@ def intent_validation_blocker(
             in_archive = True
         except ValueError:
             in_archive = False
+        try:
+            item.path.relative_to(stage_root / planned_items_root)
+            in_planned = True
+        except ValueError:
+            in_planned = False
         if in_archive:
             if item.status != "archived":
                 return (
                     f"Stage archive gate violation: an archive-located work item must keep "
                     f"status archived. status `{item.status}`"
                 )
+        elif in_planned:
+            if item.status != "rejected":
+                return (
+                    "Stage archive gate violation: a planned work item must be rejected "
+                    f"before archiving. status `{item.status}`"
+                )
         elif item.status not in {"completed", "rejected"}:
             return (
                 f"Stage archive gate violation: work_item `{work_item_id}` status must be "
                 f"completed/rejected. status `{item.status}`"
             )
-        # Rejection reasons are learning assets: a rejected item records its
-        # completed retrospective before archiving, like a completed one.
-        if item.status == "rejected" and (
+        # A rejection made before work starts keeps its reason on the planned
+        # card. A rejection after work starts still records a retrospective.
+        if item.status == "rejected" and not in_planned and (
             item.retrospective not in RETROSPECTIVE_DONE or not item.retrospective_ref
         ):
             return (

@@ -59,6 +59,8 @@ REQUIRED_WORK_FIELDS = (
     "promotion",
     "scope",
 )
+CURRENT_LIFECYCLE_FIELDS = ("verification", "retrospective", "promotion")
+PLANNED_REJECTION_OPTIONAL_FIELDS = (*CURRENT_LIFECYCLE_FIELDS, "scope")
 ACTIVE_VIEW_STATUSES = {"active", "blocked"}
 REVIEW_VIEW_STATUSES = {"review", "completed", "rejected"}
 ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)")
@@ -121,6 +123,17 @@ def v4_routing_only_locations() -> tuple[str, ...]:
             ("roadmap", "themes"),
         )
         for root in stage_topology.get_zone(family, zone).record_roots
+    )
+
+
+def is_direct_planned_rejection_archive(audited_item: AuditedItem) -> bool:
+    """Return whether an archived rejection never entered current work."""
+
+    fields = audited_item.fields
+    return (
+        audited_item.location == "archive"
+        and fields.get("terminal_disposition", "").strip() == "rejected"
+        and all(field not in fields for field in CURRENT_LIFECYCLE_FIELDS)
     )
 
 
@@ -354,8 +367,11 @@ class Audit:
     def audit_work_item_fields(self, audited_item: AuditedItem) -> None:
         item = audited_item.item
         path = item.path
+        direct_planned_rejection = is_direct_planned_rejection_archive(audited_item)
 
         for field in REQUIRED_WORK_FIELDS:
+            if direct_planned_rejection and field in PLANNED_REJECTION_OPTIONAL_FIELDS:
+                continue
             if field not in audited_item.fields:
                 self.error("WORK001", f"Work item frontmatter field is missing: {field}", path)
 
@@ -376,12 +392,13 @@ class Audit:
             self.error("WORK002", f"Work item id differs from filename: {item.item_id}", path)
         if item.status not in STATUS_VALUES:
             self.error("WORK003", f"Unknown status value: {item.status}", path)
-        if item.verification not in VERIFICATION_VALUES:
-            self.error("WORK004", f"Unknown verification value: {item.verification}", path)
-        if item.retrospective not in RETROSPECTIVE_VALUES:
-            self.error("WORK005", f"Unknown retrospective value: {item.retrospective}", path)
-        if item.promotion not in PROMOTION_VALUES:
-            self.error("WORK006", f"Unknown promotion value: {item.promotion}", path)
+        if not direct_planned_rejection:
+            if item.verification not in VERIFICATION_VALUES:
+                self.error("WORK004", f"Unknown verification value: {item.verification}", path)
+            if item.retrospective not in RETROSPECTIVE_VALUES:
+                self.error("WORK005", f"Unknown retrospective value: {item.retrospective}", path)
+            if item.promotion not in PROMOTION_VALUES:
+                self.error("WORK006", f"Unknown promotion value: {item.promotion}", path)
         if item.review not in stage_guard.REVIEW_VALUES:
             self.error("WORK013", f"Unknown review value: {item.review}", path)
         if item.kind and item.kind not in self.known_kinds():
@@ -893,7 +910,13 @@ class Audit:
                         "Archived completed item has open gates: " + ", ".join(open_gates),
                         item.path,
                     )
-            if item.retrospective not in stage_guard.RETROSPECTIVE_DONE or not item.retrospective_ref:
+            if (
+                not is_direct_planned_rejection_archive(entry)
+                and (
+                    item.retrospective not in stage_guard.RETROSPECTIVE_DONE
+                    or not item.retrospective_ref
+                )
+            ):
                 self.error(
                     "ARCHIVE003",
                     "Archived item has no completed retrospective "
