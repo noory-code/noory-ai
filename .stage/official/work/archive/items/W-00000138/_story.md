@@ -8,11 +8,12 @@ source:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000138
+promotion: not_applicable
 review: not_required
 scope: plainly/hooks/inject_style.py, plainly/styles/baseline.md, plainly/tests/, plainly/README.md, plainly/CHANGELOG.md
 promotes:
@@ -66,11 +67,43 @@ plainly 는 이미 어떤 스타일을 골라도 살아남는 고정 규칙 자�
 
 ## Progress
 
+드라이버 한 바퀴에 통과, 2026-07-30. 정직성 두 문장이 경계 밖으로, baseline 에서 제거,
+plainly 미출시 절 신설(매니페스트 0.4.1 유지).
 
 ## Verification
 
+리뷰 판정 파일(`.stage/.runtime/driver/verdicts/W-00000138.json`): 기준 여섯 전부 PASS,
+approved. plainly 테스트 40개 통과(회귀 둘 추가). 결과를 실물로 확인함 — 다음 턴의 주입
+문맥에 `Honesty rule:` 문장이 스타일 경계 밖에 붙어 왔다.
+
+### Executed at close — 2026-07-30
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 40 tests in 1.063s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 40 tests in 1.061s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
+[R-00000138](../../retrospectives/R-00000138.md)
 
 ## Promotion decision
+
+not_applicable — 플러그인 소스 수정.

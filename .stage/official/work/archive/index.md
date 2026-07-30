@@ -120,3 +120,4 @@
 | W-00000135 | completed | [items/W-00000135/_story.md](items/W-00000135/_story.md) |
 | W-00000136 | completed | [items/W-00000136/_story.md](items/W-00000136/_story.md) |
 | W-00000137 | completed | [items/W-00000137/_story.md](items/W-00000137/_story.md) |
+| W-00000138 | completed | [items/W-00000138/_story.md](items/W-00000138/_story.md) |
