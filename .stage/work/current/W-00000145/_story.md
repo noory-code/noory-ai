@@ -2,14 +2,20 @@
 id: W-00000145
 title: 결정 하나를 카드 여럿이 참조할 수 있는가
 kind: design
-venue:
+venue: claude
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: .stage/decisions/pending/
+promotes:
+decision_refs:
 ---
 
 # W-00000145 결정 하나를 카드 여럿이 참조할 수 있는가
@@ -62,3 +68,11 @@ scope: .stage/decisions/pending/
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

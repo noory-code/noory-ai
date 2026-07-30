@@ -2,14 +2,20 @@
 id: W-00000148
 title: 두 번째 바퀴의 리뷰를 좁힌 범위로 돌린다
 kind: fix
-venue:
+venue: codex
 milestone:
-status: captured
 priority: 1
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/scripts/drive.py, stage/scripts/tests/, stage/templates/, stage/docs/, stage/CHANGELOG.md
+scope: stage/scripts/drive.py, stage/scripts/tests/, stage/templates/, stage/docs/, stage/CHANGELOG.md, .stage/settings.json
+promotes:
+decision_refs:
 ---
 
 # W-00000148 두 번째 바퀴의 리뷰를 좁힌 범위로 돌린다
@@ -49,3 +55,11 @@ W-00000146 이 정할 결정을 코드로 옮긴다. 두 번째 바퀴부터 리
 
 
 ## Next action
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
