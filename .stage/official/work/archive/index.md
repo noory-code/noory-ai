@@ -136,3 +136,4 @@
 | W-00000151 | completed | [items/W-00000151/_story.md](items/W-00000151/_story.md) |
 | W-00000143 | completed | [items/W-00000143/_story.md](items/W-00000143/_story.md) |
 | W-00000153 | completed | [items/W-00000153/_story.md](items/W-00000153/_story.md) |
+| W-00000156 | completed | [items/W-00000156/_story.md](items/W-00000156/_story.md) |
