@@ -21,7 +21,11 @@ for import_dir in (SCRIPTS_DIR, HOOKS_DIR):
     if str(import_dir) not in sys.path:
         sys.path.insert(0, str(import_dir))
 
-from drive import resolve_independent_reviewer_venue, resolve_reap_command  # noqa: E402
+from drive import (  # noqa: E402
+    load_run_state,
+    resolve_independent_reviewer_venue,
+    resolve_reap_command,
+)
 from stage_paths import normalize_path_text, read_settings  # noqa: E402
 from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
@@ -489,36 +493,65 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
     settings_path, settings, settings_error = read_settings(stage_root)
     if settings_error is not None:
         return f"venue reaper was not run: cannot read {settings_path}: {settings_error}"
-    role = "executor"
+
+    state_path = stage_root / ".runtime/driver" / f"{spec.target}.json"
+    state, state_error = load_run_state(state_path, spec.target, 0.0)
+    if state_error:
+        return f"venue reaper was not run: cannot resolve running_role: {state_error}"
+    assert state is not None
+    running_roles = [
+        item_state["running_role"]
+        for item_state in state["items"].values()
+        if item_state.get("running_role") is not None
+    ]
+    if len(running_roles) > 1:
+        return (
+            "venue reaper was not run: driver run state has multiple active "
+            f"running_role values for {spec.target}"
+        )
+
+    fallback_notice = ""
+    role = running_roles[0] if running_roles else "executor"
     log_path = stage_root / ".runtime/driver/logs" / f"{spec.target}.md"
-    if log_path.is_file():
+    if not running_roles:
+        fallback_notice = "running_role is unavailable; used legacy log inference. "
+    if not running_roles and log_path.is_file():
         try:
             log_text = log_path.read_text(encoding="utf-8")
         except OSError as exc:
-            return f"venue reaper was not run: cannot read {log_path}: {exc}"
+            return f"{fallback_notice}venue reaper was not run: cannot read {log_path}: {exc}"
         if REPORT_HEADING_RE.search(log_text):
             role = "reviewer"
-            review = settings.get("review") if isinstance(settings, dict) else None
-            reviewer_venue = (
-                resolve_independent_reviewer_venue(review, venue)
-                if isinstance(review, dict)
-                else None
+    if role == "reviewer":
+        review = settings.get("review") if isinstance(settings, dict) else None
+        reviewer_venue = (
+            resolve_independent_reviewer_venue(review, venue)
+            if isinstance(review, dict)
+            else None
+        )
+        if reviewer_venue is None:
+            return (
+                f"{fallback_notice}venue reaper was not run: cannot resolve independent "
+                f"reviewer venue for {spec.target}"
             )
-            if reviewer_venue is None:
-                return (
-                    "venue reaper was not run: cannot resolve independent reviewer "
-                    f"venue for {spec.target}"
-                )
-            venue = reviewer_venue
+        venue = reviewer_venue
 
     reapers = settings.get("reapers") if isinstance(settings, dict) else None
     command, configured, config_error = resolve_reap_command(reapers, venue)
     if config_error:
-        return f"reapers.{venue} is unusable ({config_error}); external jobs may remain"
+        return (
+            f"{fallback_notice}reapers.{venue} is unusable ({config_error}); "
+            "external jobs may remain"
+        )
     if command is None:
         if configured:
-            return f"reapers.{venue} declares that no external job needs reaping"
-        return f"reapers.{venue} is not configured; external jobs may remain"
+            return (
+                f"{fallback_notice}reapers.{venue} declares that no external job "
+                "needs reaping"
+            )
+        return (
+            f"{fallback_notice}reapers.{venue} is not configured; external jobs may remain"
+        )
 
     environment = real_git_environment()
     environment.update(
@@ -543,19 +576,25 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
         )
     except subprocess.TimeoutExpired:
         return (
-            f"reapers.{venue} timed out after {REAPER_TIMEOUT} seconds; "
+            f"{fallback_notice}reapers.{venue} timed out after {REAPER_TIMEOUT} seconds; "
             "external jobs may remain"
         )
     except OSError as exc:
-        return f"reapers.{venue} could not start ({exc}); external jobs may remain"
+        return (
+            f"{fallback_notice}reapers.{venue} could not start ({exc}); "
+            "external jobs may remain"
+        )
     if result.returncode != 0:
         detail = ((result.stdout or "") + (result.stderr or "")).strip()
         suffix = f": {detail}" if detail else ""
         return (
-            f"reapers.{venue} failed with status {result.returncode}; "
+            f"{fallback_notice}reapers.{venue} failed with status {result.returncode}; "
             f"external jobs may remain{suffix}"
         )
-    return f"reapers.{venue} completed; confirm no external jobs remain before cleanup"
+    return (
+        f"{fallback_notice}reapers.{venue} completed; "
+        "confirm no external jobs remain before cleanup"
+    )
 
 
 def run_driver(

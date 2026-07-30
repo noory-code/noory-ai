@@ -795,6 +795,31 @@ class DriveParallelTest(unittest.TestCase):
             json.dumps({"reapers": {"codex": "reap-command"}}),
             encoding="utf-8",
         )
+        runtime_dir = tree / ".stage/.runtime/driver"
+        runtime_dir.mkdir(parents=True)
+        (runtime_dir / "W-00000001.json").write_text(
+            json.dumps(
+                {
+                    "target": "W-00000001",
+                    "started_at_unix": 1,
+                    "iteration_count": 1,
+                    "items": {
+                        "W-00000001": {
+                            "attempt_count": 1,
+                            "last_fingerprint": "",
+                            "running_role": "executor",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        log_dir = runtime_dir / "logs"
+        log_dir.mkdir()
+        (log_dir / "W-00000001.md").write_text(
+            "\n### Executor report\nWhat changed: executor is still running\n",
+            encoding="utf-8",
+        )
         spec = module.WorktreeSpec(
             "W-00000001",
             tree,
@@ -852,8 +877,94 @@ class DriveParallelTest(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        log_dir = tree / ".stage/.runtime/driver/logs"
-        log_dir.mkdir(parents=True)
+        runtime_dir = tree / ".stage/.runtime/driver"
+        runtime_dir.mkdir(parents=True)
+        (runtime_dir / "W-00000001.json").write_text(
+            json.dumps(
+                {
+                    "target": "W-00000001",
+                    "started_at_unix": 1,
+                    "iteration_count": 1,
+                    "items": {
+                        "W-00000001": {
+                            "attempt_count": 1,
+                            "last_fingerprint": "",
+                            "running_role": "reviewer",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        spec = module.WorktreeSpec(
+            "W-00000001",
+            tree,
+            "stage/worktree/W-00000001",
+        )
+
+        with mock.patch.object(
+            module.subprocess,
+            "run",
+            side_effect=[
+                subprocess.TimeoutExpired(["driver"], 7),
+                subprocess.CompletedProcess("reap-reviewer", 0, "", ""),
+            ],
+        ) as run:
+            result = module.run_driver(spec, module.DRIVER, timeout=7)
+
+        self.assertEqual(124, result.returncode)
+        self.assertIn("reapers.claude completed", result.stderr)
+        self.assertEqual("reap-reviewer", run.call_args_list[1].args[0])
+        self.assertEqual("reviewer", run.call_args_list[1].kwargs["env"]["STAGE_TURN_ROLE"])
+
+    def test_run_driver_timeout_reports_legacy_role_fallback(self) -> None:
+        module = load_module()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        tree = Path(tmp.name) / "worktree"
+        card_dir = tree / ".stage/work/current/W-00000001"
+        card_dir.mkdir(parents=True)
+        (card_dir / "_story.md").write_text(
+            "---\nid: W-00000001\nvenue: codex\n---\n",
+            encoding="utf-8",
+        )
+        (tree / ".stage/settings.json").write_text(
+            json.dumps(
+                {
+                    "reapers": {
+                        "codex": "reap-executor",
+                        "claude": "reap-reviewer",
+                    },
+                    "review": {
+                        "reviewers": {
+                            "codex": "own-venue",
+                            "claude": "review-command",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        runtime_dir = tree / ".stage/.runtime/driver"
+        runtime_dir.mkdir(parents=True)
+        (runtime_dir / "W-00000001.json").write_text(
+            json.dumps(
+                {
+                    "target": "W-00000001",
+                    "started_at_unix": 1,
+                    "iteration_count": 1,
+                    "items": {
+                        "W-00000001": {
+                            "attempt_count": 1,
+                            "last_fingerprint": "",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        log_dir = runtime_dir / "logs"
+        log_dir.mkdir()
         (log_dir / "W-00000001.md").write_text(
             "\n### Executor report\nWhat changed: ready for review\n",
             encoding="utf-8",
@@ -875,6 +986,7 @@ class DriveParallelTest(unittest.TestCase):
             result = module.run_driver(spec, module.DRIVER, timeout=7)
 
         self.assertEqual(124, result.returncode)
+        self.assertIn("running_role is unavailable; used legacy log inference", result.stderr)
         self.assertIn("reapers.claude completed", result.stderr)
         self.assertEqual("reap-reviewer", run.call_args_list[1].args[0])
         self.assertEqual("reviewer", run.call_args_list[1].kwargs["env"]["STAGE_TURN_ROLE"])
