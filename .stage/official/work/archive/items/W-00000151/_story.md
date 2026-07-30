@@ -7,11 +7,12 @@ milestone:
 priority: 3
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000151
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/docs/, stage/skills/stage-work/SKILL.md, stage/skills/stage-retrospective/SKILL.md, stage/templates/, stage/CHANGELOG.md
 promotes:
@@ -86,9 +87,22 @@ decision_refs:
 - `stage/scripts/tests` 497개, `stage/hooks/tests` 347개 통과. 두 판의 기술 용어 대조 시험 포함.
 - 변경 이력에 항목이 있고 매니페스트 버전은 그대로다.
 
-## Progress
+### Executed at close — 2026-07-30
 
-## Verification
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 347 tests in 1.087s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+WARNING TEMPLATE004 [.stage/work/current/README.md]: Stage guidance differs from the current localized template. Run `python3 stage/scripts/refresh_guidance.py --project-root <project-root> work/current/README.md` or declare the path in settings.json guidance_overrides.
+Summary: errors=0, warnings=1
+```
 
 ## Retrospective
 

@@ -45,3 +45,4 @@
 | DE-00000043 | promoted | 사용자 | [records/DE-00000043.md](records/DE-00000043.md) |
 | DE-00000044 | promoted | 사용자 | [records/DE-00000044.md](records/DE-00000044.md) |
 | DE-00000046 | promoted | 사용자 | [records/DE-00000046.md](records/DE-00000046.md) |
+

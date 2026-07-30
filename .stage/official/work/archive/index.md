@@ -133,3 +133,4 @@
 | W-00000148 | completed | [items/W-00000148/_story.md](items/W-00000148/_story.md) |
 | W-00000152 | completed | [items/W-00000152/_story.md](items/W-00000152/_story.md) |
 | W-00000149 | completed | [items/W-00000149/_story.md](items/W-00000149/_story.md) |
+| W-00000151 | completed | [items/W-00000151/_story.md](items/W-00000151/_story.md) |

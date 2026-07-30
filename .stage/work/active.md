@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000151 | documentation | claude | decision_refs 가 무엇을 담는지 문서에 적는다 | active | claude | [current/W-00000151/_story.md](current/W-00000151/_story.md) |
