@@ -2287,6 +2287,87 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("Stage purpose gate", reason(result))
 
+    def test_purpose_gate_reminds_again_when_top_level_work_changes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "file_path": ".stage/state/observations/O-0001.md",
+                    "content": "# Observation\n",
+                },
+            }
+
+            first = stage_guard.handle_event("pre-tool-use", payload)
+            current = root / ".stage/work/current/W-0001/_story.md"
+            current.write_text(
+                current.read_text(encoding="utf-8").replace(
+                    "status: active", "status: completed"
+                ),
+                encoding="utf-8",
+            )
+            self.write_work_item(root, item_id="W-0002", status="active")
+            second = stage_guard.handle_event("pre-tool-use", payload)
+            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
+            acknowledged_item = marker.read_text(encoding="utf-8")
+
+        self.assertEqual(decision(first), "deny")
+        self.assertEqual(decision(second), "deny")
+        self.assertIn("W-0002 Test work", reason(second))
+        self.assertEqual(acknowledged_item, "W-0002\n")
+
+    def test_purpose_gate_includes_every_active_top_level_work_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            self.write_work_item(root, item_id="W-0002", status="active")
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "file_path": ".stage/state/observations/O-0001.md",
+                    "content": "# Observation\n",
+                },
+            }
+
+            first = stage_guard.handle_event("pre-tool-use", payload)
+            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
+            acknowledged_items = marker.read_text(encoding="utf-8")
+            second = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(first), "deny")
+        self.assertIn("W-0001 Keep the work tied to purpose", reason(first))
+        self.assertIn("W-0002 Test work", reason(first))
+        self.assertEqual(acknowledged_items, "W-0001\nW-0002\n")
+        self.assertEqual(decision(second), "allow")
+
+    def test_purpose_gate_covers_apply_patch_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "apply_patch",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "command": (
+                        "*** Begin Patch\n"
+                        "*** Add File: .stage/state/observations/O-0001.md\n"
+                        "+# Observation\n"
+                        "*** End Patch\n"
+                    )
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("Stage purpose gate", reason(result))
+
     def test_stop_prunes_session_summaries_to_keep_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

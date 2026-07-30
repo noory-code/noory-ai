@@ -5,7 +5,7 @@ This document owns the Stage hook rules.
 ## Rules
 
 - `SessionStart` injects the Stage context and completion gates.
-- `PreToolUse` blocks executions that are likely rule violations before they run.
+- `PreToolUse` blocks likely rule violations and returns purpose before sensitive writes run.
 - `PostToolUse` completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop` leaves a summary the next session can pick up.
 - Hooks assist the Stage core principles; they do not replace artifact promotion itself.
@@ -49,7 +49,18 @@ Writing a work item whose `parent` does not exist, points at itself, or opens a 
 
 Before `AskUserQuestion` reaches the user, the hook reminds once per question: derive the answer from the work item's Purpose and `official/canon/principles.md` first; ask only when the decision genuinely belongs to the user. Re-asking after the reminder passes.
 
-Shell write detection is best-effort. The default detection targets are redirects, `cp`, `mv`, `tee`, and `sed -i`, plus delete operands of `rm`/`del`/`erase`/`Remove-Item`/`ri`. File writes inside inline interpreters are outside the detection range.
+## Purpose gate
+
+Before the first purpose-sensitive write in a session, the hook stops the call and returns the live
+theme intent, milestone purpose, and Purpose and User value of every active top-level work item.
+Purpose-sensitive targets are `.stage/` except `.stage/.runtime/`, plus every `CLAUDE.md` and
+`AGENTS.md` in the workspace. Code, tests, and other documents do not trigger the reminder.
+
+The gate runs after every other deny-capable check and immediately before promotion-intent
+consumption. It writes the sorted active top-level work IDs, one per line, to
+`.stage/.runtime/purpose-ack/<session_id>`. Repeating the write with the same active set passes;
+changing the set reminds again. Marker read or write failures pass through so the reminder never
+prevents writing permanently.
 
 ## Promotion intent
 

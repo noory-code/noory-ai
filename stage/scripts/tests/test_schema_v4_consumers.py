@@ -318,17 +318,23 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                     self.assertIn("retired in v4", reason)
                     self.assertIn(replacement, reason)
 
-            current_result = stage_guard.validate_pre_tool(
-                {
-                    "cwd": str(root),
-                    "tool_name": "Write",
-                    "tool_input": {
-                        "file_path": str(current_path),
-                        "content": item_text,
-                    },
-                }
-            )
+            current_payload = {
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_name": "Write",
+                "tool_input": {
+                    "file_path": str(current_path),
+                    "content": item_text,
+                },
+            }
+            purpose_reminder = stage_guard.validate_pre_tool(current_payload)
+            current_result = stage_guard.validate_pre_tool(current_payload)
 
+        self.assertEqual("deny", permission_decision(purpose_reminder))
+        self.assertIn(
+            "Stage purpose gate",
+            purpose_reminder["hookSpecificOutput"]["permissionDecisionReason"],
+        )
         self.assertEqual("allow", permission_decision(current_result))
 
     def test_v3_guard_denies_mutable_legacy_roots_with_migration_banner(self):
