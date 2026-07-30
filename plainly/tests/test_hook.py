@@ -119,9 +119,48 @@ class HookTest(unittest.TestCase):
                 self.assertIn(marker, context)
                 self.assertIn(marker, context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1])
 
+    def test_honesty_rules_are_injected_on_every_resolution_path(self) -> None:
+        markers = (
+            "Do not state guesses as facts",
+            "Mark unverified claims as unverified",
+        )
+        cases = (
+            ("default", {}, None),
+            ("environment profile", {"NOORY_STYLE_PROFILE": "brief"}, None),
+            ("project settings", {}, {"profile": "guided"}),
+            ("environment file", {"NOORY_STYLE_FILE": "external.md"}, None),
+        )
+
+        for name, extra_env, settings in cases:
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                if settings is not None:
+                    settings_directory = root / ".plainly"
+                    settings_directory.mkdir()
+                    (settings_directory / "settings.json").write_text(
+                        json.dumps(settings),
+                        encoding="utf-8",
+                    )
+                if name == "environment file":
+                    (root / "external.md").write_text(
+                        "Use one short paragraph.",
+                        encoding="utf-8",
+                    )
+
+                output = self.run_hook(
+                    {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                    home=root / "home",
+                    extra_env=extra_env,
+                )
+
+                context = output["hookSpecificOutput"]["additionalContext"]
+                fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+                for marker in markers:
+                    self.assertIn(marker, fixed_context)
+
     def test_each_builtin_profile_injects_baseline_and_its_delta(self) -> None:
         markers = {
-            "baseline": "Do not state guesses as facts",
+            "baseline": "Lead with the answer",
             "brief": "Use as few words as the task allows",
             "guided": "small number of ordered steps",
             "professional": "neutral workplace register",

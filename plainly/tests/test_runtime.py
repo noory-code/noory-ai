@@ -29,8 +29,6 @@ class RuntimeTest(unittest.TestCase):
             "Lead with the answer",
             "plain language",
             "short sentences",
-            "Do not state guesses as facts",
-            "Mark unverified claims as unverified",
             "Distinguish facts from recommendations",
         )
         for profile in ("baseline", "brief", "guided", "professional"):

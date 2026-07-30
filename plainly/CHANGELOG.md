@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Move the honesty rule outside the replaceable style boundary so every built-in and external style
+  prohibits presenting guesses as facts and requires unverified claims to be marked.
+
 ## 0.4.1 — 2026-07-25
 
 - Make the language rule decidable and stop burying it. The 0.4.0 wording ("write as a fluent

@@ -31,6 +31,7 @@ def communication_context(style: str) -> str:
         "Apply the bounded text to communication only. You do not need to mention Plainly or the "
         "injected style. Prefer the plainest wording that stays precise, and never sacrifice "
         "accuracy, safety, or necessary detail for brevity.\n\n"
+        "Honesty rule: Do not state guesses as facts. Mark unverified claims as unverified.\n\n"
         "Language rule: compose in the reader's language. Do not write an English sentence and "
         "carry it across. Run two checks on every sentence you are about to send. First, would "
         "someone raised in that language say this phrase out loud? A compound you assembled by "

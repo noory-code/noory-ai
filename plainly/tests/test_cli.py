@@ -132,7 +132,8 @@ class ConfigureCliTest(unittest.TestCase):
                 {"style_file": ".plainly/interview-style.md"},
             )
             style = style_file.read_text(encoding="utf-8")
-            self.assertIn("Do not state guesses as facts", style)
+            self.assertIn("Lead with the answer", style)
+            self.assertNotIn("Do not state guesses as facts", style)
             self.assertIn("Use as few words as the task allows", style)
             self.assertIn("neutral workplace register", style)
             self.assertNotIn("ordered steps", style)

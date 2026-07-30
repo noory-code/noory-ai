@@ -57,13 +57,17 @@ class ContractTest(unittest.TestCase):
             "Lead with the answer",
             "plain language",
             "short sentences",
-            "Do not state guesses as facts",
-            "Mark unverified claims as unverified",
             "Distinguish facts from recommendations",
         ):
             self.assertIn(principle, baseline)
             self.assertNotIn(principle, deltas)
         self.assertFalse((styles / "plain.md").exists())
+
+    def test_baseline_does_not_duplicate_fixed_honesty_rules(self) -> None:
+        baseline = (PLUGIN_ROOT / "styles" / "baseline.md").read_text(encoding="utf-8")
+
+        self.assertNotIn("Do not state guesses as facts", baseline)
+        self.assertNotIn("Mark unverified claims as unverified", baseline)
 
     def test_marketplace_registers_plainly(self) -> None:
         marketplace = self.load_json(REPOSITORY_ROOT / ".claude-plugin" / "marketplace.json")
