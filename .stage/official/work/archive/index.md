@@ -115,3 +115,7 @@
 | W-00000122 | completed | [items/W-00000122/_story.md](items/W-00000122/_story.md) |
 | W-00000123 | completed | [items/W-00000123/_epic.md](items/W-00000123/_epic.md) |
 | W-00000115 | completed | [items/W-00000115/_epic.md](items/W-00000115/_epic.md) |
+| W-00000111 | completed | [items/W-00000111/_story.md](items/W-00000111/_story.md) |
+| W-00000120 | completed | [items/W-00000120/_story.md](items/W-00000120/_story.md) |
+| W-00000135 | completed | [items/W-00000135/_story.md](items/W-00000135/_story.md) |
+| W-00000136 | completed | [items/W-00000136/_story.md](items/W-00000136/_story.md) |
