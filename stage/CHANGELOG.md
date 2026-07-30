@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.55.1 — 2026-07-30
+
 - Allow archive intents to reopen schema-v5 epic, story, and action records by deriving
   work-item identity from each hierarchical record path while preserving flat archive paths.
 - Skip default guidance replacement when a no-table project document contains lines absent from
