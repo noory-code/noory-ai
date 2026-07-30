@@ -12,7 +12,6 @@
 |---|---|---|---|---|---|---|
 | W-00000092 | 드라이버가 실행자의 건강을 확인한다 — 사전 점검과 생존 감시 | design | rejected |  |  | [W-00000092/_story.md](W-00000092/_story.md) |
 | W-00000143 | 쌓이는 자리를 템플릿이 빈 그릇으로 배포한다 | design | captured |  |  | [W-00000143/_story.md](W-00000143/_story.md) |
-| W-00000151 | decision_refs 가 무엇을 담는 칸인지 문서가 말한다 | documentation | captured | 3 |  | [W-00000151/_story.md](W-00000151/_story.md) |
 
 ## 상태 값
 

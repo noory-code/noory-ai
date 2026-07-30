@@ -2,14 +2,20 @@
 id: W-00000151
 title: decision_refs 가 무엇을 담는지 문서에 적는다
 kind: documentation
-venue:
+venue: claude
 milestone:
-status: captured
 priority: 3
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: completed
+retrospective_ref: R-00000151
+promotion: pending
 review: not_required
 scope: stage/docs/, stage/skills/stage-work/SKILL.md, stage/skills/stage-retrospective/SKILL.md, stage/templates/, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000151 decision_refs 가 무엇을 담는지 문서에 적는다
@@ -58,10 +64,36 @@ scope: stage/docs/, stage/skills/stage-work/SKILL.md, stage/skills/stage-retrosp
 
 ## Success criteria
 
-- 위 네 곳 **전부**에 같은 두 문장이 있다.
+- 위 네 곳 **전부**에 같은 두 문장이 있다. **번역본까지 포함하면 다섯이다** — 템플릿 설명 문서는
+  한국어판이 따로 있고, 두 판이 같은 기술 용어를 담는지 시험이 검사한다.
 - 문서가 "왜 여러 카드가 한 결정을 적으면 안 되는가"도 한 줄 답한다. 이유는 안전 검사다 — 정책을
   벗어난 실행 창을 한 번 허가할 때, 그 허가가 어느 카드의 것인지를 바로 이 연결로 특정한다.
   여러 카드가 한 결정을 적을 수 있게 되면 카드 하나에 준 허가를 다른 카드가 주장할 수 있다.
 - 그 두 문장을 처음 읽는 사람이 **다른 파일을 안 열고** 무엇을 적어야 하는지 안다.
 
 ## Next action
+
+## Progress
+
+다섯 자리에 적었다. 처음에 영어판만 고쳤다가 두 판의 기술 용어를 대조하는 시험이 실패해서
+한국어판도 맞췄다.
+
+## Verification
+
+- 스키마 문서, 카드 등록 절차, 카드 닫기 절차, 카드 템플릿 설명(영어·한국어) 다섯 자리에 같은
+  규칙이 있다.
+- 다섯 자리 모두 "왜 일대일인가"를 안전 검사로 설명한다.
+- `stage/scripts/tests` 497개, `stage/hooks/tests` 347개 통과. 두 판의 기술 용어 대조 시험 포함.
+- 변경 이력에 항목이 있고 매니페스트 버전은 그대로다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+[R-00000151](../../retrospectives/R-00000151.md) — 규칙을 적을 때 번역본을 안 세면 검사가 잡는다.
+
+## Promotion decision
+
+FINAL: not_applicable. 플러그인 문서 변경이고 승격할 산출물이 없다.

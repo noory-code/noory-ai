@@ -47,6 +47,11 @@ Answer briefly.
   `operations/` when the rule is common to every project).
 - The retrospective artifact lives at `work/retrospectives/R-NNNNNNNN.md`.
 - The work item's `retrospective_ref` points to that retrospective file.
+- A decision this work settled — one it moved to `decided` — goes in the item's `decision_refs`.
+  That field records what the item settled, not what it obeyed, so the item that raised a question
+  and the item that carried the answer out do not both claim the record: the one that settled it
+  owns it, and the other links it in its body. The audit enforces the back-link, and a venue
+  exception relies on it to identify the single item it authorized.
 
 ## Promotion intent
 

@@ -131,6 +131,13 @@ in the chain; ordering is chain-structural, never numeric or timestamp.
 
 W frontmatter includes these execution fields:
 
+- `decision_refs:` — the decision records **this item settled**, meaning the ones it moved to
+  `decided`. It is not a list of decisions the item obeys. The audit enforces the direction: each
+  referenced record's `work_item` must name this item (WORK015). An item carrying out a decision
+  another card settled links it in the body instead — commonly under `## Related truth`.
+  Keeping this one-to-one is what lets a venue exception identify the single item it authorized;
+  if several items could claim one record, an exception granted to one would be claimable by
+  another.
 - `autonomous:` — boolean eligibility signal. It defaults to `false` when absent. An item with
   `autonomous: true` must carry at least one `acceptance` command; `register_work.py` and
   `start_work.py` refuse the transition otherwise.

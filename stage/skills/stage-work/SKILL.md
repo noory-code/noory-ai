@@ -101,6 +101,11 @@ next free number, writes the card, and updates the owning index:
   or an action inside a story.
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
   the human selected that active milestone.
+- `decision_refs` — leave it empty at registration. It names the decision records this item
+  **settles**, and an item settles none before it runs. An item that exists to carry out a
+  decision another card already settled links that record in its body, never here: the audit
+  requires every referenced record to name this item back, and that one-to-one link is what
+  identifies which single item a venue exception authorized.
 - The body must answer four questions, each in its own section. A card that leaves any of them
   empty is not a work item — it is a note, and whoever picks it up will invent the missing answer:
 

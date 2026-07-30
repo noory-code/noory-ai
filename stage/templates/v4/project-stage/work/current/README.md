@@ -23,5 +23,5 @@ The document SSOT of the work status enum is `operations/artifacts.md`.
 - `scope`: paths this work owns. Separate multiple entries with commas. An empty value owns no path. Declare `*` only for a truly global scope.
 - `promotes`: `.stage/official/` paths this work may promote. Separate multiple entries with commas.
 - `retrospective_ref`: the retrospective file ID or path linked when `retrospective: completed`.
-- `decision_refs`: optional decision record IDs or paths in `decisions/pending/`.
+- `decision_refs`: the decision records this work item settled — the ones it moved to `decided`. Optional, and empty until it settles one. It is not a list of decisions the item obeys: an item carrying out a decision another item settled links that record in its body instead. Each referenced record must name this item back in its `work_item`, and that one-to-one link is what identifies which single item a venue exception authorized.
 - `source`: optional historical source reference.

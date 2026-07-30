@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Document what a work item's `decision_refs` holds: the decision records that item settled, not
+  the ones it obeys. The audit already enforced the direction, but nothing said so, so cards were
+  written against a rule nobody had stated — including one project left with an audit error it
+  could not resolve. The docs now also give the reason the link stays one-to-one: a venue
+  exception identifies the single item it authorized through exactly that back-link.
+
 - Pin all project driver executor and review commands to their existing models, expose the same
   eight command positions in new-project settings, and record each supervised or unattended
   round's exact executor and reviewer commands in its shared work log.
