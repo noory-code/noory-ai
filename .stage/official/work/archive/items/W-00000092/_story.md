@@ -3,7 +3,8 @@ id: W-00000092
 title: 드라이버가 실행자의 건강을 확인한다 — 사전 점검과 생존 감시
 kind: design
 venue:
-status: rejected
+status: archived
+terminal_disposition: rejected
 priority:
 autonomous: false
 acceptance: []

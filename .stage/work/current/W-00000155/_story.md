@@ -12,8 +12,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000155
 promotion: pending
 review: not_required
 scope: stage/skills/stage-archive/archive_work.py, stage/skills/stage-archive/SKILL.md, stage/hooks/stage_runtime.py, stage/scripts/audit_stage.py, stage/scripts/tests/test_archive_work.py, stage/scripts/tests/test_audit_stage.py, stage/hooks/tests/test_stage_guard.py, stage/docs/SCHEMA_V5.md, stage/CHANGELOG.md
