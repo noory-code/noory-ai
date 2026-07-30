@@ -7,7 +7,9 @@ milestone:
 status: captured
 priority: 2
 autonomous: false
-acceptance: []
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/tests/, stage/templates/, stage/docs/, stage/CHANGELOG.md
 ---
