@@ -46,9 +46,8 @@ from close_work import (  # noqa: E402
     ensure_work_log,
     executor_report_error,
     executor_review_dispositions,
+    load_review_verdict,
     read_work_log,
-    review_verdict_error,
-    review_verdict_failures,
     review_verdict_path,
     run_check,
     work_log_reference,
@@ -482,6 +481,222 @@ def cumulative_executor_changed_paths(
         set(previous)
         | set(changed_repository_paths(before_executor, after_executor))
     )
+
+
+def load_driver_review_verdict(
+    path: Path,
+) -> tuple[dict[str, object] | None, str]:
+    """Load a first-round verdict or a driver-merged re-review verdict."""
+
+    verdict, error = load_review_verdict(path)
+    if not error:
+        return verdict, ""
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None, error
+    if not isinstance(raw, dict) or set(raw) != {"criteria", "approved"}:
+        return None, error
+    criteria = raw["criteria"]
+    approved = raw["approved"]
+    if not isinstance(criteria, list) or not criteria or type(approved) is not bool:
+        return None, error
+    if not all(
+        isinstance(entry, dict) and "reviewed_in_round" in entry
+        for entry in criteria
+    ):
+        return None, error
+
+    normalized: list[dict[str, object]] = []
+    seen_criteria: set[str] = set()
+    for entry in criteria:
+        if not isinstance(entry, dict) or set(entry) != {
+            "criterion",
+            "verdict",
+            "reason",
+            "reviewed_in_round",
+        }:
+            return None, (
+                "each merged review criterion must contain exactly `criterion`, "
+                "`verdict`, `reason`, and `reviewed_in_round`"
+            )
+        criterion = entry["criterion"]
+        criterion_verdict = entry["verdict"]
+        reason = entry["reason"]
+        reviewed_in_round = entry["reviewed_in_round"]
+        if not all(
+            isinstance(value, str)
+            for value in (criterion, criterion_verdict, reason)
+        ):
+            return None, "review criterion values must be strings"
+        if (
+            not criterion.strip()
+            or not reason.strip()
+            or "\n" in criterion
+            or "\r" in criterion
+            or "\n" in reason
+            or "\r" in reason
+        ):
+            return None, (
+                "review criterion and reason must be non-empty one-line strings"
+            )
+        if criterion in seen_criteria:
+            return None, "review verdict criteria must be unique"
+        if criterion_verdict not in {"PASS", "FAIL"}:
+            return None, "review criterion verdict must be `PASS` or `FAIL`"
+        if (
+            type(reviewed_in_round) is not int
+            or reviewed_in_round < 1
+        ):
+            return None, (
+                "reviewed_in_round must be a positive integer"
+            )
+        seen_criteria.add(criterion)
+        normalized.append(
+            {
+                "criterion": criterion,
+                "verdict": criterion_verdict,
+                "reason": reason,
+                "reviewed_in_round": reviewed_in_round,
+            }
+        )
+
+    all_passed = all(
+        entry["verdict"] == "PASS" for entry in normalized
+    )
+    if approved != all_passed:
+        return None, (
+            "review verdict approved must be true exactly when every criterion passes"
+        )
+    return {"criteria": normalized, "approved": approved}, ""
+
+
+def review_verdict_error(path: Path) -> str:
+    """Return the driver verdict error for full or merged reviews."""
+
+    verdict, error = load_driver_review_verdict(path)
+    if error:
+        return error
+    if verdict is None or verdict["approved"] is not True:
+        return "review verdict did not approve the work item"
+    return ""
+
+
+def review_verdict_failures(path: Path) -> list[str]:
+    """Return failed criteria from a full or merged driver verdict."""
+
+    verdict, error = load_driver_review_verdict(path)
+    if error or verdict is None:
+        return []
+    criteria = verdict["criteria"]
+    assert isinstance(criteria, list)
+    return [
+        entry["criterion"]
+        for entry in criteria
+        if isinstance(entry, dict) and entry.get("verdict") == "FAIL"
+        and isinstance(entry.get("criterion"), str)
+    ]
+
+
+def merge_narrow_review_verdict(
+    previous: dict[str, object],
+    current: dict[str, object],
+    destination: Path,
+) -> str:
+    """Merge reviewed criteria into the prior complete verdict with round provenance."""
+
+    previous_criteria = previous.get("criteria")
+    current_criteria = current.get("criteria")
+    if not isinstance(previous_criteria, list) or not isinstance(
+        current_criteria, list
+    ):
+        return "cannot merge review verdict without criteria arrays"
+
+    previous_by_criterion = {
+        entry["criterion"]: entry
+        for entry in previous_criteria
+        if isinstance(entry, dict) and isinstance(entry.get("criterion"), str)
+    }
+    current_by_criterion = {
+        entry["criterion"]: entry
+        for entry in current_criteria
+        if isinstance(entry, dict) and isinstance(entry.get("criterion"), str)
+    }
+    unknown = [
+        criterion
+        for criterion in current_by_criterion
+        if criterion not in previous_by_criterion
+    ]
+    if unknown:
+        return (
+            "narrow review returned criteria absent from the previous verdict: "
+            + ", ".join(unknown)
+        )
+    missing_failures = [
+        entry["criterion"]
+        for entry in previous_criteria
+        if isinstance(entry, dict)
+        and entry.get("verdict") == "FAIL"
+        and entry.get("criterion") not in current_by_criterion
+    ]
+    if missing_failures:
+        return (
+            "narrow review omitted previously failed criteria: "
+            + ", ".join(missing_failures)
+        )
+
+    prior_rounds = [
+        entry.get("reviewed_in_round", 1)
+        for entry in previous_criteria
+        if isinstance(entry, dict)
+    ]
+    current_round = max(
+        round_number
+        for round_number in prior_rounds
+        if type(round_number) is int
+    ) + 1
+    merged: list[dict[str, object]] = []
+    for previous_entry in previous_criteria:
+        assert isinstance(previous_entry, dict)
+        criterion = previous_entry["criterion"]
+        assert isinstance(criterion, str)
+        current_entry = current_by_criterion.get(criterion)
+        if current_entry is None:
+            merged.append(
+                {
+                    "criterion": criterion,
+                    "verdict": previous_entry["verdict"],
+                    "reason": previous_entry["reason"],
+                    "reviewed_in_round": previous_entry.get(
+                        "reviewed_in_round", 1
+                    ),
+                }
+            )
+            continue
+        merged.append(
+            {
+                "criterion": criterion,
+                "verdict": current_entry["verdict"],
+                "reason": current_entry["reason"],
+                "reviewed_in_round": current_round,
+            }
+        )
+
+    payload = {
+        "criteria": merged,
+        "approved": all(
+            entry["verdict"] == "PASS" for entry in merged
+        ),
+    }
+    try:
+        destination.write_text(
+            json.dumps(payload, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        return f"cannot write merged review verdict file: {exc}"
+    return ""
 
 
 def git_diff(project_root: Path) -> str:
@@ -2464,7 +2679,14 @@ def main() -> int:
         log_path = ensure_work_log(stage_root, item.item_id)
         verdict_file = review_verdict_path(stage_root, item.item_id)
         log_before = read_work_log(log_path)
-        pending_findings = review_verdict_failures(verdict_file)
+        previous_verdict, _previous_verdict_error = (
+            load_driver_review_verdict(verdict_file)
+        )
+        pending_findings = (
+            review_verdict_failures(verdict_file)
+            if previous_verdict is not None
+            else []
+        )
         repository_before = repository_fingerprint(project_root)
         repository_paths_before = repository_path_snapshot(project_root)
     except RuntimeError as exc:
@@ -2490,6 +2712,9 @@ def main() -> int:
         temporary_root = Path(temporary)
         executor_index = temporary_root / "executor-index"
         changed_paths_file = temporary_root / "review-changed-paths.json"
+        previous_verdict_file = temporary_root / "previous-review-verdict.json"
+        failed_criteria_file = temporary_root / "failed-review-criteria.json"
+        current_verdict_file = temporary_root / "current-review-verdict.json"
         if index_existed and index_path is not None:
             try:
                 shutil.copyfile(index_path, executor_index)
@@ -2565,6 +2790,10 @@ def main() -> int:
                 repository_paths_before,
                 repository_paths_after,
             )
+            review_changed_paths = changed_repository_paths(
+                repository_paths_before,
+                repository_paths_after,
+            )
         except RuntimeError as exc:
             step_ok = False
             failure = f"cannot inspect repository after executor: {exc}"
@@ -2592,7 +2821,15 @@ def main() -> int:
             else:
                 try:
                     changed_paths_file.write_text(
-                        json.dumps(changed_paths, indent=2) + "\n",
+                        json.dumps(
+                            (
+                                review_changed_paths
+                                if previous_verdict is not None
+                                else changed_paths
+                            ),
+                            indent=2,
+                        )
+                        + "\n",
                         encoding="utf-8",
                     )
                 except OSError as exc:
@@ -2651,21 +2888,56 @@ def main() -> int:
         if step_ok:
             try:
                 clear_review_verdict(verdict_file)
+                if previous_verdict is not None:
+                    previous_verdict_file.write_text(
+                        json.dumps(previous_verdict, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+                    failed_criteria_file.write_text(
+                        json.dumps(pending_findings, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
             except RuntimeError as exc:
                 step_ok = False
                 failure = str(exc)
+            except OSError as exc:
+                step_ok = False
+                failure = f"cannot prepare narrow review inputs: {exc}"
 
         if step_ok:
             reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
+            reviewer_verdict_file = (
+                current_verdict_file
+                if previous_verdict is not None
+                else verdict_file
+            )
             reviewer_env.update(
                 {
                     "STAGE_WORK_ITEM_PATH": str(item.path.resolve()),
                     "STAGE_CHANGED_PATHS_FILE": str(changed_paths_file.resolve()),
-                    "STAGE_REVIEW_VERDICT_FILE": str(verdict_file.resolve()),
+                    "STAGE_REVIEW_MODE": (
+                        "narrow"
+                        if previous_verdict is not None
+                        else "full"
+                    ),
+                    "STAGE_REVIEW_VERDICT_FILE": str(
+                        reviewer_verdict_file.resolve()
+                    ),
                     "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
             )
+            if previous_verdict is not None:
+                reviewer_env.update(
+                    {
+                        "STAGE_PREVIOUS_REVIEW_VERDICT_FILE": str(
+                            previous_verdict_file.resolve()
+                        ),
+                        "STAGE_REVIEW_FAILED_CRITERIA_FILE": str(
+                            failed_criteria_file.resolve()
+                        ),
+                    }
+                )
             state_existed_before_reviewer = state_path.exists()
             previous_reviewer_item_state = state["items"].get(item.item_id)
             if previous_reviewer_item_state is not None:
@@ -2715,16 +2987,50 @@ def main() -> int:
             except OSError as exc:
                 print_escalation(f"cannot restore state after reviewer turn: {exc}")
                 return 1
-            verdict_error = review_verdict_error(verdict_file)
+            narrow_merge_error = ""
+            current_verdict_error = ""
+            if previous_verdict is not None:
+                current_verdict, current_verdict_error = (
+                    load_driver_review_verdict(current_verdict_file)
+                )
+                if current_verdict_error or current_verdict is None:
+                    narrow_merge_error = (
+                        current_verdict_error
+                        or "narrow review verdict is unavailable"
+                    )
+                else:
+                    narrow_merge_error = merge_narrow_review_verdict(
+                        previous_verdict,
+                        current_verdict,
+                        verdict_file,
+                    )
+            verdict_error = (
+                narrow_merge_error or review_verdict_error(verdict_file)
+            )
             reviewer_blocked = bool(
                 review_verdict_failures(verdict_file)
             )
             if not reviewed or verdict_error:
-                infrastructure_failed = retryable_review_infrastructure_failure(
-                    close_ok=reviewed,
-                    close_output=review_evidence,
-                    verdict_file=verdict_file,
-                )
+                if (
+                    previous_verdict is not None
+                    and current_verdict_error
+                    == "review verdict file is missing"
+                ):
+                    infrastructure_failed = (
+                        retryable_review_infrastructure_failure(
+                            close_ok=reviewed,
+                            close_output=review_evidence,
+                            verdict_file=current_verdict_file,
+                        )
+                    )
+                elif not narrow_merge_error:
+                    infrastructure_failed = retryable_review_infrastructure_failure(
+                        close_ok=reviewed,
+                        close_output=review_evidence,
+                        verdict_file=verdict_file,
+                    )
+                else:
+                    infrastructure_failed = False
                 review_failure = (
                     verdict_error or "independent reviewer command failed"
                 )

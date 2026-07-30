@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Narrow supervised review retries to previously failed criteria and paths changed since the prior
+  verdict, merge reviewed results with explicit round provenance, and retain full review when no
+  usable prior verdict exists and at close time.
+
 ## 0.55.1 — 2026-07-30
 
 - Allow archive intents to reopen schema-v5 epic, story, and action records by deriving

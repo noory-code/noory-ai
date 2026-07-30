@@ -250,11 +250,11 @@ the current process environment and sets:
 - `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists.
 
 This complete injection applies only to executor commands. Stored acceptance verification commands
-receive none of the driver-added variables. The supervised independent reviewer receives only
-`STAGE_WORK_ITEM_PATH`, with the same absolute card path passed to the executor; the review command
-and its child processes inherit that variable and decide how to read the card. It also receives the
-executor's disposable index through `GIT_INDEX_FILE` when that index exists. It does not receive
-`STAGE_WORK_ITEM` or `STAGE_PROJECT_ROOT`.
+receive none of the driver-added variables. The supervised independent reviewer receives
+`STAGE_WORK_ITEM_PATH`, `STAGE_WORK_LOG_PATH`, `STAGE_CHANGED_PATHS_FILE`, and
+`STAGE_REVIEW_VERDICT_FILE`. `STAGE_REVIEW_MODE` is `full` or `narrow`; the latter accompanies the
+two prior-review inputs described below. The reviewer does not receive `STAGE_WORK_ITEM`,
+`STAGE_PROJECT_ROOT`, or the executor's disposable `GIT_INDEX_FILE`.
 
 `stage_paths.load_executors_config()` reads the raw section, and
 `stage_paths.resolve_executor_command(executors, item_venue)` returns `(command, "")` only when
@@ -314,9 +314,21 @@ executor output and verification output; those remain inputs only to the separat
 fingerprint. If the work was already complete before execution, the operator must run
 `close_work.py` manually so verification and review still run through an explicit path.
 
-The driver reuses the close-work command runner and the same reviewer-owned JSON verdict file: a
-nonzero reviewer exit, or a missing, malformed, or non-approving verdict at
-`STAGE_REVIEW_VERDICT_FILE`, is a review failure. It then prints the outcome and recommended
+On the first supervised review, or whenever no readable valid prior verdict exists, the reviewer
+receives the cumulative card paths and judges every success criterion. A later supervised review
+also receives `STAGE_PREVIOUS_REVIEW_VERDICT_FILE` and
+`STAGE_REVIEW_FAILED_CRITERIA_FILE`. Its changed-path input contains only paths changed since the
+prior verdict. The reviewer judges every previously failed criterion plus any previously passing
+criterion affected by that changed segment, and writes only the criteria judged in that round.
+The driver rejects a narrowed result that omits an earlier failure or introduces an unknown
+criterion, then merges it with the prior complete verdict. Every merged criterion has a positive
+`reviewed_in_round` value: carried criteria retain their earlier round, while reviewed criteria
+receive the next round. The merged `criteria` array therefore remains complete, and `approved` is
+true exactly when every merged criterion passes. A missing or malformed prior verdict fails safe
+to a complete review rather than selecting a round by attempt count.
+
+A nonzero reviewer exit, or a missing, malformed, or non-approving verdict at
+`STAGE_REVIEW_VERDICT_FILE`, is a review failure. The driver then prints the outcome and recommended
 explicit next action. It does not commit, call
 `close_work.py`, call `escalate_work.py`, advance the parent, promote official truth, or loop over
 the subtree. Those actions remain human-supervised and are deferred to a later ship.
@@ -392,7 +404,8 @@ On success the executor output is committed, a NEUTRAL `driver-generated`
 retrospective is written (it does not claim success — the item's
 Verification, stamped by `close_work`, is the source of truth; a human reviews the retrospective at
 merge), and the item is closed through `close_work.py` (which re-runs acceptance and the mandatory
-independent review). The resulting `.stage` **lifecycle records (card status, retrospective,
+independent review against the complete final code; this close-time review is never narrowed).
+The resulting `.stage` **lifecycle records (card status, retrospective,
 indexes) are then committed to the run branch too**, so a merge carries the Stage bookkeeping, not
 only the executor output. If `close_work.py` fails because acceptance or the independent review did
 not pass, the escalation reason preserves its latest output using the same evidence bound as a
