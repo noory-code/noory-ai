@@ -2,17 +2,23 @@
 id: W-00000155
 title: 반려한 계획 카드를 보관으로 빼는 길을 만든다
 kind: fix
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
   - "python3 -m unittest discover -s stage/hooks/tests -q"
   - "python3 stage/scripts/audit_stage.py"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/skills/stage-archive/archive_work.py, stage/skills/stage-archive/SKILL.md, stage/hooks/stage_runtime.py, stage/scripts/tests/test_archive_work.py, stage/hooks/tests/test_stage_guard.py, stage/docs/SCHEMA_V5.md, stage/CHANGELOG.md
+scope: stage/skills/stage-archive/archive_work.py, stage/skills/stage-archive/SKILL.md, stage/hooks/stage_runtime.py, stage/scripts/audit_stage.py, stage/scripts/tests/test_archive_work.py, stage/scripts/tests/test_audit_stage.py, stage/hooks/tests/test_stage_guard.py, stage/docs/SCHEMA_V5.md, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000155 반려한 계획 카드를 보관으로 빼는 길을 만든다
@@ -46,6 +52,13 @@ scope: stage/skills/stage-archive/archive_work.py, stage/skills/stage-archive/SK
   하고, 옮기는 중간 상태를 거부하지 않게 한다.
 - **시작 명령은 그대로 둔다.** 반려된 카드를 시작할 수 있게 만들지 않는다. 반려는 시작이 아니라
   보관으로 간다.
+- **감사도 시작한 적 없는 반려를 알아본다.** 지금 감사는 보관된 모든 기록에 완료된 회고와
+  `retrospective_ref` 를 조건 없이 요구하고(ARCHIVE003), 진행 관련 칸(`verification`,
+  `retrospective`, `promotion`, `scope`)도 다 채워져 있으라고 요구한다(WORK001·004·005·006).
+  계획에서 바로 반려된 카드에는 그 칸들이 없다. 보관 명령이 찍어 두는 `terminal_disposition:
+  rejected` 로 그 카드를 알아보고 두 요구에서 뺀다. 진행 중 카드의 반려는 그대로 요구한다.
+- 진행 중 카드의 반려가 막히는 보장을 v5 배치로 집는 시험을 더한다. 지금 그 시험 둘은 v3 배치로
+  쓰여 있어, 이 프로젝트가 실제로 쓰는 배치를 집는 시험이 없다.
 - 보관 절차 문서와 스키마 문서의 조건 서술을 실제 동작과 맞춘다.
 
 ## User value
@@ -90,3 +103,11 @@ scope: stage/skills/stage-archive/archive_work.py, stage/skills/stage-archive/SK
 ## Next action
 
 보관 명령의 카드 찾기 시험을 먼저 쓴다 — 계획 폴더의 반려 카드를 주면 찾아야 한다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
