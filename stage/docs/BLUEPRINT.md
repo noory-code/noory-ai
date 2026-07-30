@@ -1,18 +1,13 @@
 # Stage Mermaid 설계도
 
-이 문서는 Stage 설계도를 Mermaid 차트 중심으로 정리한다.
+이 문서는 Stage 설계도를 Mermaid 차트 중심으로 정리한다. 무엇을 위한 물건인지는
+[PHILOSOPHY.md](PHILOSOPHY.md)가 소유한다.
 
 ## 1. 전체 지도
 
 ```mermaid
 mindmap
   root((Stage))
-    Mission
-      "LLM 수행 지속성"
-      "문맥 질서"
-      "행위 통제"
-      "산출물 승격"
-      "호스트/플랫폼 독립성"
     Principles
       SSOT
       MECE

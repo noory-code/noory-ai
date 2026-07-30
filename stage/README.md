@@ -1,8 +1,12 @@
 # Stage
 
+**A stage the heroes can run wild on — but it has to have a purpose.**
+
 Stage is an execution harness that helps an LLM perform consistently across long-running projects.
 
 Stage adds no model capability. Instead it controls the conditions the LLM acts under: artifact status, context ownership, decision gates, verification, and retrospectives — for every kind of work, not only code.
+
+Execution stays free; purpose stays strict. Stage never tells the executor how to work, and it never lets work float free of what it is for. [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) owns why the harness is shaped this way.
 
 ## Generated artifacts
 
@@ -105,6 +109,8 @@ python3 stage/scripts/promote_intent.py --project-root . --type archive --work-i
 
 ## Design
 
+[docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) owns what Stage is for; every other design document owns
+how it is built.
 [docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the responsibility-topology blueprint introduced with schema v4.
 [docs/SCHEMA_V5.md](docs/SCHEMA_V5.md) is the current work-hierarchy contract.
 [docs/SCHEMA_V4.md](docs/SCHEMA_V4.md) is the historical schema-v4 topology design.
