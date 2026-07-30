@@ -16,8 +16,8 @@ CLI = SCRIPT_ROOT / "refresh_guidance.py"
 if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
-import init_stage
 import guidance_docs
+import init_stage
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -40,16 +40,19 @@ def insert_first_table_row(text: str, row: str) -> str:
 
 
 class RefreshGuidanceTest(unittest.TestCase):
-    def test_help_describes_both_default_skip_conditions(self):
+    def test_help_describes_default_container_and_full_replacement_branches(self):
         with tempfile.TemporaryDirectory() as tmp:
             result = run(Path(tmp), "--help")
 
         self.assertEqual(0, result.returncode, result.stderr)
         help_text = " ".join(result.stdout.split())
-        self.assertIn("no-table templates have unexplained project lines", help_text)
+        self.assertIn(
+            "templates without an empty container have unexplained project lines",
+            help_text,
+        )
         self.assertIn("templates have populated tables", help_text)
 
-    def test_default_skips_no_table_document_with_unexplained_project_lines(self):
+    def test_default_preserves_project_items_in_empty_list_container(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="ko")
@@ -65,8 +68,8 @@ class RefreshGuidanceTest(unittest.TestCase):
 
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual(project, target.read_text(encoding="utf-8"))
-            self.assertIn("skipped state/current.md", result.stdout)
-            self.assertIn("1 line not present in the template", result.stdout)
+            self.assertIn("unchanged state/current.md", result.stdout)
+            self.assertNotIn("skipped state/current.md", result.stdout)
 
     def test_dry_run_reports_plan_without_writing(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -82,14 +85,14 @@ class RefreshGuidanceTest(unittest.TestCase):
             self.assertEqual(stale, target.read_bytes())
             self.assertIn("would refresh state/current.md", result.stdout)
 
-    def test_selected_no_table_document_with_project_lines_is_replaced(self):
+    def test_selected_document_without_list_container_is_replaced(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="ko")
             relative = Path("state/current.md")
             target = root / ".stage" / relative
             target.write_text(
-                "# 현재 상태\n\n- [O-00000001](observations/O-00000001.md)\n",
+                "# 현재 상태\n\n목록 그릇이 없는 프로젝트 문서\n",
                 encoding="utf-8",
             )
 
@@ -102,7 +105,7 @@ class RefreshGuidanceTest(unittest.TestCase):
             )
             self.assertIn("refreshed state/current.md", result.stdout)
 
-    def test_default_keeps_fresh_no_table_document_refreshable(self):
+    def test_default_keeps_fresh_empty_list_document_refreshable(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="ko")
@@ -167,6 +170,139 @@ class RefreshGuidanceTest(unittest.TestCase):
             template.replace("|---|---|\r\n", f"|---|---|\r\n{row}\r\n"),
             plan.content,
         )
+
+    def test_empty_list_keeps_items_and_wrapped_lines_while_replacing_other_content(self):
+        template = (
+            "# Current observations\n\n"
+            "Template-owned introduction.\n\n"
+            "## Observations\n\n"
+            "-\n"
+        )
+        project_items = (
+            "- [O-00000001](observations/O-00000001.md) — first observation\n"
+            "  with a wrapped continuation\n"
+            "- [O-00000002](observations/O-00000002.md) — second observation\n"
+        )
+        project = (
+            "# Stale heading\n\n"
+            "Stale introduction.\n\n"
+            "## Observations\n\n"
+            f"{project_items}"
+        )
+
+        plan = guidance_docs.plan_refresh(template, project, selected=False)
+
+        self.assertEqual("refresh", plan.action)
+        self.assertEqual(
+            template.replace("-\n", project_items),
+            plan.content,
+        )
+
+    def test_empty_list_project_items_do_not_count_as_guidance_drift(self):
+        template = "# Current observations\n\n## Observations\n\n-\n"
+        project = template.replace(
+            "-\n",
+            "- [O-00000001](observations/O-00000001.md) — observation\n"
+            "  with a wrapped continuation\n",
+        )
+
+        self.assertTrue(guidance_docs.guidance_matches(template, project))
+        self.assertFalse(
+            guidance_docs.guidance_matches(
+                template,
+                project.replace("# Current observations", "# Stale observations"),
+            )
+        )
+
+    def test_twenty_four_observations_survive_template_prose_refresh(self):
+        relative = Path("state/current.md")
+        template = init_stage.template_source(relative, "ko").read_text(encoding="utf-8")
+        updated_template = template.replace("관측 본문은", "관측 기록은")
+        project_items = "".join(
+            f"- [O-{number:08d}](observations/O-{number:08d}.md) — 관측\n"
+            for number in range(1, 25)
+        )
+        project = template.replace("-\n", project_items)
+
+        plan = guidance_docs.plan_refresh(updated_template, project, selected=False)
+
+        self.assertEqual("refresh", plan.action)
+        assert plan.content is not None
+        self.assertIn("관측 기록은", plan.content)
+        self.assertEqual(24, sum(line.startswith("- [O-") for line in plan.content.splitlines()))
+        self.assertTrue(guidance_docs.guidance_matches(updated_template, plan.content))
+
+    def test_missing_project_list_container_is_skipped_unless_selected(self):
+        template = "# Current observations\n\n## Observations\n\n-\n"
+        project = "# Current observations\n\nThere is no observation list.\n"
+
+        default_plan = guidance_docs.plan_refresh(template, project, selected=False)
+        selected_plan = guidance_docs.plan_refresh(template, project, selected=True)
+
+        self.assertEqual("skipped", default_plan.action)
+        self.assertIn("does not contain the template's list container", default_plan.reason)
+        self.assertEqual("refresh", selected_plan.action)
+        self.assertEqual(template, selected_plan.content)
+
+    def test_missing_project_table_container_is_skipped_unless_selected(self):
+        template = "# Active work\n\n| Work | Status |\n|---|---|\n"
+        project = "# Active work\n\nThere is no work table.\n"
+
+        default_plan = guidance_docs.plan_refresh(template, project, selected=False)
+        selected_plan = guidance_docs.plan_refresh(template, project, selected=True)
+
+        self.assertEqual("skipped", default_plan.action)
+        self.assertIn("does not contain the template's table container", default_plan.reason)
+        self.assertEqual("refresh", selected_plan.action)
+        self.assertEqual(template, selected_plan.content)
+
+    def test_mixed_empty_table_and_list_containers_are_refused(self):
+        template = "# Ambiguous\n\n| Item |\n|---|\n\n## More\n\n-\n"
+
+        plan = guidance_docs.plan_refresh(template, None, selected=False)
+
+        self.assertEqual("refused", plan.action)
+        self.assertEqual("template has multiple empty containers", plan.reason)
+
+    def test_empty_table_beside_populated_table_is_refused(self):
+        template = "# Ambiguous\n\n| Item |\n|---|\n\n## Reference\n\n| Name | Owner |\n|---|---|\n| a | b |\n"
+
+        plan = guidance_docs.plan_refresh(template, None, selected=False)
+
+        self.assertEqual("refused", plan.action)
+        self.assertEqual("template mixes project-owned and populated tables", plan.reason)
+
+    def test_empty_list_beside_populated_list_still_declares_a_container(self):
+        template = "# Observations\n\nRules:\n\n- Keep bodies current.\n- Cite the principle.\n\n## Items\n\n-\n"
+        project = template.replace("## Items\n\n-\n", "## Items\n\n- [O-1](o1.md) first\n")
+
+        plan = guidance_docs.plan_refresh(template, project, selected=False)
+
+        self.assertEqual("refresh", plan.action)
+        self.assertIn("- Keep bodies current.", plan.content)
+        self.assertIn("- [O-1](o1.md) first", plan.content)
+
+    def test_two_empty_list_containers_are_refused(self):
+        template = "# Ambiguous\n\n## First\n\n-\n\n## Second\n\n-\n"
+
+        plan = guidance_docs.plan_refresh(template, None, selected=False)
+
+        self.assertEqual("refused", plan.action)
+        self.assertEqual("template has multiple empty containers", plan.reason)
+
+    def test_populated_list_keeps_no_container_default_behavior(self):
+        template = "# Invariants\n\n- Built-in invariant\n"
+        clean_plan = guidance_docs.plan_refresh(template, template, selected=False)
+        changed_plan = guidance_docs.plan_refresh(
+            template,
+            template + "Project-owned prose.\n",
+            selected=False,
+        )
+
+        self.assertEqual("refresh", clean_plan.action)
+        self.assertEqual(template, clean_plan.content)
+        self.assertEqual("skipped", changed_plan.action)
+        self.assertIn("1 line not present in the template", changed_plan.reason)
 
     def test_unexplained_line_count_ignores_blank_and_table_separator_lines(self):
         template = "# Current\n\n-\n| Name |\n|---|\n"
@@ -250,7 +386,7 @@ class RefreshGuidanceTest(unittest.TestCase):
             self.assertEqual(1, return_code)
             self.assertEqual(original, target.read_text(encoding="utf-8"))
             self.assertIn("refused double.md", output.getvalue())
-            self.assertIn("multiple empty tables", output.getvalue())
+            self.assertIn("multiple empty containers", output.getvalue())
 
 
 if __name__ == "__main__":

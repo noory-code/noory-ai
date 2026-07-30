@@ -62,16 +62,28 @@ are not work records in schema v5 and no runtime scanner recognizes them.
 
 ## Guidance refresh safety
 
-The default guidance refresh derives each file's ownership boundary from its current localized
-template. A document with no table is refreshed only when every non-empty, non-separator project
-line also exists in the template. Otherwise the command skips the file, reports the unexplained
-line count, and requires the operator to name the path explicitly for full replacement.
+The default guidance refresh derives each file's project-owned container from its current
+localized template. One empty table or one empty list item declares that container. An empty
+table carries the project's table data rows into the current template. An empty list carries each
+project bullet item together with its indented continuation lines. Both merges preserve all
+template text outside the container span byte for byte.
 
-A template with one empty table still carries only the project's table data rows into the current
-template; the merge preserves all template text outside the data-row span byte for byte. A
-template with populated tables is skipped by default, and ambiguous empty-table shapes are
-refused. Naming an individual path authorizes full replacement for the no-table and populated-table
-branches.
+A template without an empty container is refreshed only when every non-empty, non-separator
+project line also exists in the template. Otherwise the command skips the file, reports the
+unexplained line count, and requires the operator to name the path explicitly for full
+replacement. A populated list does not declare a container and stays in this branch. A template
+with populated tables is skipped by default.
+
+If the project document does not contain the container declared by the template, the default
+refresh skips it instead of failing the command. Naming that path authorizes full replacement.
+Two or more empty containers are refused as ambiguous, whether they are tables, lists, or one of
+each.
+
+An empty table standing beside a populated table is refused for the same reason: a template that
+carries reference rows of its own leaves no way to tell which rows the project owns. An empty list
+standing beside a populated list is not refused, because guidance prose routinely uses bullets and
+refusing that shape would forbid a template from explaining itself above its own container. The
+merge then aligns the project's lists with the template's by position.
 
 ## Failure and rollback
 

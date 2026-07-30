@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Extend safe guidance refresh and drift comparison from empty tables to empty list containers,
+  preserving each bullet with its indented continuation lines, skipping project documents that
+  lack the declared container, and refusing every combination of multiple empty containers.
 - Document what a work item's `decision_refs` holds: the decision records that item settled, not
   the ones it obeys. The audit already enforced the direction, but nothing said so, so cards were
   written against a rule nobody had stated — including one project left with an audit error it

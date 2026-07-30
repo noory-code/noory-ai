@@ -2,17 +2,23 @@
 id: W-00000153
 title: 빈 목록 그릇을 갱신과 감사가 알아보게 한다
 kind: fix
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
   - "python3 -m unittest discover -s stage/hooks/tests -q"
   - "python3 stage/scripts/audit_stage.py"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/guidance_docs.py, stage/scripts/refresh_guidance.py, stage/scripts/tests/test_refresh_guidance.py, stage/docs/SCHEMA_V5.md, stage/skills/stage-audit/SKILL.md, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000153 빈 목록 그릇을 갱신과 감사가 알아보게 한다
@@ -80,8 +86,31 @@ DE-00000047 이 답을 정했다 — **빈 그릇의 뜻을 표에서 목록까�
   사본은 자동 갱신된다.
 - 감사가 관측을 쌓은 관측 인덱스를 낡음으로 보고하지 않는다.
 - 사람이 겪는 결과: 이 저장소에서 `guidance_overrides` 의 관측 인덱스 항목을 임시로 걷고 기본
-  갱신을 돌렸을 때, 관측 24줄이 그대로 있고 명령이 실패로 끝나지 않는다.
+  갱신을 돌렸을 때, 관측 항목이 하나도 안 사라지고 명령이 실패로 끝나지 않는다.
 
 ## Next action
 
 `guidance_docs.py` 의 목록 그릇 탐지 시험을 먼저 쓴다.
+
+## Progress
+
+## Verification
+
+### 리뷰 지적 판단 — 1회차 (승인, 막지 않는 지적 넷)
+
+- **빈 목록 옆 채워진 목록이 조용히 합쳐진다 (표는 같은 자리에서 거절한다)** — **미룸.** 목록은
+  설명글에 흔하게 쓰이므로, 표와 똑같이 거절하면 템플릿이 자기 그릇 위에 설명을 못 적는다. 지금
+  `empty_list` 템플릿은 하나뿐이고 그 안에 목록도 하나라 위치 맞추기 규칙을 시험할 실제 사례가
+  없다. 다른 판정을 일부러 고른 것이라고 문서와 시험에 남기고, 위치 맞추기 손질은 W-00000154 로
+  옮겼다.
+- **빈 표 옆 채워진 표를 거절하는 갈래에 회귀 시험이 없다** — **받음.** 이 카드가 분류 함수를
+  다시 짰으므로 시험 없이 도는 갈래다. `test_empty_table_beside_populated_table_is_refused`
+  추가.
+- **성공 기준의 "관측 24줄" 이 낡았다** — **받음.** 설계 카드가 관측을 하나 더해서 숫자가
+  변했다. 숫자를 박지 않고 "항목이 하나도 안 사라진다"로 고쳤다.
+- **표가 섞인 경우 거절을 설명하는 문서가 없다** — **받음.** `stage/docs/SCHEMA_V5.md` 와 감사
+  스킬에 두 모양을 다르게 다루는 이유까지 적었다.
+
+## Retrospective
+
+## Promotion decision
