@@ -356,6 +356,23 @@ def strict_audit_findings(project_root: Path):
     ]
 
 
+def relocated_v5_audit_findings(project_root: Path) -> list[Any]:
+    """Audit relocated cards as v5 before the schema marker is stamped."""
+
+    import audit_stage
+
+    audit_active_topology = audit_stage.active_topology
+    records_active_topology = audit_stage.stage_records.active_topology
+    selected_topology = lambda _stage_root: audit_stage.ACTIVE_TOPOLOGY_V4
+    audit_stage.active_topology = selected_topology
+    audit_stage.stage_records.active_topology = selected_topology
+    try:
+        return strict_audit_findings(project_root)
+    finally:
+        audit_stage.active_topology = audit_active_topology
+        audit_stage.stage_records.active_topology = records_active_topology
+
+
 def audit_finding_signature(finding: Any) -> tuple[str, str, str]:
     """Identify the same defect across a migration-owned path relocation."""
 
@@ -413,20 +430,36 @@ def cleanup_completed_migration_journals(stage_root: Path) -> None:
             path.unlink()
 
 
-def migrate_to_v5(
-    project_root: Path, dry_run: bool, baseline: list[Any]
-) -> int:
+def migrate_to_v5(project_root: Path, dry_run: bool) -> int:
+    baseline: list[Any] = []
     audit_findings = (
         None
         if dry_run
         else lambda root: post_migration_audit_findings(root, baseline)
     )
-    result = v5_migration.migrate(
-        project_root,
-        dry_run,
-        audit=not dry_run,
-        audit_findings=audit_findings,
-    )
+    relocate_work_records = v5_migration.relocate_work_records
+
+    def relocate_and_capture_baseline(
+        stage_root: Path,
+        checked: v5_migration.Preflight,
+        journal: dict[str, Any],
+    ) -> None:
+        relocate_work_records(stage_root, checked, journal)
+        baseline.extend(relocated_v5_audit_findings(project_root))
+
+    if dry_run:
+        result = v5_migration.migrate(project_root, True)
+    else:
+        v5_migration.relocate_work_records = relocate_and_capture_baseline
+        try:
+            result = v5_migration.migrate(
+                project_root,
+                False,
+                audit=True,
+                audit_findings=audit_findings,
+            )
+        finally:
+            v5_migration.relocate_work_records = relocate_work_records
     if result == 0 and not dry_run:
         cleanup_completed_migration_journals(project_root / ".stage")
     return result
@@ -523,9 +556,8 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         cleanup_completed_migration_journals(stage_root)
         print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
         return 0
-    audit_baseline = [] if dry_run else strict_audit_findings(project_root)
     if schema_version == V4_SCHEMA_VERSION:
-        return migrate_to_v5(project_root, dry_run, audit_baseline)
+        return migrate_to_v5(project_root, dry_run)
 
     try:
         checked = v4_migration.preflight(
@@ -602,7 +634,7 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         return 1
 
     print("Schema-v4 responsibility relocation complete; continuing to schema v5.")
-    return migrate_to_v5(project_root, False, audit_baseline)
+    return migrate_to_v5(project_root, False)
 
 
 def main() -> None:

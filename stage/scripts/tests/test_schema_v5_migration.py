@@ -1,5 +1,6 @@
 import io
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -10,6 +11,7 @@ from unittest.mock import patch
 
 STAGE_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = STAGE_ROOT / "scripts"
+V5_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "v4" / "project-stage"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
@@ -89,6 +91,45 @@ class SchemaV5MigrationTest(unittest.TestCase):
             "|---|---|---|\n"
             "| W-00000001 | completed | [item](items/W-00000001.md) |\n"
             "| W-00000002 | completed | [item](items/W-00000002.md) |\n",
+            encoding="utf-8",
+        )
+        return temporary, project_root, stage_root
+
+    def make_auditable_v4_project(
+        self,
+    ) -> tuple[tempfile.TemporaryDirectory[str], Path, Path]:
+        temporary = tempfile.TemporaryDirectory()
+        project_root = Path(temporary.name)
+        stage_root = project_root / ".stage"
+        shutil.copytree(V5_TEMPLATE_ROOT, stage_root)
+        settings = stage_root / "settings.jsonc"
+        settings.write_text(
+            settings.read_text(encoding="utf-8").replace(
+                '"schema_version": 5',
+                '"schema_version": 4',
+                1,
+            ),
+            encoding="utf-8",
+        )
+        write_card(
+            stage_root / "work/current/W-00000003.md",
+            "W-00000003",
+            status="active",
+        )
+        card = stage_root / "work/current/W-00000003.md"
+        card.write_text(
+            card.read_text(encoding="utf-8")
+            .replace("kind: development", "kind: fix", 1)
+            .replace("verification: passed", "verification: pending", 1)
+            .replace("retrospective: completed", "retrospective: pending", 1)
+            .replace("promotion: not_applicable", "promotion: pending", 1),
+            encoding="utf-8",
+        )
+        active = stage_root / "work/active.md"
+        active.write_text(
+            active.read_text(encoding="utf-8")
+            + "| W-00000003 | fix | codex | Fixture | active | codex | "
+            "[item](current/W-00000003.md) |\n",
             encoding="utf-8",
         )
         return temporary, project_root, stage_root
@@ -206,6 +247,51 @@ class SchemaV5MigrationTest(unittest.TestCase):
             self.assertIn("Pre-existing audit findings carried forward", output.getvalue())
             self.assertIn("WARNING KIND001", output.getvalue())
             self.assertFalse(stale.exists())
+
+    def test_flat_v4_card_kind_debt_is_carried_after_relocation(self):
+        temporary, project_root, _stage_root = self.make_auditable_v4_project()
+        with temporary:
+            output = io.StringIO()
+
+            with redirect_stdout(output):
+                result = migrate_stage.migrate(project_root, dry_run=False)
+
+            self.assertEqual(0, result, output.getvalue())
+            self.assertIn("Pre-existing audit findings carried forward", output.getvalue())
+            self.assertIn("WARNING KIND001", output.getvalue())
+
+    def test_defect_introduced_after_relocation_still_blocks_migration(self):
+        temporary, project_root, stage_root = self.make_auditable_v4_project()
+        with temporary:
+            rewrite_indexes = migration.rewrite_indexes
+
+            def rewrite_indexes_with_broken_ref(root: Path) -> list[str]:
+                rewritten = rewrite_indexes(root)
+                card = root / "work/current/W-00000003/_story.md"
+                card.write_text(
+                    card.read_text(encoding="utf-8").replace(
+                        "decision_refs:\n",
+                        "decision_refs: DE-99999999\n",
+                        1,
+                    ),
+                    encoding="utf-8",
+                )
+                return rewritten
+
+            output = io.StringIO()
+            with patch.object(
+                migration,
+                "rewrite_indexes",
+                side_effect=rewrite_indexes_with_broken_ref,
+            ), redirect_stdout(output):
+                result = migrate_stage.migrate(project_root, dry_run=False)
+
+            self.assertEqual(1, result)
+            self.assertIn("Strict post-migration audit failed", output.getvalue())
+            self.assertIn("WORK014", output.getvalue())
+            self.assertTrue(
+                (stage_root / migration.MAINTENANCE_MARKER_RELATIVE).is_file()
+            )
 
     def test_abort_restores_the_exact_pre_migration_tree_after_interruption(self):
         temporary, project_root, stage_root = self.make_project()

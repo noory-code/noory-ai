@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Capture the v4-to-v5 audit baseline immediately after flat work cards enter the v5
+  hierarchy so pre-existing card debt remains visible without blocking migration, while
+  defects introduced by later migration steps still fail closed.
+
 ## 0.55.0 — 2026-07-30
 
 - Reap timed-out parallel work through the persisted executor or reviewer role instead of
