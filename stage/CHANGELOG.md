@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Return the live theme, milestone, and top-level work purpose before a session's first write to
+  `.stage/` (excluding `.stage/.runtime/`) or any `CLAUDE.md`/`AGENTS.md`. The PreToolUse reminder
+  runs only after existing blockers pass and before promotion intent consumption, then retains the
+  active top-level work ID so repeating the write proceeds and changing work reminds again.
 - Say what Stage is for, not only what it does. The design documents described the machinery —
   gates, lifecycle, spaces — and the one blueprint branch that reached for purpose listed
   capabilities instead. So a reader learned the rules without their reason, and an agent reading

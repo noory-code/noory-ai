@@ -122,6 +122,55 @@ class StageGuardTest(unittest.TestCase):
             json.dumps(payload, ensure_ascii=False),
         )
 
+    def write_purpose_reminder_fixture(self, root: Path) -> None:
+        self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
+        self.write_stage_file(
+            root,
+            "work/current/W-0001/_story.md",
+            (
+                "---\n"
+                "id: W-0001\n"
+                "title: Keep the work tied to purpose\n"
+                "kind: development\n"
+                "venue: codex\n"
+                "milestone: M-0001\n"
+                "status: active\n"
+                "verification: pending\n"
+                "retrospective: pending\n"
+                "promotion: pending\n"
+                "scope: stage/hooks/, pkg/\n"
+                "---\n"
+                "# W-0001 Keep the work tied to purpose\n\n"
+                "## Purpose\n\nKeep purpose visible before governed writing.\n\n"
+                "## User value\n\nThe agent sees why the work matters.\n"
+            ),
+        )
+        self.write_stage_file(
+            root,
+            "roadmap/milestones/M-0001.md",
+            (
+                "---\n"
+                "id: M-0001\n"
+                "theme: TH-0001\n"
+                "decision_refs:\n"
+                "---\n"
+                "# M-0001 Purposeful work\n\n"
+                "## Purpose\n\nWork starts from user intent.\n"
+            ),
+        )
+        self.write_stage_file(
+            root,
+            "roadmap/themes/TH-0001.md",
+            (
+                "---\n"
+                "id: TH-0001\n"
+                "decision_refs:\n"
+                "---\n"
+                "# TH-0001 A durable stage\n\n"
+                "## Intent\n\nKeep products alive for one builder.\n"
+            ),
+        )
+
     def test_session_start_injects_stage_context(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -364,8 +413,10 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": "link/../past/canon/principles.md", "content": "x"},
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -389,8 +440,10 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": ".stage/past/canon/principles.md", "content": "x"},
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -470,8 +523,10 @@ class StageGuardTest(unittest.TestCase):
             patch = "*** Begin Patch\n*** Delete File: .stage/past/canon/plink\n*** End Patch\n"
             payload = {"tool_name": "apply_patch", "cwd": str(root), "tool_input": {"command": patch}}
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -716,8 +771,10 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": "link/past/canon/principles.md", "content": "x"},
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -908,8 +965,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("not in a completed state", reason(result))
 
@@ -1839,8 +1898,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "allow")
 
     def test_hierarchy_gate_uses_planned_folder_parent_without_parent_field(self):
@@ -2020,8 +2081,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "allow")
 
     def test_hierarchy_gate_allows_partial_edit_of_completed_child(self):
@@ -2147,6 +2210,82 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(first_b), "deny")
         self.assertEqual(decision(second_a), "allow")
         self.assertEqual(decision(second_b), "allow")
+
+    def test_purpose_gate_reminds_with_live_hierarchy_then_allows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "file_path": ".stage/state/observations/O-0001.md",
+                    "content": "# Observation\n",
+                },
+            }
+
+            first = stage_guard.handle_event("pre-tool-use", payload)
+            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
+            acknowledged_item = marker.read_text(encoding="utf-8")
+            second = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(first), "deny")
+        self.assertIn("Stage purpose gate", reason(first))
+        self.assertIn("TH-0001 A durable stage", reason(first))
+        self.assertIn("Keep products alive for one builder.", reason(first))
+        self.assertIn("M-0001 Purposeful work", reason(first))
+        self.assertIn("Work starts from user intent.", reason(first))
+        self.assertIn("W-0001 Keep the work tied to purpose", reason(first))
+        self.assertIn("Keep purpose visible before governed writing.", reason(first))
+        self.assertIn("The agent sees why the work matters.", reason(first))
+        self.assertIn("fires only once", reason(first))
+        self.assertEqual(acknowledged_item, "W-0001\n")
+        self.assertEqual(decision(second), "allow")
+
+    def test_purpose_gate_skips_code_runtime_and_unrelated_documents(self):
+        targets = (
+            "stage/hooks/stage_guard.py",
+            ".stage/.runtime/driver/logs/W-0001.md",
+            ".stage/.runtime/AGENTS.md",
+            "pkg/README.md",
+        )
+        for target in targets:
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.write_purpose_reminder_fixture(root)
+                payload = {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "session_id": "sess-purpose",
+                    "tool_input": {"file_path": target, "content": "changed\n"},
+                }
+
+                result = stage_guard.handle_event("pre-tool-use", payload)
+
+                self.assertEqual(decision(result), "allow")
+                self.assertFalse(
+                    (root / ".stage/.runtime/purpose-ack/sess-purpose").exists()
+                )
+
+    def test_purpose_gate_covers_nested_agents_document(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "file_path": "pkg/AGENTS.md",
+                    "content": "# Package rules\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("Stage purpose gate", reason(result))
 
     def test_stop_prunes_session_summaries_to_keep_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2452,11 +2591,20 @@ class StageGuardTest(unittest.TestCase):
             stale = self.write_stage_file(root, ".runtime/question-ack/sess-dead", "t\n")
             os.utime(stale, (1_000_000, 1_000_000))
             fresh = self.write_stage_file(root, ".runtime/question-ack/sess-live", "t\n")
+            stale_purpose = self.write_stage_file(
+                root, ".runtime/purpose-ack/sess-dead", "W-0001\n"
+            )
+            os.utime(stale_purpose, (1_000_000, 1_000_000))
+            fresh_purpose = self.write_stage_file(
+                root, ".runtime/purpose-ack/sess-live", "W-0001\n"
+            )
 
             stage_guard.handle_event("session-start", {"cwd": str(root)})
 
             self.assertFalse(stale.exists())
             self.assertTrue(fresh.exists())
+            self.assertFalse(stale_purpose.exists())
+            self.assertTrue(fresh_purpose.exists())
 
     def test_overlapping_intents_covering_same_path_are_denied(self):
         # Fail closed on ambiguity: an arbitrary consume could let one work
@@ -2484,8 +2632,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
+            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
+        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("multiple pending intents", reason(result))
 

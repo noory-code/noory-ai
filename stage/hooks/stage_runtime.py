@@ -586,19 +586,20 @@ QUESTION_ACK_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
 def prune_question_ack_markers(stage_root: Path) -> None:
-    """Ack markers live seconds (deny → re-ask); anything older is an abandoned session's."""
-    root = stage_root / ".runtime" / "question-ack"
+    """Remove abandoned per-session question and purpose reminder markers."""
     now = datetime.now(timezone.utc).timestamp()
-    try:
-        markers = list(root.iterdir())
-    except OSError:
-        return
-    for marker in markers:
+    for directory in ("question-ack", "purpose-ack"):
+        root = stage_root / ".runtime" / directory
         try:
-            if now - marker.stat().st_mtime > QUESTION_ACK_MAX_AGE_SECONDS:
-                marker.unlink()
+            markers = list(root.iterdir())
         except OSError:
-            pass
+            continue
+        for marker in markers:
+            try:
+                if now - marker.stat().st_mtime > QUESTION_ACK_MAX_AGE_SECONDS:
+                    marker.unlink()
+            except OSError:
+                pass
 
 
 SESSION_SUMMARY_KEEP = 5

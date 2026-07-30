@@ -382,6 +382,133 @@ def question_purpose_reminder(workspace_root: Path, payload: dict[str, Any]) -> 
     )
 
 
+def markdown_section(path: Path, heading: str) -> str:
+    """Return one Markdown H2 body without copying durable purpose into hook code."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    match = re.search(
+        rf"^##[ \t]+{re.escape(heading)}[ \t]*$(.*?)(?=^##[ \t]+|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    return match.group(1).strip() if match is not None else ""
+
+
+def record_title(path: Path, record_id: str) -> str:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    match = re.search(
+        rf"^#[ \t]+{re.escape(record_id)}(?:[ \t]+(.*?))?[ \t]*$",
+        text,
+        re.MULTILINE,
+    )
+    return (match.group(1) or "").strip() if match is not None else ""
+
+
+def purpose_record_path(stage_root: Path, record_id: str) -> Path | None:
+    try:
+        candidates = stage_topology.resolve_artifact_reference(record_id).candidate_paths
+    except ValueError:
+        return None
+    paths = tuple(stage_root / candidate for candidate in candidates)
+    return next((path for path in paths if path.is_file()), None)
+
+
+def active_top_level_work_item(stage_root: Path) -> WorkItem | None:
+    roots = sorted(
+        (
+            item
+            for item in load_work_items(stage_root)
+            if item.status == "active" and not item.parent
+        ),
+        key=lambda item: (item.item_id, item.path.as_posix()),
+    )
+    return roots[0] if len(roots) == 1 else None
+
+
+def purpose_reminder_reason(stage_root: Path, item: WorkItem) -> str:
+    sections = ["Stage purpose gate: re-read why this work exists before writing."]
+    fields = parse_frontmatter(item.path)
+    milestone_id = str(fields.get("milestone") or "").strip()
+    if milestone_id:
+        milestone_path = purpose_record_path(stage_root, milestone_id)
+        if milestone_path is not None:
+            milestone_title = record_title(milestone_path, milestone_id)
+            milestone_fields = parse_frontmatter(milestone_path)
+            theme_id = str(milestone_fields.get("theme") or "").strip()
+            if theme_id:
+                theme_path = purpose_record_path(stage_root, theme_id)
+                if theme_path is not None:
+                    theme_title = record_title(theme_path, theme_id)
+                    theme_intent = markdown_section(theme_path, "Intent")
+                    sections.append(
+                        f"Theme: {theme_id} {theme_title}".rstrip()
+                        + (f"\n{theme_intent}" if theme_intent else "")
+                    )
+            milestone_purpose = markdown_section(milestone_path, "Purpose")
+            sections.append(
+                f"Milestone: {milestone_id} {milestone_title}".rstrip()
+                + (f"\n{milestone_purpose}" if milestone_purpose else "")
+            )
+
+    work_purpose = markdown_section(item.path, "Purpose")
+    user_value = markdown_section(item.path, "User value")
+    sections.append(
+        f"Work: {item.item_id} {item.title}".rstrip()
+        + (f"\nPurpose:\n{work_purpose}" if work_purpose else "")
+        + (f"\nUser value:\n{user_value}" if user_value else "")
+    )
+    sections.append(
+        "This reminder fires only once for this active top-level work item in the session; "
+        "repeat the same write to proceed."
+    )
+    return "\n\n".join(sections)
+
+
+def target_needs_purpose_reminder(raw: str, workspace_root: Path) -> bool:
+    for form in stage_relative_forms(raw, workspace_root):
+        if not form or is_outside_workspace(form):
+            continue
+        normalized = normalize_path_text(form)
+        if normalized == ".stage/.runtime" or normalized.startswith(".stage/.runtime/"):
+            continue
+        if normalized == ".stage" or normalized.startswith(".stage/"):
+            return True
+        if Path(normalized).name in {"CLAUDE.md", "AGENTS.md"}:
+            return True
+    return False
+
+
+def purpose_write_reminder(
+    workspace_root: Path, payload: dict[str, Any], targets: list[str]
+) -> dict[str, Any]:
+    """Block the first purpose-sensitive write for the one active top-level item."""
+    if not any(target_needs_purpose_reminder(target, workspace_root) for target in targets):
+        return pre_tool_allow()
+    stage_root = workspace_root / ".stage"
+    item = active_top_level_work_item(stage_root)
+    if item is None:
+        return pre_tool_allow()
+
+    marker = stage_root / ".runtime" / "purpose-ack" / session_slot(payload)
+    try:
+        acknowledged_item = marker.read_text(encoding="utf-8").strip() if marker.exists() else ""
+    except OSError:
+        return pre_tool_allow()
+    if acknowledged_item == item.item_id:
+        return pre_tool_allow()
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(item.item_id + "\n", encoding="utf-8")
+    except OSError:
+        return pre_tool_allow()
+    return deny(purpose_reminder_reason(stage_root, item))
+
+
 def hierarchy_item_targets(workspace_root: Path, payload: dict[str, Any], name: str) -> list[tuple[str, str]]:
     """(relative_path, projected_post_edit_text) for every targeted work item file."""
     data = tool_input(payload)
@@ -807,6 +934,11 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         blocker = commit_blocker(workspace_root, files)
         if blocker:
             return deny(blocker)
+
+    if stage_root.exists() and name in write_tools:
+        reminder = purpose_write_reminder(workspace_root, payload, explicit_paths)
+        if reminder:
+            return reminder
 
     # The promotion gate runs LAST: it consumes a pending intent by an atomic
     # rename reservation, so every deny-capable gate above must have passed —
