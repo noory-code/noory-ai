@@ -1243,6 +1243,98 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
+    def test_allows_archive_intent_for_v5_hierarchical_item_paths(self):
+        def archived_item_text(item_id: str, title: str) -> str:
+            return (
+                f"---\nid: {item_id}\ntitle: {title}\nstatus: archived\n"
+                "verification: passed\nretrospective: completed\n"
+                "retrospective_ref:\npromotion: promoted\nscope:\npromotes:\n"
+                f"---\n# {item_id} {title}\n"
+            )
+
+        cases = (
+            ("items/W-0001/_story.md", "W-0001", ()),
+            ("items/W-EPIC/_epic.md", "W-EPIC", ()),
+            ("items/W-EPIC/W-STORY/_story.md", "W-STORY", (("W-EPIC/_epic.md", "W-EPIC"),)),
+            (
+                "items/W-EPIC/W-STORY/W-ACTION.md",
+                "W-ACTION",
+                (
+                    ("W-EPIC/_epic.md", "W-EPIC"),
+                    ("W-EPIC/W-STORY/_story.md", "W-STORY"),
+                ),
+            ),
+        )
+        for relative, item_id, parents in cases:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.write_stage_file(root, "settings.json", json.dumps({"schema_version": 5}))
+                target = f".stage/official/work/archive/{relative}"
+                for parent_relative, parent_id in parents:
+                    self.write_stage_file(
+                        root,
+                        f"official/work/archive/items/{parent_relative}",
+                        archived_item_text(parent_id, "Archived parent"),
+                    )
+                self.write_stage_file(
+                    root,
+                    f"official/work/archive/{relative}",
+                    archived_item_text(item_id, "Archived work"),
+                )
+                self.write_promotion_intent(
+                    root,
+                    work_item=item_id,
+                    paths=[target],
+                    intent_type="archive",
+                )
+                payload = {
+                    "tool_name": "Write",
+                    "cwd": str(root),
+                    "tool_input": {
+                        "file_path": target,
+                        "content": archived_item_text(item_id, "Corrected archived work"),
+                    },
+                }
+
+                result = stage_guard.handle_event("pre-tool-use", payload)
+
+                self.assertEqual(decision(result), "allow", reason(result) if result else "")
+
+    def test_blocks_archive_intent_for_different_v5_hierarchical_item(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", json.dumps({"schema_version": 5}))
+            self.write_stage_file(
+                root,
+                "official/work/archive/items/W-0001/_story.md",
+                (
+                    "---\nid: W-0001\ntitle: Archived work\nstatus: archived\n"
+                    "verification: passed\nretrospective: completed\n"
+                    "retrospective_ref:\npromotion: promoted\nscope:\npromotes:\n"
+                    "---\n# W-0001\n"
+                ),
+            )
+            target = ".stage/official/work/archive/items/W-0002/_story.md"
+            self.write_promotion_intent(
+                root,
+                work_item="W-0001",
+                paths=[target],
+                intent_type="archive",
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": target,
+                    "content": "# W-0002\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("work_item", reason(result))
+
     def test_allows_archive_intent_including_index_update(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

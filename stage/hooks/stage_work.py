@@ -428,8 +428,16 @@ def archive_target_item_id(path: str, workspace_root: Path) -> str:
         prefix = ".stage/past/work/archive/items/"
     if not relative.startswith(prefix):
         return ""
-    name = Path(relative).name
-    if name.lower().endswith(".md"):
+    archive_relative = Path(relative[len(prefix) :])
+    parts = archive_relative.parts
+    name = archive_relative.name
+    if len(parts) == 1 and name.lower().endswith(".md"):
+        return name[:-3]
+    if name == stage_topology.EPIC_RECORD_NAME and len(parts) == 2:
+        return archive_relative.parent.name
+    if name == stage_topology.STORY_RECORD_NAME and len(parts) in {2, 3}:
+        return archive_relative.parent.name
+    if name.lower().endswith(".md") and not name.startswith("_") and len(parts) in {2, 3}:
         return name[:-3]
     return ""
 
