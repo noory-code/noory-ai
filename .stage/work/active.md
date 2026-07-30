@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000161 | development | codex | 쓰기 직전에 무엇을 위한 일인지 다시 띄운다 | active | codex | [current/W-00000161/_story.md](current/W-00000161/_story.md) |
