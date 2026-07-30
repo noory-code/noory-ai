@@ -130,6 +130,10 @@ class TemplateV4Test(unittest.TestCase):
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 
         self.assertIn("STAGE_REVIEW_VERDICT_FILE", template_settings)
+        self.assertIn("STAGE_REVIEW_MODE", template_settings)
+        self.assertIn("STAGE_PREVIOUS_REVIEW_VERDICT_FILE", template_settings)
+        self.assertIn("STAGE_REVIEW_FAILED_CRITERIA_FILE", template_settings)
+        self.assertIn("reviewed_in_round", template_settings)
         self.assertIn('"criteria"', template_settings)
         self.assertIn('"criterion"', template_settings)
         self.assertIn('"verdict"', template_settings)
@@ -151,6 +155,12 @@ class TemplateV4Test(unittest.TestCase):
             "criterion and reason are non-empty one-line strings",
             "criterion values are unique",
             "approved is true exactly when every criterion passes",
+            "$STAGE_PREVIOUS_REVIEW_VERDICT_FILE",
+            "$STAGE_REVIEW_FAILED_CRITERIA_FILE",
+            "judge only those failed criteria plus any previously passing criterion "
+            "affected by the paths in $STAGE_CHANGED_PATHS_FILE",
+            "write only criteria judged in this round because the driver merges them",
+            "Otherwise, judge every ## Success criteria item",
         )
 
         self.assertEqual(6, len(commands))

@@ -82,6 +82,115 @@ def retry_reviewer_command(marker: Path) -> str:
     )
 
 
+def narrowing_executor_command(marker: Path) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+        "marker.write_text(str(round_number), encoding='utf-8')\n"
+        "changed = Path(f'round-{round_number}.txt')\n"
+        "changed.write_text(str(round_number), encoding='utf-8')\n"
+        "changed_paths = [f'round-{number}.txt' for number in range(1, round_number + 1)]\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: completed review round ' + str(round_number) + '\\n"
+        "Why: exercise narrowed re-review inputs\\n"
+        "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n')\n"
+        "if round_number > 1:\n"
+        "    report += ('Review dispositions (JSON):\\n' + json.dumps([{\n"
+        "        'finding': 'failing criterion',\n"
+        "        'disposition': 'accept',\n"
+        "        'reason': 'the second round fixes this criterion',\n"
+        "    }]) + '\\n')\n"
+        "report += 'Review request: review this round according to the driver inputs\\n'\n"
+        "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+    )
+
+
+def narrowing_reviewer_command(marker: Path, capture: Path) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        f"capture = Path({str(capture)!r})\n"
+        "round_number = int(marker.read_text(encoding='utf-8'))\n"
+        "verdict_path = Path(os.environ['STAGE_REVIEW_VERDICT_FILE'])\n"
+        "if round_number == 1:\n"
+        "    assert os.environ['STAGE_REVIEW_MODE'] == 'full'\n"
+        "    assert 'STAGE_PREVIOUS_REVIEW_VERDICT_FILE' not in os.environ\n"
+        "    assert 'STAGE_REVIEW_FAILED_CRITERIA_FILE' not in os.environ\n"
+        "    verdict = {\n"
+        "        'criteria': [\n"
+        "            {'criterion': 'passing criterion', 'verdict': 'PASS', "
+        "'reason': 'the first review passed it'},\n"
+        "            {'criterion': 'failing criterion', 'verdict': 'FAIL', "
+        "'reason': 'the first review found a defect'},\n"
+        "        ],\n"
+        "        'approved': False,\n"
+        "    }\n"
+        "else:\n"
+        "    assert os.environ['STAGE_REVIEW_MODE'] == 'narrow'\n"
+        "    previous = json.loads(Path(\n"
+        "        os.environ['STAGE_PREVIOUS_REVIEW_VERDICT_FILE']\n"
+        "    ).read_text(encoding='utf-8'))\n"
+        "    failed = json.loads(Path(\n"
+        "        os.environ['STAGE_REVIEW_FAILED_CRITERIA_FILE']\n"
+        "    ).read_text(encoding='utf-8'))\n"
+        "    changed = json.loads(Path(\n"
+        "        os.environ['STAGE_CHANGED_PATHS_FILE']\n"
+        "    ).read_text(encoding='utf-8'))\n"
+        "    capture.write_text(json.dumps({\n"
+        "        'previous': previous,\n"
+        "        'failed': failed,\n"
+        "        'changed': changed,\n"
+        "    }), encoding='utf-8')\n"
+        "    assert failed == ['failing criterion']\n"
+        "    assert changed == ['round-2.txt']\n"
+        "    verdict = {\n"
+        "        'criteria': [{\n"
+        "            'criterion': 'failing criterion',\n"
+        "            'verdict': 'PASS',\n"
+        "            'reason': 'the second review confirmed the fix',\n"
+        "        }],\n"
+        "        'approved': True,\n"
+        "    }\n"
+        "verdict_path.write_text(json.dumps(verdict), encoding='utf-8')\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "with log.open('a', encoding='utf-8') as handle:\n"
+        "    handle.write('\\n### Reviewer report\\nreviewed round ' + "
+        "str(round_number) + '\\n')\n"
+    )
+
+
+def missing_verdict_then_full_reviewer_command(marker: Path, capture: Path) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        f"capture = Path({str(capture)!r})\n"
+        "round_number = int(marker.read_text(encoding='utf-8'))\n"
+        "if round_number == 1:\n"
+        "    raise SystemExit(9)\n"
+        "capture.write_text(json.dumps({\n"
+        "    'mode': os.environ['STAGE_REVIEW_MODE'],\n"
+        "    'has_previous': 'STAGE_PREVIOUS_REVIEW_VERDICT_FILE' in os.environ,\n"
+        "    'has_failed': 'STAGE_REVIEW_FAILED_CRITERIA_FILE' in os.environ,\n"
+        "    'changed': json.loads(Path(os.environ['STAGE_CHANGED_PATHS_FILE']).read_text(\n"
+        "        encoding='utf-8'\n"
+        "    )),\n"
+        "}), encoding='utf-8')\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps({\n"
+        "    'criteria': [{\n"
+        "        'criterion': 'full criterion',\n"
+        "        'verdict': 'PASS',\n"
+        "        'reason': 'the fallback reviewed the complete card',\n"
+        "    }],\n"
+        "    'approved': True,\n"
+        "}), encoding='utf-8')\n"
+    )
+
+
 def approving_reviewer_command(code: str = "") -> str:
     setup = ""
     if code:
@@ -1177,6 +1286,93 @@ class DriveTest(unittest.TestCase):
                 )
                 self.assertIsNone(reviewer_input["git_index_file"])
 
+    def test_second_review_only_rechecks_failures_and_changed_segment(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            capture = Path(marker_tmp) / "reviewer-input.json"
+            tmp, root = self.make_project(
+                executor=narrowing_executor_command(marker),
+                reviewer=narrowing_reviewer_command(marker, capture),
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                first = self.run_cli(root, "--execute")
+                second = self.run_cli(root, "--execute")
+                verdict = json.loads(
+                    (
+                        root
+                        / ".stage/.runtime/driver/verdicts/W-00000002.json"
+                    ).read_text(encoding="utf-8")
+                )
+
+            self.assertNotEqual(0, first.returncode)
+            self.assertEqual(
+                0, second.returncode, second.stdout + second.stderr
+            )
+            reviewer_input = json.loads(capture.read_text(encoding="utf-8"))
+            self.assertEqual(["failing criterion"], reviewer_input["failed"])
+            self.assertEqual(["round-2.txt"], reviewer_input["changed"])
+            self.assertEqual(
+                [
+                    {
+                        "criterion": "passing criterion",
+                        "verdict": "PASS",
+                        "reason": "the first review passed it",
+                        "reviewed_in_round": 1,
+                    },
+                    {
+                        "criterion": "failing criterion",
+                        "verdict": "PASS",
+                        "reason": "the second review confirmed the fix",
+                        "reviewed_in_round": 2,
+                    },
+                ],
+                verdict["criteria"],
+            )
+            self.assertTrue(verdict["approved"])
+
+    def test_missing_previous_verdict_falls_back_to_full_review(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            capture = Path(marker_tmp) / "reviewer-input.json"
+            tmp, root = self.make_project(
+                executor=narrowing_executor_command(marker),
+                reviewer=missing_verdict_then_full_reviewer_command(
+                    marker, capture
+                ),
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+
+                first = self.run_cli(root, "--execute")
+                second = self.run_cli(root, "--execute")
+
+            self.assertNotEqual(0, first.returncode)
+            self.assertEqual(
+                0, second.returncode, second.stdout + second.stderr
+            )
+            reviewer_input = json.loads(capture.read_text(encoding="utf-8"))
+            self.assertEqual("full", reviewer_input["mode"])
+            self.assertFalse(reviewer_input["has_previous"])
+            self.assertFalse(reviewer_input["has_failed"])
+            self.assertEqual(
+                ["round-1.txt", "round-2.txt"],
+                reviewer_input["changed"],
+            )
+
     def test_supervised_comparison_ignores_driver_owned_work_log_path(self):
         work_log_path = ".stage/.runtime/driver/logs/W-00000002.md"
         executor = reporting_python_command(
@@ -1809,7 +2005,16 @@ class DriveTest(unittest.TestCase):
         )
         tmp, root = self.make_project(
             executor=executor,
-            reviewer=APPROVING_REVIEWER,
+            reviewer=python_command(
+                "import json, os\n"
+                "from pathlib import Path\n"
+                "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+                "    json.dumps({'criteria': [{"
+                f"'criterion': {finding!r}, "
+                "'verdict': 'PASS', "
+                "'reason': 'the disposition resolves this criterion'}], "
+                "'approved': True}), encoding='utf-8')\n"
+            ),
         )
         with tmp:
             stage_root = root / ".stage"

@@ -34,12 +34,20 @@
     "max_iterations": 12,
     "max_wall_clock_seconds": 5400
   },
-  // Review commands receive $STAGE_REVIEW_VERDICT_FILE. Each command must write
+  // Review commands receive $STAGE_REVIEW_MODE (`full` or `narrow`),
+  // $STAGE_REVIEW_VERDICT_FILE, and $STAGE_CHANGED_PATHS_FILE.
+  // When $STAGE_PREVIOUS_REVIEW_VERDICT_FILE is set, they also receive
+  // $STAGE_REVIEW_FAILED_CRITERIA_FILE. In that case, review only the listed failed
+  // criteria plus previously passing criteria affected by the changed paths, and
+  // write only criteria judged in this round; the driver merges the prior verdict.
+  // Without those prior-review inputs, review every success criterion.
+  // Each command must write
   // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
   // "approved":true|false}, with no other keys at either level. criteria must be
   // non-empty with unique, non-empty one-line criterion and reason values. approved
   // is true exactly when every criterion passes. Review prose may still go to
-  // $STAGE_WORK_LOG_PATH, but prose never decides the result.
+  // $STAGE_WORK_LOG_PATH, but prose never decides the result. A merged verdict retains
+  // every criterion and adds reviewed_in_round so carried results are explicit.
   "review": {
     "reviewers": {
       "claude": "",

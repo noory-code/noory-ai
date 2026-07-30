@@ -8,6 +8,9 @@
 - State the four questions a work card must answer — what it does, why now, what it achieves, and
   when it is finished — and which section owns each. A card missing any of them is a note, and
   whoever picks it up invents the missing answer; capturing for later does not exempt it.
+- Narrow supervised review retries to previously failed criteria and paths changed since the prior
+  verdict, merge reviewed results with explicit round provenance, and retain full review when no
+  usable prior verdict exists and at close time.
 
 ## 0.55.1 — 2026-07-30
 
