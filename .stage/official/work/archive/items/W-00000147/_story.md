@@ -7,15 +7,16 @@ milestone:
 source:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000147
+promotion: promoted
 review: not_required
 scope: .stage/decisions/pending/
-promotes:
-decision_refs:
+promotes: .stage/official/decisions/records/DE-00000044.md, .stage/official/decisions/index.md
+decision_refs: DE-00000044
 ---
 
 # W-00000147 시도가 오를 때 누가 실행하고 판정하는가
@@ -66,12 +67,13 @@ obra/superpowers 가 이 축을 명시적으로 갖는다: 역할마다 모델�
 ## Success criteria
 
 - 결정 기록이 서고 `status: decided` 다. 위 물음 넷에 각각 답한다.
-- 결정이 **기존 설정으로 돌던 프로젝트가 안 깨지는 길**을 정한다. 등급을 안 선언한 프로젝트가
-  지금과 같이 동작하는지 한 줄로 답한다.
-- 결정이 **등급 올리기와 에스컬레이션의 경계**를 적는다(DE-00000017 과 겹치지 않게).
+- **결정을 쓰기 전에 지금 어떤 모델로 도는지 설정에서 읽는다.** 초안이 "한 등급 위로 올린다"였는데
+  실제로는 두 venue 다 각 surface 의 최상급이라 올릴 자리가 없었다. 현재 값을 안 읽고 쓴 설계는
+  전제부터 틀린다.
+- 결정이 **기존 설정으로 돌던 프로젝트가 안 깨지는 길**을 정한다.
 - 적용 자리 표에 설정의 두 벌·두 벌·네 벌이 각각 적힌다.
 - 값의 근거가 추측인지 실측인지 구분해 적는다. 지금 막힌 카드의 원인 기록이 없다면 그것을 한계로
-  적는다.
+  적고, **축을 다시 여는 조건**을 남긴다.
 
 ## Related truth
 
@@ -90,7 +92,21 @@ obra/superpowers 가 이 축을 명시적으로 갖는다: 역할마다 모델�
 ## Verification
 
 
+### Executed at close — 2026-07-30
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
 ## Retrospective
 
+[R-00000147](../../retrospectives/R-00000147.md) — 값이 실측이 아니라는 것을 결정에 적었다.
 
 ## Promotion decision
+
+FINAL: promoted. DE-00000044 는 앞으로의 실행을 구속하는 계약이므로 DE-00000030 의 판정에 따라
+`official/decisions/records/` 로 승격한다.

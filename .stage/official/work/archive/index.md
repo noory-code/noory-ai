@@ -123,3 +123,8 @@
 | W-00000138 | completed | [items/W-00000138/_story.md](items/W-00000138/_story.md) |
 | W-00000139 | completed | [items/W-00000139/_story.md](items/W-00000139/_story.md) |
 | W-00000140 | completed | [items/W-00000140/_story.md](items/W-00000140/_story.md) |
+| W-00000141 | completed | [items/W-00000141/_story.md](items/W-00000141/_story.md) |
+| W-00000142 | completed | [items/W-00000142/_story.md](items/W-00000142/_story.md) |
+| W-00000146 | completed | [items/W-00000146/_story.md](items/W-00000146/_story.md) |
+| W-00000147 | completed | [items/W-00000147/_story.md](items/W-00000147/_story.md) |
+| W-00000144 | completed | [items/W-00000144/_story.md](items/W-00000144/_story.md) |

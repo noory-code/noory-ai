@@ -6,7 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000142 | fix | codex |  | active | Claude | [current/W-00000142/_story.md](current/W-00000142/_story.md) |
-| W-00000144 | fix | codex |  | active | Claude | [current/W-00000144/_story.md](current/W-00000144/_story.md) |
-| W-00000146 | design | claude |  | active | Claude | [current/W-00000146/_story.md](current/W-00000146/_story.md) |
-| W-00000147 | design | claude |  | active | Claude | [current/W-00000147/_story.md](current/W-00000147/_story.md) |

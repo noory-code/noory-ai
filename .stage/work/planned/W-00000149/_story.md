@@ -16,8 +16,10 @@ scope: stage/scripts/drive.py, stage/scripts/tests/, stage/templates/, stage/doc
 
 ## Purpose
 
-W-00000147 이 정할 결정을 코드로 옮긴다. 시도가 오르면 드라이버가 같은 명령을 다시 부르지 않고
-한 등급 위 명령으로 부른다. 등급을 선언하지 않은 프로젝트는 지금과 똑같이 돈다.
+DE-00000044 를 설정과 코드로 옮긴다. **범위가 처음 잡을 때보다 훨씬 작다** — 등급을 바꾸는 축은
+안 만들기로 했다. 할 일은 드라이버가 부르는 명령에 모델을 못 박는 것이다: claude 쪽 `opus[1m]`,
+codex 쪽 `gpt-5.6-sol`. 값은 지금 도는 것과 같고, 바뀌는 것은 그 값이 실행하는 사람의 홈
+디렉터리가 아니라 프로젝트 설정에 적힌다는 점이다. 어느 명령으로 돌았는지 작업 로그에도 남긴다.
 
 **W-00000148 과 같은 설정 항목을 건드린다** — `executors` 두 벌, `review.reviewers` 두 벌,
 `review.strengths` 네 벌, 템플릿 `settings.jsonc`, `drive.py`. 한 바퀴에 같이 돌리는 것이 기본이다.

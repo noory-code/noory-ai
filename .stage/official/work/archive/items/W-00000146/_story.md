@@ -7,15 +7,16 @@ milestone:
 source:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000146
+promotion: promoted
 review: not_required
 scope: .stage/decisions/pending/
-promotes:
-decision_refs:
+promotes: .stage/official/decisions/records/DE-00000043.md, .stage/official/decisions/index.md
+decision_refs: DE-00000043
 ---
 
 # W-00000146 두 번째 바퀴의 리뷰가 무엇을 다시 보는가
@@ -92,7 +93,22 @@ obra/superpowers 가 같은 자리를 다르게 푼다. 고침 한 바퀴 뒤에
 ## Verification
 
 
+### Executed at close — 2026-07-30
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
+
 ## Retrospective
 
+[R-00000146](../../retrospectives/R-00000146.md) — 좁히기는 중간 바퀴에만 하고 마지막 판정은 안
+건드린다.
 
 ## Promotion decision
+
+FINAL: promoted. DE-00000043 은 앞으로의 리뷰를 구속하는 계약이고 일회성 허가가 아니므로
+DE-00000030 의 판정에 따라 `official/decisions/records/` 로 승격한다.
