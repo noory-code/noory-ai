@@ -85,6 +85,20 @@ def template_mode(template_text: str) -> tuple[str, str]:
     return "no_table", ""
 
 
+def unexplained_line_count(template_text: str, project_text: str) -> int:
+    """Count non-empty project lines that the current template does not contain."""
+    template_lines = {
+        line
+        for line in template_text.splitlines()
+        if line.strip() and not _is_separator(line)
+    }
+    return sum(
+        1
+        for line in project_text.splitlines()
+        if line.strip() and not _is_separator(line) and line not in template_lines
+    )
+
+
 def _merge_project_rows(template_text: str, project_text: str | None) -> RefreshPlan:
     template_table = markdown_tables(template_text)[0]
     if project_text is None:
@@ -98,7 +112,7 @@ def _merge_project_rows(template_text: str, project_text: str | None) -> Refresh
             "project document does not contain exactly one matching table",
         )
 
-    template_lines = template_text.splitlines()
+    template_lines = template_text.splitlines(keepends=True)
     project_lines = project_text.splitlines()
     project_table = project_tables[0]
     # Existing index writers append rows at EOF. Some templates end with a
@@ -111,15 +125,19 @@ def _merge_project_rows(template_text: str, project_text: str | None) -> Refresh
         and _table_cells(line)
         and not _is_separator(line)
     ]
-    merged_lines = (
-        template_lines[: template_table.data_start]
-        + project_rows
-        + template_lines[template_table.data_end :]
-    )
-    merged = "\n".join(merged_lines)
-    if template_text.endswith("\n"):
-        merged += "\n"
-    return RefreshPlan("refresh", merged)
+    if not project_rows:
+        return RefreshPlan("refresh", template_text)
+
+    prefix = "".join(template_lines[: template_table.data_start])
+    suffix = "".join(template_lines[template_table.data_end :])
+    separator_line = template_lines[template_table.separator]
+    newline = separator_line[len(separator_line.rstrip("\r\n")) :] or "\n"
+    if prefix and not prefix.endswith(("\r", "\n")):
+        prefix += newline
+    rows = newline.join(project_rows)
+    if suffix or template_text.endswith(("\r", "\n")):
+        rows += newline
+    return RefreshPlan("refresh", prefix + rows + suffix)
 
 
 def plan_refresh(
@@ -140,6 +158,16 @@ def plan_refresh(
         )
     if mode == "empty_table":
         return _merge_project_rows(template_text, project_text)
+    if mode == "no_table" and project_text is not None and not selected:
+        unexplained = unexplained_line_count(template_text, project_text)
+        if unexplained:
+            noun = "line" if unexplained == 1 else "lines"
+            return RefreshPlan(
+                "skipped",
+                None,
+                f"project document has {unexplained} {noun} not present in the template; "
+                "select the file explicitly to replace it",
+            )
     return RefreshPlan("refresh", template_text)
 
 

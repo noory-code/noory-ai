@@ -34,8 +34,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "paths",
         nargs="*",
         help=(
-            "Guidance paths relative to .stage. Omit to refresh safe defaults; files whose "
-            "templates contain populated tables are replaced only when named explicitly."
+            "Guidance paths relative to .stage. Omit to refresh safe defaults. Defaults skip "
+            "files when no-table templates have unexplained project lines or templates have "
+            "populated tables; naming a path authorizes full replacement."
         ),
     )
     return parser.parse_args(argv)

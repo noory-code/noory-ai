@@ -60,6 +60,19 @@ relative link to that path.
 The direct `glob("B-*.md")` in `migrate_stage.py` remains solely as v3 migration input. B cards
 are not work records in schema v5 and no runtime scanner recognizes them.
 
+## Guidance refresh safety
+
+The default guidance refresh derives each file's ownership boundary from its current localized
+template. A document with no table is refreshed only when every non-empty, non-separator project
+line also exists in the template. Otherwise the command skips the file, reports the unexplained
+line count, and requires the operator to name the path explicitly for full replacement.
+
+A template with one empty table still carries only the project's table data rows into the current
+template; the merge preserves all template text outside the data-row span byte for byte. A
+template with populated tables is skipped by default, and ambiguous empty-table shapes are
+refused. Naming an individual path authorizes full replacement for the no-table and populated-table
+branches.
+
 ## Failure and rollback
 
 Before changing durable Stage files, the v4-to-v5 pass records the original `HEAD` and a

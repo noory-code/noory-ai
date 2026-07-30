@@ -4,6 +4,9 @@
 
 - Allow archive intents to reopen schema-v5 epic, story, and action records by deriving
   work-item identity from each hierarchical record path while preserving flat archive paths.
+- Skip default guidance replacement when a no-table project document contains lines absent from
+  its localized template, while retaining explicit replacement and byte-exact template prose
+  around preserved rows in empty-table documents.
 - Capture the v4-to-v5 audit baseline immediately after flat work cards enter the v5
   hierarchy so pre-existing card debt remains visible without blocking migration, while
   defects introduced by later migration steps still fail closed.
