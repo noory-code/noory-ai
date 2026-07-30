@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Sanitize inherited host-project and Stage work-item bindings in hook test helpers so the hook
+  and script suites stay hermetic inside agent sessions.
 - Keep supervised executor, acceptance, and reviewer infrastructure failures from spending a work
   attempt, using the same transport and tool-failure classification as unattended execution while
   continuing to count substantive executor, acceptance, and review failures.

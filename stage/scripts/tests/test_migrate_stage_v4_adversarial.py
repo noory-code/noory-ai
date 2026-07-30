@@ -20,6 +20,7 @@ from unittest.mock import patch
 
 STAGE_ROOT = Path(__file__).resolve().parents[2]
 HOOK_ROOT = STAGE_ROOT / "hooks"
+HOOK_TEST_ROOT = HOOK_ROOT / "tests"
 SCRIPT_ROOT = STAGE_ROOT / "scripts"
 V3_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "project-stage"
 V3_LOCALE_ROOT = STAGE_ROOT / "templates" / "locales"
@@ -29,9 +30,14 @@ START = SCRIPT_ROOT / "start_work.py"
 CLOSE = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
 ARCHIVE = STAGE_ROOT / "skills" / "stage-archive" / "archive_work.py"
 AUDIT = SCRIPT_ROOT / "audit_stage.py"
-for import_root in (HOOK_ROOT, SCRIPT_ROOT):
+for import_root in (HOOK_ROOT, HOOK_TEST_ROOT, SCRIPT_ROOT):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
+
+from hook_test_environment import sanitize_current_hook_environment  # noqa: E402
+
+
+sanitize_current_hook_environment()
 
 
 def load_module(name: str, path: Path):
