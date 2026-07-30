@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.55.0 — 2026-07-30
+
 - Reap timed-out parallel work through the persisted executor or reviewer role instead of
   inferring it from report headings, while reporting the legacy log-inference fallback when
   older run state has no active role.
