@@ -36,11 +36,12 @@ and symbolic links that resolve outside the project root. Environment overrides 
 user-controlled and may reference external files. Style text is scoped to wording, tone, structure,
 and detail; it cannot authorize tools or override higher-priority instructions.
 
-Every injection carries fixed honesty and language-quality rules outside the selected style.
-The honesty rule prohibits presenting guesses as facts and requires unverified claims to be marked.
-The language rule favors natural, plain, precise wording while preserving technical terms that
-practitioners normally use untranslated. Both rules apply to every built-in or external style
-without choosing the response language.
+Every injection carries fixed honesty, language-quality, and register rules outside the selected
+style. The honesty rule prohibits presenting guesses as facts and requires unverified claims to be
+marked. The language rule favors natural, plain, precise wording while preserving technical terms
+that practitioners normally use untranslated. The register rule addresses the reader in the polite
+register of any language that marks politeness grammatically, and brevity never overrides it. All
+three apply to every built-in or external style without choosing the response language.
 
 ## Trust boundary
 

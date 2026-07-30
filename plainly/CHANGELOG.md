@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a fixed register rule outside the replaceable style boundary: a reply in a language that marks
+  politeness grammatically addresses the reader in its polite register, and brevity is not a reason
+  to drop it. No layer specified a register before, so the concision instructions alone decided it
+  and Korean replies came back in plain form. The rule carries no style-level opt-out — an escape
+  clause reopens the negotiation the rule exists to close, and no built-in style names a register.
 - Move the honesty rule outside the replaceable style boundary so every built-in and external style
   prohibits presenting guesses as facts and requires unverified claims to be marked.
 

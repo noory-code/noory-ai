@@ -38,7 +38,10 @@ def communication_context(style: str) -> str:
         "translating an English term piece by piece fails this check: drop it and say what the "
         "thing does. Second, does the sentence still stand in English word order? Rebuild it in "
         "the order the target language uses. Keep a technical term in the form practitioners say "
-        "it, which is usually the original."
+        "it, which is usually the original.\n\n"
+        "Register rule: when the reader's language marks politeness grammatically, as Korean and "
+        "Japanese do, address the reader in its polite register. Brevity is never a reason to drop "
+        "it: a clipped plain-form sentence talks down to the person you are answering."
     )
 
 

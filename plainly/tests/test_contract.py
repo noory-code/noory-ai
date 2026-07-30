@@ -69,6 +69,25 @@ class ContractTest(unittest.TestCase):
         self.assertNotIn("Do not state guesses as facts", baseline)
         self.assertNotIn("Mark unverified claims as unverified", baseline)
 
+    def test_styles_do_not_duplicate_fixed_register_rule(self) -> None:
+        styles = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (PLUGIN_ROOT / "styles").glob("*.md")
+        )
+
+        self.assertNotIn("marks politeness grammatically", styles)
+        self.assertNotIn("polite register", styles)
+
+    def test_fixed_register_rule_carries_no_style_escape_clause(self) -> None:
+        hook = (PLUGIN_ROOT / "hooks" / "inject_style.py").read_text(encoding="utf-8")
+
+        for escape in (
+            "different level of formality",
+            "unless the",
+            "explicitly directs",
+        ):
+            self.assertNotIn(escape, hook)
+
     def test_marketplace_registers_plainly(self) -> None:
         marketplace = self.load_json(REPOSITORY_ROOT / ".claude-plugin" / "marketplace.json")
         entries = {entry["name"]: entry for entry in marketplace["plugins"]}

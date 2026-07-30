@@ -158,6 +158,72 @@ class HookTest(unittest.TestCase):
                 for marker in markers:
                     self.assertIn(marker, fixed_context)
 
+    def test_register_rule_is_injected_on_every_resolution_path(self) -> None:
+        markers = (
+            "when the reader's language marks politeness grammatically",
+            "address the reader in its polite register",
+        )
+        cases = (
+            ("default", {}, None),
+            ("environment profile", {"NOORY_STYLE_PROFILE": "brief"}, None),
+            ("project settings", {}, {"profile": "guided"}),
+            ("environment file", {"NOORY_STYLE_FILE": "external.md"}, None),
+        )
+
+        for name, extra_env, settings in cases:
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                if settings is not None:
+                    settings_directory = root / ".plainly"
+                    settings_directory.mkdir()
+                    (settings_directory / "settings.json").write_text(
+                        json.dumps(settings),
+                        encoding="utf-8",
+                    )
+                if name == "environment file":
+                    (root / "external.md").write_text(
+                        "Use one short paragraph.",
+                        encoding="utf-8",
+                    )
+
+                output = self.run_hook(
+                    {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                    home=root / "home",
+                    extra_env=extra_env,
+                )
+
+                context = output["hookSpecificOutput"]["additionalContext"]
+                fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+                for marker in markers:
+                    self.assertIn(marker, fixed_context)
+
+    def test_project_style_file_replaces_baseline_and_keeps_the_register_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            settings_directory = root / ".plainly"
+            settings_directory.mkdir()
+            (settings_directory / "settings.json").write_text(
+                json.dumps({"style_file": "project-style.md"}),
+                encoding="utf-8",
+            )
+            (root / "project-style.md").write_text(
+                "Use casual contractions.",
+                encoding="utf-8",
+            )
+            output = self.run_hook(
+                {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                home=root / "home",
+            )
+
+        context = output["hookSpecificOutput"]["additionalContext"]
+        bounded_style = context.split("<<<PLAINLY_STYLE_START>>>", maxsplit=1)[1]
+        bounded_style = bounded_style.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[0]
+        fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+
+        self.assertIn("Use casual contractions.", bounded_style)
+        self.assertNotIn("Lead with the answer", bounded_style)
+        self.assertIn("address the reader in its polite register", fixed_context)
+
     def test_each_builtin_profile_injects_baseline_and_its_delta(self) -> None:
         markers = {
             "baseline": "Lead with the answer",
