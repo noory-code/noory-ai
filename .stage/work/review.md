@@ -7,3 +7,4 @@
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
 | W-00000162 | passed | completed | not_applicable | [current/W-00000161/W-00000162.md](current/W-00000161/W-00000162.md) |
+| W-00000163 | passed | completed | not_applicable | [current/W-00000161/W-00000163.md](current/W-00000161/W-00000163.md) |
