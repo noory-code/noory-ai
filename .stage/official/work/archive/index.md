@@ -142,3 +142,4 @@
 | W-00000158 | completed | [items/W-00000158/_story.md](items/W-00000158/_story.md) |
 | W-00000160 | completed | [items/W-00000160/_story.md](items/W-00000160/_story.md) |
 | W-00000159 | completed | [items/W-00000159/_story.md](items/W-00000159/_story.md) |
+| W-00000161 | completed | [items/W-00000161/_story.md](items/W-00000161/_story.md) |
