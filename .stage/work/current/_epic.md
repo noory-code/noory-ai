@@ -1,10 +1,9 @@
 ---
 id: W-00000000
-title: 제목
+title: Title
 kind:
 venue:
 milestone:
-source:
 autonomous: false
 acceptance: []
 status: active
@@ -18,30 +17,44 @@ promotes:
 decision_refs:
 ---
 
-# W-00000000 제목
+# W-00000000 Title
 
-## 목적
-
-
-## 스토리
+## Purpose
 
 
-## 범위
+## Stories
 
 
-## 성공 기준
+## User value
 
 
-## 관련 진실
+## Scope
+
+### Included
 
 
-## 진행
+### Excluded
 
 
-## 검증
+## Risks
 
 
-## 회고
+## Success criteria
 
 
-## 승격 결정
+## Next action
+
+
+## Related truth
+
+
+## Progress
+
+
+## Verification
+
+
+## Retrospective
+
+
+## Promotion decision

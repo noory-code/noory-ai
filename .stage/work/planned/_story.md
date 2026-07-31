@@ -1,6 +1,6 @@
 ---
 id: W-00000000
-title: 제목
+title: Title
 kind:
 venue:
 milestone:
@@ -11,29 +11,29 @@ acceptance: []
 review: not_required
 ---
 
-# W-00000000 제목
+# W-00000000 Title
 
-## 목적
-
-
-## 액션
+## Purpose
 
 
-## 사용자 가치
+## Actions
 
 
-## 범위
-
-### 포함
+## User value
 
 
-### 제외
+## Scope
+
+### Included
 
 
-## 위험
+### Excluded
 
 
-## 성공 기준
+## Risks
 
 
-## 다음 행동
+## Success criteria
+
+
+## Next action
