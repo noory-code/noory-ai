@@ -9,9 +9,9 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000168
+promotion: not_applicable
 review: not_required
 scope: stage/docs/, stage/skills/stage-drive/, stage/scripts/, stage/CHANGELOG.md, .stage/
 promotes:
