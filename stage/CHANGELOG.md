@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- State what an executor may decide for itself and what it must hand back. The philosophy said the
+  executor widens its own scope to reach the purpose, which left every such widening invisible: on
+  2026-07-31 an executor chose a behaviour the design had left blank and never said so, and the
+  same round found work it could not reach and never said that either. Both were caught by the
+  reviewer reading code. Inside the card's declared paths the executor decides and reports what it
+  decided; outside them it does not act and reports what is needed; work the purpose does not need
+  is simply skipped. Judging the work wrong at all means stopping and handing it back.
+
 - Narrow the documentation rules to what a Stage body must contain and leave out. Five of the ten
   rules described how any sentence should read — word-by-word translation, naming before use, one
   new term per sentence, brevity — and the same rules were already stated where response style is
