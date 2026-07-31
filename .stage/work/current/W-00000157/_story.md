@@ -10,9 +10,9 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000157
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/tests/
 promotes:
