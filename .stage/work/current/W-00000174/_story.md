@@ -10,9 +10,9 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000174
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/, stage/skills/stage-handoff/SKILL.md, stage/skills/stage-archive/SKILL.md, stage/docs/, stage/operations/, stage/CHANGELOG.md
 promotes:
