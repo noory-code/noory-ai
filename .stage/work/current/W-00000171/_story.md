@@ -7,8 +7,8 @@ milestone:
 priority:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000171
 promotion: not_applicable
@@ -88,6 +88,16 @@ decision_refs:
 ## Progress
 
 ## Verification
+
+### Executed at close — 2026-07-31
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
