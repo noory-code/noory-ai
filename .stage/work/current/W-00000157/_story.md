@@ -2,15 +2,21 @@
 id: W-00000157
 title: 드라이버 시험이 물려받은 환경 변수에 흔들리지 않게 한다
 kind: fix
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/scripts/tests/test_drive.py
+scope: stage/scripts/tests/
+promotes:
+decision_refs:
 ---
 
 # W-00000157 드라이버 시험이 물려받은 환경 변수에 흔들리지 않게 한다
@@ -70,3 +76,11 @@ scope: stage/scripts/tests/test_drive.py
 ## Next action
 
 일곱 변수를 깔고 시험 묶음을 돌려 실패를 재현한다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
