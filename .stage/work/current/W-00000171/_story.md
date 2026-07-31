@@ -2,14 +2,20 @@
 id: W-00000171
 title: 목적이 매 도구 호출마다 눈앞에 있고, 파일 목록은 막는 대신 알린다
 kind: development
-venue:
+venue: codex
 milestone:
-status: captured
 priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/hooks/, stage/docs/, stage/operations/, stage/CHANGELOG.md, .stage/
+promotes:
+decision_refs:
 ---
 
 # W-00000171 목적이 매 도구 호출마다 눈앞에 있고, 파일 목록은 막는 대신 알린다
@@ -78,3 +84,11 @@ scope: stage/hooks/, stage/docs/, stage/operations/, stage/CHANGELOG.md, .stage/
 ## Next action
 
 지금 막는 검사가 등록 여부와 목록 일치를 어떻게 한 번에 보는지 읽고, 가를 자리를 정한다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
