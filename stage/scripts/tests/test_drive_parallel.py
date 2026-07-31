@@ -16,9 +16,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from driver_test_environment import sanitize_current_driver_test_environment
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive_parallel.py"
 HOOKS = SCRIPT.parent.parent / "hooks"
+
+sanitize_current_driver_test_environment()
 
 
 def load_module():

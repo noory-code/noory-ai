@@ -22,8 +22,12 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from driver_test_environment import sanitize_current_driver_test_environment
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
+
+sanitize_current_driver_test_environment()
 
 
 def python_command(code: str) -> str:
