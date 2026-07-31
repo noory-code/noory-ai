@@ -6,3 +6,4 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
+| W-00000169 | passed | completed | not_applicable | [current/W-00000168/W-00000169.md](current/W-00000168/W-00000169.md) |
