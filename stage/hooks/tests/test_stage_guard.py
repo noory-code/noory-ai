@@ -1120,6 +1120,38 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
+    def test_allows_outside_scope_commit_and_reports_crossing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(root, status="active", scope="src")
+            guide = root / "docs" / "guide.md"
+            guide.parent.mkdir(parents=True)
+            guide.write_text("# Guide\n", encoding="utf-8")
+            subprocess.run(
+                ["git", "init"],
+                cwd=root,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            subprocess.run(
+                ["git", "add", "docs/guide.md"],
+                cwd=root,
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            payload = {
+                "tool_name": "Bash",
+                "cwd": str(root),
+                "tool_input": {"command": "git commit -m work"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed: docs/guide.md.", message(result))
+
     def test_blocks_git_add_and_commit_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -1139,6 +1171,35 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_work_item(root, status="completed", verification="passed", retrospective="pending", promotion="approved", scope="src")
+            payload = {
+                "tool_name": "Bash",
+                "cwd": str(root),
+                "tool_input": {"command": "git add src/app.py && git commit -m x"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("retrospective", reason(result))
+
+    def test_blocks_completed_item_commit_with_unfinished_lifecycle_when_other_work_is_open(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(
+                root,
+                item_id="W-0001",
+                status="completed",
+                verification="passed",
+                retrospective="pending",
+                promotion="approved",
+                scope="src",
+            )
+            self.write_work_item(
+                root,
+                item_id="W-0002",
+                status="active",
+                scope="other",
+            )
             payload = {
                 "tool_name": "Bash",
                 "cwd": str(root),

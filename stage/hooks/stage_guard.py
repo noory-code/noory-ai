@@ -456,6 +456,24 @@ def work_scale_label(stage_root: Path, item: WorkItem) -> str:
         return "Work"
 
 
+def commit_target_files(workspace_root: Path, command: str) -> list[str]:
+    """Return every path the commit gate can observe for one shell command."""
+    files = staged_files(workspace_root)
+    files.extend(
+        path
+        for path in git_add_paths_from_command(command, workspace_root)
+        if path not in files
+    )
+    files.extend(
+        path
+        for path in git_commit_pathspec_files(command, workspace_root)
+        if path not in files
+    )
+    if git_commit_all_requested(command):
+        files.extend(path for path in changed_files(workspace_root) if path not in files)
+    return files
+
+
 def purpose_context_targets(
     workspace_root: Path, payload: dict[str, Any]
 ) -> tuple[list[str], bool]:
@@ -464,17 +482,21 @@ def purpose_context_targets(
     write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
     if name not in SHELL_TOOLS and name not in write_tools:
         return [], False
-    _command, explicit_paths, shell_write_targets = mutation_targets(
+    command, explicit_paths, shell_write_targets = mutation_targets(
         payload, name, workspace_root
     )
     follows_symlinks = name in {"Write", "Edit", "MultiEdit"} or (
         name not in WRITE_TOOLS
         and isinstance(tool_input(payload).get("content"), str)
     )
-    return (
-        explicit_paths if name in write_tools else shell_write_targets,
-        follows_symlinks,
-    )
+    targets = list(explicit_paths if name in write_tools else shell_write_targets)
+    if name in SHELL_TOOLS and command and command_has_git_commit(command):
+        targets.extend(
+            path
+            for path in commit_target_files(workspace_root, command)
+            if path not in targets
+        )
+    return targets, follows_symlinks
 
 
 def purpose_tool_context(workspace_root: Path, payload: dict[str, Any]) -> str:
@@ -986,12 +1008,9 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
             return deny(blocker)
 
     if stage_root.exists() and name in SHELL_TOOLS and command and command_has_git_commit(command):
-        files = staged_files(workspace_root)
-        files.extend(path for path in git_add_paths_from_command(command, workspace_root) if path not in files)
-        files.extend(path for path in git_commit_pathspec_files(command, workspace_root) if path not in files)
-        if git_commit_all_requested(command):
-            files.extend(path for path in changed_files(workspace_root) if path not in files)
-        blocker = commit_blocker(workspace_root, files)
+        blocker = commit_blocker(
+            workspace_root, commit_target_files(workspace_root, command)
+        )
         if blocker:
             return deny(blocker)
 

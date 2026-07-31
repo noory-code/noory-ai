@@ -41,6 +41,14 @@ nothing downstream will say so. When a bulk change needs a program, run it and t
 
 The registration gate covers nearly all workspace files by default — code, documents, configuration, and design artifacts alike. `.stage/`, `.git/`, and `.discuss/` are excluded. It asks only whether open work exists; a work item's scope is an advisory signal, not write authorization. An outside-scope target passes and the purpose context names the crossing so the executor reports it. Projects adjust governance in `.stage/settings.json` (`governance.exclude_paths`/`exclude_extensions`); every narrowing is reported by the audit. When `settings.json` exists but is unreadable, writes outside `.stage/` are denied until it is repaired (fail-closed).
 
+## Commit gate
+
+The commit gate applies the same registration rule to staged files, same-command `git add`
+targets, `git commit -a` changes, and commit pathspecs. At least one work item must be open, but an
+outside-scope target passes and the purpose context names the crossing. Independently, a target
+owned by a completed work item remains blocked until that item's verification, retrospective, and
+promotion decision are final.
+
 ## Hierarchy gate
 
 Writing a work item whose `parent` does not exist, points at itself, or opens a child under a finalized parent (completed/archived/rejected) is denied at write time. The audit re-checks the full hierarchy (unknown parents, cycles, open children under finalized parents) as a safety net.
@@ -56,9 +64,9 @@ The hook selects the driver-provided item when `STAGE_WORK_ITEM_PATH` names an a
 otherwise it renders every active leaf and its ancestors.
 
 Each branch contributes its leaf scope, an explicit report instruction, and any scope boundary
-crossed by a recognized write call. Those signals come first. The live theme, milestone, epic,
-story, and action purpose first sentences follow in hierarchy order, one line per level, so the
-current action purpose is the final line returned for the tool call. Denied calls retain their
+crossed by a recognized write or commit call. Those signals come first. The live theme, milestone,
+epic, story, and action purpose first sentences follow in hierarchy order, one line per level, so
+the current action purpose is the final line returned for the tool call. Denied calls retain their
 original reason before this context.
 
 ## Promotion intent

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Let commits follow the same registration rule as writes: any open work permits an
+  outside-scope target, the purpose context reports that crossing, and no open work still blocks.
+  Keep the independent completion gate for files owned by completed items whose verification,
+  retrospective, or promotion is unfinished.
+
 - Put purpose at the end of every tool decision, reduced to one live sentence per hierarchy level.
   Scope now signals ownership instead of authorizing writes: work with any open registration may
   cross its leaf scope, and the same hook output names the crossing and requires the executor to

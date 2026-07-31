@@ -474,7 +474,7 @@ flowchart TB
   PreToolUse --> GovernanceGate["거버넌스 게이트\nsettings.json 파손 시 fail-closed"]
   PreToolUse --> HierarchyGate["계층 게이트\n부모 부재 / 자기 참조 /\n닫힌 부모 아래 자식 차단"]
   PreToolUse --> PromotionGate["승격 게이트\n대역 외 승격 의도 + promotes 바인딩\nrename 예약 (1단계)"]
-  PreToolUse --> CommitGate["커밋 게이트\nstaged / git add / commit -a 대상 연결"]
+  PreToolUse --> CommitGate["커밋 게이트\n열린 일 필요 / 목록 밖 통과+알림\n끝난 일의 미완결 파일 차단"]
   PreToolUse --> PortabilityGate["이식성 게이트\nOS 전용 스크립트 차단"]
   PreToolUse --> QuestionReminder["질문 게이트\n질문 전 목적·원칙 상기\n질문당 1회 리마인드"]
 

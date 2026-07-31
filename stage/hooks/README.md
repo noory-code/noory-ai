@@ -17,7 +17,11 @@ This directory owns the hooks that apply Stage principles at execution time.
 - Work item hierarchy is enforced at write time: unknown parents, self-parents, and opening a child under a finalized parent are denied.
 - The question tool (`AskUserQuestion` on Claude, `request_user_input` on Codex) gets a once-per-question reminder to derive the answer from the work purpose and canon principles first; re-asking passes.
 - Every tool call gets non-blocking purpose context when active work exists. Scope and boundary-crossing lines come first; then the live theme, milestone, epic, story, and action purpose first sentences follow in hierarchy order, leaving the current action purpose last. A denied call keeps its original reason and appends the same purpose context.
-- Intermediate commits are allowed. The commit gate checks that staged files, same-command `git add` targets, and `git commit -a` targets are registered to work items.
+- Intermediate commits are allowed. For staged files, same-command `git add` targets, `git commit
+  -a` changes, and commit pathspecs, the commit gate requires at least one open work item and still
+  blocks a target owned by a completed item whose verification, retrospective, or promotion is
+  unfinished. An open item's scope is not commit authorization: an outside-scope target passes and
+  is reported in the purpose context.
 - OS-specific executable scripts are not allowed inside `.stage`.
 
 ## Runtime concurrency

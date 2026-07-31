@@ -647,26 +647,22 @@ def commit_blocker(workspace_root: Path, paths: list[str]) -> str:
         return ""
 
     items = load_work_items(workspace_root / ".stage")
-    missing: list[str] = []
     blockers: list[str] = []
     for path in source_paths:
         matched = [item for item in items if item_matches_path(item, path, workspace_root)]
-        if not matched:
-            missing.append(path)
-            continue
         for item in matched:
             if item_is_completed(item):
                 blockers.extend(item_completion_blockers(item))
 
-    if missing:
-        return (
-            "Stage commit gate violation: committed governed files are not registered to a work item. "
-            "Targets: " + ", ".join(missing[:5])
-        )
     if blockers:
         return (
             "Stage completion gate violation: close the completed item's verification, retrospective, "
             "and promotion decision first. " + " / ".join(blockers)
+        )
+    if not any(item_is_open(item) for item in items):
+        return (
+            "Stage commit gate violation: before committing governed files, register an open work "
+            "item. Targets without open work: " + ", ".join(source_paths[:5])
         )
     return ""
 

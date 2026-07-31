@@ -33,8 +33,9 @@ card by delegation instead of waiting for a human to switch windows:
 - The hosting window forwards the card's self-carrying body (purpose, completed context,
   remaining problem, success criteria, NEXT action) to the venue's executor through the
   bridge, and stays responsible for monitoring the run to completion.
-- The delegated executor works under the same Stage gates as a native window — registration,
-  scope, and commit gates apply to the bridged process identically.
+- The delegated executor works under the same Stage gates as a native window — registration and
+  commit gates apply to the bridged process identically. Scope is a signal on either path: a
+  crossing passes and is reported.
 - The hosting window reviews the delegated output before the card closes (see
   `operations/review.md`, Cross-venue review). Delegation transfers execution, never review:
   the executor of a card and the reviewer of that card must be different venues.

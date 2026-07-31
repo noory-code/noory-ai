@@ -21,7 +21,7 @@
 | 승격 게이트 | 구현됨 | `.stage/.runtime/intents/<work-item>.json` + 완료된 작업 항목 확인 |
 | Archive 게이트 | 구현됨 | `type: archive` intent + completed/rejected 작업 항목 확인 |
 | 등재 게이트 | 구현됨 | 소스 수정 전 `present/work/items/` active 작업 항목 확인 |
-| 커밋 게이트 | 구현됨 | staged 소스, 같은 명령의 `git add` 대상, `git commit -a` 대상의 작업 항목 등재와 completed blocker 확인 |
+| 커밋 게이트 | 구현됨 | staged 소스, 같은 명령의 `git add` 대상, `git commit -a` 대상에 열린 작업 존재 확인 + 목록 밖 통과·알림 + completed blocker 확인 |
 | Stop 인계 | 구현됨 | Stop 시 세션 요약 기록 |
 | 이식성 게이트 | 구현됨 | `.stage` 내부 OS 전용 스크립트 차단 |
 | 산출물 패밀리 구조 | 구현됨 | 색인 문서, 개별 기록 디렉터리, `operations/artifacts.md` 분리 |
@@ -53,7 +53,7 @@
 | P7 | ✅ Closed | ~~백로그와 다른 산출물 영역을 단일 문서 중심으로 과소설계했다.~~ | `future/backlog.md`, `future/roadmap.md`, `present/*/*.md`가 본문과 색인 역할을 겸할 수 있었다. | 문서가 커질수록 SSOT, MECE, 이력, 우선순위 관리가 붕괴할 수 있었다. | 산출물 패밀리를 `index` + `items/records` + `_template` + `views`로 분리함. |
 | P8 | ✅ Closed | ~~완료·회고 게이트가 등재된 작업에만 적용된다.~~ | 미등재 소스 수정이 가능하면 하네스가 옵트인이 됐다. | 회고 필수와 부분 완료 금지가 자율 규칙으로 약해질 수 있었다. | 소스 수정 전 active 작업 항목 등재를 차단 게이트로 추가함. |
 | P9 | ✅ Closed | ~~승격 게이트가 본문 마커에 의존한다.~~ | `[stage-promote]`나 `승격` 문자열이 공식 산출물 본문을 오염시킬 수 있었다. | `past`의 evergreen 문서 원칙과 충돌했다. | `.stage/.runtime/promote-intent.json` 대역 외 신호로 변경함. |
-| P10 | ✅ Closed | ~~커밋·Stop 게이트 의미론이 장기 프로젝트와 충돌한다.~~ | 미완료 작업 전체를 기준으로 커밋/중단을 막으면 중간 커밋과 세션 인계가 어려웠다. | 상태 조작을 유도할 수 있었다. | 커밋은 대상 소스 등재와 completed blocker 확인으로 두고, Stop은 요약 기록으로 변경함. |
+| P10 | ✅ Closed | ~~커밋·Stop 게이트 의미론이 장기 프로젝트와 충돌한다.~~ | 미완료 작업 전체를 기준으로 커밋/중단을 막으면 중간 커밋과 세션 인계가 어려웠다. | 상태 조작을 유도할 수 있었다. | 커밋은 열린 작업 존재와 대상 소스의 completed blocker를 확인하고, 목록 밖은 통과·알림으로 두며, Stop은 요약 기록으로 변경함. |
 | P11 | ✅ Closed | ~~셸 경로에서 등재·승격 게이트가 우회된다.~~ | redirect, append redirect, cp, mv, tee, sed -i 같은 셸 쓰기 경로가 Write 도구 게이트를 지나지 않았다. | 하네스 강제가 도구 선택에 따라 사라졌다. | 셸 쓰기 대상 추출과 git 복합 명령 추정을 추가함. 인라인 인터프리터 쓰기는 best-effort 감지 범위 밖으로 문서화함. |
 | P12 | ✅ Closed | ~~작업 scope 기본값이 fail-open이다.~~ | `scope: .` 또는 빈 scope가 전체 경로와 매칭될 수 있었다. | 작업 항목 하나로 모든 소스 변경이 통과했다. | 빈 scope와 `.`은 매칭 없음, 전역은 `*`만 허용하도록 변경함. |
 | P13 | ✅ Closed | ~~설계도 공간축과 상태 어휘가 구현과 어긋난다.~~ | §5 공간축, §6 상태 전이, §9 게이트 목록이 현재 템플릿/스킬과 완전히 일치하지 않았다. | 설계도 대비 감사의 기준이 흔들렸다. | 공간축, 작업 상태 enum, 의사결정 8게이트를 현재 구현과 맞춤. |
@@ -79,12 +79,12 @@
 |---|---|
 | 백로그와 주요 산출물이 단일 파일 중심이던 문제 | 색인과 개별 기록 디렉터리를 분리하는 산출물 패밀리 구조로 변경 |
 | 본문 마커 승격 문제 | 승격 의도를 `.stage/.runtime/promote-intent.json`으로 분리 |
-| 미등재 소스 수정 문제 | active 작업 항목 scope와 연결된 경우만 허용 |
+| 미등재 소스 수정 문제 | 열린 작업이 있을 때만 허용하고, scope 밖은 통과시키되 넘었다고 알림 |
 | Stop 과차단 문제 | Stop은 인계 요약을 남기고 허용 |
 | 셸 우회 문제 | redirect, cp, mv, tee, sed -i 대상 경로를 등재/승격 게이트에 연결 |
 | append redirect 문제 | `>>` 대상 경로를 등재 게이트에 연결 |
 | past 읽기 과차단 | 승격 게이트 입력을 쓰기 대상 경로로 한정 |
-| scope fail-open 문제 | 빈 scope와 `.`을 매칭 없음으로 변경하고 `*`만 전역으로 허용 |
+| scope fail-open 문제 | 빈 scope와 `.`은 소유 경로 없음, `*`만 전역 소유로 유지하되 scope는 허가가 아닌 신호로 사용 |
 | archive 거처 부재 | `past/work/archive/items/` 추가와 감사 CLI 검사 연결 |
 | 설계도 lag | 공간축, 작업 상태 전이, 의사결정 게이트 명칭을 구현과 일치시킴 |
 | 감사 CLI 오탐 | 작업 항목 링크만 색인 참조로 해석하고 회고 링크와 산문 패턴을 제외 |
