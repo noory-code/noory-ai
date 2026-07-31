@@ -96,6 +96,11 @@ def settings_path(project_root: Path) -> Path:
     return project_root.expanduser().resolve() / SETTINGS_DIRECTORY / SETTINGS_FILENAME
 
 
+def user_settings_path(home: Path) -> Path:
+    """User-wide default, used only when the project pins nothing."""
+    return home.expanduser().resolve() / SETTINGS_DIRECTORY / SETTINGS_FILENAME
+
+
 def read_style_file(path: Path) -> tuple[str | None, str | None]:
     resolved = path.expanduser().resolve()
     try:
@@ -160,6 +165,15 @@ def resolve_style(
         if resolved is not None:
             return resolved
 
+    # A project that pins nothing falls back to the person's own default. This
+    # scope names a built-in profile only: a style file would reintroduce the
+    # out-of-project read that project settings are confined against.
+    user_settings = user_settings_path(Path.home() if home is None else home)
+    if user_settings != project_settings and user_settings.exists():
+        resolved = _user_profile_from_settings(user_settings, catalog, diagnostics)
+        if resolved is not None:
+            return resolved
+
     default = _builtin_style(catalog, catalog.default, f"builtin:{catalog.default}", diagnostics)
     if default is None:
         raise RuntimeError(f"Plainly default profile {catalog.default!r} cannot be loaded")
@@ -208,6 +222,37 @@ def _builtin_style(
         profile=canonical_name,
         diagnostics=tuple(diagnostics),
     )
+
+
+def _user_profile_from_settings(
+    path: Path,
+    catalog: ProfileCatalog,
+    diagnostics: list[str],
+) -> ResolvedStyle | None:
+    try:
+        raw: Any = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        diagnostics.append(f"Cannot read Plainly settings {path}: {exc}")
+        return None
+    if not isinstance(raw, dict):
+        diagnostics.append(f"Plainly settings {path} must contain a JSON object")
+        return None
+
+    if isinstance(raw.get("style_file"), str) and raw["style_file"].strip():
+        diagnostics.append(
+            f"Plainly user settings {path} may name a profile only; style_file is ignored"
+        )
+
+    profile_value = raw.get("profile")
+    if not isinstance(profile_value, str) or not profile_value.strip():
+        diagnostics.append(f"Plainly user settings {path} has no profile")
+        return None
+
+    name = profile_value.strip()
+    resolved = _builtin_style(catalog, name, f"user-settings:{path}", diagnostics)
+    if resolved is None:
+        diagnostics.append(f"Unknown Plainly profile in {path}: {name}")
+    return resolved
 
 
 def _style_from_settings(

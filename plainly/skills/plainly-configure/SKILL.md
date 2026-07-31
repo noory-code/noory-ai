@@ -9,11 +9,16 @@ Use Plainly's deterministic configuration script at
 `${CLAUDE_PLUGIN_ROOT}/scripts/configure.py`. If the host does not expand that variable, resolve the
 plugin root two directories above this `SKILL.md` and use the same `scripts/configure.py` path.
 
-## Project ownership
+## Where settings live
 
-- Plainly persists settings only at `<workspace>/.plainly/settings.json`.
-- Pass the active workspace root through `--project-root`.
-- Environment variables remain temporary overrides; there is no persisted user-global scope.
+- A project's choice lives at `<workspace>/.plainly/settings.json`. Pass the workspace root through
+  `--project-root`.
+- The person's own default lives at `<home>/.plainly/settings.json` and applies wherever a project
+  pins nothing. Reach it with `--user`.
+- A project always wins over that default. Ask which one the request means before writing either.
+- The user-wide file may name a built-in profile only. An external style file there would read from
+  outside every project it applies to, so `set-file` has no `--user` form.
+- Environment variables remain temporary overrides.
 
 ## Commands
 
@@ -23,9 +28,11 @@ Run the corresponding command with `python3`:
 <cli> list
 <cli> show --project-root <workspace>
 <cli> set-profile <profile> --project-root <workspace>
+<cli> set-profile <profile> --user
 <cli> set-file <path> --project-root <workspace>
 <cli> apply-interview --length <standard|shortest> --structure <direct|step-by-step> --tone <conversational|formal> --project-root <workspace>
 <cli> reset --project-root <workspace>
+<cli> reset --user
 ```
 
 Do not hand-edit settings. The script validates profile names and style files and writes settings

@@ -97,11 +97,11 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(second.source, f"file:{style_file.resolve()}")
         self.assertIsNone(second.profile)
 
-    def test_project_settings_are_the_only_persisted_scope(self) -> None:
+    def test_project_settings_win_over_the_user_default(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             home = root / "home"
-            user_settings = home / ".noory" / "plainly" / "settings.json"
+            user_settings = home / ".plainly" / "settings.json"
             project_settings = root / ".plainly" / "settings.json"
             user_settings.parent.mkdir(parents=True)
             project_settings.parent.mkdir(parents=True)
@@ -112,6 +112,41 @@ class RuntimeTest(unittest.TestCase):
 
         self.assertEqual(resolved.profile, "guided")
         self.assertEqual(resolved.source, f"settings:{project_settings.resolve()}")
+
+    def test_user_default_applies_when_the_project_pins_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            user_settings = home / ".plainly" / "settings.json"
+            user_settings.parent.mkdir(parents=True)
+            user_settings.write_text(json.dumps({"profile": "decision"}), encoding="utf-8")
+
+            resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=home)
+
+        self.assertEqual(resolved.profile, "decision")
+        self.assertEqual(resolved.source, f"user-settings:{user_settings.resolve()}")
+
+    def test_user_default_cannot_name_a_style_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            outside = root / "outside.md"
+            outside.write_text("Use one short paragraph.", encoding="utf-8")
+            user_settings = home / ".plainly" / "settings.json"
+            user_settings.parent.mkdir(parents=True)
+            user_settings.write_text(
+                json.dumps({"style_file": str(outside)}),
+                encoding="utf-8",
+            )
+
+            resolved = resolve_style(PLUGIN_ROOT, root, environ={}, home=home)
+
+        self.assertEqual(resolved.profile, "baseline")
+        self.assertNotIn("Use one short paragraph.", resolved.text)
+        self.assertTrue(
+            any("style_file is ignored" in note for note in resolved.diagnostics),
+            resolved.diagnostics,
+        )
 
     def test_legacy_noory_settings_are_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Narrow the documentation rules to what a Stage body must contain and leave out. Five of the ten
+  rules described how any sentence should read — word-by-word translation, naming before use, one
+  new term per sentence, brevity — and the same rules were already stated where response style is
+  decided, so a change had to be made in more than one place to hold. Nothing points at the other
+  side: a project without a response-style plugin keeps every rule this document still owns.
 - Return the live theme, milestone, and top-level work purpose before a session's first write to
   `.stage/` (excluding `.stage/.runtime/`) or any `CLAUDE.md`/`AGENTS.md`. The PreToolUse reminder
   runs only after existing blockers pass and before promotion intent consumption, then retains all

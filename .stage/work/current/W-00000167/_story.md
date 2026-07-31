@@ -14,7 +14,7 @@ retrospective: pending
 retrospective_ref:
 promotion: pending
 review: not_required
-scope: plainly/, stage/operations/, .plainly/
+scope: plainly/, stage/operations/, stage/CHANGELOG.md, .plainly/
 promotes:
 decision_refs:
 ---

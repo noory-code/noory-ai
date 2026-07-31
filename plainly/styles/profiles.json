@@ -15,6 +15,11 @@
       "description": "Give the answer and essential details with minimal wording.",
       "file": "brief.md"
     },
+    "decision": {
+      "label": "Decision",
+      "description": "Say what a change means and what it costs, so someone who is not reading the code can decide.",
+      "file": "decision.md"
+    },
     "guided": {
       "label": "Guided",
       "description": "Explain unfamiliar work step by step and define necessary terms.",

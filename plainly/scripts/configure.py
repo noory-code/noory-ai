@@ -17,6 +17,7 @@ from plainly.runtime import (  # noqa: E402
     read_style_file,
     resolve_style,
     settings_path,
+    user_settings_path,
 )
 
 
@@ -44,6 +45,8 @@ def write_settings(path: Path, payload: dict[str, str]) -> None:
 
 
 def target_settings(args: argparse.Namespace) -> Path:
+    if getattr(args, "user", False):
+        return user_settings_path(Path.home())
     return settings_path(Path(args.project_root))
 
 
@@ -139,6 +142,11 @@ def build_parser() -> argparse.ArgumentParser:
         "profile",
         choices=tuple(catalog.profiles) + tuple(catalog.aliases),
     )
+    set_profile.add_argument(
+        "--user",
+        action="store_true",
+        help="Set your own default for projects that pin nothing, instead of this project.",
+    )
     add_project_root(set_profile)
 
     set_file = commands.add_parser("set-file", help="Select an external UTF-8 style file.")
@@ -159,6 +167,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_project_root(interview)
 
     reset = commands.add_parser("reset", help="Remove saved Plainly settings.")
+    reset.add_argument(
+        "--user",
+        action="store_true",
+        help="Remove your own default instead of this project's settings.",
+    )
     add_project_root(reset)
     return parser
 
@@ -185,7 +198,8 @@ def run(args: argparse.Namespace) -> int:
     if args.command == "set-profile":
         profile = catalog.aliases.get(args.profile, args.profile)
         write_settings(path, {"profile": profile})
-        print(f"Plainly project profile set to {profile}: {path}")
+        scope = "user" if args.user else "project"
+        print(f"Plainly {scope} profile set to {profile}: {path}")
         return 0
 
     if args.command == "set-file":
@@ -214,11 +228,12 @@ def run(args: argparse.Namespace) -> int:
         return 0 if configured else 2
 
     if args.command == "reset":
+        scope = "user" if args.user else "project"
         if path.exists():
             path.unlink()
-            print(f"Plainly project settings removed: {path}")
+            print(f"Plainly {scope} settings removed: {path}")
         else:
-            print(f"Plainly project settings already use defaults: {path}")
+            print(f"Plainly {scope} settings already use defaults: {path}")
         return 0
 
     raise RuntimeError(f"Unhandled command: {args.command}")

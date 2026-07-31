@@ -39,7 +39,7 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(registry["aliases"], {"plain": "baseline"})
         self.assertEqual(
             set(registry["profiles"]),
-            {"baseline", "brief", "guided", "professional"},
+            {"baseline", "brief", "decision", "guided", "professional"},
         )
         for entry in registry["profiles"].values():
             style_path = PLUGIN_ROOT / "styles" / entry["file"]
@@ -50,7 +50,7 @@ class ContractTest(unittest.TestCase):
         baseline = (styles / "baseline.md").read_text(encoding="utf-8")
         deltas = "\n".join(
             (styles / name).read_text(encoding="utf-8")
-            for name in ("brief.md", "guided.md", "professional.md")
+            for name in ("brief.md", "decision.md", "guided.md", "professional.md")
         )
 
         for principle in (

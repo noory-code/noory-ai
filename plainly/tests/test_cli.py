@@ -255,6 +255,65 @@ class ConfigureCliTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unrecognized arguments", result.stderr)
 
+    def test_user_flag_writes_the_home_default_and_leaves_the_project_alone(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            home.mkdir()
+
+            result = self.run_cli(
+                "set-profile",
+                "decision",
+                "--user",
+                "--project-root",
+                str(root),
+                home=home,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("user profile set to decision", result.stdout)
+            self.assertFalse((root / ".plainly" / "settings.json").exists())
+            self.assertEqual(
+                json.loads((home / ".plainly" / "settings.json").read_text(encoding="utf-8")),
+                {"profile": "decision"},
+            )
+
+    def test_user_default_can_be_reset_without_touching_the_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            user_settings = home / ".plainly" / "settings.json"
+            user_settings.parent.mkdir(parents=True)
+            user_settings.write_text(json.dumps({"profile": "brief"}), encoding="utf-8")
+            project_settings = root / ".plainly" / "settings.json"
+            project_settings.parent.mkdir(parents=True)
+            project_settings.write_text(json.dumps({"profile": "guided"}), encoding="utf-8")
+
+            result = self.run_cli("reset", "--user", "--project-root", str(root), home=home)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("user settings removed", result.stdout)
+            self.assertFalse(user_settings.exists())
+            self.assertTrue(project_settings.exists())
+
+    def test_set_file_has_no_user_form(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            style = root / "style.md"
+            style.write_text("Use one short paragraph.", encoding="utf-8")
+
+            result = self.run_cli(
+                "set-file",
+                str(style),
+                "--user",
+                "--project-root",
+                str(root),
+                home=root / "home",
+            )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unrecognized arguments", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

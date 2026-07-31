@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Read a user-wide default from `<home>/.plainly/settings.json` when a project pins nothing, so a
+  chosen style no longer has to be repeated in every repository. A project's own settings still
+  win. This scope names a built-in profile only: a style file here would read from outside every
+  project it applies to, which is the read that project settings are confined against, and a
+  `style_file` key is reported and ignored rather than obeyed.
+- Apply the style to every sentence written for a person — replies, documents, commit messages,
+  comments, records — instead of conversation alone. The block said "communication only", so a
+  document written in the same turn read as exempt and the rules stopped at what was spoken. The
+  wording also draws the boundary the other way: the style governs how a sentence reads, never what
+  a file must contain, so a project's own document rules stay separate and neither side repeats the
+  other.
+- Add a fixed vocabulary rule: a name a project uses among itself means nothing to the reader, so
+  say what it does before using it, and introduce at most one new name per sentence. Identifiers,
+  paths, and commands stay exempt because the reader can open them.
+- Add a fixed brevity rule: shorten by cutting repetition, never by cutting a step.
+- Carry the Korean writing guidance in the plugin instead of leaving each project to supply it.
+  Nothing in that guidance was project-specific, yet a project that did not copy it lost the rules
+  entirely. It is marked skippable in one line for anyone not writing Korean.
+- Add the `decision` style: say what a change means and what it costs before naming a file,
+  function, or command, and keep implementation detail for when it is asked for or when a risky
+  decision turns on it.
 - Add a fixed register rule outside the replaceable style boundary: a reply in a language that marks
   politeness grammatically addresses the reader in its polite register, and brevity is not a reason
   to drop it. No layer specified a register before, so the concision instructions alone decided it

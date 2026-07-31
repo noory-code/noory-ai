@@ -27,7 +27,8 @@ Plainly reads the first valid source on every `UserPromptSubmit` event:
 1. `NOORY_STYLE_FILE`
 2. `NOORY_STYLE_PROFILE`
 3. `<project>/.plainly/settings.json`
-4. Built-in `baseline`
+4. `<home>/.plainly/settings.json` — profile name only
+5. Built-in `baseline`
 
 An external style must be a non-empty UTF-8 file no larger than 8,192 bytes. Relative paths in
 `NOORY_STYLE_FILE` and project settings resolve from the project root. The project CLI stores style
@@ -53,8 +54,10 @@ permission, and higher-priority instructions found there. Project settings also 
 file that resolves outside the project root. These controls reduce accidental scope leakage but do
 not make an untrusted repository safe.
 
-The `.plainly/` directory is project-owned and can be committed so the same style follows the
-repository across computers. Plainly does not persist user-global settings.
+A project's `.plainly/` directory can be committed so the same style follows the repository across
+computers, and it always wins over the user-wide default. The same file under the home directory
+sets that default for projects that pin nothing; it may name a built-in profile only, because a
+style file there would read from outside every project it applies to.
 
 Manual configuration is also available. Run `scripts/configure.py` with `python3` from the
 `plainly/` package directory; see

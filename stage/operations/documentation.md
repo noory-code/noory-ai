@@ -1,6 +1,7 @@
 # Documentation
 
-This document owns the writing rules.
+This document owns what a Stage body must contain and must leave out. How a sentence reads — word
+choice, word order, naming, length — is not decided here.
 
 ## Readers
 
@@ -20,11 +21,3 @@ not know this project's names, its history, or which line of code a body is abou
 - Write at that reader's level. A body that needs another file open to carry its meaning has
   failed. Principle names, record IDs, and paths are the exception: the principle catalog and the
   file system own those meanings.
-- Say what a thing is before using its name. A term taken from the code carries its meaning on
-  first use; only after that does it stand alone.
-- Introduce at most one new term per sentence.
-- Brevity comes from cutting repetition, never from cutting a step. State the fact, why it is a
-  problem, and what it causes.
-- Do not assemble a word by translating an English term piece by piece. If nobody says the result
-  out loud, it is not the word: say what the thing does, or keep the form practitioners use. This
-  applies to every language a body is written in.

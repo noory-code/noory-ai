@@ -68,7 +68,7 @@ class HookTest(unittest.TestCase):
         self.assertNotIn("decision", output)
         self.assertNotIn("continue", output)
 
-    def test_external_style_is_injected_and_scoped_to_communication(self) -> None:
+    def test_external_style_is_injected_and_scoped_to_written_sentences(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             style_file = root / "external.md"
@@ -82,7 +82,9 @@ class HookTest(unittest.TestCase):
 
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("Use one short paragraph.", context)
-        self.assertIn("communication only", context)
+        self.assertIn("every sentence you write for a person to read", context)
+        self.assertIn("never what a file must contain", context)
+        self.assertNotIn("communication only", context)
 
     def test_language_rule_is_injected_on_every_resolution_path(self) -> None:
         marker = "Language rule: compose in the reader's language"
@@ -196,6 +198,66 @@ class HookTest(unittest.TestCase):
                 fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
                 for marker in markers:
                     self.assertIn(marker, fixed_context)
+
+    def test_vocabulary_and_brevity_rules_are_injected_on_every_resolution_path(self) -> None:
+        markers = (
+            "a name your project uses among itself means nothing to the reader",
+            "The name comes after the meaning, never instead of it",
+            "Introduce at most one new name per sentence",
+            "shorten by cutting repetition, never by cutting a step",
+        )
+        cases = (
+            ("default", {}, None),
+            ("environment profile", {"NOORY_STYLE_PROFILE": "brief"}, None),
+            ("project settings", {}, {"profile": "decision"}),
+            ("environment file", {"NOORY_STYLE_FILE": "external.md"}, None),
+        )
+
+        for name, extra_env, settings in cases:
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                if settings is not None:
+                    settings_directory = root / ".plainly"
+                    settings_directory.mkdir()
+                    (settings_directory / "settings.json").write_text(
+                        json.dumps(settings),
+                        encoding="utf-8",
+                    )
+                if name == "environment file":
+                    (root / "external.md").write_text(
+                        "Use one short paragraph.",
+                        encoding="utf-8",
+                    )
+
+                output = self.run_hook(
+                    {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                    home=root / "home",
+                    extra_env=extra_env,
+                )
+
+                context = output["hookSpecificOutput"]["additionalContext"]
+                fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+                for marker in markers:
+                    self.assertIn(marker, fixed_context)
+
+    def test_korean_guidance_travels_with_the_plugin_not_the_project(self) -> None:
+        markers = (
+            "Writing Korean (skip if you are not)",
+            "Never render an English term as a Sino-Korean compound nobody says",
+            "English builds meaning on nouns; Korean builds it on verbs",
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output = self.run_hook(
+                {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                home=root / "home",
+            )
+
+        context = output["hookSpecificOutput"]["additionalContext"]
+        fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+        for marker in markers:
+            self.assertIn(marker, fixed_context)
 
     def test_project_style_file_replaces_baseline_and_keeps_the_register_rule(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
