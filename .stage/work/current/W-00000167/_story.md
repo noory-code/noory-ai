@@ -10,9 +10,9 @@ acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000167
+promotion: not_applicable
 review: not_required
 scope: plainly/, stage/operations/, stage/CHANGELOG.md, .plainly/
 promotes:
