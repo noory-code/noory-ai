@@ -8,7 +8,8 @@ source:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000174
