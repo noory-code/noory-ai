@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000171 | development | codex | 목적이 매 도구 호출마다 눈앞에 있고, 파일 목록은 막는 대신 알린다 | active | codex | [current/W-00000171/_story.md](current/W-00000171/_story.md) |
-| W-00000173 | development | codex | 목적을 매 도구 호출마다 얹고 목록 밖 쓰기를 알림으로 바꾼다 | active | codex | [current/W-00000171/W-00000173.md](current/W-00000171/W-00000173.md) |
