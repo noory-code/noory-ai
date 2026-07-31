@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000168 | development | codex | 실행하는 쪽이 무엇을 스스로 하고 무엇을 보고하는지 계약으로 세운다 | active | codex | [current/W-00000168/_story.md](current/W-00000168/_story.md) |

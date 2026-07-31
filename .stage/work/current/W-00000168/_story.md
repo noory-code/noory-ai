@@ -7,8 +7,8 @@ milestone:
 priority:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000168
 promotion: not_applicable
@@ -81,6 +81,16 @@ W-00000169 를 시작한다. 결정 내용은 2026-07-31 논의에서 이미 합
 ## Progress
 
 ## Verification
+
+### Executed at close — 2026-07-31
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
