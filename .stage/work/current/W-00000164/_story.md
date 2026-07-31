@@ -2,14 +2,20 @@
 id: W-00000164
 title: 카드 그릇이 층마다 무엇을 물을지 계약으로 세운다
 kind: development
-venue:
+venue: codex
 milestone: M-00000001
-status: captured
 priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/templates/, stage/skills/stage-work/, stage/docs/, stage/CHANGELOG.md, .stage/
+promotes:
+decision_refs:
 ---
 
 # W-00000164 카드 그릇이 층마다 무엇을 물을지 계약으로 세운다
@@ -72,3 +78,11 @@ scope: stage/templates/, stage/skills/stage-work/, stage/docs/, stage/CHANGELOG.
 
 W-00000165 를 시작하기 전에 사용자와 토론한다 — 자율이 설계에 있고 구현은 계획대로 간다면,
 계획 층과 구현 층이 물어야 할 것이 서로 다르다. 그 답이 이 카드의 뼈대다.
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

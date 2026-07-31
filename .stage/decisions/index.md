@@ -10,4 +10,5 @@
 | DE-00000050 | decided | W-00000162 | [pending/DE-00000050.md](pending/DE-00000050.md) |
 | DE-00000051 | decided | W-00000169 | [pending/DE-00000051.md](pending/DE-00000051.md) |
 | DE-00000052 | decided | W-00000172 | [pending/DE-00000052.md](pending/DE-00000052.md) |
+| DE-00000053 | decided | W-00000165 | [pending/DE-00000053.md](pending/DE-00000053.md) |
 
