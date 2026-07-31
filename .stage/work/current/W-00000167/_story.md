@@ -8,8 +8,8 @@ source:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000167
 promotion: not_applicable
@@ -90,6 +90,37 @@ decision_refs:
 ## Progress
 
 ## Verification
+
+### Executed at close — 2026-07-31
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 51 tests in 1.524s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 51 tests in 1.564s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 356 tests in 1.183s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
