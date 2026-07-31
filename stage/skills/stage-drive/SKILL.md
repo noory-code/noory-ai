@@ -131,6 +131,42 @@ so its variable syntax is platform-specific.
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and
 the driver refuses rather than letting a venue grade its own work.
 
+## Executor autonomy and report contract
+
+Before acting, the executor decides whether the selected action itself serves its stated purpose.
+If the action is wrong, it stops without implementing it and reports that decision for the human to
+redesign or cancel.
+
+When the action is sound, every encountered task follows exactly one row:
+
+| Task | Action | Report |
+|---|---|---|
+| Needed for the purpose and inside the declared scope | Do it | State the decision and why |
+| Needed for the purpose but outside the declared scope | Do not do it | State what is needed and why |
+| Not needed for the purpose | Skip it | No task-specific report |
+
+Every executor command must require exactly one append-only report per attempt in this shape:
+
+```text
+### Executor report
+What changed: <non-empty one-line summary>
+Why: <non-empty one-line reason>
+Decisions made: <non-empty one-line decisions, or None>
+Work not done: <non-empty one-line needed work left undone, or None>
+Changed paths (JSON):
+["<repository-relative path>"]
+Review dispositions (JSON):
+[{"finding":"<exact failed criterion>","disposition":"accept|decline|defer","reason":"<one-line reason>"}]
+Review request: <non-empty one-line request>
+```
+
+`Review dispositions (JSON)` is present only when a prior verdict has failed criteria. `Decisions
+made:` records choices the executor made while doing needed in-scope work. `Work not done:` records
+needed work it left undone because the action was wrong or the path was outside scope. Use `None`
+instead of leaving either field empty. Reviewer commands must read both fields and judge whether
+the declared-scope contract was followed; they must not reconstruct unreported choices only from
+the code.
+
 ## Optional per-venue turn reaping
 
 `reapers` is an optional sibling of `executors` in `.stage/settings.json` (or `settings.jsonc`).

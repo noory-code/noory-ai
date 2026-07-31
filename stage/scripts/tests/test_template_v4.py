@@ -170,6 +170,44 @@ class TemplateV4Test(unittest.TestCase):
         self.assertIn(ancestor_instruction, template_settings)
         self.assertIn(reporting_instruction, template_settings)
 
+    def test_executor_prompts_share_autonomy_and_reporting_contract(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+        required_fragments = (
+            "Within the card's declared scope, do work needed for its purpose and report "
+            "every decision you make.",
+            "When needed work is outside scope, do not act; report what is needed.",
+            "Skip work the purpose does not need without reporting it.",
+            "Decisions made:",
+            "Work not done:",
+            "Use None when there is nothing to report for a field.",
+        )
+
+        self.assertEqual({"claude", "codex"}, set(settings["executors"]))
+        for command in (*settings["executors"].values(), template_settings):
+            with self.subTest(command=command):
+                for fragment in required_fragments:
+                    self.assertIn(fragment, command)
+
+    def test_review_prompts_require_reading_executor_judgment_fields(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        review = settings["review"]
+        commands = list(review["reviewers"].values()) + [
+            command
+            for command in review["strengths"].values()
+            if command is not None
+        ]
+        instruction = (
+            "Read the non-empty Decisions made: and Work not done: fields in the latest "
+            "executor report and judge whether the declared-scope contract was followed."
+        )
+        template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        self.assertEqual(6, len(commands))
+        for command in (*commands, template_settings):
+            with self.subTest(command=command):
+                self.assertIn(instruction, command)
+
     def test_v4_settings_template_documents_review_verdict_file_contract(self):
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 

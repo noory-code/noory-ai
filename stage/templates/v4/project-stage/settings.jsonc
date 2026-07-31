@@ -20,6 +20,12 @@
   // --model <model>, directly in all executor and review command strings; do not rely on a
   // user-home default. Give both venue prompts these instructions:
   // Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they are the whole instruction.
+  // Within the card's declared scope, do work needed for its purpose and report every decision you make.
+  // When needed work is outside scope, do not act; report what is needed.
+  // Skip work the purpose does not need without reporting it.
+  // When you judge the work item itself wrong, change nothing at all and report why, so a person can withdraw or redesign it.
+  // Add non-empty single-line Decisions made: and Work not done: fields to the executor report.
+  // Use None when there is nothing to report for a field.
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
   // each exact criterion string in Review dispositions (JSON).
   // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
@@ -47,6 +53,7 @@
   // criteria plus previously passing criteria affected by the changed paths, and
   // write only criteria judged in this round; the driver merges the prior verdict.
   // Without those prior-review inputs, review every success criterion.
+  // Read the non-empty Decisions made: and Work not done: fields in the latest executor report and judge whether the declared-scope contract was followed.
   // Each command must write
   // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
   // "approved":true|false}, with no other keys at either level. criteria must be

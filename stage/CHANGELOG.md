@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Carry the executor autonomy contract into project and new-project driver settings. Executor
+  prompts now distinguish needed in-scope work, needed out-of-scope work, and purpose-unneeded
+  work; every report names decisions made and needed work left undone, and every reviewer prompt
+  reads those fields instead of relying on code inspection to recover hidden choices.
+
 - State what an executor may decide for itself and what it must hand back. The philosophy said the
   executor widens its own scope to reach the purpose, which left every such widening invisible: on
   2026-07-31 an executor chose a behaviour the design had left blank and never said so, and the
