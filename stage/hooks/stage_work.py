@@ -620,28 +620,24 @@ def source_registration_blocker(
     if not source_paths:
         return ""
     open_items = [item for item in load_work_items(workspace_root / ".stage") if item_is_open(item)]
-    # Every governed target must be covered — otherwise one legitimate target
-    # would smuggle arbitrary unregistered targets through in the same call.
-    uncovered = [
-        path
-        for path in source_paths
-        if not any(item_matches_path(item, path, workspace_root, follows_symlink) for item in open_items)
-    ]
-    if not uncovered:
+    # Scope is an execution signal, not an authorization boundary. The hook
+    # reports crossings in the per-tool purpose context; registration blocks
+    # only when no open work exists at all.
+    if open_items:
         return ""
     if active_topology(workspace_root / ".stage") == ACTIVE_TOPOLOGY_V4:
         current_root = stage_topology.card_location_for_status("active")
         return (
             "Stage registration gate violation: before modifying governed files, establish a story "
-            "first, then register an active work item with a matching scope in "
+            "first, then register an active work item in "
             f"`.stage/{current_root}/`. "
-            "Unregistered targets: " + ", ".join(uncovered[:5])
+            "Targets without active work: " + ", ".join(source_paths[:5])
         )
     return (
         "Stage registration gate violation: before modifying governed files, establish a story "
-        "first, then register an active work item with a matching scope in "
+        "first, then register an active work item in "
         "`.stage/present/work/items/`. "
-        "Unregistered targets: " + ", ".join(uncovered[:5])
+        "Targets without active work: " + ", ".join(source_paths[:5])
     )
 
 

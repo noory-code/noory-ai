@@ -1,13 +1,14 @@
 ---
 name: stage-work
-description: Register a Stage work item before you touch governed files. Use this whenever you start a task, feature, fix, refactor, or doc change in a project that has a `.stage/` harness — plan the work, confirm scope with the human, then create the item and its `active.md` row. Registering first is not optional: the hook denies governed writes when no open work item's `scope` covers them, so reach for this at the very start of any Stage work, even if the user just says "let's build X" without mentioning Stage.
+description: Register a Stage work item before you touch governed files. Use this whenever you start a task, feature, fix, refactor, or doc change in a project that has a `.stage/` harness — plan the work, confirm scope with the human, then create the item and its `active.md` row. Registering first is not optional: the hook denies governed writes when no work item is open, so reach for this at the very start of any Stage work, even if the user just says "let's build X" without mentioning Stage.
 ---
 
 # Stage Work Registration
 
 Register work BEFORE modifying governed files. The registration gate denies a governed write when
-no open (`active`/`review`/`blocked`) work item has a `scope` covering it. Registering mid-task
-leaves early commits ungated (R-00000001's learning).
+no work item is open (`active`/`review`/`blocked`). Scope is an advisory signal: a write outside
+the selected leaf's scope passes, and the hook tells the executor to report the boundary crossing.
+Registering mid-task leaves early commits ungated (R-00000001's learning).
 
 `.stage/` itself is not governed source, so the item file and `active.md` are free to create.
 
@@ -95,8 +96,10 @@ next free number, writes the card, and updates the owning index:
   value `split` is mixed by definition: register a planning/design item and an implementation
   item as separate hierarchy records instead of one ambiguous item (see `stage-handoff`); a
   deliberate single item needs the same exception decision.
-- `scope` — the paths this work may modify. The registration gate matches writes against these,
-  so list every governed subtree you will touch. `*` authorizes anything (use sparingly).
+- `scope` — the paths this work expects to modify. List every governed subtree known at
+  registration time. The hook reports but does not block a needed write outside this list; the
+  executor must report every such boundary crossing. `*` suppresses useful boundary signals, so
+  use it sparingly.
 - `scale` and placement — always pass `--scale`. Pass `--parent` only for a story inside an epic
   or an action inside a story.
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
@@ -153,8 +156,9 @@ next free number, writes the card, and updates the owning index:
 
 ## Then work
 
-Make small, verifiable changes within `scope`. When the work reaches a completion candidate, run
-`stage-retrospective` to close it, and `stage-archive` to drain it from the review queue.
+Make small, verifiable changes for the stated purpose. Use `scope` as the expected-path plan, and
+do and report purpose-needed work that crosses it. When the work reaches a completion candidate,
+run `stage-retrospective` to close it, and `stage-archive` to drain it from the review queue.
 
 If an action exhausts its attempts, do not reactivate or rerun it. Read the pending decision and
 the failed-action evidence on its blocked story, revise the story decomposition, then register

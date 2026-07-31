@@ -247,10 +247,10 @@ class DriveParallelTest(unittest.TestCase):
                     "cwd": str(root),
                     "tool_input": {
                         "file_path": f"outside-{target}.txt",
-                        "content": "must be denied",
+                        "content": "must be allowed and reported",
                     },
                 }
-                denied_hook = subprocess.run(
+                boundary_hook = subprocess.run(
                     [sys.executable, "-B", "stage/hooks/stage_guard.py", "pre-tool-use"],
                     cwd=root,
                     input=json.dumps(out_of_scope_payload),
@@ -258,8 +258,14 @@ class DriveParallelTest(unittest.TestCase):
                     text=True,
                     env=environment,
                 )
-                denied_output = json.loads(denied_hook.stdout)
-                denied_decision = denied_output["hookSpecificOutput"]["permissionDecision"]
+                hook_output = json.loads(hook.stdout)
+                boundary_output = json.loads(boundary_hook.stdout)
+                hook_decision = hook_output.get("hookSpecificOutput", {}).get(
+                    "permissionDecision", "allow"
+                )
+                boundary_decision = boundary_output.get("hookSpecificOutput", {}).get(
+                    "permissionDecision", "allow"
+                )
                 git_root = subprocess.run(
                     ["git", "rev-parse", "--show-toplevel"],
                     cwd=root,
@@ -274,12 +280,12 @@ class DriveParallelTest(unittest.TestCase):
                     "legacy_project_root": os.environ["PROJECT_ROOT"],
                     "work_item_path": os.environ["STAGE_WORK_ITEM_PATH"],
                     "hook_payload_root": payload["cwd"],
-                    "hook_allowed": hook.returncode == 0 and not hook.stdout.strip(),
-                    "hook_stdout": hook.stdout.strip(),
-                    "hook_denied_out_of_scope": (
-                        denied_hook.returncode == 0 and denied_decision == "deny"
+                    "hook_allowed": hook.returncode == 0 and hook_decision == "allow",
+                    "hook_message": hook_output.get("systemMessage", ""),
+                    "hook_allowed_out_of_scope": (
+                        boundary_hook.returncode == 0 and boundary_decision == "allow"
                     ),
-                    "hook_denial_stdout": denied_hook.stdout.strip(),
+                    "hook_boundary_message": boundary_output.get("systemMessage", ""),
                     "git_root": git_root,
                 }
                 observed_path.write_text(
@@ -292,7 +298,7 @@ class DriveParallelTest(unittest.TestCase):
                     f"What changed: observed cwd={root}; project_root={root}; "
                     f"git_root={git_root}; work_item_path="
                     f"{os.environ['STAGE_WORK_ITEM_PATH']}; in-scope hook decision allow; "
-                    f"out-of-scope hook decision {denied_decision}\\n"
+                    f"out-of-scope hook decision {boundary_decision}\\n"
                     "Why: prove the driver and Stage hook use the isolated worktree\\n"
                     "Changed paths (JSON):\\n"
                     + json.dumps([observed_path.name])
@@ -325,7 +331,8 @@ class DriveParallelTest(unittest.TestCase):
                 assert observed["hook_payload_root"] == str(root)
                 assert observed["git_root"] == str(root)
                 assert observed["hook_allowed"]
-                assert observed["hook_denied_out_of_scope"]
+                assert observed["hook_allowed_out_of_scope"]
+                assert "Scope boundary crossed:" in observed["hook_boundary_message"]
                 assert Path(observed["work_item_path"]).is_relative_to(root)
                 print(f"acceptance observed isolated root {root}")
                 """
@@ -347,7 +354,8 @@ class DriveParallelTest(unittest.TestCase):
                 observed = json.loads((root / changed[0]).read_text(encoding="utf-8"))
                 assert observed["project_root"] == str(root)
                 assert observed["hook_allowed"]
-                assert observed["hook_denied_out_of_scope"]
+                assert observed["hook_allowed_out_of_scope"]
+                assert "Scope boundary crossed:" in observed["hook_boundary_message"]
                 report = (
                     "CRITERIA VERDICT:\\n"
                     f"- isolated worktree root: PASS - reviewer opened {changed[0]} in {root}\\n"
@@ -485,18 +493,21 @@ class DriveParallelTest(unittest.TestCase):
             self.assertEqual(str(tree), observed["legacy_project_root"])
             self.assertEqual(str(tree), observed["hook_payload_root"])
             self.assertEqual(str(tree), observed["git_root"])
-            self.assertTrue(observed["hook_allowed"], observed["hook_stdout"])
+            self.assertTrue(observed["hook_allowed"], observed["hook_message"])
             self.assertTrue(
-                observed["hook_denied_out_of_scope"],
-                observed["hook_denial_stdout"],
+                observed["hook_allowed_out_of_scope"],
+                observed["hook_boundary_message"],
             )
+            self.assertIn("Stage work context:", observed["hook_message"])
+            self.assertNotIn("Scope boundary crossed:", observed["hook_message"])
+            self.assertIn("Scope boundary crossed:", observed["hook_boundary_message"])
             self.assertTrue(Path(observed["work_item_path"]).is_relative_to(tree))
             log = tree / f".stage/.runtime/driver/logs/{target}.md"
             log_text = log.read_text(encoding="utf-8")
             self.assertIn("### Executor report", log_text)
             self.assertIn(f"observed cwd={tree}", log_text)
             self.assertIn("in-scope hook decision allow", log_text)
-            self.assertIn("out-of-scope hook decision deny", log_text)
+            self.assertIn("out-of-scope hook decision allow", log_text)
             self.assertIn("### Reviewer report", log_text)
             self.assertIn(f"Merge branch: stage/worktree/{target}", output.getvalue())
 

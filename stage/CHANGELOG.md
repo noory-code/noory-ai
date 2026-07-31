@@ -2,18 +2,21 @@
 
 ## Unreleased
 
+- Put purpose at the end of every tool decision, reduced to one live sentence per hierarchy level.
+  Scope now signals ownership instead of authorizing writes: work with any open registration may
+  cross its leaf scope, and the same hook output names the crossing and requires the executor to
+  report it; governed writes with no open work remain blocked.
+
 - Carry the executor autonomy contract into project and new-project driver settings. Executor
   prompts now distinguish needed in-scope work, needed out-of-scope work, and purpose-unneeded
   work; every report names decisions made and needed work left undone, and every reviewer prompt
   reads those fields instead of relying on code inspection to recover hidden choices.
 
-- State what an executor may decide for itself and what it must hand back. The philosophy said the
-  executor widens its own scope to reach the purpose, which left every such widening invisible: on
-  2026-07-31 an executor chose a behaviour the design had left blank and never said so, and the
-  same round found work it could not reach and never said that either. Both were caught by the
-  reviewer reading code. Inside the card's declared paths the executor decides and reports what it
-  decided; outside them it does not act and reports what is needed; work the purpose does not need
-  is simply skipped. Judging the work wrong at all means stopping and handing it back.
+- State what an executor may decide for itself and what it must hand back. Two failures on
+  2026-07-31 shared one cause: a choice the design had left blank was made and never mentioned,
+  and work the executor could not reach went unmentioned too, both found only by a reviewer
+  reading code. Every decision made and every piece of needed work left undone is now reported,
+  and judging the work item itself wrong means changing nothing and handing it back.
 
 - Narrow the documentation rules to what a Stage body must contain and leave out. Five of the ten
   rules described how any sentence should read — word-by-word translation, naming before use, one

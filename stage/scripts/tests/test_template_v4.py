@@ -174,9 +174,8 @@ class TemplateV4Test(unittest.TestCase):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
         required_fragments = (
-            "Within the card's declared scope, do work needed for its purpose and report "
-            "every decision you make.",
-            "When needed work is outside scope, do not act; report what is needed.",
+            "Do work needed for the card's purpose, including work outside its declared scope.",
+            "Report every decision you make and every scope boundary crossing.",
             "Skip work the purpose does not need without reporting it.",
             "Decisions made:",
             "Work not done:",
@@ -199,7 +198,8 @@ class TemplateV4Test(unittest.TestCase):
         ]
         instruction = (
             "Read the non-empty Decisions made: and Work not done: fields in the latest "
-            "executor report and judge whether the declared-scope contract was followed."
+            "executor report and judge whether the purpose and scope-boundary reporting "
+            "contract was followed."
         )
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 

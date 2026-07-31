@@ -250,17 +250,18 @@ On Windows, `shell=True` uses `cmd.exe`, so use percent-delimited variable synta
 ```
 
 An executor first decides whether the action itself serves its stated purpose. If it does not, the
-executor stops and reports that decision. Otherwise, needed work inside the card's declared scope
-is done and every executor decision is reported; needed work outside scope is not done and is
-reported; work the purpose does not need is skipped without a task-specific report.
+executor stops and reports that decision. Otherwise, all needed work is done, including work
+outside the card's declared scope. Every executor decision and scope boundary crossing is reported;
+work the purpose does not need is skipped without a task-specific report.
 
 Each attempt appends exactly one `### Executor report` with non-empty one-line `What changed:`,
 `Why:`, `Decisions made:`, `Work not done:`, and `Review request:` fields plus the existing
 `Changed paths (JSON):` array and any required `Review dispositions (JSON):` array. `Decisions
-made:` records choices made while doing needed in-scope work. `Work not done:` records needed work
-left undone because the action was wrong or its path was outside scope. The executor writes `None`
-when either field has nothing to report; it never leaves the field empty. Every configured reviewer
-and review-strength command reads both fields and judges whether the declared-scope contract was
+made:` records choices made while doing needed work, including choices to cross scope.
+`Work not done:` records needed work left undone because the action itself was wrong; scope is
+never a reason to leave needed work undone. The executor writes `None` when either field has
+nothing to report; it never leaves the field empty. Every configured reviewer and review-strength
+command reads both fields and judges whether the purpose and scope-boundary reporting contract was
 followed.
 
 For each supervised `--execute` or unattended round, the shared work log records the exact selected

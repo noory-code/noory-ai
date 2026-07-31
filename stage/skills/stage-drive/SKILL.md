@@ -142,7 +142,7 @@ When the action is sound, every encountered task follows exactly one row:
 | Task | Action | Report |
 |---|---|---|
 | Needed for the purpose and inside the declared scope | Do it | State the decision and why |
-| Needed for the purpose but outside the declared scope | Do not do it | State what is needed and why |
+| Needed for the purpose but outside the declared scope | Do it | State the decision, why, and scope boundary crossing |
 | Not needed for the purpose | Skip it | No task-specific report |
 
 Every executor command must require exactly one append-only report per attempt in this shape:
@@ -161,11 +161,11 @@ Review request: <non-empty one-line request>
 ```
 
 `Review dispositions (JSON)` is present only when a prior verdict has failed criteria. `Decisions
-made:` records choices the executor made while doing needed in-scope work. `Work not done:` records
-needed work it left undone because the action was wrong or the path was outside scope. Use `None`
-instead of leaving either field empty. Reviewer commands must read both fields and judge whether
-the declared-scope contract was followed; they must not reconstruct unreported choices only from
-the code.
+made:` records choices the executor made while doing needed work, including choices to cross
+scope. `Work not done:` records needed work it left undone because the action itself was wrong;
+scope is never a reason to leave needed work undone. Use `None` instead of leaving either field
+empty. Reviewer commands must read both fields and judge whether the purpose and scope-boundary
+reporting contract was followed; they must not reconstruct unreported choices only from the code.
 
 ## Optional per-venue turn reaping
 

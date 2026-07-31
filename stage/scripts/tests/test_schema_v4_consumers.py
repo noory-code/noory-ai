@@ -327,15 +327,14 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                     "content": item_text,
                 },
             }
-            purpose_reminder = stage_guard.validate_pre_tool(current_payload)
-            current_result = stage_guard.validate_pre_tool(current_payload)
+            first_result = stage_guard.handle_event("pre-tool-use", current_payload)
+            second_result = stage_guard.handle_event("pre-tool-use", current_payload)
 
-        self.assertEqual("deny", permission_decision(purpose_reminder))
-        self.assertIn(
-            "Stage purpose gate",
-            purpose_reminder["hookSpecificOutput"]["permissionDecisionReason"],
-        )
-        self.assertEqual("allow", permission_decision(current_result))
+        self.assertEqual("allow", permission_decision(first_result))
+        self.assertEqual("allow", permission_decision(second_result))
+        for result in (first_result, second_result):
+            self.assertIn("Stage work context:", result["systemMessage"])
+            self.assertIn("Scope boundary crossed:", result["systemMessage"])
 
     def test_v3_guard_denies_mutable_legacy_roots_with_migration_banner(self):
         with tempfile.TemporaryDirectory() as tmp:

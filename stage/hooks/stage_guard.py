@@ -103,6 +103,7 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     item_from_fields,
     item_is_completed,
     item_is_open,
+    item_matches_path,
     item_promotes_path,
     load_all_work_items,
     load_work_items,
@@ -396,19 +397,6 @@ def markdown_section(path: Path, heading: str) -> str:
     return match.group(1).strip() if match is not None else ""
 
 
-def record_title(path: Path, record_id: str) -> str:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return ""
-    match = re.search(
-        rf"^#[ \t]+{re.escape(record_id)}(?:[ \t]+(.*?))?[ \t]*$",
-        text,
-        re.MULTILINE,
-    )
-    return (match.group(1) or "").strip() if match is not None else ""
-
-
 def purpose_record_path(stage_root: Path, record_id: str) -> Path | None:
     try:
         candidates = stage_topology.resolve_artifact_reference(record_id).candidate_paths
@@ -418,100 +406,167 @@ def purpose_record_path(stage_root: Path, record_id: str) -> Path | None:
     return next((path for path in paths if path.is_file()), None)
 
 
-def active_top_level_work_items(stage_root: Path) -> tuple[WorkItem, ...]:
-    return tuple(
-        sorted(
-            (
-                item
-                for item in load_work_items(stage_root)
-                if item.status == "active" and not item.parent
-            ),
-            key=lambda item: (item.item_id, item.path.as_posix()),
-        )
+def first_sentence(text: str) -> str:
+    """Collapse Markdown prose and return its first sentence on one line."""
+    one_line = " ".join(text.split())
+    match = re.match(r"^.*?[.!?](?=\s|$)", one_line)
+    return match.group(0) if match is not None else one_line
+
+
+def active_work_chains(stage_root: Path) -> tuple[tuple[WorkItem, ...], ...]:
+    """Return ancestor-to-leaf chains for the selected or active leaf work."""
+    items = load_work_items(stage_root)
+    by_id = {item.item_id: item for item in items}
+    active_items = [item for item in items if item.status == "active"]
+    selected_path = os.environ.get("STAGE_WORK_ITEM_PATH", "")
+    selected = next(
+        (
+            item
+            for item in active_items
+            if selected_path and item.path.resolve() == Path(selected_path).expanduser().resolve()
+        ),
+        None,
+    )
+    if selected is not None:
+        leaves = [selected]
+    else:
+        active_parent_ids = {item.parent for item in active_items if item.parent}
+        leaves = [item for item in active_items if item.item_id not in active_parent_ids]
+
+    chains: list[tuple[WorkItem, ...]] = []
+    for leaf in sorted(leaves, key=lambda item: (item.item_id, item.path.as_posix())):
+        chain: list[WorkItem] = []
+        seen: set[str] = set()
+        current: WorkItem | None = leaf
+        while current is not None and current.item_id not in seen:
+            seen.add(current.item_id)
+            chain.append(current)
+            current = by_id.get(current.parent)
+        chains.append(tuple(reversed(chain)))
+    return tuple(chains)
+
+
+def work_scale_label(stage_root: Path, item: WorkItem) -> str:
+    if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
+        return "Work"
+    items_root = stage_root / stage_topology.card_location_for_status("active")
+    try:
+        return work_record_scale(items_root, item.path).title()
+    except ValueError:
+        return "Work"
+
+
+def purpose_context_targets(
+    workspace_root: Path, payload: dict[str, Any]
+) -> tuple[list[str], bool]:
+    name = tool_name(payload)
+    stage_root = workspace_root / ".stage"
+    write_tools = WRITE_TOOLS | configured_write_tools(stage_root)
+    if name not in SHELL_TOOLS and name not in write_tools:
+        return [], False
+    _command, explicit_paths, shell_write_targets = mutation_targets(
+        payload, name, workspace_root
+    )
+    follows_symlinks = name in {"Write", "Edit", "MultiEdit"} or (
+        name not in WRITE_TOOLS
+        and isinstance(tool_input(payload).get("content"), str)
+    )
+    return (
+        explicit_paths if name in write_tools else shell_write_targets,
+        follows_symlinks,
     )
 
 
-def purpose_reminder_reason(stage_root: Path, items: tuple[WorkItem, ...]) -> str:
-    sections = ["Stage purpose gate: re-read why this work exists before writing."]
-    for item in items:
-        fields = parse_frontmatter(item.path)
-        milestone_id = str(fields.get("milestone") or "").strip()
+def purpose_tool_context(workspace_root: Path, payload: dict[str, Any]) -> str:
+    """Render scope signals first and one purpose sentence per hierarchy level last."""
+    stage_root = workspace_root / ".stage"
+    if not stage_root.exists():
+        return ""
+    chains = active_work_chains(stage_root)
+    if not chains:
+        return ""
+
+    targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
+    leaves = tuple(chain[-1] for chain in chains)
+    crossed: list[str] = []
+    for target in targets:
+        if any(
+            item_matches_path(item, target, workspace_root, follows_symlinks)
+            for item in leaves
+        ):
+            continue
+        relative = entry_relative_to_workspace(target, workspace_root)
+        if relative and relative not in crossed:
+            crossed.append(relative)
+
+    lines = [
+        "Stage work context:",
+        *(
+            f"Scope for {leaf.item_id}: {', '.join(leaf.scope) if leaf.scope else '(none)'}"
+            for leaf in leaves
+        ),
+        "Report every scope boundary crossing.",
+    ]
+    if crossed:
+        lines.append(f"Scope boundary crossed: {', '.join(crossed)}.")
+
+    purpose_lines: list[str] = []
+    seen_records: set[str] = set()
+    for chain in chains:
+        milestone_id = ""
+        for item in chain:
+            candidate = str(parse_frontmatter(item.path).get("milestone") or "").strip()
+            if candidate:
+                milestone_id = candidate
+                break
         if milestone_id:
             milestone_path = purpose_record_path(stage_root, milestone_id)
             if milestone_path is not None:
-                milestone_title = record_title(milestone_path, milestone_id)
                 milestone_fields = parse_frontmatter(milestone_path)
                 theme_id = str(milestone_fields.get("theme") or "").strip()
-                if theme_id:
+                if theme_id and theme_id not in seen_records:
                     theme_path = purpose_record_path(stage_root, theme_id)
                     if theme_path is not None:
-                        theme_title = record_title(theme_path, theme_id)
-                        theme_intent = markdown_section(theme_path, "Intent")
-                        sections.append(
-                            f"Theme: {theme_id} {theme_title}".rstrip()
-                            + (f"\n{theme_intent}" if theme_intent else "")
-                        )
-                milestone_purpose = markdown_section(milestone_path, "Purpose")
-                sections.append(
-                    f"Milestone: {milestone_id} {milestone_title}".rstrip()
-                    + (f"\n{milestone_purpose}" if milestone_purpose else "")
+                        intent = first_sentence(markdown_section(theme_path, "Intent"))
+                        if intent:
+                            purpose_lines.append(f"Theme {theme_id}: {intent}")
+                            seen_records.add(theme_id)
+                if milestone_id not in seen_records:
+                    purpose = first_sentence(markdown_section(milestone_path, "Purpose"))
+                    if purpose:
+                        purpose_lines.append(f"Milestone {milestone_id}: {purpose}")
+                        seen_records.add(milestone_id)
+        for item in chain:
+            if item.item_id in seen_records:
+                continue
+            purpose = first_sentence(markdown_section(item.path, "Purpose"))
+            if purpose:
+                purpose_lines.append(
+                    f"{work_scale_label(stage_root, item)} {item.item_id}: {purpose}"
                 )
-
-        work_purpose = markdown_section(item.path, "Purpose")
-        user_value = markdown_section(item.path, "User value")
-        sections.append(
-            f"Work: {item.item_id} {item.title}".rstrip()
-            + (f"\nPurpose:\n{work_purpose}" if work_purpose else "")
-            + (f"\nUser value:\n{user_value}" if user_value else "")
-        )
-    sections.append(
-        "This reminder fires only once for this set of active top-level work items in the session; "
-        "repeat the same write to proceed."
-    )
-    return "\n\n".join(sections)
+                seen_records.add(item.item_id)
+    return "\n".join([*lines, *purpose_lines])
 
 
-def target_needs_purpose_reminder(raw: str, workspace_root: Path) -> bool:
-    for form in stage_relative_forms(raw, workspace_root):
-        if not form or is_outside_workspace(form):
-            continue
-        normalized = normalize_path_text(form)
-        if normalized == ".stage/.runtime" or normalized.startswith(".stage/.runtime/"):
-            continue
-        if normalized == ".stage" or normalized.startswith(".stage/"):
-            return True
-        if Path(normalized).name in {"CLAUDE.md", "AGENTS.md"}:
-            return True
-    return False
-
-
-def purpose_write_reminder(
-    workspace_root: Path, payload: dict[str, Any], targets: list[str]
+def append_purpose_context(
+    result: dict[str, Any], workspace_root: Path, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    """Block the first purpose-sensitive write for the active top-level item set."""
-    if not any(target_needs_purpose_reminder(target, workspace_root) for target in targets):
-        return pre_tool_allow()
-    stage_root = workspace_root / ".stage"
-    items = active_top_level_work_items(stage_root)
-    if not items:
-        return pre_tool_allow()
-    item_ids = tuple(item.item_id for item in items)
-
-    marker = stage_root / ".runtime" / "purpose-ack" / session_slot(payload)
-    try:
-        acknowledged_items = (
-            tuple(marker.read_text(encoding="utf-8").splitlines()) if marker.exists() else ()
+    context = purpose_tool_context(workspace_root, payload)
+    if not context:
+        return result
+    output = dict(result)
+    hook_output = output.get("hookSpecificOutput")
+    if isinstance(hook_output, dict) and hook_output.get("permissionDecision") == "deny":
+        updated_hook = dict(hook_output)
+        existing = str(updated_hook.get("permissionDecisionReason") or "").rstrip()
+        updated_hook["permissionDecisionReason"] = (
+            f"{existing}\n\n{context}" if existing else context
         )
-    except OSError:
-        return pre_tool_allow()
-    if acknowledged_items == item_ids:
-        return pre_tool_allow()
-    try:
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("".join(f"{item_id}\n" for item_id in item_ids), encoding="utf-8")
-    except OSError:
-        return pre_tool_allow()
-    return deny(purpose_reminder_reason(stage_root, items))
+        output["hookSpecificOutput"] = updated_hook
+        return output
+    existing_message = str(output.get("systemMessage") or "").rstrip()
+    output["systemMessage"] = f"{existing_message}\n\n{context}" if existing_message else context
+    return output
 
 
 def hierarchy_item_targets(workspace_root: Path, payload: dict[str, Any], name: str) -> list[tuple[str, str]]:
@@ -940,11 +995,6 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         if blocker:
             return deny(blocker)
 
-    if stage_root.exists() and name in write_tools:
-        reminder = purpose_write_reminder(workspace_root, payload, explicit_paths)
-        if reminder:
-            return reminder
-
     # The promotion gate runs LAST: it consumes a pending intent by an atomic
     # rename reservation, so every deny-capable gate above must have passed —
     # otherwise a call denied later would burn the honest actor's one-shot
@@ -1007,7 +1057,8 @@ def handle_event(event: str, payload: dict[str, Any]) -> dict[str, Any]:
     if normalized in {"session-start", "sessionstart"}:
         return handle_session_start(payload)
     if normalized in {"pre-tool-use", "pretooluse"}:
-        return validate_pre_tool(payload)
+        workspace_root = resolve_workspace_root(payload)
+        return append_purpose_context(validate_pre_tool(payload), workspace_root, payload)
     if normalized in {"post-tool-use", "posttooluse"}:
         return handle_post_tool(payload)
     if normalized == "stop":

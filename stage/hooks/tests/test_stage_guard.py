@@ -23,14 +23,19 @@ SPEC.loader.exec_module(stage_guard)
 
 def decision(result):
     # Allow is empty output (cross-host contract: Codex rejects an explicit
-    # permissionDecision:allow without updatedInput as unsupported).
-    if not result:
+    # permissionDecision:allow without updatedInput as unsupported). A
+    # non-blocking purpose reminder uses only systemMessage.
+    if not result or "hookSpecificOutput" not in result:
         return "allow"
     return result["hookSpecificOutput"]["permissionDecision"]
 
 
 def reason(result):
-    return result["hookSpecificOutput"].get("permissionDecisionReason", "")
+    return result.get("hookSpecificOutput", {}).get("permissionDecisionReason", "")
+
+
+def message(result):
+    return result.get("systemMessage", "")
 
 
 class GitAddPathsFromCommandTest(unittest.TestCase):
@@ -122,15 +127,15 @@ class StageGuardTest(unittest.TestCase):
             json.dumps(payload, ensure_ascii=False),
         )
 
-    def write_purpose_reminder_fixture(self, root: Path) -> None:
+    def write_purpose_reminder_fixture(self, root: Path) -> Path:
         self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
         self.write_stage_file(
             root,
-            "work/current/W-0001/_story.md",
+            "work/current/W-0001/_epic.md",
             (
                 "---\n"
                 "id: W-0001\n"
-                "title: Keep the work tied to purpose\n"
+                "title: Keep the epic tied to purpose\n"
                 "kind: development\n"
                 "venue: codex\n"
                 "milestone: M-0001\n"
@@ -140,9 +145,50 @@ class StageGuardTest(unittest.TestCase):
                 "promotion: pending\n"
                 "scope: stage/hooks/, pkg/\n"
                 "---\n"
-                "# W-0001 Keep the work tied to purpose\n\n"
-                "## Purpose\n\nKeep purpose visible before governed writing.\n\n"
+                "# W-0001 Keep the epic tied to purpose\n\n"
+                "## Purpose\n\nKeep purpose visible before governed writing. "
+                "This second sentence is not injected.\n\n"
                 "## User value\n\nThe agent sees why the work matters.\n"
+            ),
+        )
+        self.write_stage_file(
+            root,
+            "work/current/W-0001/W-0002/_story.md",
+            (
+                "---\n"
+                "id: W-0002\n"
+                "title: Keep the story tied to purpose\n"
+                "kind: development\n"
+                "venue: codex\n"
+                "status: active\n"
+                "verification: pending\n"
+                "retrospective: pending\n"
+                "promotion: pending\n"
+                "scope: stage/hooks/\n"
+                "---\n"
+                "# W-0002 Keep the story tied to purpose\n\n"
+                "## Purpose\n\nKeep the story purpose visible. "
+                "This second story sentence is not injected.\n"
+            ),
+        )
+        action = self.write_stage_file(
+            root,
+            "work/current/W-0001/W-0002/W-0003.md",
+            (
+                "---\n"
+                "id: W-0003\n"
+                "title: Show the action purpose\n"
+                "kind: development\n"
+                "venue: codex\n"
+                "status: active\n"
+                "verification: pending\n"
+                "retrospective: pending\n"
+                "promotion: pending\n"
+                "scope: stage/hooks/\n"
+                "---\n"
+                "# W-0003 Show the action purpose\n\n"
+                "## Purpose\n\nShow the current action before every tool call. "
+                "This second action sentence is not injected.\n"
             ),
         )
         self.write_stage_file(
@@ -170,6 +216,7 @@ class StageGuardTest(unittest.TestCase):
                 "## Intent\n\nKeep products alive for one builder.\n"
             ),
         )
+        return action
 
     def test_session_start_injects_stage_context(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -269,8 +316,9 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
-    def test_multi_target_requires_every_path_registered(self):
-        # F2: one covered target must not smuggle an uncovered one.
+    def test_multi_target_reports_every_scope_crossing_without_blocking(self):
+        # Scope is a signal: one covered target does not hide the other target,
+        # but the crossing is reported instead of denied.
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_stage_file(root, "index.md", "# Stage\n")
@@ -289,8 +337,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("outside.txt", reason(result))
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed: outside.txt.", message(result))
 
     def test_multi_target_allows_when_each_path_registered(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -413,10 +461,8 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": "link/../past/canon/principles.md", "content": "x"},
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -440,10 +486,8 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": ".stage/past/canon/principles.md", "content": "x"},
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -523,10 +567,8 @@ class StageGuardTest(unittest.TestCase):
             patch = "*** Begin Patch\n*** Delete File: .stage/past/canon/plink\n*** End Patch\n"
             payload = {"tool_name": "apply_patch", "cwd": str(root), "tool_input": {"command": patch}}
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -771,10 +813,8 @@ class StageGuardTest(unittest.TestCase):
                 "tool_input": {"file_path": "link/past/canon/principles.md", "content": "x"},
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion", reason(result).lower())
 
@@ -965,10 +1005,8 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("not in a completed state", reason(result))
 
@@ -1038,7 +1076,7 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
 
-    def test_blank_scope_does_not_match_source_path(self):
+    def test_blank_scope_reports_source_path_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_work_item(root, status="active", scope="")
@@ -1050,10 +1088,10 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration gate", reason(result))
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
 
-    def test_dot_scope_does_not_match_source_path(self):
+    def test_dot_scope_reports_source_path_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_work_item(root, status="active", scope=".")
@@ -1065,8 +1103,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration gate", reason(result))
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
 
     def test_allows_intermediate_commit_with_open_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1898,11 +1936,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "allow")
+        self.assertIn("Stage work context", message(result))
 
     def test_hierarchy_gate_uses_planned_folder_parent_without_parent_field(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2081,11 +2118,10 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "allow")
+        self.assertIn("Stage work context", message(result))
 
     def test_hierarchy_gate_allows_partial_edit_of_completed_child(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2211,7 +2247,46 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(second_a), "allow")
         self.assertEqual(decision(second_b), "allow")
 
-    def test_purpose_gate_reminds_with_live_hierarchy_then_allows(self):
+    def test_purpose_context_is_non_blocking_and_ends_with_each_hierarchy_purpose(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Read",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {"file_path": "pkg/README.md"},
+            }
+
+            first = stage_guard.handle_event("pre-tool-use", payload)
+            second = stage_guard.handle_event("pre-tool-use", payload)
+
+        for result in (first, second):
+            with self.subTest(result=result):
+                context = message(result)
+                self.assertEqual(decision(result), "allow")
+                self.assertIn("Scope for W-0003: stage/hooks/", context)
+                self.assertIn("Report every scope boundary crossing.", context)
+                self.assertIn("Theme TH-0001: Keep products alive for one builder.", context)
+                self.assertIn("Milestone M-0001: Work starts from user intent.", context)
+                self.assertIn(
+                    "Epic W-0001: Keep purpose visible before governed writing.",
+                    context,
+                )
+                self.assertIn(
+                    "Story W-0002: Keep the story purpose visible.",
+                    context,
+                )
+                self.assertTrue(
+                    context.endswith(
+                        "Action W-0003: Show the current action before every tool call."
+                    )
+                )
+                self.assertNotIn("This second sentence", context)
+                self.assertNotIn("User value", context)
+        self.assertFalse((root / ".stage/.runtime/purpose-ack").exists())
+
+    def test_purpose_context_reports_out_of_scope_write_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
@@ -2220,153 +2295,85 @@ class StageGuardTest(unittest.TestCase):
                 "cwd": str(root),
                 "session_id": "sess-purpose",
                 "tool_input": {
-                    "file_path": ".stage/state/observations/O-0001.md",
-                    "content": "# Observation\n",
+                    "file_path": "src/app.py",
+                    "content": "print('x')\n",
                 },
             }
 
-            first = stage_guard.handle_event("pre-tool-use", payload)
-            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
-            acknowledged_item = marker.read_text(encoding="utf-8")
-            second = stage_guard.handle_event("pre-tool-use", payload)
+            result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(first), "deny")
-        self.assertIn("Stage purpose gate", reason(first))
-        self.assertIn("TH-0001 A durable stage", reason(first))
-        self.assertIn("Keep products alive for one builder.", reason(first))
-        self.assertIn("M-0001 Purposeful work", reason(first))
-        self.assertIn("Work starts from user intent.", reason(first))
-        self.assertIn("W-0001 Keep the work tied to purpose", reason(first))
-        self.assertIn("Keep purpose visible before governed writing.", reason(first))
-        self.assertIn("The agent sees why the work matters.", reason(first))
-        self.assertIn("fires only once", reason(first))
-        self.assertEqual(acknowledged_item, "W-0001\n")
-        self.assertEqual(decision(second), "allow")
-
-    def test_purpose_gate_skips_code_runtime_and_unrelated_documents(self):
-        targets = (
-            "stage/hooks/stage_guard.py",
-            ".stage/.runtime/driver/logs/W-0001.md",
-            ".stage/.runtime/AGENTS.md",
-            "pkg/README.md",
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
+        self.assertTrue(
+            message(result).endswith(
+                "Action W-0003: Show the current action before every tool call."
+            )
         )
-        for target in targets:
-            with self.subTest(target=target), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                self.write_purpose_reminder_fixture(root)
-                payload = {
-                    "tool_name": "Write",
-                    "cwd": str(root),
-                    "session_id": "sess-purpose",
-                    "tool_input": {"file_path": target, "content": "changed\n"},
-                }
 
+    def test_purpose_context_uses_driver_selected_leaf_scope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            selected = self.write_purpose_reminder_fixture(root)
+            self.write_stage_file(
+                root,
+                "work/current/W-0004/_story.md",
+                (
+                    "---\n"
+                    "id: W-0004\n"
+                    "title: Other work\n"
+                    "status: active\n"
+                    "verification: pending\n"
+                    "retrospective: pending\n"
+                    "promotion: pending\n"
+                    "scope: other/\n"
+                    "---\n"
+                    "# W-0004 Other work\n\n"
+                    "## Purpose\n\nKeep another branch active.\n"
+                ),
+            )
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {"file_path": "other/file.py", "content": "x\n"},
+            }
+
+            with patch.dict(
+                os.environ,
+                {"STAGE_WORK_ITEM_PATH": str(selected.resolve())},
+                clear=False,
+            ):
                 result = stage_guard.handle_event("pre-tool-use", payload)
 
-                self.assertEqual(decision(result), "allow")
-                self.assertFalse(
-                    (root / ".stage/.runtime/purpose-ack/sess-purpose").exists()
-                )
-
-    def test_purpose_gate_covers_nested_agents_document(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.write_purpose_reminder_fixture(root)
-            payload = {
-                "tool_name": "Write",
-                "cwd": str(root),
-                "session_id": "sess-purpose",
-                "tool_input": {
-                    "file_path": "pkg/AGENTS.md",
-                    "content": "# Package rules\n",
-                },
-            }
-
-            result = stage_guard.handle_event("pre-tool-use", payload)
-
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("Stage purpose gate", reason(result))
-
-    def test_purpose_gate_reminds_again_when_top_level_work_changes(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.write_purpose_reminder_fixture(root)
-            payload = {
-                "tool_name": "Write",
-                "cwd": str(root),
-                "session_id": "sess-purpose",
-                "tool_input": {
-                    "file_path": ".stage/state/observations/O-0001.md",
-                    "content": "# Observation\n",
-                },
-            }
-
-            first = stage_guard.handle_event("pre-tool-use", payload)
-            current = root / ".stage/work/current/W-0001/_story.md"
-            current.write_text(
-                current.read_text(encoding="utf-8").replace(
-                    "status: active", "status: completed"
-                ),
-                encoding="utf-8",
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope for W-0003: stage/hooks/", message(result))
+        self.assertNotIn("Scope for W-0004", message(result))
+        self.assertIn("Scope boundary crossed: other/file.py.", message(result))
+        self.assertTrue(
+            message(result).endswith(
+                "Action W-0003: Show the current action before every tool call."
             )
-            self.write_work_item(root, item_id="W-0002", status="active")
-            second = stage_guard.handle_event("pre-tool-use", payload)
-            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
-            acknowledged_item = marker.read_text(encoding="utf-8")
+        )
 
-        self.assertEqual(decision(first), "deny")
-        self.assertEqual(decision(second), "deny")
-        self.assertIn("W-0002 Test work", reason(second))
-        self.assertEqual(acknowledged_item, "W-0002\n")
-
-    def test_purpose_gate_includes_every_active_top_level_work_item(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.write_purpose_reminder_fixture(root)
-            self.write_work_item(root, item_id="W-0002", status="active")
-            payload = {
-                "tool_name": "Write",
-                "cwd": str(root),
-                "session_id": "sess-purpose",
-                "tool_input": {
-                    "file_path": ".stage/state/observations/O-0001.md",
-                    "content": "# Observation\n",
-                },
-            }
-
-            first = stage_guard.handle_event("pre-tool-use", payload)
-            marker = root / ".stage/.runtime/purpose-ack/sess-purpose"
-            acknowledged_items = marker.read_text(encoding="utf-8")
-            second = stage_guard.handle_event("pre-tool-use", payload)
-
-        self.assertEqual(decision(first), "deny")
-        self.assertIn("W-0001 Keep the work tied to purpose", reason(first))
-        self.assertIn("W-0002 Test work", reason(first))
-        self.assertEqual(acknowledged_items, "W-0001\nW-0002\n")
-        self.assertEqual(decision(second), "allow")
-
-    def test_purpose_gate_covers_apply_patch_target(self):
+    def test_purpose_context_is_last_when_another_gate_blocks(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
             payload = {
-                "tool_name": "apply_patch",
+                "tool_name": "Bash",
                 "cwd": str(root),
                 "session_id": "sess-purpose",
-                "tool_input": {
-                    "command": (
-                        "*** Begin Patch\n"
-                        "*** Add File: .stage/state/observations/O-0001.md\n"
-                        "+# Observation\n"
-                        "*** End Patch\n"
-                    )
-                },
+                "tool_input": {"command": "rm -rf .stage"},
             }
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "deny")
-        self.assertIn("Stage purpose gate", reason(result))
+        self.assertIn("deleting `.stage` entirely is blocked", reason(result))
+        self.assertTrue(
+            reason(result).endswith(
+                "Action W-0003: Show the current action before every tool call."
+            )
+        )
 
     def test_stop_prunes_session_summaries_to_keep_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2672,20 +2679,14 @@ class StageGuardTest(unittest.TestCase):
             stale = self.write_stage_file(root, ".runtime/question-ack/sess-dead", "t\n")
             os.utime(stale, (1_000_000, 1_000_000))
             fresh = self.write_stage_file(root, ".runtime/question-ack/sess-live", "t\n")
-            stale_purpose = self.write_stage_file(
-                root, ".runtime/purpose-ack/sess-dead", "W-0001\n"
+            legacy_purpose = self.write_stage_file(
+                root, ".runtime/purpose-ack/sess-old", "W-0001\n"
             )
-            os.utime(stale_purpose, (1_000_000, 1_000_000))
-            fresh_purpose = self.write_stage_file(
-                root, ".runtime/purpose-ack/sess-live", "W-0001\n"
-            )
-
             stage_guard.handle_event("session-start", {"cwd": str(root)})
 
             self.assertFalse(stale.exists())
             self.assertTrue(fresh.exists())
-            self.assertFalse(stale_purpose.exists())
-            self.assertTrue(fresh_purpose.exists())
+            self.assertFalse(legacy_purpose.exists())
 
     def test_overlapping_intents_covering_same_path_are_denied(self):
         # Fail closed on ambiguity: an arbitrary consume could let one work
@@ -2713,10 +2714,8 @@ class StageGuardTest(unittest.TestCase):
                 },
             }
 
-            reminder = stage_guard.handle_event("pre-tool-use", payload)
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertIn("Stage purpose gate", reason(reminder))
         self.assertEqual(decision(result), "deny")
         self.assertIn("multiple pending intents", reason(result))
 
@@ -2909,10 +2908,15 @@ class StageGuardTest(unittest.TestCase):
     def test_pre_tool_allow_is_empty_output(self):
         # Codex marks permissionDecision:allow (without updatedInput) as a
         # failed hook run; allow must therefore be empty output on both hosts.
-        result = stage_guard.handle_event(
-            "pre-tool-use",
-            {"tool_name": "Read", "tool_input": {"file_path": "README.md"}},
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            result = stage_guard.handle_event(
+                "pre-tool-use",
+                {
+                    "tool_name": "Read",
+                    "cwd": tmp,
+                    "tool_input": {"file_path": "README.md"},
+                },
+            )
 
         self.assertEqual(result, {})
 
@@ -3437,7 +3441,7 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
-    def test_scope_does_not_cross_authorize_aliased_leaves(self):
+    def test_scope_crossing_for_aliased_leaf_is_reported(self):
         # Round 12 (4th pass): `src/a.py` and `other/b.py` aliasing one target —
         # a scope covering only `src` must not authorize deleting the distinct
         # entry `other/b.py` through the shared resolved path.
@@ -3454,8 +3458,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed:", message(result))
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
     def test_clustered_bsd_find_flags_are_scanned_past(self):
@@ -3617,7 +3621,7 @@ class StageGuardTest(unittest.TestCase):
         self.assertIn("deleting", reason(result).lower())
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
-    def test_lexical_collapse_does_not_smuggle_scope_authorization(self):
+    def test_lexical_collapse_does_not_hide_scope_crossing(self):
         # Round 12 (6th pass): `alias/../other/file.py` (alias -> src/nested)
         # lands in src/other/, but its lexical collapse reads other/ — a scope
         # covering only `other` must not authorize it.
@@ -3636,8 +3640,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed:", message(result))
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
     def test_last_find_traversal_option_wins(self):
@@ -4052,7 +4056,7 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "allow")
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
-    def test_file_symlink_scope_does_not_cross_authorize(self):
+    def test_file_symlink_scope_crossing_is_reported(self):
         # Round 12 (10th pass): `scope: aliases/link.py` (link.py -> src/actual.py)
         # must not authorize a direct write to the distinct entry src/actual.py.
         with tempfile.TemporaryDirectory() as tmp:
@@ -4070,8 +4074,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed:", message(result))
 
     def test_quoted_heredoc_operator_is_not_a_heredoc(self):
         # Round 12 (11th pass): a quoted `<<EOF` is literal text, not a heredoc
@@ -4523,7 +4527,7 @@ class StageGuardTest(unittest.TestCase):
         self.assertIn("registration", reason(result).lower())
 
     @unittest.skipIf(os.name == "nt", "symlink creation needs privileges on Windows")
-    def test_content_write_matches_scope_by_resolved_target(self):
+    def test_content_write_reports_resolved_target_scope_crossing(self):
         # Round 12 (15th pass, representative): a Write to `aliases/link.py`
         # (-> src/app.py) modifies src/app.py; a scope of only `aliases` must
         # not authorize it (content writes follow the symlink).
@@ -4542,8 +4546,8 @@ class StageGuardTest(unittest.TestCase):
 
             result = stage_guard.handle_event("pre-tool-use", payload)
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed:", message(result))
 
     def test_destructive_find_below_stage_sibling_is_allowed(self):
         # Companion: a destructive find rooted OUTSIDE `.stage`'s branch stays
@@ -4694,8 +4698,8 @@ class ShellDeleteGateTest(unittest.TestCase):
             uncovered = self.run_command(root, "cd src && rm ../tools/build.py")
 
         self.assertEqual(decision(covered), "allow")
-        self.assertEqual(decision(uncovered), "deny")
-        self.assertIn("registration", reason(uncovered).lower())
+        self.assertEqual(decision(uncovered), "allow")
+        self.assertIn("Scope boundary crossed:", message(uncovered))
 
     def test_deleting_past_file_requires_promotion_intent(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -4942,8 +4946,8 @@ class ShellWriteAnchorTest(unittest.TestCase):
             uncovered = self.run_command(root, "cd src && printf x > ../rogue.py")
 
         self.assertEqual(decision(covered), "allow")
-        self.assertEqual(decision(uncovered), "deny")
-        self.assertIn("registration", reason(uncovered).lower())
+        self.assertEqual(decision(uncovered), "allow")
+        self.assertIn("Scope boundary crossed:", message(uncovered))
 
     def test_quoted_redirect_text_is_not_a_write_target(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -4964,8 +4968,8 @@ class ShellWriteAnchorTest(unittest.TestCase):
             uncovered = self.run_command(root, "cd src && mv x.py ../out.py")
 
         self.assertEqual(decision(covered), "allow")
-        self.assertEqual(decision(uncovered), "deny")
-        self.assertIn("registration", reason(uncovered).lower())
+        self.assertEqual(decision(uncovered), "allow")
+        self.assertIn("Scope boundary crossed:", message(uncovered))
 
     def test_tee_target_behind_double_dash_is_gated(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -5038,8 +5042,8 @@ class ShellWriteAnchorTest(unittest.TestCase):
 
             result = self.run_command(root, "cp README.md 'src>backup.py'")
 
-        self.assertEqual(decision(result), "deny")
-        self.assertIn("registration", reason(result).lower())
+        self.assertEqual(decision(result), "allow")
+        self.assertIn("Scope boundary crossed:", message(result))
 
     def test_redirect_into_past_through_cwd_requires_intent(self):
         with tempfile.TemporaryDirectory() as tmp:
