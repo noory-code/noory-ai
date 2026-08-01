@@ -4,7 +4,6 @@ title: Title
 kind:
 venue:
 milestone:
-source:
 autonomous: false
 acceptance: []
 status: active
@@ -26,10 +25,24 @@ decision_refs:
 ## Stories
 
 
+## User value
+
+
 ## Scope
+
+### Included
+
+
+### Excluded
+
+
+## Risks
 
 
 ## Success criteria
+
+
+## Next action
 
 
 ## Related truth

@@ -3,6 +3,10 @@
 This document owns what a Stage body must contain and must leave out. How a sentence reads — word
 choice, word order, naming, length — is not decided here.
 
+Work cards follow the scale-specific body contract in `docs/SCHEMA_V5.md`. Its requirement that
+each scale's `Purpose` contain exactly one sentence is structural cardinality, not a prose-style
+length rule.
+
 ## Readers
 
 Every Stage body is read by someone who did not write it: the operator supervising the work, and

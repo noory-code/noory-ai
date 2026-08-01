@@ -15,6 +15,12 @@ TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "project-stage"
 LOCALE_ROOT = PLUGIN_ROOT / "templates" / "locales"
 V4_TEMPLATE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "project-stage"
 V4_KO_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales" / "ko"
+V4_LOCALE_INVARIANT_WORK_TEMPLATES = {
+    Path("work/planned/_epic.md"),
+    Path("work/planned/_story.md"),
+    Path("work/current/_epic.md"),
+    Path("work/current/_story.md"),
+}
 
 # Files whose markdown-table first column is a machine token set.
 TOKEN_TABLE_FILES = {
@@ -189,12 +195,22 @@ class TemplateV4LocaleParityTest(unittest.TestCase):
             path.relative_to(V4_TEMPLATE_ROOT)
             for path in sorted(V4_TEMPLATE_ROOT.rglob("*.md"))
             if path.name != "_template.md"
+            and path.relative_to(V4_TEMPLATE_ROOT)
+            not in V4_LOCALE_INVARIANT_WORK_TEMPLATES
         ]
         for relative in required:
             with self.subTest(file=str(relative)):
                 self.assertTrue(
                     (V4_KO_ROOT / relative).is_file(),
                     f"ko overlay missing {relative}",
+                )
+
+    def test_v4_work_record_templates_are_locale_invariant(self):
+        for relative in V4_LOCALE_INVARIANT_WORK_TEMPLATES:
+            with self.subTest(file=str(relative)):
+                self.assertFalse(
+                    (V4_KO_ROOT / relative).exists(),
+                    f"{relative} must use the canonical machine-token headings",
                 )
 
 

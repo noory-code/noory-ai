@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Give planned and current epic, story, and action cards the same scale-specific questions, add
+  the missing user-value and planning sections to direct-current registration, reject a supplied
+  purpose when it continues past one sentence, and remove the four unused Korean work-record
+  overlays so record headings always come from the canonical machine-token templates.
+
 - Let commits follow the same registration rule as writes: any open work permits an
   outside-scope target, the purpose context reports that crossing, and no open work still blocks.
   Keep the independent completion gate for files owned by completed items whose verification,

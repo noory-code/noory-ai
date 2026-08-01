@@ -30,6 +30,26 @@ W-INDEPENDENT-STORY/
 Lifecycle moves operate on the top-level directory. A hierarchy is therefore started, closed,
 and archived as one move unit while each record keeps its own lifecycle fields and retrospective.
 
+## Work record questions
+
+Every planned and current work record asks for `Purpose`, `User value`, `Scope`, `Risks`,
+`Success criteria`, and `Next action`. `Purpose` is exactly one sentence at each scale, with no
+character limit. A child states only its own contribution instead of repeating an ancestor's
+purpose.
+
+Scale determines the remaining planning questions:
+
+| Scale | Questions |
+|---|---|
+| Epic | `Stories` lists the stories that combine into the epic. |
+| Story | `Actions` lists the actions that combine into the story. |
+| Action | `Source` names what produced the indivisible step, and `Dependencies` names what it waits for. |
+
+A current record keeps the same questions as its planned counterpart. It additionally carries
+`Related truth`, `Progress`, `Verification`, `Retrospective`, and `Promotion decision`, which are
+filled as execution advances. Record-section headings are machine tokens and remain English for
+every project language.
+
 ## Rejected planned work
 
 `rejected` is a terminal status in both `work/planned/` and `work/current/`, but the two locations

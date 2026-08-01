@@ -52,6 +52,7 @@ import stage_roadmap  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 MILESTONE_RE = re.compile(r"^M-\d{8}$")
+SENTENCE_END_RE = re.compile(r"[.!?](?=\s|$)")
 _PLUGIN_ROOT = Path(__file__).resolve().parents[2]
 _TEMPLATE = _PLUGIN_ROOT.joinpath(
     "templates", "project-stage", "present", "work", "items", "_template.md"
@@ -98,6 +99,14 @@ def set_list_field(text: str, field: str, values: list[str], *, after: str) -> s
 
 def _v4_template(template_source: str) -> Path:
     return _PLUGIN_ROOT / "templates" / "v4" / template_source
+
+
+def purpose_has_multiple_sentences(purpose: str) -> bool:
+    """Return whether purpose text continues after its first sentence boundary."""
+
+    one_line = " ".join(purpose.split())
+    first_end = SENTENCE_END_RE.search(one_line)
+    return first_end is not None and bool(one_line[first_end.end() :].strip())
 
 
 def existing_numbers(stage_root: Path) -> set[int]:
@@ -530,6 +539,9 @@ def main() -> int:
     )
     args = parser.parse_args()
     args.acceptance = [command for command in args.acceptance if command.strip()]
+    if args.purpose and purpose_has_multiple_sentences(args.purpose):
+        print("refusing: purpose must be one sentence", file=sys.stderr)
+        return 1
     if args.autonomous and not args.acceptance:
         print(
             "refusing: autonomous work requires at least one --acceptance command",

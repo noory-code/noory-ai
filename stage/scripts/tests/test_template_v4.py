@@ -318,11 +318,72 @@ class TemplateV4Test(unittest.TestCase):
         for relative in work_templates:
             with self.subTest(file=str(relative)):
                 self.assertNotIn("parent", frontmatter_keys(V4_ROOT / relative))
-        for relative in work_templates:
-            if relative.name == "_template.md":
-                continue
+        locale_invariant = work_templates[:2] + work_templates[3:5]
+        for relative in locale_invariant:
+            with self.subTest(locale="ko", file=str(relative)):
+                self.assertFalse((V4_LOCALE_ROOT / relative).exists())
+        for relative in work_templates[6:8]:
             with self.subTest(locale="ko", file=str(relative)):
                 self.assertTrue((V4_LOCALE_ROOT / relative).is_file())
+
+    def test_work_hierarchy_templates_ask_scale_specific_questions(self):
+        scale_sections = {
+            "_epic.md": (
+                "## Purpose",
+                "## Stories",
+                "## User value",
+                "## Scope",
+                "### Included",
+                "### Excluded",
+                "## Risks",
+                "## Success criteria",
+                "## Next action",
+            ),
+            "_story.md": (
+                "## Purpose",
+                "## Actions",
+                "## User value",
+                "## Scope",
+                "### Included",
+                "### Excluded",
+                "## Risks",
+                "## Success criteria",
+                "## Next action",
+            ),
+            "_template.md": (
+                "## Purpose",
+                "## Source",
+                "## User value",
+                "## Scope",
+                "### Included",
+                "### Excluded",
+                "## Dependencies",
+                "## Risks",
+                "## Success criteria",
+                "## Next action",
+            ),
+        }
+        lifecycle_only = (
+            "## Related truth",
+            "## Progress",
+            "## Verification",
+            "## Retrospective",
+            "## Promotion decision",
+        )
+
+        for lifecycle in ("planned", "current"):
+            for filename, sections in scale_sections.items():
+                path = V4_ROOT / "work" / lifecycle / filename
+                headings = tuple(
+                    line
+                    for line in path.read_text(encoding="utf-8").splitlines()
+                    if line.startswith("## ") or line.startswith("### ")
+                )
+                expected = sections + (lifecycle_only if lifecycle == "current" else ())
+                with self.subTest(lifecycle=lifecycle, template=filename):
+                    self.assertEqual(expected, headings)
+                    if lifecycle == "current":
+                        self.assertNotIn("source", frontmatter_keys(path))
 
 
 if __name__ == "__main__":

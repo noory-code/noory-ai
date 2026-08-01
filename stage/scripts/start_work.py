@@ -76,7 +76,13 @@ FRONTMATTER_ORDER = (
     "promotes",
     "decision_refs",
 )
-RECORD_SECTIONS = ("## Progress", "## Verification", "## Retrospective", "## Promotion decision")
+RECORD_SECTIONS = (
+    "## Related truth",
+    "## Progress",
+    "## Verification",
+    "## Retrospective",
+    "## Promotion decision",
+)
 
 
 def parse_args() -> argparse.Namespace:

@@ -109,19 +109,23 @@ next free number, writes the card, and updates the owning index:
   decision another card already settled links that record in its body, never here: the audit
   requires every referenced record to name this item back, and that one-to-one link is what
   identifies which single item a venue exception authorized.
-- The body must answer four questions, each in its own section. A card that leaves any of them
-  empty is not a work item — it is a note, and whoever picks it up will invent the missing answer:
+- Every scale asks for one `## Purpose` sentence, `## User value`, `## Scope`, `## Risks`,
+  `## Success criteria`, and `## Next action`. Registration refuses `--purpose` when a `.`, `!`,
+  or `?` sentence boundary is followed by more text; it does not impose a character limit.
+  Lower levels name only their own contribution instead of repeating an ancestor's purpose.
 
-  | Question | Section |
+  | Scale | Scale-specific sections |
   |---|---|
-  | 무엇을 하는가 | `## Actions` — the work itself, and `## Scope` for the paths it may touch |
-  | 왜 지금 하는가 | `## Purpose` — what is wrong today, with the evidence that it is wrong |
-  | 무엇을 이루려는가 | `## User value` — what someone can do afterwards that they cannot do now |
-  | 언제 끝나는가 | `## Success criteria` — checkable, and at least one of them names a result a person experiences, not only a structure that exists |
+  | `epic` | `## Stories` — the stories that combine into the epic |
+  | `story` | `## Actions` — the actions that combine into the story |
+  | `action` | `## Source` and `## Dependencies` — what produced the indivisible step and what it waits for |
 
-  Capturing a card for later (`--backlog`) does not exempt it. A planned card with an empty body
-  cannot be started: the driver refuses an item whose acceptance command is missing, and a human
-  reading it has to redo the thinking that was skipped.
+  A current card keeps those same questions and adds only the lifecycle sections that execution
+  fills: `## Related truth`, `## Progress`, `## Verification`, `## Retrospective`, and
+  `## Promotion decision`. Capturing a card for later (`--backlog`) does not exempt it. A card that
+  leaves its questions empty is a note, and whoever picks it up will invent the missing answer.
+  A planned card with an empty body cannot be started: the driver refuses an item whose acceptance
+  command is missing, and a human reading it has to redo the thinking that was skipped.
 
 - Store the smallest command that fails when this card's own result breaks — one test file, or one
   test name. A card that only changes documents can store the audit alone. If the command can fail

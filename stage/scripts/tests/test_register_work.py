@@ -47,6 +47,14 @@ def story_path(root: Path, lifecycle: str, item_id: str) -> Path:
     return root / ".stage" / "work" / lifecycle / item_id / "_story.md"
 
 
+def question_headings(text: str) -> tuple[str, ...]:
+    return tuple(
+        line
+        for line in text.splitlines()
+        if line.startswith("## ") or line.startswith("### ")
+    )
+
+
 class RegisterWorkTest(unittest.TestCase):
     def make(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
@@ -349,6 +357,66 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn("acceptance", proc.stderr)
         self.assertFalse(story_path(root, "current", "W-00000001").exists())
 
+    def test_current_registration_refuses_more_than_one_purpose_sentence(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Focused purpose",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--purpose",
+                "Deliver one outcome. Repeat the parent outcome.",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("purpose must be one sentence", proc.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
+    def test_planned_registration_refuses_more_than_one_purpose_sentence(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--backlog",
+                "--title",
+                "Focused purpose",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--purpose",
+                "Deliver one outcome! Repeat the parent outcome.",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("purpose must be one sentence", proc.stderr)
+        self.assertFalse(story_path(root, "planned", "W-00000001").exists())
+
+    def test_registration_accepts_one_purpose_sentence_without_terminal_punctuation(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Focused purpose",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--purpose",
+                "Deliver one outcome",
+            )
+            body = story_path(root, "current", "W-00000001").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("## Purpose\n\nDeliver one outcome\n", body)
+
     def test_registration_writes_autonomous_acceptance_sequence(self):
         tmp, root = self.make()
         with tmp:
@@ -546,6 +614,49 @@ status: captured
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("\nparent: W-00000001\n", item)
+
+    def test_planned_and_direct_current_registration_ask_the_same_questions(self):
+        tmp, root = self.make()
+        with tmp:
+            planned = run(
+                root,
+                "--backlog",
+                "--title",
+                "Planned path",
+                "--kind",
+                "chore",
+                "--scope",
+                "stage/x",
+                "--id",
+                "W-00000001",
+            )
+            self.assertEqual(0, planned.returncode, planned.stderr)
+            started = run_start(root, "W-00000001", "--scope", "stage/x")
+            self.assertEqual(0, started.returncode, started.stderr)
+            direct = run(
+                root,
+                "--title",
+                "Direct path",
+                "--kind",
+                "chore",
+                "--scope",
+                "stage/x",
+                "--id",
+                "W-00000002",
+            )
+            self.assertEqual(0, direct.returncode, direct.stderr)
+
+            started_text = story_path(root, "current", "W-00000001").read_text(
+                encoding="utf-8"
+            )
+            direct_text = story_path(root, "current", "W-00000002").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(question_headings(direct_text), question_headings(started_text))
+        self.assertIn("## Related truth", question_headings(started_text))
+        self.assertIn("### Included", question_headings(direct_text))
+        self.assertIn("### Excluded", question_headings(direct_text))
 
     def test_planned_hierarchy_records_keep_their_declared_scopes_when_started(self):
         tmp, root = self.make()
