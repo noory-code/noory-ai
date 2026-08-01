@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Refuse `promotion: not_applicable` at close when a work item owns any decision other than a
+  one-time `authorizes: venue_exception`. The person must choose a real final promotion outcome,
+  while items with no decisions or only venue exceptions keep their existing close path.
+
 - Give planned and current epic, story, and action cards the same scale-specific questions, add
   the missing user-value and planning sections to direct-current registration, reject a supplied
   purpose when it continues past one sentence, and remove the four unused Korean work-record

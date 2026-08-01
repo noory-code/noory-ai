@@ -285,11 +285,15 @@ class CloseWorkTest(unittest.TestCase):
 
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
-    def write_decision(self, root: Path, *, status: str) -> None:
+    def write_decision(
+        self, root: Path, *, status: str, authorizes: str = ""
+    ) -> None:
         decisions = root / ".stage/decisions/pending"
         decisions.mkdir(parents=True, exist_ok=True)
+        authorization = f"authorizes: {authorizes}\n" if authorizes else ""
         (decisions / "DE-00000001.md").write_text(
-            f"---\nid: DE-00000001\nwork_item: W-00000001\nstatus: {status}\n---\n# DE-00000001\n",
+            f"---\nid: DE-00000001\nwork_item: W-00000001\nstatus: {status}\n"
+            f"{authorization}---\n# DE-00000001\n",
             encoding="utf-8",
         )
 
@@ -312,13 +316,59 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("DE-00000001", proc.stderr)
         self.assertIn("status: active", body)
 
-    def test_closes_when_linked_decision_is_decided(self):
+    def test_refuses_not_applicable_for_linked_governing_decision(self):
         tmp, root = self.make()
         with tmp:
             self.write_decision(root, status="decided")
             self.link_decision(root)
-            proc = run(root, "W-00000001", "--check", f"{sys.executable} -c 'print(1)'")
+            marker = root / "check-ran"
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command(f"from pathlib import Path; Path({str(marker)!r}).touch()"),
+            )
             body = (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("DE-00000001", proc.stderr)
+        self.assertIn("not_applicable", proc.stderr)
+        self.assertFalse(marker.exists())
+        self.assertIn("status: active", body)
+
+    def test_closes_with_approved_promotion_for_linked_governing_decision(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision(root, status="decided")
+            self.link_decision(root)
+            proc = run(
+                root,
+                "W-00000001",
+                "--promotion",
+                "approved",
+                "--check",
+                f"{sys.executable} -c 'print(1)'",
+            )
+            body = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", body)
+
+    def test_allows_not_applicable_for_linked_venue_exception(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision(
+                root,
+                status="decided",
+                authorizes="venue_exception",
+            )
+            self.link_decision(root)
+            proc = run(root, "W-00000001", "--check", "true")
+            body = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", body)

@@ -18,7 +18,7 @@ Usage:
     close_work.py --project-root . W-00000008 \
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
-        [--promotion not_applicable] [--timeout 900]
+        [--promotion <final-choice>] [--timeout 900]
 """
 
 from __future__ import annotations
@@ -50,11 +50,13 @@ from stage_paths import (  # noqa: E402
 )
 from stage_work import (  # noqa: E402
     GATE_FIELD_DEFAULTS,
+    VENUE_EXCEPTION_AUTHORIZATION,
     decision_status,
     item_from_fields,
     load_all_work_items,
     non_terminal_children,
     parse_frontmatter,
+    resolve_decision_record,
     split_scope,
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
@@ -109,6 +111,19 @@ def append_to_section(text: str, heading: str, body: str) -> str:
         return f"{match.group(1)}{match.group(2)}\n{body}\n"
 
     return re.sub(pattern, append, text, count=1, flags=re.DOTALL)
+
+
+def decisions_requiring_promotion_choice(
+    stage_root: Path, decision_refs: tuple[str, ...]
+) -> list[str]:
+    """Return linked decisions that are not one-time venue exceptions."""
+
+    required: list[str] = []
+    for decision_ref in decision_refs:
+        fields = parse_frontmatter(resolve_decision_record(stage_root, decision_ref))
+        if (fields.get("authorizes") or "").strip() != VENUE_EXCEPTION_AUTHORIZATION:
+            required.append(decision_ref)
+    return required
 
 
 def work_log_path(stage_root: Path, item_id: str) -> Path:
@@ -646,7 +661,8 @@ def main() -> int:
 
     # Finished work must not rest on undecided decisions (DE-00000005); the
     # audit reports the same state as DECISION002.
-    for decision_ref in split_scope(field(text, "decision_refs")):
+    decision_refs = split_scope(field(text, "decision_refs"))
+    for decision_ref in decision_refs:
         if decision_status(stage_root, decision_ref) == "open":
             print(
                 f"{args.item}: linked decision {decision_ref} is still open — close it "
@@ -659,6 +675,18 @@ def main() -> int:
     if promotion not in PROMOTION_FINAL:
         print(f"{args.item}: promotion `{promotion}` is not final {sorted(PROMOTION_FINAL)} — pass --promotion", file=sys.stderr)
         return 1
+    if promotion == "not_applicable":
+        promotion_decisions = decisions_requiring_promotion_choice(
+            stage_root, decision_refs
+        )
+        if promotion_decisions:
+            print(
+                f"{args.item}: linked decision(s) {', '.join(promotion_decisions)} are not "
+                "one-time venue exceptions; promotion `not_applicable` would skip their "
+                "promotion decision — pass --promotion with the actual final choice",
+                file=sys.stderr,
+            )
+            return 1
 
     checks = [*work_item.acceptance, *args.check]
     if not checks:
