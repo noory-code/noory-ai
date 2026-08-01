@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000179 | development | codex | 통행증이 아직 살아 있는지 목록만 봐서는 알 수 없고 그 목록마저 서랍과 어긋나 있다. | active | Claude | [current/W-00000179/_story.md](current/W-00000179/_story.md) |
