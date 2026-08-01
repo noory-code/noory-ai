@@ -149,3 +149,4 @@
 | W-00000171 | completed | [items/W-00000171/_story.md](items/W-00000171/_story.md) |
 | W-00000174 | completed | [items/W-00000174/_story.md](items/W-00000174/_story.md) |
 | W-00000164 | completed | [items/W-00000164/_story.md](items/W-00000164/_story.md) |
+| W-00000175 | completed | [items/W-00000175/_story.md](items/W-00000175/_story.md) |
