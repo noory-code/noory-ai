@@ -11,9 +11,9 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
-scope: stage/scripts/, stage/hooks/, stage/operations/, stage/CHANGELOG.md, .stage/
+scope: stage/scripts/, stage/hooks/, stage/skills/, stage/docs/, stage/operations/, stage/templates/, stage/CHANGELOG.md, .stage/
 promotes:
 decision_refs:
 ---
@@ -48,7 +48,9 @@ decision_refs:
   전에 같이 손대지 않는다.
 - 결정에 새 상태값을 주는 일. "이 카드가 끝났는가"는 카드가 이미 소유한다. 통행증에 도장을 또
   찍으면 같은 사실이 두 곳에 생겨 언젠가 한쪽만 바뀐다.
-- 결정을 옮기거나 만드는 명령이 목록을 쓰게 하는 일. 만들어 내는 쪽이면 그 자리가 필요 없다.
+- ~~결정을 옮기거나 만드는 명령이 목록을 쓰게 하는 일. 만들어 내는 쪽이면 그 자리가 필요 없다.~~
+  **이 제외가 틀렸다(2026-08-01, 1바퀴 판정).** 손으로 쓰는 자리는 없어져도 만들어 내는 명령을
+  누군가 돌려야 한다. 아래 "다음 행동"으로 옮긴다.
 
 ## Risks
 
@@ -67,8 +69,25 @@ decision_refs:
 
 ## Next action
 
-먼저 지금 목록에 손으로 쓴 내용이 있는지 본다. 그다음 목록을 만들어 내는 명령을 쓰고, 감사에
-어긋남 검사를 붙이고, 이 저장소 목록을 다시 만든다.
+1바퀴가 목록을 만들어 내는 명령과 감사 검사를 실었다. **그런데 정상 경로가 막혔다. 둘을
+고친다.**
+
+### 하나 — 결정을 만드는 모든 길이 감사를 빨갛게 만들고 끝난다
+
+막힌 카드 올리기, 마일스톤 시작·닫기, 옛 버전 이전 — 셋 다 새 대기 결정을 만들면서 목록은
+그대로 둔다. 사람이 다시 만들기 전까지 감사가 계속 오류를 낸다.
+
+**무인 실행에서 특히 아프다.** 드라이버가 막힌 카드를 올리고 커밋한 뒤 다음 카드로 넘어가는데,
+그 카드의 통과 조건이 감사면 자기 일과 무관한 이유로 떨어진다.
+
+**결정을 만드는 그 자리에서 목록도 다시 만들게 한다.** 이 카드가 범위에서 뺐던 일인데, 뺀
+근거("만들어 내는 쪽이면 그 자리가 필요 없다")가 틀렸다 — 손으로 쓰는 자리가 없어져도 명령을
+누군가 돌려야 한다.
+
+### 둘 — 계약 문서 한 줄이 이제 거짓이다
+
+`stage/docs/SCHEMA_V4.md:205` 가 막힌 카드 올리는 명령이 목록에 줄을 더한다고 적는데, 이제
+안 그런다. 코드와 문서가 다른 말을 한다.
 
 ## Related truth
 

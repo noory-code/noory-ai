@@ -199,17 +199,6 @@ def drop_index_row(text: str, item_id: str) -> str:
     return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
 
 
-def append_decision_index(text: str, decision_id: str) -> str:
-    if re.search(rf"\|\s*{re.escape(decision_id)}\s*\|", text):
-        return text
-    body = text.rstrip("\n")
-    row = (
-        f"| {decision_id} | open | human | "
-        f"[pending/{decision_id}.md](pending/{decision_id}.md) |"
-    )
-    return f"{body}\n{row}\n"
-
-
 def main() -> int:
     args = parse_args()
     reason = args.reason.strip()
@@ -274,8 +263,7 @@ def main() -> int:
     template_path = stage_root / "decisions/pending/_template.md"
     active_path = stage_root / paths.active_index
     review_path = stage_root / paths.review_index
-    decision_index_path = stage_root / "decisions/index.md"
-    required = (template_path, active_path, decision_index_path)
+    required = (template_path, active_path)
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         print(f"Stage escalation prerequisite missing: {', '.join(missing)}", file=sys.stderr)
@@ -322,9 +310,6 @@ def main() -> int:
                 paths.current_cards,
                 record.relative_to(stage_root).as_posix(),
             )
-        updated_decision_index = append_decision_index(
-            decision_index_path.read_text(encoding="utf-8"), decision_id
-        )
     except (OSError, ValueError) as exc:
         print(f"{args.item}: cannot prepare escalation: {exc}", file=sys.stderr)
         return 2
@@ -342,7 +327,6 @@ def main() -> int:
                 record_id = str(parse_frontmatter(record).get("id") or "").strip()
                 review_text = drop_index_row(review_text, record_id)
             review_path.write_text(review_text, encoding="utf-8")
-        decision_index_path.write_text(updated_decision_index, encoding="utf-8")
     except OSError as exc:
         print(f"{args.item}: escalation write failed: {exc}", file=sys.stderr)
         return 2

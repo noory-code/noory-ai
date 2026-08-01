@@ -669,6 +669,7 @@ class StageAuditTest(unittest.TestCase):
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
             self.append_active_index(root, "W-0001")
+            audit_stage.refresh_decision_index.refresh_index(root)
 
             findings = audit_stage.Audit(root).run()
 
@@ -1674,6 +1675,46 @@ class StageAuditTest(unittest.TestCase):
         self.assertIn("DECISION001", codes)
         self.assertIn("WORK016", codes)
         self.assertIn("WORK021", codes)
+
+    def test_pending_decision_index_drift_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, decision_refs="DE-0001")
+            self.append_active_index(root, "W-0001")
+            self.write_decision(root)
+
+            findings = audit_stage.Audit(root).run()
+
+        drift = [finding for finding in findings if finding.code == "DECISION004"]
+        self.assertEqual(["error"], [finding.severity for finding in drift])
+        self.assertIn("refresh_decision_index.py", drift[0].message)
+
+    def test_generated_pending_decision_index_passes_sync_audit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, decision_refs="DE-0001")
+            self.append_active_index(root, "W-0001")
+            self.write_decision(root)
+            audit_stage.refresh_decision_index.refresh_index(root)
+
+            codes = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertNotIn("DECISION004", codes)
+
+    def test_unrecognized_pending_decision_index_shape_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            index = root / ".stage/decisions/index.md"
+            index.write_text("# Custom\n\n| Name | Note |\n|---|---|\n", encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+        drift = [finding for finding in findings if finding.code == "DECISION004"]
+        self.assertEqual(["error"], [finding.severity for finding in drift])
+        self.assertIn("cannot be derived", drift[0].message)
 
     def test_directory_squatting_a_required_file_is_error(self):
         with tempfile.TemporaryDirectory() as tmp:

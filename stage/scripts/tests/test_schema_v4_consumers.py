@@ -237,6 +237,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             self.assertIn(decision_path, [node.path for node in graph.decisions])
             self.assertIn(question_path, [node.path for node in graph.state])
             self.assertIn(milestone_path, [node.path for node in graph.milestones])
+            audit_stage.refresh_decision_index.refresh_index(root)
             self.assertEqual([], audit_stage.Audit(root).run())
             context = stage_context.session_context(root)
 

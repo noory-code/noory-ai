@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Generate the pending-decision index from decision records and linked work-card status, show when
+  one-item venue exceptions have expired, and make the audit reject stale or unfamiliar views.
+
 - Stop the unattended driver from supplying `promotion: approved` on its own. It now passes the
   choice already stored on each executed card, tells executors to make that choice, and defaults
   only aggregation parents without decisions or promotion paths to `not_applicable`. Audit current

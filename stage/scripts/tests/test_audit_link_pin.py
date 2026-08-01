@@ -211,6 +211,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "DECISION002",
                 "RETRO001",
                 "RETRO002",
+                "DECISION004",
                 "STATE001",
                 # Family-index membership (X4): every backlog record in the
                 # fixture is deliberately unindexed.

@@ -26,6 +26,7 @@ if str(SCRIPT_ROOT) not in sys.path:
 
 import stage_guard  # noqa: E402
 import guidance_docs  # noqa: E402
+import refresh_decision_index  # noqa: E402
 import stage_roadmap  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
@@ -210,6 +211,7 @@ class Audit:
         self.audit_backlog_items(graph)
         self.audit_retrospective_identities(graph)
         self.audit_orphan_records(graph)
+        self.audit_pending_decision_index()
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_future_indexes(graph)
@@ -852,6 +854,31 @@ class Audit:
                 f"{self.display_path(node.path)}. Each R-id must have one location and one "
                 "work_item.",
                 node.path,
+            )
+
+    def audit_pending_decision_index(self) -> None:
+        """The pending-decision view is derived from its records and work cards."""
+
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        index_path = self.stage_root / refresh_decision_index.INDEX_RELATIVE
+        try:
+            existing = index_path.read_text(encoding="utf-8")
+            expected = refresh_decision_index.render_index(self.stage_root, existing)
+        except (OSError, refresh_decision_index.IndexFormatError) as exc:
+            self.error(
+                "DECISION004",
+                "Pending-decision index cannot be derived; run "
+                f"`python3 stage/scripts/refresh_decision_index.py --project-root .`: {exc}",
+                index_path,
+            )
+            return
+        if existing != expected:
+            self.error(
+                "DECISION004",
+                "Pending-decision index differs from pending records or their work cards; run "
+                "`python3 stage/scripts/refresh_decision_index.py --project-root .`.",
+                index_path,
             )
 
     def audit_state_links(self, graph: RecordGraph) -> None:

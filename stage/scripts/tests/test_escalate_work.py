@@ -133,7 +133,7 @@ class EscalateWorkTest(unittest.TestCase):
             self.assertIn(reason, decision)
             self.assertIn("| blocked |", active)
             self.assertIn("W-00000001", active)
-            self.assertIn("DE-00000008", decision_index)
+            self.assertNotIn("DE-00000008", decision_index)
             self.assertIn("DE-00000008", result.stdout)
 
     def test_non_open_item_is_refused_without_changes(self):

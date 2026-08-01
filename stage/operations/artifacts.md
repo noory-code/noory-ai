@@ -121,6 +121,14 @@ One table to recognize every artifact family fast. Read this before creating any
 
 Every family follows the same shape — `index` (view) + individual records + `_template.md`. Copy the family's `_template.md` to create a record; never invent a new frontmatter shape.
 
+The pending-decision index is a derived view. Refresh it after decision or linked-work lifecycle
+changes; the command preserves prose outside its recognized table and refuses an unfamiliar table
+instead of overwriting it:
+
+```bash
+python3 stage/scripts/refresh_decision_index.py --project-root .
+```
+
 IDs are zero-padded to 8 digits (`W-00000001`) and counted PER TYPE (the first theme is `TH-00000001`, the first milestone `M-00000001`), so lexical order matches creation order within each type at long-project scale. Hooks and the audit accept any width of 3 or more digits, so existing shorter IDs stay valid.
 
 The roadmap family (`TH-`/`M-`) is fixed in `roadmap/`: themes and milestones span lifecycle states, so they do not move. Their status is computed solely from their decision chain (no authored status field). A milestone closes through a decision that freezes an immutable basis of its terminal work cards; promoting that closure revalidates the basis fail-closed, and a work card frozen by an effective closure cannot change its `milestone` without a superseding decision.

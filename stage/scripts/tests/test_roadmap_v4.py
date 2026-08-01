@@ -18,6 +18,7 @@ SCRIPT_ROOT = STAGE_ROOT / "scripts"
 ROADMAP = STAGE_ROOT / "skills" / "stage-roadmap" / "manage_roadmap.py"
 REGISTER = STAGE_ROOT / "skills" / "stage-work" / "register_work.py"
 AUDIT = SCRIPT_ROOT / "audit_stage.py"
+REFRESH_DECISIONS = SCRIPT_ROOT / "refresh_decision_index.py"
 V3_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "project-stage"
 V4_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "v4" / "project-stage"
 for import_root in (HOOK_ROOT, SCRIPT_ROOT):
@@ -142,6 +143,8 @@ class RoadmapFixture(unittest.TestCase):
         return [finding.code for finding in self.findings(root)]
 
     def assert_audit_clean(self, root: Path) -> None:
+        refreshed = run_cli(REFRESH_DECISIONS, root)
+        self.assertEqual(0, refreshed.returncode, refreshed.stdout + refreshed.stderr)
         findings = self.findings(root)
         self.assertEqual([], findings, [finding.to_dict() for finding in findings])
 
@@ -179,6 +182,13 @@ class RoadmapCliTest(RoadmapFixture):
         with tmp:
             _theme_id, milestone_id = self.create_theme_and_milestone(root)
             pursuit = run_cli(ROADMAP, root, "open-pursuit", milestone_id)
+            decision_index = (root / ".stage/decisions/index.md").read_text(
+                encoding="utf-8"
+            )
+            refreshed = run_cli(REFRESH_DECISIONS, root)
+            refreshed_index = (root / ".stage/decisions/index.md").read_text(
+                encoding="utf-8"
+            )
             registered = run_cli(
                 REGISTER,
                 root,
@@ -199,6 +209,12 @@ class RoadmapCliTest(RoadmapFixture):
 
             self.assertEqual(0, pursuit.returncode, pursuit.stderr)
             self.assertIn("DE-00000001", pursuit.stdout)
+            self.assertNotIn("DE-00000001", decision_index)
+            self.assertEqual(0, refreshed.returncode, refreshed.stdout + refreshed.stderr)
+            self.assertIn(
+                "[M-00000001](../roadmap/milestones/M-00000001.md) | active | active |",
+                refreshed_index,
+            )
             self.assertEqual(0, registered.returncode, registered.stderr)
             self.assertEqual(0, audited.returncode, audited.stdout + audited.stderr)
             self.assertIn("Summary: errors=0, warnings=0", audited.stdout)

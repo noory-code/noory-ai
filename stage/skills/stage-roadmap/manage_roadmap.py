@@ -357,13 +357,8 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
     pending_zone = stage_topology.get_zone("decisions", "pending")
     pending_dir = stage_root / pending_zone.canonical_path
     template_path = PLUGIN_ROOT / "templates" / "v4" / str(pending_zone.template_source)
-    decision_index = stage_root / pending_zone.index_surfaces[0]
-    if (
-        not pending_dir.is_dir()
-        or not decision_index.is_file()
-        or not template_path.is_file()
-    ):
-        raise RuntimeError("pending-decision directory, index, or bundled template is missing")
+    if not pending_dir.is_dir() or not template_path.is_file():
+        raise RuntimeError("pending-decision directory or bundled template is missing")
     template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
         pending_dir,
@@ -372,11 +367,6 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
         lambda item_id: _decision_content(template, item_id, milestone),
     )
     _append_decision_ref(milestone_path, decision_id)
-    decision_row = (
-        f"| {decision_id} | decided | stage-roadmap | "
-        f"[pending/{decision_id}.md](pending/{decision_id}.md) |"
-    )
-    _ensure_index_row(decision_index, decision_id, decision_row)
     print(f"{args.milestone}: pursuit active via {decision_id}")
     return 0
 
@@ -423,13 +413,8 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
     template_path = PLUGIN_ROOT / "templates" / "v4" / str(
         pending_zone.template_source
     )
-    decision_index = stage_root / pending_zone.index_surfaces[0]
-    if (
-        not pending_dir.is_dir()
-        or not decision_index.is_file()
-        or not template_path.is_file()
-    ):
-        raise RuntimeError("pending-decision directory, index, or bundled template is missing")
+    if not pending_dir.is_dir() or not template_path.is_file():
+        raise RuntimeError("pending-decision directory or bundled template is missing")
     template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
         pending_dir,
@@ -445,11 +430,6 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         ),
     )
     _append_decision_ref(milestone_path, decision_id)
-    decision_row = (
-        f"| {decision_id} | decided | stage-roadmap | "
-        f"[pending/{decision_id}.md](pending/{decision_id}.md) |"
-    )
-    _ensure_index_row(decision_index, decision_id, decision_row)
     print(
         f"{args.milestone}: closed via {decision_id} "
         f"(frozen basis: {len(entries)} work cards)"
