@@ -20,6 +20,7 @@ for import_root in (HOOK_ROOT, SCRIPT_ROOT):
 import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
+import refresh_decision_index  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
@@ -326,6 +327,13 @@ def _append_decision_ref(record_path: Path, decision_id: str) -> None:
     )
 
 
+def _validate_decision_index(stage_root: Path) -> None:
+    index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
+    refresh_decision_index.render_index(
+        stage_root, index_path.read_text(encoding="utf-8")
+    )
+
+
 def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
     if re.fullmatch(r"M-\d{8}", args.milestone) is None:
         print(
@@ -359,6 +367,7 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
     template_path = PLUGIN_ROOT / "templates" / "v4" / str(pending_zone.template_source)
     if not pending_dir.is_dir() or not template_path.is_file():
         raise RuntimeError("pending-decision directory or bundled template is missing")
+    _validate_decision_index(stage_root)
     template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
         pending_dir,
@@ -367,6 +376,7 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
         lambda item_id: _decision_content(template, item_id, milestone),
     )
     _append_decision_ref(milestone_path, decision_id)
+    refresh_decision_index.refresh_index(stage_root.parent)
     print(f"{args.milestone}: pursuit active via {decision_id}")
     return 0
 
@@ -415,6 +425,7 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
     )
     if not pending_dir.is_dir() or not template_path.is_file():
         raise RuntimeError("pending-decision directory or bundled template is missing")
+    _validate_decision_index(stage_root)
     template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
         pending_dir,
@@ -430,6 +441,7 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         ),
     )
     _append_decision_ref(milestone_path, decision_id)
+    refresh_decision_index.refresh_index(stage_root.parent)
     print(
         f"{args.milestone}: closed via {decision_id} "
         f"(frozen basis: {len(entries)} work cards)"

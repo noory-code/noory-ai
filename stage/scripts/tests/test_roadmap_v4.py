@@ -185,10 +185,6 @@ class RoadmapCliTest(RoadmapFixture):
             decision_index = (root / ".stage/decisions/index.md").read_text(
                 encoding="utf-8"
             )
-            refreshed = run_cli(REFRESH_DECISIONS, root)
-            refreshed_index = (root / ".stage/decisions/index.md").read_text(
-                encoding="utf-8"
-            )
             registered = run_cli(
                 REGISTER,
                 root,
@@ -209,11 +205,9 @@ class RoadmapCliTest(RoadmapFixture):
 
             self.assertEqual(0, pursuit.returncode, pursuit.stderr)
             self.assertIn("DE-00000001", pursuit.stdout)
-            self.assertNotIn("DE-00000001", decision_index)
-            self.assertEqual(0, refreshed.returncode, refreshed.stdout + refreshed.stderr)
             self.assertIn(
                 "[M-00000001](../roadmap/milestones/M-00000001.md) | active | active |",
-                refreshed_index,
+                decision_index,
             )
             self.assertEqual(0, registered.returncode, registered.stderr)
             self.assertEqual(0, audited.returncode, audited.stdout + audited.stderr)
@@ -238,6 +232,26 @@ class RoadmapCliTest(RoadmapFixture):
         self.assertIn("plugin requires v5", result.stderr)
         self.assertIn("stage-migrate", result.stderr)
         self.assertEqual(before, after)
+
+    def test_unrecognized_decision_index_is_refused_before_opening_pursuit(self):
+        tmp, root = self.make_fixture()
+        with tmp:
+            _theme_id, milestone_id = self.create_theme_and_milestone(root)
+            milestone_path = root / f".stage/roadmap/milestones/{milestone_id}.md"
+            before = milestone_path.read_text(encoding="utf-8")
+            (root / ".stage/decisions/index.md").write_text(
+                "# Custom decisions\n\n| Note | Owner |\n|---|---|\n| Keep | This |\n",
+                encoding="utf-8",
+            )
+
+            result = run_cli(ROADMAP, root, "open-pursuit", milestone_id)
+
+            self.assertEqual(2, result.returncode)
+            self.assertIn("exactly one recognized", result.stderr)
+            self.assertEqual(before, milestone_path.read_text(encoding="utf-8"))
+            self.assertFalse(
+                (root / ".stage/decisions/pending/DE-00000001.md").exists()
+            )
 
 
 class DecisionChainTest(RoadmapFixture):

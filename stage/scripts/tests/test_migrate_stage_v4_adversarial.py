@@ -379,7 +379,17 @@ class MigrationContentAdversarialTest(MigrationAdversarialFixture):
             )
             commit_all(root, "add Contract X decision fixture")
 
-            self.migrate_successfully(root)
+            code, output = run_migrate(root)
+            self.assertEqual(0, code, output)
+            decision_index = (stage_root / "decisions/index.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(stable_id, decision_index)
+            self.assertIn(
+                "[W-00000001](../work/current/W-00000001/_story.md)",
+                decision_index,
+            )
+            self.assert_audit_clean(root)
 
             migrated_work = stage_root / "work/current/W-00000001/_story.md"
             work_text = migrated_work.read_text(encoding="utf-8")

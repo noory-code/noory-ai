@@ -181,6 +181,10 @@ class CloseMilestoneCliTest(ClosureFixture):
             self.assertEqual(0, result.returncode, result.stderr)
             decision = root / ".stage/decisions/pending/DE-00000002.md"
             text = decision.read_text(encoding="utf-8")
+            decision_index = (root / ".stage/decisions/index.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("DE-00000002", decision_index)
             self.assertIn("transition: closure", text)
             self.assertIn("predecessor: DE-00000001", text)
             self.assertIn("| W-00000001 | accepted |", text)

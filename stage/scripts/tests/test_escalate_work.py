@@ -133,7 +133,7 @@ class EscalateWorkTest(unittest.TestCase):
             self.assertIn(reason, decision)
             self.assertIn("| blocked |", active)
             self.assertIn("W-00000001", active)
-            self.assertNotIn("DE-00000008", decision_index)
+            self.assertIn("DE-00000008", decision_index)
             self.assertIn("DE-00000008", result.stdout)
 
     def test_non_open_item_is_refused_without_changes(self):
@@ -154,6 +154,25 @@ class EscalateWorkTest(unittest.TestCase):
             self.assertNotRegex(
                 (root / ".stage/decisions/index.md").read_text(encoding="utf-8"),
                 re.compile(r"DE-00000008"),
+            )
+
+    def test_unrecognized_decision_index_is_refused_before_escalation(self):
+        tmp, root = self.make_project()
+        with tmp:
+            item_path = root / ".stage/work/current/W-00000001/_story.md"
+            before = item_path.read_text(encoding="utf-8")
+            (root / ".stage/decisions/index.md").write_text(
+                "# Custom decisions\n\n| Note | Owner |\n|---|---|\n| Keep | This |\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_cli(root, "Need a decision.")
+
+            self.assertEqual(2, result.returncode)
+            self.assertIn("exactly one recognized", result.stderr)
+            self.assertEqual(before, item_path.read_text(encoding="utf-8"))
+            self.assertFalse(
+                (root / ".stage/decisions/pending/DE-00000008.md").exists()
             )
 
     def test_action_escalation_blocks_story_and_requests_redecomposition(self):

@@ -202,7 +202,7 @@ coupled transition:
 - allocate the next `DE-` identity after the maximum identity in `decisions/pending/` and
   `official/decisions/records/`;
 - create an open record from `decisions/pending/_template.md`, append its identity to the work
-  item's `decision_refs`, and add it to `decisions/index.md`;
+  item's `decision_refs`, and regenerate `decisions/index.md` from the pending records;
 - keep the blocked item in `work/active.md` and remove any stale row from `work/review.md`.
 
 `blocked` remains an open work status. A limit hit or stuck execution loop must use this

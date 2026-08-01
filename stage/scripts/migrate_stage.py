@@ -61,6 +61,7 @@ from stage_record_paths import record_paths  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
 import stage_schema_v4_migration as v4_migration  # noqa: E402
 import stage_schema_v5_migration as v5_migration  # noqa: E402
+import refresh_decision_index  # noqa: E402
 
 
 V4_SCHEMA_VERSION = 4
@@ -606,6 +607,7 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         journal["rewritten"] = rewritten
         v4_migration.save_journal(stage_root, journal)
         v4_migration.create_v4_indexes(stage_root, settings, journal)
+        refresh_decision_index.refresh_index(project_root)
         # Compatibility migrations above may have narrowly edited routing rows.
         # Rebuild the already-recognized topology patch from that current index so
         # those edits are not overwritten by the preflight snapshot.

@@ -29,6 +29,7 @@ from stage_paths import (  # noqa: E402
     schema_migration_banner,
 )
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
+import refresh_decision_index  # noqa: E402
 
 
 ESCALATABLE_STATUSES = {"active", "review"}
@@ -261,9 +262,10 @@ def main() -> int:
             return 1
 
     template_path = stage_root / "decisions/pending/_template.md"
+    decision_index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
     active_path = stage_root / paths.active_index
     review_path = stage_root / paths.review_index
-    required = (template_path, active_path)
+    required = (template_path, decision_index_path, active_path)
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         print(f"Stage escalation prerequisite missing: {', '.join(missing)}", file=sys.stderr)
@@ -278,6 +280,9 @@ def main() -> int:
             target_id,
             reason,
             failed_action=args.item if scale == "action" else "",
+        )
+        refresh_decision_index.render_index(
+            stage_root, decision_index_path.read_text(encoding="utf-8")
         )
         records = [(item_path, fields)]
         if target_path != item_path:
@@ -327,7 +332,8 @@ def main() -> int:
                 record_id = str(parse_frontmatter(record).get("id") or "").strip()
                 review_text = drop_index_row(review_text, record_id)
             review_path.write_text(review_text, encoding="utf-8")
-    except OSError as exc:
+        refresh_decision_index.refresh_index(project_root)
+    except (OSError, refresh_decision_index.IndexFormatError) as exc:
         print(f"{args.item}: escalation write failed: {exc}", file=sys.stderr)
         return 2
 

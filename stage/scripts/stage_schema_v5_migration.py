@@ -30,6 +30,7 @@ if str(HOOK_ROOT) not in sys.path:
 from stage_paths import read_settings, write_setting_preserving_comments  # noqa: E402
 from stage_record_paths import record_paths, work_record_scale  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
+import refresh_decision_index  # noqa: E402
 
 
 SCHEMA_VERSION = 5
@@ -732,6 +733,12 @@ def migrate(
     try:
         relocate_work_records(stage_root, checked, journal)
         journal["rewritten_indexes"] = rewrite_indexes(stage_root)
+        decision_index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
+        journal["refreshed_decision_index"] = (
+            refresh_decision_index.refresh_index(project_root)
+            if decision_index_path.is_file()
+            else False
+        )
         journal["refreshed_guidance"] = refresh_work_guidance(
             stage_root, settings
         )
