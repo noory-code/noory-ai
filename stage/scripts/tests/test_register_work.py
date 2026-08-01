@@ -43,8 +43,26 @@ def run_start(root: Path, *args: str) -> subprocess.CompletedProcess:
         text=True,
     )
 
+
+def work_path(
+    root: Path,
+    lifecycle: str,
+    item_id: str,
+    scale: str,
+    parent_id: str = "",
+) -> Path:
+    lifecycle_root = root / ".stage" / "work" / lifecycle
+    if scale == "epic":
+        return lifecycle_root / item_id / "_epic.md"
+    if scale == "story":
+        return lifecycle_root / item_id / "_story.md"
+    if scale == "action" and parent_id:
+        return lifecycle_root / parent_id / f"{item_id}.md"
+    raise ValueError(f"unsupported work hierarchy: scale={scale!r}, parent={parent_id!r}")
+
+
 def story_path(root: Path, lifecycle: str, item_id: str) -> Path:
-    return root / ".stage" / "work" / lifecycle / item_id / "_story.md"
+    return work_path(root, lifecycle, item_id, "story")
 
 
 def question_headings(text: str) -> tuple[str, ...]:
@@ -53,6 +71,14 @@ def question_headings(text: str) -> tuple[str, ...]:
         for line in text.splitlines()
         if line.startswith("## ") or line.startswith("### ")
     )
+
+
+def frontmatter_keys(text: str) -> tuple[str, ...]:
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return ()
+    end = lines.index("---", 1)
+    return tuple(line.partition(":")[0] for line in lines[1:end] if not line.startswith(" "))
 
 
 class RegisterWorkTest(unittest.TestCase):
@@ -580,8 +606,9 @@ status: captured
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("review: not_required", item)
         self.assertNotIn("\nparent:", item)
+        self.assertNotIn("\npriority:", item)
         self.assertLess(item.index("venue:"), item.index("milestone:"))
-        self.assertLess(item.index("milestone:"), item.index("priority:"))
+        self.assertLess(item.index("milestone:"), item.index("autonomous:"))
 
     def test_starting_legacy_child_preserves_valued_parent(self):
         tmp, root = self.make()
@@ -616,47 +643,83 @@ status: captured
         self.assertIn("\nparent: W-00000001\n", item)
 
     def test_planned_and_direct_current_registration_ask_the_same_questions(self):
-        tmp, root = self.make()
-        with tmp:
-            planned = run(
-                root,
-                "--backlog",
-                "--title",
-                "Planned path",
-                "--kind",
-                "chore",
-                "--scope",
-                "stage/x",
-                "--id",
-                "W-00000001",
-            )
-            self.assertEqual(0, planned.returncode, planned.stderr)
-            started = run_start(root, "W-00000001", "--scope", "stage/x")
-            self.assertEqual(0, started.returncode, started.stderr)
-            direct = run(
-                root,
-                "--title",
-                "Direct path",
-                "--kind",
-                "chore",
-                "--scope",
-                "stage/x",
-                "--id",
-                "W-00000002",
-            )
-            self.assertEqual(0, direct.returncode, direct.stderr)
+        for scale in ("epic", "story", "action"):
+            with self.subTest(scale=scale):
+                tmp, root = self.make()
+                with tmp:
+                    parent_id = ""
+                    if scale == "action":
+                        parent_id = "W-00000001"
+                        parent = run(
+                            root,
+                            "--backlog",
+                            "--scale",
+                            "story",
+                            "--title",
+                            "Planned parent",
+                            "--kind",
+                            "chore",
+                            "--scope",
+                            "stage/x",
+                            "--id",
+                            parent_id,
+                        )
+                        self.assertEqual(0, parent.returncode, parent.stderr)
 
-            started_text = story_path(root, "current", "W-00000001").read_text(
-                encoding="utf-8"
-            )
-            direct_text = story_path(root, "current", "W-00000002").read_text(
-                encoding="utf-8"
-            )
+                    planned_id = "W-00000002" if parent_id else "W-00000001"
+                    direct_id = "W-00000003" if parent_id else "W-00000002"
+                    parent_args = ("--parent", parent_id) if parent_id else ()
+                    planned = run(
+                        root,
+                        "--backlog",
+                        "--scale",
+                        scale,
+                        *parent_args,
+                        "--title",
+                        "Planned path",
+                        "--kind",
+                        "chore",
+                        "--scope",
+                        "stage/x",
+                        "--id",
+                        planned_id,
+                    )
+                    self.assertEqual(0, planned.returncode, planned.stderr)
+                    start_id = parent_id or planned_id
+                    started = run_start(root, start_id, "--scope", "stage/x")
+                    self.assertEqual(0, started.returncode, started.stderr)
+                    direct = run(
+                        root,
+                        "--scale",
+                        scale,
+                        *parent_args,
+                        "--title",
+                        "Direct path",
+                        "--kind",
+                        "chore",
+                        "--scope",
+                        "stage/x",
+                        "--id",
+                        direct_id,
+                    )
+                    self.assertEqual(0, direct.returncode, direct.stderr)
 
-        self.assertEqual(question_headings(direct_text), question_headings(started_text))
-        self.assertIn("## Related truth", question_headings(started_text))
-        self.assertIn("### Included", question_headings(direct_text))
-        self.assertIn("### Excluded", question_headings(direct_text))
+                    started_text = work_path(
+                        root, "current", planned_id, scale, parent_id
+                    ).read_text(encoding="utf-8")
+                    direct_text = work_path(
+                        root, "current", direct_id, scale, parent_id
+                    ).read_text(encoding="utf-8")
+
+                self.assertEqual(
+                    question_headings(direct_text), question_headings(started_text)
+                )
+                self.assertEqual(
+                    frontmatter_keys(direct_text), frontmatter_keys(started_text)
+                )
+                self.assertIn("## Related truth", question_headings(started_text))
+                self.assertIn("### Included", question_headings(direct_text))
+                self.assertIn("### Excluded", question_headings(direct_text))
 
     def test_planned_hierarchy_records_keep_their_declared_scopes_when_started(self):
         tmp, root = self.make()

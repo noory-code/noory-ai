@@ -63,7 +63,6 @@ FRONTMATTER_ORDER = (
     "title",
     "kind",
     "venue",
-    "priority",
     "autonomous",
     "acceptance",
     "status",
@@ -159,6 +158,7 @@ def started_fields(
     decision: str,
 ) -> dict[str, Any]:
     fields = dict(fields)
+    fields.pop("priority", None)
     if not (fields.get("parent") or "").strip():
         fields.pop("parent", None)
     original_status = (fields.get("status") or "").strip().lower()
