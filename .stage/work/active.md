@@ -7,4 +7,4 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000175 | development | codex | DE-00000030 이 정한 승격 규칙을 사람이 손으로만 지켜서 앞으로를 구속하는 결정 여섯이 대기에 갇혔 | active | Claude | [current/W-00000175/_story.md](current/W-00000175/_story.md) |
-| W-00000177 | development | codex | 닫는 명령이 승격 여부를 안 묻고 지나가서 결정이 대기에 갇힌다. | active | Claude | [current/W-00000175/W-00000177.md](current/W-00000175/W-00000177.md) |
+| W-00000178 | development | codex | 드라이버가 닫을 때 승격 값을 상수로 넘겨서 방금 세운 게이트를 통째로 지나간다. | active | Claude | [current/W-00000175/W-00000178.md](current/W-00000175/W-00000178.md) |
