@@ -45,4 +45,10 @@
 | DE-00000043 | promoted | 사용자 | [records/DE-00000043.md](records/DE-00000043.md) |
 | DE-00000044 | promoted | 사용자 | [records/DE-00000044.md](records/DE-00000044.md) |
 | DE-00000046 | promoted | 사용자 | [records/DE-00000046.md](records/DE-00000046.md) |
-
+| DE-00000047 | promoted | 사용자 | [records/DE-00000047.md](records/DE-00000047.md) |
+| DE-00000048 | promoted | 사용자 | [records/DE-00000048.md](records/DE-00000048.md) |
+| DE-00000049 | promoted | 사용자 | [records/DE-00000049.md](records/DE-00000049.md) |
+| DE-00000050 | promoted | 사용자 | [records/DE-00000050.md](records/DE-00000050.md) |
+| DE-00000051 | promoted | 사용자 | [records/DE-00000051.md](records/DE-00000051.md) |
+| DE-00000052 | promoted | 사용자 | [records/DE-00000052.md](records/DE-00000052.md) |
+| DE-00000053 | promoted | 사용자 | [records/DE-00000053.md](records/DE-00000053.md) |
