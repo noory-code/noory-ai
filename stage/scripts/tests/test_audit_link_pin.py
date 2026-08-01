@@ -144,7 +144,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 verification="passed",
                 retrospective="completed",
                 retrospective_ref="R-0010",
-                promotion="approved",
+                promotion="not_applicable",
             )
             self.write_item(root, "W-0011", source="B-9999")  # legacy source: inert history
             self.write_item(root, "W-0012", source="B-0001")  # legacy source: inert history

@@ -55,6 +55,7 @@ class StageAuditTest(unittest.TestCase):
         promotion: str = "pending",
         location: str = "present",
         parent: str = "",
+        promotes: str = "",
         decision_refs: str = "",
         terminal_disposition: str = "",
     ) -> Path:
@@ -100,6 +101,7 @@ class StageAuditTest(unittest.TestCase):
                 f"retrospective_ref: {retrospective_ref}\n"
                 f"promotion: {promotion}\n"
                 "scope:\n"
+                f"promotes: {promotes}\n"
                 f"decision_refs: {decision_refs}\n"
                 "---\n"
                 f"# {item_id} Test work\n"
@@ -240,6 +242,85 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK008", finding_codes(findings))
 
+    def test_completed_promoted_item_requires_declared_promotion_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="promoted",
+            )
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_review_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK027", finding_codes(findings))
+
+    def test_completed_promoted_item_requires_every_promoted_path_to_exist(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="promoted",
+                promotes=".stage/official/decisions/records/DE-0001.md",
+            )
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_review_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK027", finding_codes(findings))
+
+    def test_completed_approved_item_still_requires_promotion_when_paths_already_exist(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="approved",
+                promotes=".stage/official/decisions/index.md",
+            )
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_review_index(root, "W-0001", "completed")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK027", finding_codes(findings))
+
+    def test_completed_promoted_item_passes_when_every_promoted_path_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(
+                root,
+                status="completed",
+                verification="passed",
+                retrospective="completed",
+                retrospective_ref="R-0001",
+                promotion="promoted",
+                promotes=".stage/official/decisions/index.md",
+            )
+            self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
+            self.append_review_index(root, "W-0001", "promoted")
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertEqual([], findings)
+
     def test_completed_retrospective_requires_reference(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -344,7 +425,7 @@ class StageAuditTest(unittest.TestCase):
                 verification="passed",
                 retrospective="completed",
                 retrospective_ref="R-0001",
-                promotion="approved",
+                promotion="not_applicable",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
             self.append_review_index(root, "W-0001", "completed")
@@ -363,7 +444,7 @@ class StageAuditTest(unittest.TestCase):
                 verification="passed",
                 retrospective="completed",
                 retrospective_ref="retrospectives/R-0001.md",
-                promotion="approved",
+                promotion="not_applicable",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
             self.append_review_index(root, "W-0001", "completed")

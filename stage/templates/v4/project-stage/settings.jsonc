@@ -24,6 +24,10 @@
   // Report every decision you make and every scope boundary crossing.
   // Skip work the purpose does not need without reporting it.
   // When you judge the work item itself wrong, change nothing at all and report why, so a person can withdraw or redesign it.
+  // Before exiting, set the selected card's frontmatter `promotion` to the actual final choice.
+  // Use `not_applicable` only when the card owns no decision or only one-time venue exceptions;
+  // any other linked decision requires an explicit `approved`, `deferred`, or `rejected` choice.
+  // After every declared promotion path has been written, use `promoted` so the audit can distinguish choosing promotion from completing it.
   // Add non-empty single-line Decisions made: and Work not done: fields to the executor report.
   // Use None when there is nothing to report for a field.
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use

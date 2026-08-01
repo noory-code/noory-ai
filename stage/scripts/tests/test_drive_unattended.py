@@ -242,6 +242,9 @@ class UnattendedTest(unittest.TestCase):
         parent: str = "",
         status: str = "active",
         autonomous: bool = True,
+        promotion: str = "pending",
+        promotes: str = "",
+        decision_refs: str = "",
         acceptance: tuple[str, ...] = ("echo ok",),
         scope: str = "driver-work.txt",
     ) -> None:
@@ -278,12 +281,12 @@ class UnattendedTest(unittest.TestCase):
             "verification: pending\n"
             "retrospective: pending\n"
             "retrospective_ref:\n"
-            "promotion: pending\n"
+            f"promotion: {promotion}\n"
             f"autonomous: {'true' if autonomous else 'false'}\n"
             f"acceptance: {rendered}\n"
             f"scope: {scope}\n"
-            "promotes:\n"
-            "decision_refs:\n"
+            f"promotes: {promotes}\n"
+            f"decision_refs: {decision_refs}\n"
             "---\n\n## Progress\n",
             encoding="utf-8",
         )
@@ -310,7 +313,9 @@ class UnattendedTest(unittest.TestCase):
                 drive.set_frontmatter_field(text, "status", status), encoding="utf-8"
             )
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             calls.append(("close", item_id))
             set_status(str(project_root), item_id, "completed")
             return True, ""
@@ -676,7 +681,9 @@ class UnattendedTest(unittest.TestCase):
             drive = load_module()
             close_calls: list[str] = []
 
-            def stub_close(project_root, item_id, extra_checks, timeout):
+            def stub_close(
+                project_root, item_id, extra_checks, timeout, promotion_default=None
+            ):
                 close_calls.append(item_id)
                 log = (
                     stage_root / ".runtime/driver/logs" / f"{item_id}.md"
@@ -787,7 +794,9 @@ class UnattendedTest(unittest.TestCase):
             drive = load_module()
             close_calls = 0
 
-            def stub_close(project_root, item_id, extra_checks, timeout):
+            def stub_close(
+                project_root, item_id, extra_checks, timeout, promotion_default=None
+            ):
                 nonlocal close_calls
                 close_calls += 1
                 log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
@@ -859,7 +868,9 @@ class UnattendedTest(unittest.TestCase):
         drive = load_module()
         escalation_reasons: list[str] = []
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
             write_review_verdict(
                 stage_root,
@@ -929,7 +940,9 @@ class UnattendedTest(unittest.TestCase):
             drive = load_module()
             close_calls = 0
 
-            def stub_close(project_root, item_id, extra_checks, timeout):
+            def stub_close(
+                project_root, item_id, extra_checks, timeout, promotion_default=None
+            ):
                 nonlocal close_calls
                 close_calls += 1
                 log = (
@@ -990,7 +1003,9 @@ class UnattendedTest(unittest.TestCase):
         drive = load_module()
         close_calls: list[str] = []
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             close_calls.append(item_id)
             if len(close_calls) == 1:
                 return False, "close_work timed out after 31s"
@@ -1551,7 +1566,9 @@ class UnattendedTest(unittest.TestCase):
         close_calls: list[str] = []
         lifecycle_calls: list[str] = []
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             close_calls.append(item_id)
             return False, "simulated close failure"
 
@@ -1595,7 +1612,9 @@ class UnattendedTest(unittest.TestCase):
         close_outputs = ["obsolete first review output", latest_close_output]
         escalation_reasons: list[str] = []
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             return False, close_outputs.pop(0)
 
         def stub_escalate_and_commit(project_root, item_id, reason, timeout):
@@ -1740,6 +1759,76 @@ class UnattendedTest(unittest.TestCase):
             marker.read_text(encoding="utf-8").splitlines(),
         )
 
+    def test_parent_with_a_decision_requires_a_stored_promotion_choice(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(
+            stage_root,
+            "W-00000001",
+            autonomous=False,
+            decision_refs="DE-00000001",
+        )
+        item_path = self.card_path(stage_root, "W-00000001")
+        item_path.write_text(
+            item_path.read_text(encoding="utf-8").replace(
+                "## Progress\n",
+                "## Progress\n\n## Verification\n\n## Retrospective\n\n## Promotion decision\n",
+            ),
+            encoding="utf-8",
+        )
+        drive = load_module()
+        drive.audit_check = lambda project_root: python_command("pass")
+
+        closed, error = drive.close_ready_ancestors(
+            root,
+            stage_root,
+            "W-00000001",
+            "W-00000001",
+            30,
+        )
+
+        self.assertEqual([], closed)
+        self.assertIn("promotion `pending` is not final", error)
+
+    def test_parent_with_promotion_paths_requires_a_stored_promotion_choice(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        self.card(
+            stage_root,
+            "W-00000001",
+            autonomous=False,
+            promotes=".stage/official/decisions/records/DE-00000001.md",
+        )
+        item_path = self.card_path(stage_root, "W-00000001")
+        item_path.write_text(
+            item_path.read_text(encoding="utf-8").replace(
+                "## Progress\n",
+                "## Progress\n\n## Verification\n\n## Retrospective\n\n## Promotion decision\n",
+            ),
+            encoding="utf-8",
+        )
+        drive = load_module()
+        drive.audit_check = lambda project_root: python_command("pass")
+
+        closed, error = drive.close_ready_ancestors(
+            root,
+            stage_root,
+            "W-00000001",
+            "W-00000001",
+            30,
+        )
+
+        self.assertEqual([], closed)
+        self.assertIn("promotion `pending` is not final", error)
+
     def test_parent_and_ancestor_lifecycle_failures_are_both_reported(self):
         limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
         root, stage_root = self.make(limits=limits)
@@ -1751,7 +1840,9 @@ class UnattendedTest(unittest.TestCase):
 
         original_close = drive.close_via_close_work
 
-        def fail_parent_close(project_root, item_id, extra_checks, timeout):
+        def fail_parent_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             if item_id == "W-00000001":
                 return False, "simulated parent close failure"
             return original_close(project_root, item_id, extra_checks, timeout)
@@ -1788,7 +1879,9 @@ class UnattendedTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-        def stub_close(project_root, item_id, extra_checks, timeout):
+        def stub_close(
+            project_root, item_id, extra_checks, timeout, promotion_default=None
+        ):
             calls.append(("close", item_id))
             if item_id == "W-00000001":  # the parent close fails
                 return False, "boom"

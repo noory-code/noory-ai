@@ -68,6 +68,8 @@ from stage_work import (  # noqa: E402
     WorkItem,
     load_all_work_items,
     non_terminal_children,
+    parse_frontmatter,
+    split_scope,
 )
 
 
@@ -1532,10 +1534,20 @@ def mark_retrospective(stage_root: Path, item_id: str, retro_id: str) -> None:
 
 
 def close_via_close_work(
-    project_root: Path, item_id: str, extra_checks: list[str], timeout: int
+    project_root: Path,
+    item_id: str,
+    extra_checks: list[str],
+    timeout: int,
+    promotion_default: str | None = None,
 ) -> tuple[bool, str]:
     """Reuse the reviewed close_work.py: acceptance + (autonomous) independent review + close."""
 
+    raw_promotion = parse_frontmatter(
+        current_card_path(project_root / ".stage", item_id)
+    ).get("promotion", "")
+    promotion = raw_promotion.strip() if isinstance(raw_promotion, str) else ""
+    if promotion == "pending" and promotion_default is not None:
+        promotion = promotion_default
     command = [
         sys.executable,
         str(CLOSE_WORK),
@@ -1543,7 +1555,7 @@ def close_via_close_work(
         str(project_root),
         item_id,
         "--promotion",
-        "approved",
+        promotion,
         "--timeout",
         str(timeout),
     ]
@@ -1817,7 +1829,20 @@ def close_ready_ancestors(
                 return closed, f"{current}: {err}"
             mark_retrospective(stage_root, current, retro_id)
         checks = [audit_check(project_root)]
-        ok, out = close_via_close_work(project_root, current, checks, timeout)
+        raw_decision_refs = parse_frontmatter(parent.path).get("decision_refs", "")
+        decision_refs = (
+            split_scope(raw_decision_refs)
+            if isinstance(raw_decision_refs, str)
+            else ()
+        )
+        promotion_default = "not_applicable" if not decision_refs and not parent.promotes else None
+        ok, out = close_via_close_work(
+            project_root,
+            current,
+            checks,
+            timeout,
+            promotion_default=promotion_default,
+        )
         if not ok:
             return closed, f"{current}: parent close failed: {out.strip()[:200]}"
         closed.append(current)

@@ -575,7 +575,15 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
                 root, "W-00000002", promotion="approved"
             )
             self.assertEqual(0, closed_promoter.returncode, closed_promoter.stderr)
-            self.assert_audit_clean(root)
+            self.assert_audit_errors(
+                root,
+                [
+                    (
+                        "WORK027",
+                        ".stage/work/current/W-00000002/_story.md",
+                    )
+                ],
+            )
 
             intent = stage_guard.write_intent_file(
                 stage_root,

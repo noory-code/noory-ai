@@ -268,6 +268,7 @@ def write_card(
     parent: str = "",
     status: str = "active",
     venue: str = "codex",
+    promotion: str = "pending",
     acceptance: tuple[str, ...] = (),
 ) -> None:
     current_root = stage_root / "work/current"
@@ -297,6 +298,7 @@ def write_card(
             f"id: {item_id}\n"
             f"venue: {venue}\n"
             f"status: {status}\n"
+            f"promotion: {promotion}\n"
             f"acceptance: {rendered_acceptance}\n"
             "---\n"
         ),
@@ -386,6 +388,53 @@ class DriveTest(unittest.TestCase):
 
         self.assertIn("'/a b/repo'", joined)
         self.assertEqual(args, shlex.split(joined))
+
+    def test_close_uses_the_promotion_choice_stored_on_the_card(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        stage_root = root / ".stage"
+        write_card(
+            stage_root,
+            "W-00000001",
+            promotion="deferred",
+        )
+        drive = self.load_module()
+        completed = subprocess.CompletedProcess([], 0, "closed\n", "")
+
+        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+            closed, output = drive.close_via_close_work(
+                root,
+                "W-00000001",
+                [],
+                30,
+                promotion_default="not_applicable",
+            )
+
+        self.assertTrue(closed, output)
+        command = run.call_args.args[0]
+        promotion_index = command.index("--promotion") + 1
+        self.assertEqual("deferred", command[promotion_index])
+
+    def test_close_uses_the_default_only_while_the_card_is_pending(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        write_card(root / ".stage", "W-00000001", promotion="pending")
+        drive = self.load_module()
+        completed = subprocess.CompletedProcess([], 0, "closed\n", "")
+
+        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+            closed, output = drive.close_via_close_work(
+                root,
+                "W-00000001",
+                [],
+                30,
+                promotion_default="not_applicable",
+            )
+
+        self.assertTrue(closed, output)
+        command = run.call_args.args[0]
+        promotion_index = command.index("--promotion") + 1
+        self.assertEqual("not_applicable", command[promotion_index])
 
     def test_shell_command_joins_for_windows(self):
         # cmd.exe does NOT strip single quotes, so quoting the POSIX way would hand

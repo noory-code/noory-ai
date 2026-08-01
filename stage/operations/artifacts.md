@@ -61,6 +61,12 @@ independent story. State records (Q/A/K/O) may link affected work through `work_
 
 `promotes` is also fail-closed. A regular promotion intent may only modify paths declared in the work item's `promotes`. `promotes` entries are exact file paths, not directory prefixes.
 
+A current `completed` item with `promotion: approved` has chosen promotion but has not recorded
+that it happened, so the audit reports it even when every `promotes` path already existed. After
+writing every declared path, set `promotion: promoted`; the audit then requires at least one
+declared path and checks that every path exists as a file. This contract applies while the item
+remains in `work/current/`; archived cards that predate it are not rejected retroactively.
+
 `retrospective: completed` is valid only when `retrospective_ref` points to an existing retrospective file whose `work_item` matches the work item ID.
 
 `decision_refs` is optional — not every task has a decision point. When present, each ref must point to an existing decision record in `decisions/pending/` (or, once promoted, `official/decisions/records/`) whose `work_item` matches the work item ID.

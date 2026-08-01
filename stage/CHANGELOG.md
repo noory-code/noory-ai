@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Stop the unattended driver from supplying `promotion: approved` on its own. It now passes the
+  choice already stored on each executed card, tells executors to make that choice, and defaults
+  only aggregation parents without decisions or promotion paths to `not_applicable`. Audit current
+  completed cards that remain `approved` until they record `promoted`, then verify every declared
+  file exists.
+
 - Refuse `promotion: not_applicable` at close when a work item owns any decision other than a
   one-time `authorizes: venue_exception`. The person must choose a real final promotion outcome,
   while items with no decisions or only venue exceptions keep their existing close path.

@@ -411,6 +411,32 @@ class Audit:
         for blocker in stage_guard.item_completion_blockers(item):
             self.error("WORK008", f"Completion gate is not closed: {blocker}", path)
 
+        if audited_item.location == "present" and item.status == "completed" and item.promotion in {
+            "approved",
+            "promoted",
+        }:
+            if not item.promotes:
+                self.error(
+                    "WORK027",
+                    "Completed item declared promotion without any promotion paths.",
+                    path,
+                )
+            if item.promotion == "approved":
+                self.error(
+                    "WORK027",
+                    "Completed item approved promotion but has not recorded it as promoted.",
+                    path,
+                )
+            else:
+                for promoted in item.promotes:
+                    promoted_path = self.project_root / promoted
+                    if not promoted_path.is_file():
+                        self.error(
+                            "WORK027",
+                            f"Completed item recorded promotion before this path existed: {promoted}",
+                            path,
+                        )
+
         if item.retrospective == "completed":
             self.audit_retrospective_ref(audited_item)
 

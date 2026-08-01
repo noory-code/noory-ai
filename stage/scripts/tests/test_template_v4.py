@@ -268,6 +268,24 @@ class TemplateV4Test(unittest.TestCase):
                     command,
                 )
 
+    def test_executor_prompts_require_a_final_promotion_choice(self):
+        instruction = (
+            "Before exiting, set the selected card's frontmatter `promotion` to the actual "
+            "final choice."
+        )
+        promoted_instruction = (
+            "After every declared promotion path has been written, use `promoted` so the audit "
+            "can distinguish choosing promotion from completing it."
+        )
+        project_settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        project_commands = project_settings["executors"].values()
+        template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        for command in (*project_commands, template_settings):
+            with self.subTest(command=command):
+                self.assertIn(instruction, command)
+                self.assertIn(promoted_instruction, command)
+
     def test_close_work_comments_do_not_describe_removed_block_scanning(self):
         source = (
             PLUGIN_ROOT / "skills" / "stage-retrospective" / "close_work.py"
