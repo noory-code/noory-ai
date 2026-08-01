@@ -88,6 +88,7 @@ relative link to that path.
   lifecycle root. Its terminal disposition becomes `completed` or `rejected`, and its
   retrospective moves back to the live retrospective root.
 - Active, review, planned, and archive indexes are rebuilt with actual relative record paths.
+- The pending-decision index is refreshed after migrated work cards reach their final paths.
 - Work guidance and templates are refreshed before schema activation.
 - Audit findings present before migration form a baseline. The migration lists carried findings
   and fails only on findings introduced by the migration.

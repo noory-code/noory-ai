@@ -4,8 +4,8 @@
 
 - Generate the pending-decision index from decision records and linked work-card status, show when
   one-item venue exceptions have expired, make the audit reject stale or unfamiliar views, and
-  refresh the generated index whenever escalation, roadmap transitions, or migration changes its
-  source records.
+  refresh and audit the generated index whenever work closes. Escalation, roadmap transitions, and
+  migration also refresh it when they change its source records.
 
 - Stop the unattended driver from supplying `promotion: approved` on its own. It now passes the
   choice already stored on each executed card, tells executors to make that choice, and defaults

@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "close_work.py"
 
@@ -304,6 +305,19 @@ class CloseWorkTest(unittest.TestCase):
         )
         item.write_text(text, encoding="utf-8")
 
+    def write_decision_index(self, root: Path) -> Path:
+        index = root / ".stage/decisions/index.md"
+        index.parent.mkdir(parents=True, exist_ok=True)
+        index.write_text(
+            (
+                "# Pending decisions\n\n"
+                "| Decision | Decision status | Owner record | Owner status | Effect | Link |\n"
+                "|---|---|---|---|---|---|\n"
+            ),
+            encoding="utf-8",
+        )
+        return index
+
     def test_refuses_while_linked_decision_is_open(self):
         tmp, root = self.make()
         with tmp:
@@ -372,6 +386,62 @@ class CloseWorkTest(unittest.TestCase):
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn("status: completed", body)
+
+    def test_close_refreshes_and_audits_pending_decision_index(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision(
+                root,
+                status="decided",
+                authorizes="venue_exception",
+            )
+            self.link_decision(root)
+            index = self.write_decision_index(root)
+            check = python_command(
+                "from pathlib import Path\n"
+                f"text = Path({str(index)!r}).read_text(encoding='utf-8')\n"
+                "assert '| active | active |' in text"
+            )
+
+            proc = run(root, "W-00000001", "--check", check)
+            rendered = index.read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("| completed | expired |", rendered)
+
+    def test_close_refuses_unrecognized_pending_decision_index_before_mutation(self):
+        tmp, root = self.make()
+        with tmp:
+            index = root / ".stage/decisions/index.md"
+            index.parent.mkdir(parents=True, exist_ok=True)
+            index.write_text(
+                "# Custom\n\n| Name | Note |\n|---|---|\n| Keep | Me |\n",
+                encoding="utf-8",
+            )
+            item_path = root / ".stage/work/current/W-00000001/_story.md"
+            before = item_path.read_text(encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", "true")
+            after = item_path.read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("pending-decision index", proc.stderr)
+        self.assertEqual(before, after)
+
+    def test_post_close_refresh_runs_the_owned_audit_check(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_decision_index(root)
+            close_work = load_close_module()
+            with mock.patch.object(
+                close_work.audit_stage.Audit,
+                "audit_pending_decision_index",
+                autospec=True,
+            ) as audit:
+                error = close_work.refresh_and_audit_decision_index(root)
+
+        self.assertIsNone(error)
+        audit.assert_called_once()
 
     def test_passing_check_closes_and_moves(self):
         tmp, root = self.make()

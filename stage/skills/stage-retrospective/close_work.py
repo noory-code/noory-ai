@@ -60,6 +60,8 @@ from stage_work import (  # noqa: E402
     split_scope,
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
+import audit_stage  # noqa: E402
+import refresh_decision_index  # noqa: E402
 
 OPEN_TO_CLOSE = {"active", "review"}
 PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "rejected"}
@@ -98,6 +100,44 @@ def set_field(text: str, name: str, value: str) -> str:
     if count != 1:
         raise ValueError(f"missing lifecycle field `{name}`")
     return updated
+
+
+def decision_index_preflight_error(stage_root: Path) -> str | None:
+    """Reject an index shape that cannot be refreshed before close mutates anything."""
+
+    index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
+    if not index_path.exists():
+        return None
+    try:
+        existing = index_path.read_text(encoding="utf-8")
+        refresh_decision_index.render_index(stage_root, existing)
+    except (OSError, refresh_decision_index.IndexFormatError) as exc:
+        return f"pending-decision index cannot be refreshed safely: {exc}"
+    return None
+
+
+def refresh_and_audit_decision_index(project_root: Path) -> str | None:
+    """Refresh the optional derived view and run its owning audit check."""
+
+    stage_root = project_root / ".stage"
+    index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
+    if not index_path.exists():
+        return None
+    try:
+        refresh_decision_index.refresh_index(project_root)
+    except (OSError, refresh_decision_index.IndexFormatError) as exc:
+        return f"pending-decision index refresh failed after close: {exc}"
+
+    audit = audit_stage.Audit(project_root)
+    audit.audit_pending_decision_index()
+    errors = [
+        finding.message
+        for finding in audit.findings
+        if finding.severity == "error"
+    ]
+    if errors:
+        return "pending-decision index audit failed after close: " + "; ".join(errors)
+    return None
 
 
 def append_to_section(text: str, heading: str, body: str) -> str:
@@ -590,6 +630,11 @@ def main() -> int:
     )
     status = field(text, "status")
 
+    index_error = decision_index_preflight_error(stage_root)
+    if index_error:
+        print(f"{args.item}: {index_error}; work item unchanged", file=sys.stderr)
+        return 1
+
     # Reconcile a re-run: an already-completed item must sit in review.md, not active.md.
     if status == "completed":
         item_path.write_text(text, encoding="utf-8")
@@ -609,6 +654,10 @@ def main() -> int:
             field(text, "promotion"),
             review_item_link,
         )
+        index_error = refresh_and_audit_decision_index(stage_root.parent)
+        if index_error:
+            print(f"{args.item}: {index_error}", file=sys.stderr)
+            return 1
         print(f"{args.item}: already completed; index reconciled")
         return 0
     if status not in OPEN_TO_CLOSE:
@@ -699,6 +748,14 @@ def main() -> int:
 
     if "## Verification\n" not in text:
         print(f"{args.item}: no '## Verification' section to record evidence into; refusing", file=sys.stderr)
+        return 1
+
+    # Heal drift from earlier lifecycle moves before a declared audit check runs.
+    # Closing changes the owner status again, so the same refresh and audit run
+    # once more after the item and work indexes have reached their final state.
+    index_error = refresh_and_audit_decision_index(stage_root.parent)
+    if index_error:
+        print(f"{args.item}: {index_error}; close did not proceed", file=sys.stderr)
         return 1
 
     project_root = stage_root.parent
@@ -857,6 +914,10 @@ def main() -> int:
         promotion,
         review_item_link,
     )
+    index_error = refresh_and_audit_decision_index(stage_root.parent)
+    if index_error:
+        print(f"{args.item}: {index_error}", file=sys.stderr)
+        return 1
     print(f"{args.item}: closed (verification passed on {len(checks)} check(s), status completed)")
     return 0
 

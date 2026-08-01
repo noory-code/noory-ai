@@ -96,7 +96,7 @@ decision_refs:
 
 ## Verification
 
-- 2026-08-01: `python3 -m unittest discover -s stage/scripts/tests -q` — 538개 통과.
+- 2026-08-01: `python3 -m unittest discover -s stage/scripts/tests -q` — 541개 통과.
 - 2026-08-01: `python3 -m unittest discover -s stage/hooks/tests -q` — 356개 통과.
 - 2026-08-01: `python3 stage/scripts/audit_stage.py` — 오류와 경고 없음.
 
