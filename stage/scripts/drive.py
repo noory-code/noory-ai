@@ -347,26 +347,6 @@ def write_running_role(
     write_run_state(path, state)
 
 
-def restore_state_after_turn(
-    path: Path,
-    state: dict[str, Any],
-    item_id: str,
-    previous_item_state: dict[str, Any] | None,
-    *,
-    state_existed: bool,
-) -> None:
-    """Restore the exact durable state that preceded a completed external turn."""
-
-    if previous_item_state is None:
-        state["items"].pop(item_id, None)
-    else:
-        state["items"][item_id] = previous_item_state
-    if state_existed:
-        write_run_state(path, state)
-        return
-    path.unlink(missing_ok=True)
-
-
 def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
     """Return untracked, non-ignored file paths without changing the index."""
 
@@ -2754,6 +2734,10 @@ def main() -> int:
             return 1
         item_state["base_head"] = base_head
     base_head = item_state["base_head"]
+    in_progress_item_state = {
+        **item_state,
+        "attempt_count": attempt,
+    }
 
     step_ok = True
     failure = ""
@@ -2792,22 +2776,6 @@ def main() -> int:
     except RuntimeError as exc:
         print_escalation(f"cannot prepare executor observation: {exc}")
         return 1
-    state_existed_before_executor = state_path.exists()
-    previous_executor_item_state = state["items"].get(item.item_id)
-    if previous_executor_item_state is not None:
-        previous_executor_item_state = dict(previous_executor_item_state)
-    try:
-        write_running_role(
-            state_path,
-            state,
-            item.item_id,
-            item_state,
-            "executor",
-        )
-    except OSError as exc:
-        print_escalation(f"cannot persist executor running role: {exc}")
-        return 1
-
     with tempfile.TemporaryDirectory(prefix="stage-drive-index-") as temporary:
         temporary_root = Path(temporary)
         executor_index = temporary_root / "executor-index"
@@ -2823,6 +2791,18 @@ def main() -> int:
                     f"cannot prepare disposable Git index for executor: {exc}"
                 )
                 return 1
+        state["iteration_count"] = iteration
+        try:
+            write_running_role(
+                state_path,
+                state,
+                item.item_id,
+                in_progress_item_state,
+                "executor",
+            )
+        except OSError as exc:
+            print_escalation(f"cannot persist executor running role: {exc}")
+            return 1
 
         (
             executor_ok,
@@ -2843,6 +2823,12 @@ def main() -> int:
             ),
         )
         execution_seconds += executor_seconds
+        state["execution_seconds"] = execution_seconds
+        try:
+            write_run_state(state_path, state)
+        except OSError as exc:
+            print_escalation(f"cannot persist executor execution time: {exc}")
+            return 1
         infrastructure_failed = (
             not executor_ok and infrastructure_failure(executor_evidence)
         )
@@ -2877,15 +2863,15 @@ def main() -> int:
             timeout=args.timeout,
         )
         try:
-            restore_state_after_turn(
+            write_running_role(
                 state_path,
                 state,
                 item.item_id,
-                previous_executor_item_state,
-                state_existed=state_existed_before_executor,
+                in_progress_item_state,
+                None,
             )
         except OSError as exc:
-            print_escalation(f"cannot restore state after executor turn: {exc}")
+            print_escalation(f"cannot clear executor running role: {exc}")
             return 1
 
         try:
@@ -2984,6 +2970,14 @@ def main() -> int:
                     env=check_environment(),
                 )
                 execution_seconds += acceptance_seconds
+                state["execution_seconds"] = execution_seconds
+                try:
+                    write_run_state(state_path, state)
+                except OSError as exc:
+                    print_escalation(
+                        f"cannot persist execution time after acceptance: {exc}"
+                    )
+                    return 1
                 acceptance_output.append(raw)
                 print(f"Acceptance result:\n{evidence}")
                 if not accepted:
@@ -3045,18 +3039,12 @@ def main() -> int:
                         ),
                     }
                 )
-            state_existed_before_reviewer = state_path.exists()
-            previous_reviewer_item_state = state["items"].get(item.item_id)
-            if previous_reviewer_item_state is not None:
-                previous_reviewer_item_state = dict(
-                    previous_reviewer_item_state
-                )
             try:
                 write_running_role(
                     state_path,
                     state,
                     item.item_id,
-                    item_state,
+                    in_progress_item_state,
                     "reviewer",
                 )
             except OSError as exc:
@@ -3074,6 +3062,12 @@ def main() -> int:
                 env=reviewer_env,
             )
             execution_seconds += reviewer_seconds
+            state["execution_seconds"] = execution_seconds
+            try:
+                write_run_state(state_path, state)
+            except OSError as exc:
+                print_escalation(f"cannot persist reviewer execution time: {exc}")
+                return 1
             print(f"Independent reviewer result:\n{review_evidence}")
             try:
                 read_work_log(log_path)
@@ -3090,15 +3084,15 @@ def main() -> int:
                 timeout=args.timeout,
             )
             try:
-                restore_state_after_turn(
+                write_running_role(
                     state_path,
                     state,
                     item.item_id,
-                    previous_reviewer_item_state,
-                    state_existed=state_existed_before_reviewer,
+                    in_progress_item_state,
+                    None,
                 )
             except OSError as exc:
-                print_escalation(f"cannot restore state after reviewer turn: {exc}")
+                print_escalation(f"cannot clear reviewer running role: {exc}")
                 return 1
             narrow_merge_error = ""
             current_verdict_error = ""

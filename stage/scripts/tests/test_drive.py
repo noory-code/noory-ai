@@ -824,6 +824,52 @@ class DriveTest(unittest.TestCase):
             blocker,
         )
 
+    def test_supervised_execution_time_limit_blocks_before_next_cli_execution(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 3600,
+        }
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "executor-ran"
+            tmp, root = self.make_project(
+                executor=reporting_python_command(
+                    "from pathlib import Path; "
+                    f"Path({str(marker)!r}).touch(); "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                limits=limits,
+            )
+            with tmp:
+                stage_root = root / ".stage"
+                write_card(
+                    stage_root,
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+                initialize_git(root)
+                state_path = stage_root / ".runtime/driver/W-00000001.json"
+                state_path.parent.mkdir(parents=True)
+                state = {
+                    "target": "W-00000001",
+                    "started_at_unix": 1.0,
+                    "execution_seconds": 3600.0,
+                    "iteration_count": 0,
+                    "items": {},
+                }
+                state_path.write_text(json.dumps(state), encoding="utf-8")
+
+                result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "global execution-time limit exceeded before execution",
+            result.stdout,
+        )
+        self.assertFalse(marker.exists())
+
     def test_legacy_supervised_state_starts_with_no_execution_time(self):
         tmp, root = self.make_project()
         with tmp:
@@ -2020,9 +2066,17 @@ class DriveTest(unittest.TestCase):
                 "injected progress enumeration failure",
                 output.getvalue(),
             )
-            self.assertFalse(
-                (root / ".stage/.runtime/driver/W-00000001.json").exists()
+            state = json.loads(
+                (
+                    root / ".stage/.runtime/driver/W-00000001.json"
+                ).read_text(encoding="utf-8")
             )
+            item_state = state["items"]["W-00000002"]
+
+        self.assertEqual(1, state["iteration_count"])
+        self.assertGreater(state["execution_seconds"], 0.0)
+        self.assertEqual(1, item_state["attempt_count"])
+        self.assertIsNone(item_state["running_role"])
 
     def test_fingerprint_counts_changes_with_unborn_head(self):
         tmp, root = self.make_project()
@@ -2603,13 +2657,17 @@ class DriveTest(unittest.TestCase):
             "import json; from pathlib import Path; "
             f"state = json.loads(Path({state_path!r}).read_text(encoding='utf-8')); "
             f"assert state['items'][{selected!r}]['running_role'] == 'executor'; "
+            f"assert state['items'][{selected!r}]['attempt_count'] == 1; "
+            "assert state['iteration_count'] == 1; "
             "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
             ["executor-work.txt"],
         )
         reviewer = approving_reviewer_command(
             "import json; from pathlib import Path; "
             f"state = json.loads(Path({state_path!r}).read_text(encoding='utf-8')); "
-            f"assert state['items'][{selected!r}]['running_role'] == 'reviewer'"
+            f"assert state['items'][{selected!r}]['running_role'] == 'reviewer'; "
+            f"assert state['items'][{selected!r}]['attempt_count'] == 1; "
+            "assert state['iteration_count'] == 1"
         )
         tmp, root = self.make_project(executor=executor, reviewer=reviewer)
         with tmp:
@@ -2628,6 +2686,60 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIsNone(state["items"][selected]["running_role"])
+
+    def test_completed_executor_time_survives_termination_during_reaping(self):
+        target = "W-00000001"
+        selected = "W-00000002"
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            )
+        )
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                selected,
+                parent=target,
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            argv = [
+                str(SCRIPT),
+                "--project-root",
+                str(root),
+                "--execute",
+                target,
+            ]
+
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(
+                    drive,
+                    "reap_turn",
+                    side_effect=SystemExit("simulated driver termination"),
+                ),
+                self.assertRaisesRegex(
+                    SystemExit,
+                    "simulated driver termination",
+                ),
+            ):
+                drive.main()
+
+            state = json.loads(
+                (
+                    stage_root / f".runtime/driver/{target}.json"
+                ).read_text(encoding="utf-8")
+            )
+            item_state = state["items"][selected]
+
+        self.assertEqual(1, state["iteration_count"])
+        self.assertGreater(state["execution_seconds"], 0.0)
+        self.assertEqual(1, item_state["attempt_count"])
+        self.assertEqual("executor", item_state["running_role"])
 
     def test_identical_fingerprint_flags_no_progress(self):
         tmp, root = self.make_project(

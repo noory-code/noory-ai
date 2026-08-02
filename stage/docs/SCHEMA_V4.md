@@ -390,7 +390,10 @@ next command before it runs. `started_at_unix` records when the run state began 
 Immediately before an external executor or reviewer turn, `running_role` is written as
 `executor` or `reviewer`; it returns to `null` after that turn. A supervisor that times out the
 driver can therefore select the correct venue reaper without inferring the active role from work
-log headings.
+log headings. Supervised attempt and iteration counters are persisted with the executor role before
+the executor starts, and completed command time is persisted after each executor, acceptance, and
+reviewer command. A driver killed during a round therefore spends that round's attempt and iteration
+even when the active command cannot report its final elapsed time.
 
 The `NO-PROGRESS` fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`,
 or separate staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each
