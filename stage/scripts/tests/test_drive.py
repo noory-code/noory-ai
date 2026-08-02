@@ -762,6 +762,129 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(2, result.returncode, result.stdout + result.stderr)
         self.assertIn("--reason is required with --reset-attempts", result.stdout)
 
+    def test_supervised_idle_time_does_not_spend_the_execution_budget(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 3600,
+        }
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+            limits=limits,
+        )
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            state = {
+                "target": "W-00000001",
+                "started_at_unix": 1.0,
+                "execution_seconds": 0.0,
+                "iteration_count": 0,
+                "items": {},
+            }
+            state_path.write_text(json.dumps(state), encoding="utf-8")
+
+            result = self.run_cli(root, "--execute")
+            updated = json.loads(state_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Execution time:", result.stdout)
+        self.assertGreater(updated["execution_seconds"], 0.0)
+        self.assertLess(updated["execution_seconds"], 3600)
+
+    def test_supervised_execution_time_limit_still_blocks_long_execution(self):
+        drive = self.load_module()
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 10,
+            "max_wall_clock_seconds": 3600,
+        }
+
+        blocker = drive.limit_blocker(
+            limits,
+            attempt=1,
+            iteration=1,
+            execution_seconds=3600.0,
+        )
+
+        self.assertEqual(
+            "global execution-time limit exceeded before execution",
+            blocker,
+        )
+
+    def test_legacy_supervised_state_starts_with_no_execution_time(self):
+        tmp, root = self.make_project()
+        with tmp:
+            drive = self.load_module()
+            state_path = root / ".stage/.runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "target": "W-00000001",
+                        "started_at_unix": 1.0,
+                        "iteration_count": 2,
+                        "items": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            state, error = drive.load_run_state(
+                state_path,
+                "W-00000001",
+                now=999999.0,
+            )
+
+        self.assertEqual("", error)
+        self.assertIsNotNone(state)
+        self.assertEqual(0.0, state["execution_seconds"])
+
+    def test_supervised_execution_time_state_must_be_non_negative(self):
+        tmp, root = self.make_project()
+        with tmp:
+            drive = self.load_module()
+            state_path = root / ".stage/.runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            for invalid in (-1, True, "1"):
+                with self.subTest(invalid=invalid):
+                    state_path.write_text(
+                        json.dumps(
+                            {
+                                "target": "W-00000001",
+                                "started_at_unix": 1.0,
+                                "execution_seconds": invalid,
+                                "iteration_count": 0,
+                                "items": {},
+                            }
+                        ),
+                        encoding="utf-8",
+                    )
+
+                    state, error = drive.load_run_state(
+                        state_path,
+                        "W-00000001",
+                        now=2.0,
+                    )
+
+                    self.assertIsNone(state)
+                    self.assertIn(
+                        "execution_seconds must be a non-negative number",
+                        error,
+                    )
+
     def test_reset_attempts_refuses_a_running_item(self):
         tmp, root = self.make_project()
         with tmp:
@@ -814,6 +937,7 @@ class DriveTest(unittest.TestCase):
             state_path = stage_root / ".runtime/driver/W-00000001.json"
             state = drive.new_run_state("W-00000001", 1.0)
             state["iteration_count"] = 2
+            state["execution_seconds"] = 123.0
             state["items"]["W-00000002"] = {
                 "attempt_count": 3,
                 "last_fingerprint": "old-fingerprint",
@@ -843,6 +967,7 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(["changed.txt"], item_state["executor_changed_paths"])
         self.assertIsNone(item_state["running_role"])
         self.assertGreater(updated["started_at_unix"], 1.0)
+        self.assertEqual(0.0, updated["execution_seconds"])
         self.assertEqual(2, updated["iteration_count"])
         self.assertIn("### Attempt limit reset", log)
         self.assertIn("Reason: The card was corrected.", log)

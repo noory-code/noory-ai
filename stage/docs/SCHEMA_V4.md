@@ -369,6 +369,7 @@ Execute mode stores untracked state at
 {
   "target": "W-00000001",
   "started_at_unix": 1784779200.0,
+  "execution_seconds": 834.2,
   "iteration_count": 1,
   "items": {
     "W-00000002": {
@@ -379,6 +380,12 @@ Execute mode stores untracked state at
   }
 }
 ```
+
+In supervised mode, `execution_seconds` accumulates only the time spent running the executor,
+acceptance, and reviewer commands. Time between driver invocations does not spend this budget.
+Legacy state without `execution_seconds` starts at zero, so a long human pause cannot block the
+next command before it runs. `started_at_unix` records when the run state began and is reset by
+`--reset-attempts`, but it does not enforce the supervised time ceiling.
 
 Immediately before an external executor or reviewer turn, `running_role` is written as
 `executor` or `reviewer`; it returns to `null` after that turn. A supervisor that times out the
@@ -478,18 +485,22 @@ The optional `limits` object in `.stage/settings.json` owns the driver ceilings:
 
 When `limits` is present, all three fields are required positive JSON integers and no other
 field is accepted. `max_attempts_per_item` caps attempts for one work item;
-`max_iterations` and `max_wall_clock_seconds` are configured minimum global ceilings. At target
+`max_iterations` and `max_wall_clock_seconds` are configured minimum global ceilings. The
+`max_wall_clock_seconds` key retains its name for settings compatibility. Supervised mode applies
+it to accumulated executor, acceptance, and reviewer command time; unattended mode applies it to
+wall-clock time because no human pause exists between its iterations. At target
 run start, the default per-command timeout is `unfinished leaf count * 900` seconds, so one leaf
 keeps the former 900-second floor and larger subtrees receive more time. `--timeout SECONDS`
-explicitly overrides that derived value. The driver raises global iteration and wall-clock
+explicitly overrides that derived value. The driver raises global iteration and time
 ceilings to at least `unfinished leaf count * max_attempts_per_item` and `unfinished leaf count *
 per-action timeout baseline`, respectively. This ties each execution budget to the actual subtree
-without changing the per-action attempt cap or multiplying the wall-clock floor twice. An absent
+without changing the per-action attempt cap or multiplying the time floor twice. An absent
 object means no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")`
 for a valid object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or
 malformed shape. Every enforcement caller must fail closed on a non-empty error. The driver owns
 counters, elapsed-time measurement, and enforcement; settings own only these durable configured
-values.
+values. Attempt and iteration caps still stop repeated supervised rounds even when a person leaves
+the driver idle between them.
 
 ## Roadmap family
 

@@ -161,6 +161,7 @@ def new_run_state(target_id: str, now: float) -> dict[str, Any]:
     return {
         "target": target_id,
         "started_at_unix": now,
+        "execution_seconds": 0.0,
         "iteration_count": 0,
         "items": {},
     }
@@ -186,6 +187,14 @@ def load_run_state(
     started_at = state.get("started_at_unix")
     if not isinstance(started_at, (int, float)) or isinstance(started_at, bool):
         return None, "driver run state started_at_unix must be a number"
+    execution_seconds = state.get("execution_seconds", 0.0)
+    if (
+        not isinstance(execution_seconds, (int, float))
+        or isinstance(execution_seconds, bool)
+        or execution_seconds < 0
+    ):
+        return None, "driver run state execution_seconds must be a non-negative number"
+    state["execution_seconds"] = float(execution_seconds)
     iteration_count = state.get("iteration_count")
     if type(iteration_count) is not int or iteration_count < 0:
         return None, "driver run state iteration_count must be a non-negative integer"
@@ -286,8 +295,10 @@ def reset_attempts(
         return False, str(exc)
 
     previous_started_at = state["started_at_unix"]
+    previous_execution_seconds = state["execution_seconds"]
     previous_item_state = dict(item_state)
     state["started_at_unix"] = now
+    state["execution_seconds"] = 0.0
     state["items"][item_id] = {
         **item_state,
         "attempt_count": 0,
@@ -303,6 +314,7 @@ def reset_attempts(
             log_stream.flush()
         except OSError as exc:
             state["started_at_unix"] = previous_started_at
+            state["execution_seconds"] = previous_execution_seconds
             state["items"][item_id] = previous_item_state
             try:
                 write_run_state(state_path, state)
@@ -1266,7 +1278,7 @@ def print_plan(
     reviewer_command: str,
     attempt: int,
     iteration: int,
-    elapsed: float,
+    execution_seconds: float,
     limits: dict[str, int] | None,
 ) -> None:
     print(f"Mode: {'execute' if execute else 'dry-run'}")
@@ -1281,12 +1293,12 @@ def print_plan(
         f"{attempt}/{cap_text(limits, 'max_attempts_per_item')}"
     )
     print(f"Iteration: {iteration}/{cap_text(limits, 'max_iterations')}")
-    wall_cap = (
+    time_cap = (
         f"{limits['max_wall_clock_seconds']}s"
         if limits is not None
         else "unlimited"
     )
-    print(f"Wall clock: {int(elapsed)}s/{wall_cap}")
+    print(f"Execution time: {int(execution_seconds)}s/{time_cap}")
 
 
 def limit_blocker(
@@ -1294,7 +1306,7 @@ def limit_blocker(
     *,
     attempt: int,
     iteration: int,
-    elapsed: float,
+    execution_seconds: float,
 ) -> str:
     if limits is None:
         return ""
@@ -1302,9 +1314,23 @@ def limit_blocker(
         return "per-item attempt cap reached before execution"
     if iteration > limits["max_iterations"]:
         return "global iteration limit exceeded before execution"
-    if elapsed >= limits["max_wall_clock_seconds"]:
-        return "global wall-clock limit exceeded before execution"
+    if execution_seconds >= limits["max_wall_clock_seconds"]:
+        return "global execution-time limit exceeded before execution"
     return ""
+
+
+def timed_run_check(
+    command: str,
+    timeout: int,
+    cwd: Path,
+    env: dict[str, str] | None = None,
+) -> tuple[bool, str, str, float]:
+    """Run one supervised work command and return its actual elapsed time."""
+
+    started = time.monotonic()
+    passed, evidence, raw = run_check(command, timeout, cwd, env=env)
+    elapsed = max(0.0, time.monotonic() - started)
+    return passed, evidence, raw, elapsed
 
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
@@ -2672,7 +2698,7 @@ def main() -> int:
     )
     attempt = item_state["attempt_count"] + 1
     iteration = state["iteration_count"] + 1
-    elapsed = max(0.0, now - state["started_at_unix"])
+    execution_seconds = state["execution_seconds"]
     print_plan(
         execute=args.execute,
         target_id=args.target,
@@ -2681,12 +2707,15 @@ def main() -> int:
         reviewer_command=reviewer_command,
         attempt=attempt,
         iteration=iteration,
-        elapsed=elapsed,
+        execution_seconds=execution_seconds,
         limits=limits,
     )
 
     blocker = limit_blocker(
-        limits, attempt=attempt, iteration=iteration, elapsed=elapsed
+        limits,
+        attempt=attempt,
+        iteration=iteration,
+        execution_seconds=execution_seconds,
     )
     if blocker:
         if args.execute and blocker == "per-item attempt cap reached before execution":
@@ -2795,7 +2824,12 @@ def main() -> int:
                 )
                 return 1
 
-        executor_ok, executor_evidence, _executor_raw = run_check(
+        (
+            executor_ok,
+            executor_evidence,
+            _executor_raw,
+            executor_seconds,
+        ) = timed_run_check(
             executor_command,
             args.timeout,
             project_root,
@@ -2808,6 +2842,7 @@ def main() -> int:
                 items=items,
             ),
         )
+        execution_seconds += executor_seconds
         infrastructure_failed = (
             not executor_ok and infrastructure_failure(executor_evidence)
         )
@@ -2942,12 +2977,13 @@ def main() -> int:
 
         if step_ok:
             for command in item.acceptance:
-                accepted, evidence, raw = run_check(
+                accepted, evidence, raw, acceptance_seconds = timed_run_check(
                     command,
                     args.timeout,
                     project_root,
                     env=check_environment(),
                 )
+                execution_seconds += acceptance_seconds
                 acceptance_output.append(raw)
                 print(f"Acceptance result:\n{evidence}")
                 if not accepted:
@@ -3026,12 +3062,18 @@ def main() -> int:
             except OSError as exc:
                 print_escalation(f"cannot persist reviewer running role: {exc}")
                 return 1
-            reviewed, review_evidence, _review_raw = run_check(
+            (
+                reviewed,
+                review_evidence,
+                _review_raw,
+                reviewer_seconds,
+            ) = timed_run_check(
                 reviewer_command,
                 args.timeout,
                 project_root,
                 env=reviewer_env,
             )
+            execution_seconds += reviewer_seconds
             print(f"Independent reviewer result:\n{review_evidence}")
             try:
                 read_work_log(log_path)
@@ -3138,6 +3180,7 @@ def main() -> int:
         else attempt
     )
     state["iteration_count"] = iteration
+    state["execution_seconds"] = execution_seconds
     state["items"][item.item_id] = {
         "attempt_count": counted_attempt,
         "last_fingerprint": current_fingerprint,
@@ -3151,7 +3194,6 @@ def main() -> int:
         print_escalation(f"cannot persist driver run state after execution: {exc}")
         return 1
 
-    elapsed_after = max(0.0, time.time() - state["started_at_unix"])
     escalation_reasons: list[str] = []
     if no_progress and not infrastructure_failed:
         escalation_reasons.append("NO-PROGRESS fingerprint matched the previous attempt")
@@ -3165,8 +3207,8 @@ def main() -> int:
             escalation_reasons.append("per-item attempt cap reached")
         if not step_ok and iteration >= limits["max_iterations"]:
             escalation_reasons.append("global iteration limit reached")
-        if elapsed_after >= limits["max_wall_clock_seconds"]:
-            escalation_reasons.append("global wall-clock limit exceeded")
+        if execution_seconds >= limits["max_wall_clock_seconds"]:
+            escalation_reasons.append("global execution-time limit exceeded")
 
     if escalation_reasons:
         print_escalation("; ".join(escalation_reasons))
