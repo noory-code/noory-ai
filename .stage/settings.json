@@ -55,6 +55,7 @@
     "fix": "codex",
     "qa": "codex",
     "ops": "codex",
+    "release": "claude",
     "chore": "codex",
     "feature": "split"
   },

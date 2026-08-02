@@ -151,3 +151,4 @@
 | W-00000164 | completed | [items/W-00000164/_story.md](items/W-00000164/_story.md) |
 | W-00000175 | completed | [items/W-00000175/_story.md](items/W-00000175/_story.md) |
 | W-00000179 | completed | [items/W-00000179/_story.md](items/W-00000179/_story.md) |
+| W-00000180 | completed | [items/W-00000180/_story.md](items/W-00000180/_story.md) |

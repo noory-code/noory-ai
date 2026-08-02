@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000181 | release | claude | 오늘 실린 변경이 아직 어느 프로젝트에도 안 닿는다. | active | Claude | [current/W-00000181/_story.md](current/W-00000181/_story.md) |
