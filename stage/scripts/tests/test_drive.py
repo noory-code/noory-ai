@@ -931,7 +931,7 @@ class DriveTest(unittest.TestCase):
                         error,
                     )
 
-    def test_reset_attempts_refuses_a_running_item(self):
+    def test_reset_attempts_clears_an_interrupted_target_role(self):
         tmp, root = self.make_project()
         with tmp:
             stage_root = root / ".stage"
@@ -960,14 +960,69 @@ class DriveTest(unittest.TestCase):
                 "--reason",
                 "The card was corrected.",
             )
+            updated = json.loads(state_path.read_text(encoding="utf-8"))
+            after = state_path.read_text(encoding="utf-8")
+            item_state = updated["items"]["W-00000002"]
+            log_path = stage_root / ".runtime/driver/logs/W-00000002.md"
+            log = log_path.read_text(encoding="utf-8") if log_path.exists() else ""
 
-            self.assertEqual(before, state_path.read_text(encoding="utf-8"))
-            self.assertFalse(
-                (stage_root / ".runtime/driver/logs/W-00000002.md").exists()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertNotEqual(before, after)
+        self.assertEqual(0, item_state["attempt_count"])
+        self.assertEqual("", item_state["last_fingerprint"])
+        self.assertIsNone(item_state["running_role"])
+        self.assertIn("### Attempt limit reset", log)
+
+    def test_reset_attempts_refuses_a_running_sibling_item(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
             )
+            write_card(
+                stage_root,
+                "W-00000003",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 3,
+                "last_fingerprint": "old-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["changed.txt"],
+                "running_role": None,
+            }
+            state["items"]["W-00000003"] = {
+                "attempt_count": 1,
+                "last_fingerprint": "",
+                "base_head": "base-head",
+                "executor_changed_paths": [],
+                "running_role": "executor",
+            }
+            drive.write_run_state(state_path, state)
+            before = state_path.read_text(encoding="utf-8")
+
+            result = self.run_cli(
+                root,
+                "--reset-attempts",
+                "--reason",
+                "The card was corrected.",
+            )
+            after = state_path.read_text(encoding="utf-8")
 
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
-        self.assertIn("cannot reset attempts while executor is running", result.stdout)
+        self.assertIn(
+            "cannot reset attempts while executor is running for W-00000003",
+            result.stdout,
+        )
+        self.assertEqual(before, after)
 
     def test_reset_attempts_resets_limit_state_and_logs_reason(self):
         tmp, root = self.make_project()
@@ -2686,6 +2741,58 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIsNone(state["items"][selected]["running_role"])
+
+    def test_started_round_survives_termination_during_executor_call(self):
+        target = "W-00000001"
+        selected = "W-00000002"
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                selected,
+                parent=target,
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            state_path = stage_root / f".runtime/driver/{target}.json"
+            argv = [
+                str(SCRIPT),
+                "--project-root",
+                str(root),
+                "--execute",
+                target,
+            ]
+
+            def terminate_during_executor(*_args, **_kwargs):
+                running_state = json.loads(state_path.read_text(encoding="utf-8"))
+                running_item = running_state["items"][selected]
+                self.assertEqual(1, running_state["iteration_count"])
+                self.assertEqual(1, running_item["attempt_count"])
+                self.assertEqual("executor", running_item["running_role"])
+                raise SystemExit("simulated termination during executor call")
+
+            with (
+                mock.patch.object(sys, "argv", argv),
+                mock.patch.object(
+                    drive,
+                    "timed_run_check",
+                    side_effect=terminate_during_executor,
+                ),
+                self.assertRaisesRegex(
+                    SystemExit,
+                    "simulated termination during executor call",
+                ),
+            ):
+                drive.main()
+
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            item_state = state["items"][selected]
+
+        self.assertEqual(1, state["iteration_count"])
+        self.assertEqual(1, item_state["attempt_count"])
+        self.assertEqual("executor", item_state["running_role"])
 
     def test_completed_executor_time_survives_termination_during_reaping(self):
         target = "W-00000001"

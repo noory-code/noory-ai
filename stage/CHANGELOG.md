@@ -5,7 +5,9 @@
 - Make supervised driver time limits count only executor, acceptance, and reviewer command time,
   so human review and discussion between rounds cannot exhaust the next round's budget. Keep the
   unattended driver on wall-clock time, persist attempt and iteration stops before external work so
-  killed rounds cannot restart forever, and treat legacy run state as having spent no command time.
+  killed rounds cannot restart forever, let an explicit attempt reset clear the interrupted target's
+  stale running role while still refusing a running sibling, and treat legacy run state as having
+  spent no command time.
 
 - Generate the pending-decision index from decision records and linked work-card status, show when
   one-item venue exceptions have expired, make the audit reject stale or unfamiliar views, and

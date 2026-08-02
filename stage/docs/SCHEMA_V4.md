@@ -385,7 +385,9 @@ In supervised mode, `execution_seconds` accumulates only the time spent running 
 acceptance, and reviewer commands. Time between driver invocations does not spend this budget.
 Legacy state without `execution_seconds` starts at zero, so a long human pause cannot block the
 next command before it runs. `started_at_unix` records when the run state began and is reset by
-`--reset-attempts`, but it does not enforce the supervised time ceiling.
+`--reset-attempts`, but it does not enforce the supervised time ceiling. An explicit reset clears
+the selected item's stale `running_role` after an interrupted turn, while a running role recorded
+for any other item still blocks the reset.
 
 Immediately before an external executor or reviewer turn, `running_role` is written as
 `executor` or `reviewer`; it returns to `null` after that turn. A supervisor that times out the

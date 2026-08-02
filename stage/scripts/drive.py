@@ -278,6 +278,8 @@ def reset_attempts(
     if item_state is None:
         return False, f"no recorded attempts exist for {item_id}"
     for running_item_id, running_item_state in state["items"].items():
+        if running_item_id == item_id:
+            continue
         running_role = running_item_state.get("running_role")
         if running_role is not None:
             return (
@@ -303,6 +305,7 @@ def reset_attempts(
         **item_state,
         "attempt_count": 0,
         "last_fingerprint": "",
+        "running_role": None,
     }
     with log_stream:
         try:
