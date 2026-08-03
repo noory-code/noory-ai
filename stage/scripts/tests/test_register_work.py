@@ -478,6 +478,24 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertNotIn("INDEX004", skill)
         self.assertIn("expect errors=0", skill)
 
+    def test_skill_counts_affected_places_before_registration_confirmation(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        count_step = skill.index("## Count affected places before drafting")
+        confirm_step = skill.index("## Confirm, then register")
+
+        self.assertLess(count_step, confirm_step)
+        for check in (
+            "Entry paths and actors",
+            "Lifecycle and state changes",
+            "Replaced or removed responsibilities",
+            "Results, failures, and durable evidence",
+        ):
+            self.assertIn(f"| {check} |", skill)
+        self.assertIn("record the count", skill)
+        self.assertIn("name what was checked", skill)
+        self.assertIn("Show the human the affected-place count", skill)
+
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()
         with tmp:

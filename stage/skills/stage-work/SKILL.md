@@ -75,6 +75,33 @@ The detector counts only milestones whose valid decision chain has an effective 
 and no effective closure. A planned milestone, an invalid chain, or a milestone with no decision
 record never triggers the question.
 
+## Count affected places before drafting
+
+Before writing scope, risks, or success criteria, ask: **"Where can this change have an effect?"**
+Answer by walking all four checks below. A place is a distinct entry path, actor, state transition,
+responsibility, or observable result; a file name alone is not a place.
+
+| Check | Question |
+|---|---|
+| Entry paths and actors | Who or what reaches this behavior, including people, automation, and each hierarchy level? |
+| Lifecycle and state changes | When can the owned fact change, including create, update, close, archive, interruption, and recovery? |
+| Replaced or removed responsibilities | What other job does the behavior being changed or removed perform? |
+| Results, failures, and durable evidence | Where must the result, notice, failure, or evidence be visible and remain after the command or session ends? |
+
+For each row, list concrete places and record the count. When the count is zero, name what was checked
+and why it is unaffected; bare `none` is not evidence. Use the findings to correct the existing
+`## Scope`, `## Risks`, and `## Success criteria` answers. Do not add a duplicate section to the
+card.
+
+Show this table during confirmation:
+
+| Check | Count | Concrete places and effect | Checked but unaffected |
+|---|---:|---|---|
+| Entry paths and actors |  |  |  |
+| Lifecycle and state changes |  |  |  |
+| Replaced or removed responsibilities |  |  |  |
+| Results, failures, and durable evidence |  |  |  |
+
 ## Draft the item
 
 Prepare the inputs for `register_work.py`; the CLI selects the registry template, allocates the
@@ -152,8 +179,8 @@ next free number, writes the card, and updates the owning index:
 
 ## Confirm, then register
 
-1. Show the human the purpose, scope, and success criteria. Get confirmation before executing —
-   this is the one human checkpoint in the flow.
+1. Show the human the affected-place count, purpose, scope, and success criteria. Get confirmation
+   before executing — this is the one human checkpoint in the flow.
 2. Run `register_work.py` with the confirmed values. The CLI writes the card and the active index
    row in the topology selected by `.stage/settings.json`.
 3. Verify: `python3 stage/scripts/audit_stage.py --project-root <project-root>` (expect errors=0).
