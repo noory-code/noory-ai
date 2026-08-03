@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Run unattended drivers in per-run Git worktrees so executor retries, cleanup, and commits cannot
+  delete or absorb edits made concurrently in the human checkout. Carry only the selected
+  subtree's prior driver state into the worktree, return its runtime evidence afterward, remove a
+  clean worktree automatically, and retain a dirty or otherwise unremovable worktree with an exact
+  recovery path.
+
 ## 0.56.0 — 2026-08-03
 
 - Stop spending an attempt when a successful executor leaves the repository unchanged and records

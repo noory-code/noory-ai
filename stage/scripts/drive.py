@@ -107,7 +107,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--unattended",
         action="store_true",
-        help="Run the whole ready subtree unattended on an isolated branch (requires a limits config).",
+        help=(
+            "Run the whole ready subtree unattended in a separate Git worktree and branch "
+            "(requires a limits config)."
+        ),
     )
     parser.add_argument(
         "--timeout",
@@ -1410,6 +1413,12 @@ def run_git(project_root: Path, args: list[str], timeout: int = 120) -> tuple[bo
     return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
 
 
+def run_branch_name(target_id: str, now: float) -> str:
+    """Return the branch owned by one unattended run."""
+
+    return f"stage/driver/{target_id}-{int(now)}"
+
+
 def create_run_branch(project_root: Path, target_id: str, now: float) -> tuple[str, str]:
     """Create and check out an isolated run branch; NEVER commit to the base branch.
 
@@ -1417,7 +1426,7 @@ def create_run_branch(project_root: Path, target_id: str, now: float) -> tuple[s
     checked out rather than recreated.
     """
 
-    branch = f"stage/driver/{target_id}-{int(now)}"
+    branch = run_branch_name(target_id, now)
     exists, _ = run_git(project_root, ["rev-parse", "--verify", "--quiet", branch])
     verb = ["checkout", branch] if exists else ["checkout", "-b", branch]
     ok, out = run_git(project_root, verb)
@@ -1941,6 +1950,130 @@ def discard_worktree(project_root: Path) -> None:
     )
 
 
+def unattended_worktree_path(
+    project_root: Path,
+    target_id: str,
+    now: float,
+    *,
+    worktree_root: Path | None = None,
+) -> Path:
+    """Return the separate checkout path for one unattended run."""
+
+    root = (
+        worktree_root.resolve()
+        if worktree_root is not None
+        else project_root.parent / f"{project_root.name}-stage-unattended"
+    )
+    return (root / f"{target_id}-{int(now)}").resolve()
+
+
+def create_unattended_worktree(
+    project_root: Path,
+    target_id: str,
+    now: float,
+    *,
+    worktree_root: Path | None = None,
+) -> tuple[Path | None, str, str]:
+    """Create an unattended worktree without switching the human checkout."""
+
+    path = unattended_worktree_path(
+        project_root,
+        target_id,
+        now,
+        worktree_root=worktree_root,
+    )
+    branch = run_branch_name(target_id, now)
+    if path.exists() or path.is_symlink():
+        return None, "", f"unattended worktree path already exists: {path}"
+    exists, out = run_git(
+        project_root,
+        ["rev-parse", "--verify", "--quiet", branch],
+    )
+    if exists:
+        return None, "", f"unattended run branch already exists: {branch}"
+    if out.strip():
+        return None, "", f"cannot inspect unattended run branch {branch}: {out.strip()}"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        return None, "", f"cannot create unattended worktree root {path.parent}: {exc}"
+    ok, out = run_git(
+        project_root,
+        ["worktree", "add", "-b", branch, str(path), "HEAD"],
+    )
+    if not ok:
+        return None, "", (
+            f"cannot create unattended worktree {path} on {branch}: {out.strip()}"
+        )
+    return path, branch, ""
+
+
+def remove_unattended_worktree(project_root: Path, path: Path) -> str:
+    """Remove a clean unattended worktree while retaining its handoff branch."""
+
+    ok, out = run_git(project_root, ["worktree", "remove", str(path)])
+    if not ok:
+        detail = out.strip() or "git worktree remove failed"
+        return f"cannot remove unattended worktree {path}: {detail}"
+    try:
+        path.parent.rmdir()
+    except OSError:
+        pass
+    return ""
+
+
+def seed_unattended_runtime(
+    stage_root: Path,
+    run_stage_root: Path,
+    target_id: str,
+    items: list[WorkItem],
+) -> str:
+    """Copy only the selected subtree's prior driver state into its worktree."""
+
+    by_id = {item.item_id: item for item in items}
+    item_ids = {
+        item.item_id
+        for item in items
+        if item.item_id == target_id or is_in_subtree(item, target_id, by_id)
+    }
+    relative_paths = [Path(f"driver/{target_id}.json")]
+    for item_id in sorted(item_ids):
+        relative_paths.extend(
+            (
+                Path(f"driver/logs/{item_id}.md"),
+                Path(f"driver/verdicts/{item_id}.json"),
+            )
+        )
+    source_root = stage_root / ".runtime"
+    destination_root = run_stage_root / ".runtime"
+    try:
+        for relative_path in relative_paths:
+            source = source_root / relative_path
+            if not source.is_file():
+                continue
+            destination = destination_root / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+    except OSError as exc:
+        return f"cannot seed unattended runtime evidence: {exc}"
+    return ""
+
+
+def preserve_unattended_runtime(run_stage_root: Path, stage_root: Path) -> str:
+    """Move ignored runtime evidence back to the human checkout before cleanup."""
+
+    source = run_stage_root / ".runtime"
+    if not source.exists():
+        return ""
+    destination = stage_root / ".runtime"
+    try:
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+        shutil.rmtree(source)
+    except OSError as exc:
+        return f"cannot preserve unattended runtime evidence from {source}: {exc}"
+    return ""
+
+
 def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
     """Commit the Stage lifecycle records (.stage/) to the run branch — never the base branch."""
 
@@ -2007,7 +2140,15 @@ def escalate_and_commit(project_root: Path, item_id: str, reason: str, timeout: 
     return True
 
 
-def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Path, now: float) -> int:
+def run_unattended(
+    args: argparse.Namespace,
+    project_root: Path,
+    stage_root: Path,
+    now: float,
+    *,
+    branch: str = "",
+    base_branch: str = "",
+) -> int:
     limits, limits_error = load_limits_config(stage_root)
     if limits_error:
         print_escalation(f"limits config unusable: {limits_error}")
@@ -2032,11 +2173,18 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         print_escalation("working tree/index is not clean; commit or stash before an unattended run")
         return 1
 
-    base_branch = current_branch(project_root)
-    branch, branch_error = create_run_branch(project_root, args.target, now)
-    if branch_error:
-        print_escalation(branch_error)
-        return 1
+    if branch:
+        if current_branch(project_root) != branch:
+            print_escalation(
+                f"unattended worktree is not on its run branch {branch}"
+            )
+            return 1
+    else:
+        base_branch = current_branch(project_root)
+        branch, branch_error = create_run_branch(project_root, args.target, now)
+        if branch_error:
+            print_escalation(branch_error)
+            return 1
     print(f"Unattended run on isolated branch: {branch} (base: {base_branch or 'unknown'})")
 
     wall = limits["max_wall_clock_seconds"]
@@ -2646,6 +2794,82 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
     return 0
 
 
+def run_unattended_in_worktree(
+    args: argparse.Namespace,
+    project_root: Path,
+    stage_root: Path,
+    now: float,
+    *,
+    worktree_root: Path | None = None,
+) -> int:
+    """Run unattended work away from the human checkout and clean up when safe."""
+
+    limits, limits_error = load_limits_config(stage_root)
+    if limits_error:
+        print_escalation(f"limits config unusable: {limits_error}")
+        return 1
+    if limits is None:
+        print_escalation(
+            "unattended mode requires a `limits` config (absent is not unlimited here); "
+            "refusing to run"
+        )
+        return 1
+    if not worktree_clean(project_root):
+        print_escalation(
+            "working tree/index is not clean; commit or stash before an unattended run"
+        )
+        return 1
+
+    base_branch = current_branch(project_root)
+    run_root, branch, creation_error = create_unattended_worktree(
+        project_root,
+        args.target,
+        now,
+        worktree_root=worktree_root,
+    )
+    if creation_error or run_root is None:
+        print_escalation(creation_error or "unattended worktree unavailable")
+        return 1
+    print(f"Unattended worktree: {run_root}")
+    print(f"Unattended branch: {branch}")
+
+    seed_error = seed_unattended_runtime(
+        stage_root,
+        run_root / ".stage",
+        args.target,
+        load_all_work_items(stage_root),
+    )
+    if seed_error:
+        print_escalation(
+            f"{seed_error}. The unattended executor did not start; worktree retained at "
+            f"{run_root}."
+        )
+        return 1
+    result = run_unattended(
+        args,
+        run_root,
+        run_root / ".stage",
+        now,
+        branch=branch,
+        base_branch=base_branch,
+    )
+    runtime_error = preserve_unattended_runtime(run_root / ".stage", stage_root)
+    if runtime_error:
+        print_escalation(
+            f"{runtime_error}. Recovery retained on branch {branch} at {run_root}."
+        )
+        return 1
+    cleanup_error = remove_unattended_worktree(project_root, run_root)
+    if cleanup_error:
+        print_escalation(
+            f"{cleanup_error}. Recovery retained on branch {branch} at {run_root}. "
+            f"After preserving any changes, run `git worktree remove {run_root}`."
+        )
+        return 1
+    print(f"Removed unattended worktree: {run_root}")
+    return result
+
+
 def main() -> int:
     args = parse_args()
     if args.reset_attempts:
@@ -2722,7 +2946,12 @@ def main() -> int:
     )
 
     if args.unattended:
-        return run_unattended(args, project_root, stage_root, time.time())
+        return run_unattended_in_worktree(
+            args,
+            project_root,
+            stage_root,
+            time.time(),
+        )
 
     item = select_next_ready_leaf(args.target, items)
     if item is None:

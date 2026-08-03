@@ -599,6 +599,147 @@ class UnattendedTest(unittest.TestCase):
         self.assertTrue(current.startswith("stage/driver/W-00000001-"), current)
         self.assertGreater(int(git_out(root, "rev-list", "--count", current)), base_count_before)
 
+    def test_unattended_worktree_keeps_human_changes_out_of_executor_commit(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits)
+        human_path = root / "human-during-run.txt"
+        marker = root.parent / f"{root.name}-unattended-round"
+        self.addCleanup(marker.unlink, missing_ok=True)
+        settings_path = stage_root / "settings.json"
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        settings["executors"]["codex"] = python_command(
+            "import os\n"
+            "from pathlib import Path\n"
+            f"marker = Path({str(marker)!r})\n"
+            "round_number = int(marker.read_text() if marker.exists() else '0') + 1\n"
+            "marker.write_text(str(round_number), encoding='utf-8')\n"
+            f"Path({str(human_path)!r}).write_text('human', encoding='utf-8')\n"
+            "if round_number == 1:\n"
+            "    Path('failed-attempt.txt').write_text('discard me', encoding='utf-8')\n"
+            "    raise SystemExit(1)\n"
+            "Path('driver-work.txt').write_text('executor', encoding='utf-8')\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "report = ('\\n### Executor report\\n"
+            "What changed: wrote the successful executor output\\n"
+            "Why: exercise isolated failure recovery\\n"
+            "Decisions made: None\\n"
+            "Work not done: None\\n"
+            "Changed paths (JSON):\\n[\"driver-work.txt\"]\\n"
+            "Review request: review every success criterion\\n')\n"
+            "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')"
+        )
+        settings_path.write_text(json.dumps(settings), encoding="utf-8")
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        exclude_path = root / ".git/info/exclude"
+        with exclude_path.open("a", encoding="utf-8") as handle:
+            handle.write("\n.stage/.runtime/\n")
+        prior_log = stage_root / ".runtime/driver/logs/W-00000001.md"
+        prior_log.parent.mkdir(parents=True)
+        prior_log.write_text("# Prior unattended evidence\n", encoding="utf-8")
+        base_branch = git_out(root, "rev-parse", "--abbrev-ref", "HEAD")
+        base_head = git_out(root, "rev-parse", "HEAD")
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        now = time.time()
+        stamp = int(now)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            worktree_root = Path(temporary) / "unattended"
+            rc = drive.run_unattended_in_worktree(
+                self.args(root, "W-00000001"),
+                root,
+                stage_root,
+                now,
+                worktree_root=worktree_root,
+            )
+
+            self.assertFalse((worktree_root / f"W-00000001-{stamp}").exists())
+
+        branch = f"stage/driver/W-00000001-{stamp}"
+        self.assertEqual(0, rc)
+        self.assertEqual("human", human_path.read_text(encoding="utf-8"))
+        self.assertEqual(base_branch, git_out(root, "rev-parse", "--abbrev-ref", "HEAD"))
+        self.assertEqual(base_head, git_out(root, "rev-parse", "HEAD"))
+        self.assertEqual("executor", git_out(root, "show", f"{branch}:driver-work.txt"))
+        self.assertIn(
+            "# Prior unattended evidence",
+            prior_log.read_text(encoding="utf-8"),
+        )
+        failed_attempt = subprocess.run(
+            ["git", "show", f"{branch}:failed-attempt.txt"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(0, failed_attempt.returncode)
+        human_in_branch = subprocess.run(
+            ["git", "show", f"{branch}:human-during-run.txt"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(0, human_in_branch.returncode)
+
+    def test_unattended_cleanup_failure_retains_recoverable_worktree(self):
+        limits = {
+            "max_attempts_per_item": 3,
+            "max_iterations": 50,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(
+            limits=limits,
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('driver-work.txt').write_text('executor', encoding='utf-8'); "
+                "Path('recovery.txt').write_text('recover me', encoding='utf-8')",
+                ["driver-work.txt", "recovery.txt"],
+            ),
+        )
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        now = time.time()
+        stamp = int(now)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            worktree_root = Path(temporary) / "unattended"
+            worktree_path = worktree_root / f"W-00000001-{stamp}"
+            output = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(output):
+                    rc = drive.run_unattended_in_worktree(
+                        self.args(root, "W-00000001"),
+                        root,
+                        stage_root,
+                        now,
+                        worktree_root=worktree_root,
+                    )
+
+                self.assertEqual(1, rc)
+                self.assertEqual(
+                    "recover me",
+                    (worktree_path / "recovery.txt").read_text(encoding="utf-8"),
+                )
+                self.assertIn(str(worktree_path), output.getvalue())
+                self.assertIn("git worktree remove", output.getvalue())
+            finally:
+                if worktree_path.exists():
+                    git(root, "worktree", "remove", "--force", str(worktree_path))
+                subprocess.run(
+                    ["git", "branch", "-D", f"stage/driver/W-00000001-{stamp}"],
+                    cwd=str(root),
+                    capture_output=True,
+                    text=True,
+                )
+
     def test_executor_receives_selected_work_item_environment(self):
         limits = {"max_attempts_per_item": 3, "max_iterations": 50, "max_wall_clock_seconds": 300}
         with tempfile.TemporaryDirectory() as marker_tmp:
