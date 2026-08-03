@@ -177,10 +177,26 @@ next free number, writes the card, and updates the owning index:
   do things belong in the shared work log; the card carries the work, its reason, its goal, and its
   finish line. A card that records every step buries the four answers a reader came for.
 
+## Cover included outcomes with success criteria
+
+Before confirmation, list every outcome allowed by `## Scope` > `### Included`. An outcome is a
+result the finished work permits or promises, not a path to edit or a task to perform. Pair each
+outcome with at least one existing `## Success criteria` item that would prove it happened. One
+criterion may prove more than one outcome, but a path-only scope entry needs no pair.
+
+Show this table during confirmation:
+
+| Included outcome | Success criterion that proves the outcome |
+|---|---|
+|  |  |
+
+Do not confirm or register while any included outcome is unmatched. Add a criterion when the
+outcome belongs to this item; otherwise remove or narrow the outcome in `### Included`.
+
 ## Confirm, then register
 
-1. Show the human the affected-place count, purpose, scope, and success criteria. Get confirmation
-   before executing — this is the one human checkpoint in the flow.
+1. Show the human the affected-place count, included-outcome coverage, purpose, scope, and success
+   criteria. Get confirmation before executing — this is the one human checkpoint in the flow.
 2. Run `register_work.py` with the confirmed values. The CLI writes the card and the active index
    row in the topology selected by `.stage/settings.json`.
 3. Verify: `python3 stage/scripts/audit_stage.py --project-root <project-root>` (expect errors=0).

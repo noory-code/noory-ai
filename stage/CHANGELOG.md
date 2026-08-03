@@ -5,6 +5,9 @@
 - Keep new-project driver instructions safe to copy into shell-executed command strings by
   removing every backtick from the distributed settings template and checking the whole file.
 
+- Make work registration pair every included outcome with a success criterion before confirmation,
+  so a card cannot permit a result that its reviewer was never asked to judge.
+
 - Make work registration count affected entry paths, lifecycle changes, replaced responsibilities,
   and durable results before confirmation, then fold the findings into the existing scope, risks,
   and success criteria instead of adding another card field.
