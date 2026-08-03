@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000188 | documentation | claude | DE-00000051 을 열면 그것이 아직 구속하는 규칙처럼 읽힌다. | active | Claude | [current/W-00000188/_story.md](current/W-00000188/_story.md) |

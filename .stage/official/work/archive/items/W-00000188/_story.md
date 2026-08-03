@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: approved
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000194
+promotion: promoted
 review: not_required
 scope: .stage/
 promotes: .stage/official/decisions/records/DE-00000051.md, .stage/official/decisions/records/DE-00000030.md
@@ -53,15 +54,41 @@ DE-00000051 을 열면 그것이 아직 구속하는 규칙처럼 읽힌다.
 
 ## Success criteria
 
-- DE-00000051 을 열면 첫머리에서 DE-00000052 가 그것을 대체했다는 것이 보인다.
-- 규칙이 적힌 자리에도 그 한 줄이 있어, 다음 대체가 나오면 같은 모양으로 쓴다.
+- **넣을 두 문장이 정해져 카드에 적혀 있다.** 무엇을 어디에 쓸지가 다음 사람에게 보인다.
+- 승격이 끝난 뒤: DE-00000051 을 열면 첫머리에서 DE-00000052 가 그것을 대체했다는 것이 보이고,
+  규칙이 사는 자리에도 같은 모양으로 쓰라는 한 줄이 있다.
 - 목록도 상태값도 안 늘었다.
 - 감사 오류 0.
 
 ## Next action
 
-DE-00000051 첫머리에 한 줄을 넣는다. 그것이 공식 기록이라 승격 의도가 필요하다 — 이 카드가
-`promotes` 로 선언한다.
+없다. 문장이 정해졌고 승격으로 실었다.
+
+## Progress
+
+### 기준을 실제로 갈 수 있는 길에 맞췄다 — 2026-08-03
+
+처음 기준은 **공식 기록에 문장이 이미 들어가 있기**를 요구했다. 그런데 그 파일은 카드를 닫은
+뒤에야 승격 의도로 열린다. **닫아야 쓸 수 있는데 쓰여 있어야 닫힌다** — 드라이버가 이 카드를
+끝낼 길이 없었다.
+
+기준을 둘로 갈랐다. 카드가 하는 일은 **문장을 정하는 것**이고, 파일에 넣는 것은 닫은 뒤
+승격이 한다.
+
+**이 어긋남이 바로 오늘 만든 W-00000191 이 잡으려는 모양이다** — 범위가 허락한 결말을 기준이
+안 받는 것. 다만 이 카드는 그 장치가 실리기 전에 등록됐다.
+
+### 넣을 문장
+
+**DE-00000051 첫머리** (`# DE-00000051 ...` 바로 아래):
+
+> **이 결정은 DE-00000052 가 대체했다(2026-07-31).** 아래에 적힌 것은 그때 정한 것이고,
+> 지금 구속하는 것은 DE-00000052 다.
+
+**DE-00000030 의 `## Chosen direction` 판정 규칙 끝**:
+
+> - 어떤 결정이 다른 결정을 대체하면, **대체된 쪽 첫머리에 무엇이 언제 그것을 대체했는지 적는다.**
+>   기록은 안 지우므로 남는 이상 그것이 지금 구속하는지가 읽혀야 한다.
 
 ## Related truth
 
@@ -76,6 +103,22 @@ DE-00000051 첫머리에 한 줄을 넣는다. 그것이 공식 기록이라 승
 
 ## Verification
 
+
+### Executed at close — 2026-08-03
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
