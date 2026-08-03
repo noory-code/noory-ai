@@ -13,3 +13,4 @@
 | W-00000191 | development | codex | 범위가 허락한 결말이 성공 기준에 없어서 계약대로 멈춘 카드가 반려됐다. | active | Claude | [current/W-00000189/W-00000191.md](current/W-00000189/W-00000191.md) |
 | W-00000192 | development | codex | 마일스톤 완료 기준을 안 보고 카드를 걸어서 기준을 못 움직이는 카드 넷이 달렸다. | active | Claude | [current/W-00000189/W-00000192.md](current/W-00000189/W-00000192.md) |
 | W-00000193 | chore | codex | 코덱스 판정 명령이 읽기 전용으로 돌아 판정 파일을 못 쓰고, 클로드 몫 카드는 드라이버로 못 돈다. | active | Claude | [current/W-00000189/W-00000193.md](current/W-00000189/W-00000193.md) |
+| W-00000194 | chore | codex | 새 프로젝트를 여는 사람이 베껴 쓰라고 둔 본보기에 백틱이 있어 같은 버그가 재현된다. | active | Claude | [current/W-00000189/W-00000194.md](current/W-00000189/W-00000194.md) |
