@@ -83,9 +83,9 @@ RECOMMEND_RETRY = "failed, retry (attempt {attempt}/{cap})"
 RECOMMEND_ESCALATE = (
     "attempt cap reached / no progress / global limit exceeded → escalate_work"
 )
-UNCHANGED_REPOSITORY_FAILURE = (
-    "executor left repository state unchanged; if the work is already complete, "
-    "run close_work.py manually"
+UNCHANGED_REPOSITORY_NOTICE = (
+    "executor left repository state unchanged; work appears complete; "
+    "attempt was not spent"
 )
 
 
@@ -206,6 +206,10 @@ def load_run_state(
             return None, "driver run state item entries must be objects"
         attempt_count = item_state.get("attempt_count")
         fingerprint = item_state.get("last_fingerprint")
+        no_change_fingerprint = item_state.get(
+            "last_no_change_fingerprint",
+            "",
+        )
         base_head = item_state.get("base_head", "")
         executor_changed_paths = item_state.get("executor_changed_paths", [])
         running_role = item_state.get("running_role")
@@ -217,6 +221,11 @@ def load_run_state(
         if not isinstance(fingerprint, str):
             return None, (
                 f"driver run state {item_id}.last_fingerprint must be a string"
+            )
+        if not isinstance(no_change_fingerprint, str):
+            return None, (
+                f"driver run state {item_id}.last_no_change_fingerprint "
+                "must be a string"
             )
         if not isinstance(base_head, str):
             return None, f"driver run state {item_id}.base_head must be a string"
@@ -305,6 +314,7 @@ def reset_attempts(
         **item_state,
         "attempt_count": 0,
         "last_fingerprint": "",
+        "last_no_change_fingerprint": "",
         "running_role": None,
     }
     with log_stream:
@@ -343,6 +353,10 @@ def write_running_role(
     state["items"][item_id] = {
         "attempt_count": item_state["attempt_count"],
         "last_fingerprint": item_state["last_fingerprint"],
+        "last_no_change_fingerprint": item_state.get(
+            "last_no_change_fingerprint",
+            "",
+        ),
         "base_head": item_state.get("base_head", ""),
         "executor_changed_paths": item_state.get("executor_changed_paths", []),
         "running_role": role,
@@ -1154,6 +1168,29 @@ def append_driver_commands_to_work_log(
         raise RuntimeError(
             f"cannot append driver commands to work log {log_path}: {exc}"
         ) from exc
+
+
+def reconcile_executor_work_log(
+    log_path: Path,
+    durable_log: str,
+    attempt_log: str,
+    current_log: str,
+) -> tuple[str, str]:
+    """Restore this attempt's driver commands after an intact stale-log rewrite."""
+
+    if current_log.startswith(attempt_log):
+        return current_log, ""
+    if not current_log.startswith(durable_log):
+        return (
+            current_log,
+            "executor rewrote existing work log content instead of appending",
+        )
+    reconciled = attempt_log + current_log[len(durable_log) :]
+    try:
+        log_path.write_text(reconciled, encoding="utf-8")
+    except OSError as exc:
+        return current_log, f"cannot restore driver commands in work log {log_path}: {exc}"
+    return reconciled, ""
 
 
 def append_reap_warning_to_work_log(
@@ -2088,6 +2125,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
         try:
             log_path = ensure_work_log(stage_root, item.item_id)
             verdict_file = review_verdict_path(stage_root, item.item_id)
+            durable_log = read_work_log(log_path)
             append_driver_commands_to_work_log(
                 log_path,
                 executor_command=executor_command,
@@ -2142,7 +2180,12 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             )
         try:
             log_after_executor = read_work_log(log_path)
-            executor_log_error = ""
+            log_after_executor, executor_log_error = reconcile_executor_work_log(
+                log_path,
+                durable_log,
+                log_before,
+                log_after_executor,
+            )
         except RuntimeError as exc:
             log_after_executor = log_before
             executor_log_error = str(exc)
@@ -2179,6 +2222,7 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             print_escalation(f"cannot inspect changes for progress: {exc}")
             return 1
         executor_failure = "executor failed"
+        unchanged_repository = False
         dispositions, disposition_error = executor_review_dispositions(
             log_before,
             log_after_executor,
@@ -2211,24 +2255,35 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 else "executor failed; executor reap command failed"
             )
             executor_ok = False
+        elif executor_ok and report_error:
+            executor_ok = False
+            executor_failure = report_error
         elif (
             executor_ok
             and repository_after == repository_before
             and not reasoned_no_change
         ):
-            executor_ok = False
-            executor_failure = UNCHANGED_REPOSITORY_FAILURE
-        elif executor_ok and report_error:
-            executor_ok = False
-            executor_failure = report_error
+            unchanged_repository = True
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )
+        repeated_unchanged_repository = (
+            unchanged_repository
+            and bool(item_state.get("last_no_change_fingerprint"))
+            and repository_after == item_state["last_no_change_fingerprint"]
+        )
         state["iteration_count"] = state.get("iteration_count", 0) + 1
-        counted_attempt = item_state["attempt_count"] if infrastructure_failed else attempt
+        counted_attempt = (
+            item_state["attempt_count"]
+            if infrastructure_failed or unchanged_repository
+            else attempt
+        )
         state["items"][item.item_id] = {
             "attempt_count": counted_attempt,
             "last_fingerprint": current_fingerprint,
+            "last_no_change_fingerprint": (
+                repository_after if unchanged_repository else ""
+            ),
             "base_head": base_head,
             "executor_changed_paths": (
                 changed_paths if executor_ok else executor_changed_paths
@@ -2236,6 +2291,23 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
             "running_role": None,
         }
         write_run_state(state_path, state)
+
+        if unchanged_repository:
+            if no_progress or repeated_unchanged_repository:
+                if not escalate_and_commit(
+                    project_root,
+                    item.item_id,
+                    "NO-PROGRESS repository state matched the previous round",
+                    cmd_timeout,
+                ):
+                    return 1
+                continue
+            print(f"[{item.item_id}] {UNCHANGED_REPOSITORY_NOTICE}")
+            print(
+                "Recommended next action: run close_work.py manually to verify "
+                "and review the apparent completion"
+            )
+            return 0
 
         # A FAILED executor must never proceed to commit/close. Discard the failed
         # attempt's partial output, then retry or escalate.
@@ -2760,6 +2832,7 @@ def main() -> int:
     try:
         log_path = ensure_work_log(stage_root, item.item_id)
         verdict_file = review_verdict_path(stage_root, item.item_id)
+        durable_log = read_work_log(log_path)
         append_driver_commands_to_work_log(
             log_path,
             executor_command=executor_command,
@@ -2838,7 +2911,12 @@ def main() -> int:
         print(f"Executor result:\n{executor_evidence}")
         try:
             log_after_executor = read_work_log(log_path)
-            executor_log_error = ""
+            log_after_executor, executor_log_error = reconcile_executor_work_log(
+                log_path,
+                durable_log,
+                log_before,
+                log_after_executor,
+            )
         except RuntimeError as exc:
             log_after_executor = log_before
             executor_log_error = str(exc)
@@ -2877,6 +2955,7 @@ def main() -> int:
             print_escalation(f"cannot clear executor running role: {exc}")
             return 1
 
+        unchanged_repository = False
         try:
             repository_after = repository_fingerprint(project_root)
             repository_paths_after = repository_path_snapshot(project_root)
@@ -2907,13 +2986,26 @@ def main() -> int:
             elif not executor_ok:
                 step_ok = False
                 failure = "executor command failed"
-            elif (
-                repository_after == repository_before
-                and not reasoned_no_change
-            ):
-                step_ok = False
-                failure = UNCHANGED_REPOSITORY_FAILURE
             else:
+                report_error = executor_report_error(
+                    log_before,
+                    log_after_executor,
+                    changed_paths,
+                    pending_findings,
+                    ignored_paths=[
+                        log_path.relative_to(project_root).as_posix()
+                    ],
+                )
+                if report_error:
+                    step_ok = False
+                    failure = report_error
+                elif (
+                    repository_after == repository_before
+                    and not reasoned_no_change
+                ):
+                    unchanged_repository = True
+
+            if step_ok and not unchanged_repository:
                 try:
                     changed_paths_file.write_text(
                         json.dumps(
@@ -2933,21 +3025,12 @@ def main() -> int:
                         "cannot write driver-observed paths for review: "
                         f"{exc}"
                     )
-                if step_ok:
-                    report_error = executor_report_error(
-                        log_before,
-                        log_after_executor,
-                        changed_paths,
-                        pending_findings,
-                        ignored_paths=[
-                            log_path.relative_to(project_root).as_posix()
-                        ],
-                    )
-                    if report_error:
-                        step_ok = False
-                        failure = report_error
-
-        if step_ok and not changed_paths and not reasoned_no_change:
+        if (
+            step_ok
+            and not changed_paths
+            and not reasoned_no_change
+            and not unchanged_repository
+        ):
             step_ok = False
             failure = (
                 "repository changed but no changed paths were observed for review"
@@ -2964,7 +3047,7 @@ def main() -> int:
             except RuntimeError as exc:
                 failure = f"{failure}; {exc}"
 
-        if step_ok:
+        if step_ok and not unchanged_repository:
             for command in item.acceptance:
                 accepted, evidence, raw, acceptance_seconds = timed_run_check(
                     command,
@@ -2989,7 +3072,7 @@ def main() -> int:
                     infrastructure_failed = infrastructure_failure(evidence)
                     break
 
-        if step_ok:
+        if step_ok and not unchanged_repository:
             try:
                 clear_review_verdict(verdict_file)
                 if previous_verdict is not None:
@@ -3008,7 +3091,7 @@ def main() -> int:
                 step_ok = False
                 failure = f"cannot prepare narrow review inputs: {exc}"
 
-        if step_ok:
+        if step_ok and not unchanged_repository:
             reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_verdict_file = (
@@ -3171,9 +3254,14 @@ def main() -> int:
         and current_fingerprint == previous_fingerprint
         and not reasoned_no_change
     )
+    repeated_unchanged_repository = (
+        unchanged_repository
+        and bool(item_state.get("last_no_change_fingerprint"))
+        and repository_after == item_state["last_no_change_fingerprint"]
+    )
     counted_attempt = (
         item_state["attempt_count"]
-        if not step_ok and infrastructure_failed
+        if unchanged_repository or (not step_ok and infrastructure_failed)
         else attempt
     )
     state["iteration_count"] = iteration
@@ -3181,6 +3269,9 @@ def main() -> int:
     state["items"][item.item_id] = {
         "attempt_count": counted_attempt,
         "last_fingerprint": current_fingerprint,
+        "last_no_change_fingerprint": (
+            repository_after if unchanged_repository else ""
+        ),
         "base_head": base_head,
         "executor_changed_paths": changed_paths,
         "running_role": None,
@@ -3190,6 +3281,19 @@ def main() -> int:
     except OSError as exc:
         print_escalation(f"cannot persist driver run state after execution: {exc}")
         return 1
+
+    if unchanged_repository:
+        if no_progress or repeated_unchanged_repository:
+            print_escalation(
+                "NO-PROGRESS repository state matched the previous round"
+            )
+            return 1
+        print(f"Outcome: {UNCHANGED_REPOSITORY_NOTICE}")
+        print(
+            "Recommended next action: run close_work.py manually to verify "
+            "and review the apparent completion"
+        )
+        return 0
 
     escalation_reasons: list[str] = []
     if no_progress and not infrastructure_failed:

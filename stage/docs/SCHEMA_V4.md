@@ -264,6 +264,11 @@ nothing to report; it never leaves the field empty. Every configured reviewer an
 command reads both fields and judges whether the purpose and scope-boundary reporting contract was
 followed.
 
+The driver snapshots the durable log before it records the current `### Driver commands`. If an
+executor rewrites the file from that exact snapshot, preserves every prior byte, and adds one valid
+report, the driver restores the missing command block and canonicalizes the result as an append.
+Changing or losing any earlier log content still fails the round before acceptance or review.
+
 For each supervised `--execute` or unattended round, the shared work log records the exact selected
 executor and reviewer command strings under `### Driver commands`. The strings are JSON-quoted so
 embedded shell quotes and line breaks remain readable without changing the command.
@@ -338,10 +343,13 @@ returns an error; a project outside a Git worktree remains an explicit supported
 Immediately before each supervised or unattended executor attempt, the driver records a
 repository-only fingerprint from the tracked diff and non-ignored untracked paths. It records the
 same fingerprint immediately after the executor exits. A successful executor that leaves this
-state identical fails the attempt before acceptance or review can run. This comparison excludes
-executor output and verification output; those remain inputs only to the separate `NO-PROGRESS`
-fingerprint. If the work was already complete before execution, the operator must run
-`close_work.py` manually so verification and review still run through an explicit path.
+state identical must still append a valid report. The driver then stops before acceptance or review,
+tells the operator that the work appears complete, and does not spend an attempt. The operator runs
+`close_work.py` manually so verification and review still use an explicit path. If the same
+successful no-change repository fingerprint repeats, the driver stops as `NO-PROGRESS`;
+supervised mode recommends escalation, while unattended mode escalates the item. This comparison
+excludes executor output and verification output; those remain inputs only to the separate progress
+fingerprint.
 
 On the first supervised review, or whenever no readable valid prior verdict exists, the reviewer
 receives the cumulative card paths and judges every success criterion. A later supervised review
@@ -375,6 +383,7 @@ Execute mode stores untracked state at
     "W-00000002": {
       "attempt_count": 1,
       "last_fingerprint": "<sha256>",
+      "last_no_change_fingerprint": "<sha256-or-empty>",
       "running_role": null
     }
   }
@@ -399,7 +408,8 @@ even when the active command cannot report its final elapsed time.
 
 The `NO-PROGRESS` fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`,
 or separate staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each
-untracked non-ignored file, and acceptance output. A consecutive match is `NO-PROGRESS`. Missing
+untracked non-ignored file, and acceptance output. A consecutive match is `NO-PROGRESS`, including
+a repeated successful no-change round. Missing
 executor, missing acceptance, unusable independent review, malformed limits, an exhausted limit,
 and no progress all fail closed with an `escalate_work` recommendation; the driver never claims
 completion or performs escalation itself.
@@ -434,7 +444,9 @@ declares `null` and stays silent, while an absent venue warns.
 A FAILED executor is discarded and retried or escalated — never committed or closed. Its output
 lands in the shared work log first, so a human can see what it said before it died; the same holds
 for a reviewer that fails or blocks. Failing to append that record is itself an error, never a
-silent skip.
+silent skip. A first successful no-change round with a valid report is not FAILED: the unattended
+loop stops for human verification without spending an attempt. Repeating the same state escalates
+through the existing no-progress path.
 
 A reviewer's failed criteria flow into the next round rather than being reduced to a pass/block
 word: the next executor turn receives them and must record an explicit accept / decline / defer

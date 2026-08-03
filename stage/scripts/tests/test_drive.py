@@ -41,6 +41,26 @@ def reporting_python_command(code: str, changed_paths: list[str]) -> str:
     return python_command(f"{code}; {report}")
 
 
+def stale_log_rewrite_command(code: str, changed_paths: list[str]) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"{code}\n"
+        "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+        "current = log.read_text(encoding='utf-8')\n"
+        "durable = current.rsplit('\\n### Driver commands\\n', 1)[0]\n"
+        "report = ('\\n### Executor report\\n"
+        "What changed: rewrote the log from an intact prior snapshot\\n"
+        "Why: exercise recovery of the current driver command record\\n"
+        "Decisions made: kept every prior work-log byte intact\\n"
+        "Work not done: None\\n"
+        "Changed paths (JSON):\\n' + "
+        f"json.dumps({changed_paths!r}) + "
+        "'\\nReview request: review the recovered append-only log\\n')\n"
+        "log.write_text(durable + report, encoding='utf-8')\n"
+    )
+
+
 def cumulative_retry_executor_command(marker: Path) -> str:
     return python_command(
         "import json, os\n"
@@ -1284,7 +1304,61 @@ class DriveTest(unittest.TestCase):
         self.assertNotIn("WARNING: reapers.", result.stdout)
         self.assertNotIn("Driver warning", log)
 
-    def test_execute_rejects_successful_executor_that_leaves_repository_unchanged(self):
+    def test_execute_reports_first_unchanged_repository_without_spending_attempt(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command("pass", []),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            state = json.loads(
+                (
+                    root / ".stage/.runtime/driver/W-00000001.json"
+                ).read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("work appears complete", result.stdout)
+        self.assertIn("attempt was not spent", result.stdout)
+        self.assertIn("close_work.py", result.stdout)
+        self.assertNotIn("Acceptance result:", result.stdout)
+        self.assertNotIn("Independent reviewer result:", result.stdout)
+        self.assertEqual(0, state["items"]["W-00000002"]["attempt_count"])
+
+    def test_execute_repeated_unchanged_repository_stops_as_no_progress(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command("pass", []),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            first = self.run_cli(root, "--execute")
+            second = self.run_cli(root, "--execute")
+            state = json.loads(
+                (
+                    root / ".stage/.runtime/driver/W-00000001.json"
+                ).read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+        self.assertNotEqual(0, second.returncode)
+        self.assertIn("NO-PROGRESS", second.stdout)
+        self.assertEqual(0, state["items"]["W-00000002"]["attempt_count"])
+
+    def test_execute_unchanged_repository_without_report_still_fails(self):
         tmp, root = self.make_project(executor=PASS_COMMAND)
         with tmp:
             write_card(
@@ -1293,14 +1367,18 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
 
             result = self.run_cli(root, "--execute")
+            state = json.loads(
+                (
+                    root / ".stage/.runtime/driver/W-00000001.json"
+                ).read_text(encoding="utf-8")
+            )
 
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("executor left repository state unchanged", result.stdout)
-        self.assertIn("close_work.py", result.stdout)
-        self.assertNotIn("Acceptance result:", result.stdout)
-        self.assertNotIn("Independent reviewer result:", result.stdout)
+        self.assertIn("executor did not append a work log report", result.stdout)
+        self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
 
     def test_execute_passes_in_unborn_repository_without_an_index(self):
         tmp, root = self.make_project(
@@ -2272,6 +2350,68 @@ class DriveTest(unittest.TestCase):
         self.assertIn("executor did not append a work log report", result.stdout)
         self.assertFalse((root / acceptance_marker).exists())
         self.assertNotIn("Independent reviewer result:", result.stdout)
+
+    def test_executor_intact_stale_log_rewrite_restores_driver_commands(self):
+        executor = stale_log_rewrite_command(
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+            ["executor-work.txt"],
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual(1, log.splitlines().count("### Driver commands"))
+        self.assertEqual(1, log.splitlines().count("### Executor report"))
+        self.assertLess(
+            log.index("### Driver commands"),
+            log.index("### Executor report"),
+        )
+
+    def test_executor_log_rewrite_still_fails_when_prior_content_is_lost(self):
+        executor = python_command(
+            "import json, os\n"
+            "from pathlib import Path\n"
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "report = ('### Executor report\\n"
+            "What changed: replaced the prior work log\\n"
+            "Why: exercise the data-loss boundary\\n"
+            "Decisions made: None\\n"
+            "Work not done: None\\n"
+            "Changed paths (JSON):\\n' + json.dumps(['executor-work.txt']) + '\\n"
+            "Review request: reject the lost prior record\\n')\n"
+            "log.write_text(report, encoding='utf-8')\n"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "executor rewrote existing work log content instead of appending",
+            result.stdout,
+        )
+        self.assertNotIn("Acceptance result:", result.stdout)
 
     def test_executor_claim_must_match_driver_observed_paths_before_review(self):
         executor = reporting_python_command(

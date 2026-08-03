@@ -1380,9 +1380,25 @@ class UnattendedTest(unittest.TestCase):
         self.assertIn("executor failure sentinel", log)
         self.assertIn("[exit 7]", log)
 
-    def test_successful_executor_without_repository_changes_escalates_not_closes(self):
+    def test_successful_executor_without_repository_changes_notifies_then_escalates_repeat(self):
         limits = {"max_attempts_per_item": 1, "max_iterations": 50, "max_wall_clock_seconds": 300}
-        root, stage_root = self.make(limits=limits, executor=python_command("raise SystemExit(0)"))
+        marker_tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(marker_tmp.cleanup)
+        round_marker = Path(marker_tmp.name) / "no-change-round"
+        executor = reporting_python_command(
+            "from pathlib import Path; "
+            f"marker = Path({str(round_marker)!r}); "
+            "marker.parent.mkdir(parents=True, exist_ok=True); "
+            "round_number = int(marker.read_text(encoding='utf-8')) + 1 "
+            "if marker.exists() else 1; "
+            "marker.write_text(str(round_number), encoding='utf-8'); "
+            "print(round_number)",
+            [],
+        )
+        root, stage_root = self.make(
+            limits=limits,
+            executor=executor,
+        )
         self.card(stage_root, "W-00000001")
         self.card(stage_root, "W-00000002", parent="W-00000001")
         drive = load_module()
@@ -1404,15 +1420,38 @@ class UnattendedTest(unittest.TestCase):
         drive.escalate_and_commit = stub_escalate_and_commit
 
         self.commit_all(root)
-        rc = drive.run_unattended(
-            self.args(root, "W-00000001"), root, stage_root, time.time()
+        exclude_path = root / git_out(root, "rev-parse", "--git-path", "info/exclude")
+        exclude_path.write_text(
+            exclude_path.read_text(encoding="utf-8") + ".stage/.runtime/\n",
+            encoding="utf-8",
         )
+        started_at = time.time()
+        first_output = io.StringIO()
+        with contextlib.redirect_stdout(first_output):
+            first_rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, started_at
+            )
+        first_state = json.loads(
+            (stage_root / ".runtime/driver/W-00000001.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        second_output = io.StringIO()
+        with contextlib.redirect_stdout(second_output):
+            second_rc = drive.run_unattended(
+                self.args(root, "W-00000001"), root, stage_root, started_at + 2
+            )
 
-        self.assertEqual(0, rc)
+        self.assertEqual(0, first_rc)
+        self.assertIn("work appears complete", first_output.getvalue())
+        self.assertEqual(
+            0,
+            first_state["items"]["W-00000002"]["attempt_count"],
+        )
+        self.assertEqual(0, second_rc, second_output.getvalue())
         self.assertIn(("escalate", "W-00000002"), calls)
         self.assertNotIn(("close", "W-00000002"), calls)
-        self.assertIn("executor left repository state unchanged", escalation_reasons[0])
-        self.assertIn("close_work.py", escalation_reasons[0])
+        self.assertIn("NO-PROGRESS", escalation_reasons[0])
 
     def test_iteration_cap_stops_run(self):
         limits = {"max_attempts_per_item": 3, "max_iterations": 1, "max_wall_clock_seconds": 300}

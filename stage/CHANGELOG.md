@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Stop spending an attempt when a successful executor leaves the repository unchanged and records
+  a valid report. Tell the operator that the work appears complete, keep repeated identical states
+  on the existing no-progress stop path, and restore the current driver-command record when an
+  executor rewrites the shared log from an otherwise intact pre-attempt snapshot. Prior log loss
+  still fails before acceptance or review.
+
 - Make supervised driver time limits count only executor, acceptance, and reviewer command time,
   so human review and discussion between rounds cannot exhaust the next round's budget. Keep the
   unattended driver on wall-clock time, persist attempt and iteration stops before external work so
