@@ -6,3 +6,7 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
+| W-00000190 | passed | completed | not_applicable | [current/W-00000189/W-00000190.md](current/W-00000189/W-00000190.md) |
+| W-00000191 | passed | completed | not_applicable | [current/W-00000189/W-00000191.md](current/W-00000189/W-00000191.md) |
+| W-00000192 | passed | completed | not_applicable | [current/W-00000189/W-00000192.md](current/W-00000189/W-00000192.md) |
+| W-00000194 | passed | completed | not_applicable | [current/W-00000189/W-00000194.md](current/W-00000189/W-00000194.md) |
