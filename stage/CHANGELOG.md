@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Make work registration count affected entry paths, lifecycle changes, replaced responsibilities,
+  and durable results before confirmation, then fold the findings into the existing scope, risks,
+  and success criteria instead of adding another card field.
+
 - Keep repository-specific driver commands from losing prompt terms to shell command substitution
   by removing backtick quoting and checking every configured executor, reviewer, and review-strength
   command in the project settings regression test.
