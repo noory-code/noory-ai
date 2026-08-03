@@ -6,7 +6,9 @@
   a valid report. Tell the operator that the work appears complete, keep repeated identical states
   on the existing no-progress stop path, and restore the current driver-command record when an
   executor rewrites the shared log from an otherwise intact pre-attempt snapshot. Prior log loss
-  still fails before acceptance or review.
+  still fails before acceptance or review, but the driver now restores the lost prior record before
+  rejecting it. Unattended no-change stops also record their reason and manual next action in the
+  shared log.
 
 - Make supervised driver time limits count only executor, acceptance, and reviewer command time,
   so human review and discussion between rounds cannot exhaust the next round's budget. Keep the

@@ -445,8 +445,11 @@ A FAILED executor is discarded and retried or escalated — never committed or c
 lands in the shared work log first, so a human can see what it said before it died; the same holds
 for a reviewer that fails or blocks. Failing to append that record is itself an error, never a
 silent skip. A first successful no-change round with a valid report is not FAILED: the unattended
-loop stops for human verification without spending an attempt. Repeating the same state escalates
-through the existing no-progress path.
+loop records why it stopped and the manual `close_work.py` next action in the shared log, then stops
+for human verification without spending an attempt. Repeating the same state escalates through the
+existing no-progress path. If an executor rewrite loses prior shared-log content, the driver
+restores the pre-executor log and the current driver commands before it records and rejects the
+loss; an intact rewrite is reconciled as described above.
 
 A reviewer's failed criteria flow into the next round rather than being reduced to a pass/block
 word: the next executor turn receives them and must record an explicit accept / decline / defer

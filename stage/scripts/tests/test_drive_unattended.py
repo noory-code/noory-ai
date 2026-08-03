@@ -1436,6 +1436,9 @@ class UnattendedTest(unittest.TestCase):
                 encoding="utf-8"
             )
         )
+        first_log = (
+            stage_root / ".runtime/driver/logs/W-00000002.md"
+        ).read_text(encoding="utf-8")
         second_output = io.StringIO()
         with contextlib.redirect_stdout(second_output):
             second_rc = drive.run_unattended(
@@ -1444,6 +1447,9 @@ class UnattendedTest(unittest.TestCase):
 
         self.assertEqual(0, first_rc)
         self.assertIn("work appears complete", first_output.getvalue())
+        self.assertIn("### Driver notice", first_log)
+        self.assertIn("work appears complete", first_log)
+        self.assertIn("close_work.py", first_log)
         self.assertEqual(
             0,
             first_state["items"]["W-00000002"]["attempt_count"],

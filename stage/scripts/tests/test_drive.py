@@ -2405,6 +2405,9 @@ class DriveTest(unittest.TestCase):
             initialize_git(root)
 
             result = self.run_cli(root, "--execute")
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000002.md"
+            ).read_text(encoding="utf-8")
 
         self.assertNotEqual(0, result.returncode)
         self.assertIn(
@@ -2412,6 +2415,10 @@ class DriveTest(unittest.TestCase):
             result.stdout,
         )
         self.assertNotIn("Acceptance result:", result.stdout)
+        self.assertIn("## 책임 경계", log)
+        self.assertIn("### Driver commands", log)
+        self.assertEqual(0, log.splitlines().count("### Executor report"))
+        self.assertIn("### Driver failure", log)
 
     def test_executor_claim_must_match_driver_observed_paths_before_review(self):
         executor = reporting_python_command(

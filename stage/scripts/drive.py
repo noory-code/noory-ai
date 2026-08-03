@@ -87,6 +87,9 @@ UNCHANGED_REPOSITORY_NOTICE = (
     "executor left repository state unchanged; work appears complete; "
     "attempt was not spent"
 )
+UNCHANGED_REPOSITORY_NEXT_ACTION = (
+    "run close_work.py manually to verify and review the apparent completion"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -1170,6 +1173,26 @@ def append_driver_commands_to_work_log(
         ) from exc
 
 
+def append_driver_notice_to_work_log(
+    log_path: Path,
+    *,
+    reason: str,
+    recommended_next_action: str,
+) -> None:
+    """Append a non-failure reason why an unattended driver stopped."""
+
+    entry = (
+        "\n### Driver notice\n"
+        f"Reason: {reason}\n"
+        f"Recommended next action: {recommended_next_action}\n"
+    )
+    try:
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(entry)
+    except OSError as exc:
+        raise RuntimeError(f"cannot append notice to work log {log_path}: {exc}") from exc
+
+
 def reconcile_executor_work_log(
     log_path: Path,
     durable_log: str,
@@ -1181,10 +1204,12 @@ def reconcile_executor_work_log(
     if current_log.startswith(attempt_log):
         return current_log, ""
     if not current_log.startswith(durable_log):
-        return (
-            current_log,
-            "executor rewrote existing work log content instead of appending",
-        )
+        error = "executor rewrote existing work log content instead of appending"
+        try:
+            log_path.write_text(attempt_log, encoding="utf-8")
+        except OSError as exc:
+            return current_log, f"{error}; cannot restore prior work log: {exc}"
+        return attempt_log, error
     reconciled = attempt_log + current_log[len(durable_log) :]
     try:
         log_path.write_text(reconciled, encoding="utf-8")
@@ -2302,11 +2327,17 @@ def run_unattended(args: argparse.Namespace, project_root: Path, stage_root: Pat
                 ):
                     return 1
                 continue
+            try:
+                append_driver_notice_to_work_log(
+                    log_path,
+                    reason=UNCHANGED_REPOSITORY_NOTICE,
+                    recommended_next_action=UNCHANGED_REPOSITORY_NEXT_ACTION,
+                )
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
             print(f"[{item.item_id}] {UNCHANGED_REPOSITORY_NOTICE}")
-            print(
-                "Recommended next action: run close_work.py manually to verify "
-                "and review the apparent completion"
-            )
+            print(f"Recommended next action: {UNCHANGED_REPOSITORY_NEXT_ACTION}")
             return 0
 
         # A FAILED executor must never proceed to commit/close. Discard the failed
@@ -3289,10 +3320,7 @@ def main() -> int:
             )
             return 1
         print(f"Outcome: {UNCHANGED_REPOSITORY_NOTICE}")
-        print(
-            "Recommended next action: run close_work.py manually to verify "
-            "and review the apparent completion"
-        )
+        print(f"Recommended next action: {UNCHANGED_REPOSITORY_NEXT_ACTION}")
         return 0
 
     escalation_reasons: list[str] = []

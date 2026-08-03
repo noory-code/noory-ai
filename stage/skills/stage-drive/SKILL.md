@@ -228,10 +228,11 @@ remain shared process-wide state. Wait for the step to stop before changing the 
 
 Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
 fingerprint, and an independent reviewer JSON verdict with failed criteria. All three recommend
-`escalate_work.py`; the driver never escalates itself and never claims completion. When the
-exhausted item is an action, escalation also blocks its story and creates the human decision at
-that story: the next instruction is to re-decompose the story, not to rerun the same action. Other
-stories in the epic continue.
+`escalate_work.py`; the driver never escalates itself and never claims verified completion. A first
+successful no-change round is the narrower exception: it says the work appears complete and sends
+the human through explicit verification and review. When the exhausted item is an action,
+escalation also blocks its story and creates the human decision at that story: the next instruction
+is to re-decompose the story, not to rerun the same action. Other stories in the epic continue.
 
 **A failed verdict is where supervised and unattended part.** The round trip is the same in both —
 the next executor dispositions each failed criterion as accept, decline, or defer, with a one-line
@@ -254,10 +255,11 @@ only the JSON verdict does.
 
 `NO-PROGRESS` means the fingerprint — staged and unstaged tracked changes against `HEAD`, the path
 and content hash of each untracked non-ignored file, and the acceptance output — is identical to
-the previous attempt. Separately, an attempt whose repository state is identical before and after
-the executor fails immediately, even on its first run and regardless of exit code. If the work was
-already complete before the step, close the card manually with `close_work.py` so verification and
-review still run through an explicit path.
+the previous attempt. Separately, a successful executor that leaves the repository state unchanged
+must append a valid report. The first such round does not spend an attempt: the driver says the work
+appears complete and stops before acceptance or review. Close the card manually with
+`close_work.py` so verification and review still run through an explicit path. The same unchanged
+repository state in a later round stops as `NO-PROGRESS`.
 
 ## `--unattended` — read this before using it
 
