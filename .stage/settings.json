@@ -4,7 +4,8 @@
     "official/canon/vocabulary.md",
     "operations/verification.md",
     "index.md",
-    "state/current.md"
+    "state/current.md",
+    "proposals/index.md"
   ],
   "governance": {
     "exclude_paths": [],

@@ -158,3 +158,5 @@
 | W-00000187 | completed | [items/W-00000187/_story.md](items/W-00000187/_story.md) |
 | W-00000189 | completed | [items/W-00000189/_story.md](items/W-00000189/_story.md) |
 | W-00000188 | completed | [items/W-00000188/_story.md](items/W-00000188/_story.md) |
+| W-00000154 | rejected | [items/W-00000154/_story.md](items/W-00000154/_story.md) |
+| W-00000195 | completed | [items/W-00000195/_story.md](items/W-00000195/_story.md) |
