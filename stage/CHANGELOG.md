@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Show each open milestone's completion criteria before top-level work registration and ask
+  whether the proposed work moves one of them, while retaining the count-only CLI for existing
+  callers.
+
 - Keep new-project driver instructions safe to copy into shell-executed command strings by
   removing every backtick from the distributed settings template and checking the whole file.
 

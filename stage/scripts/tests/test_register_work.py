@@ -29,7 +29,11 @@ BACKLOG_WITH_TRAILING_SECTION = (
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
-    if "--scale" not in args and "--count-open-milestones" not in args:
+    if (
+        "--scale" not in args
+        and "--count-open-milestones" not in args
+        and "--list-open-milestones" not in args
+    ):
         args = ("--scale", "story", *args)
     return subprocess.run(
         [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
@@ -112,6 +116,57 @@ class RegisterWorkTest(unittest.TestCase):
             lines.append(f"authorizes: {authorizes}")
         lines += ["---", f"# {decision_id} Exception", ""]
         (decisions / f"{decision_id}.md").write_text("\n".join(lines), encoding="utf-8")
+
+    def write_open_milestone(
+        self,
+        root: Path,
+        *,
+        milestone_id: str = "M-00000001",
+        title: str = "Stable delivery",
+        completion_criteria: str = "Users receive every release without interruption.",
+    ) -> None:
+        milestones = root / ".stage/roadmap/milestones"
+        decisions = root / ".stage/decisions/pending"
+        milestones.mkdir(parents=True, exist_ok=True)
+        decisions.mkdir(parents=True, exist_ok=True)
+        decision_id = "DE-00000001"
+        (milestones / f"{milestone_id}.md").write_text(
+            "\n".join(
+                [
+                    "---",
+                    f"id: {milestone_id}",
+                    "theme: TH-00000001",
+                    f"decision_refs: {decision_id}",
+                    "---",
+                    "",
+                    f"# {milestone_id} {title}",
+                    "",
+                    "## Completion criteria",
+                    "",
+                    completion_criteria,
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        (decisions / f"{decision_id}.md").write_text(
+            "\n".join(
+                [
+                    "---",
+                    f"id: {decision_id}",
+                    "status: decided",
+                    "transition: pursuit",
+                    f"roadmap_item: {milestone_id}",
+                    "predecessor:",
+                    "supersedes:",
+                    "---",
+                    "",
+                    f"# {decision_id} Pursue {milestone_id}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
 
     def test_venue_derived_from_declared_routing(self):
         tmp, root = self.make()
@@ -363,6 +418,38 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertEqual(0, epic.returncode, epic.stderr)
         self.assertEqual(1, story.returncode)
         self.assertIn("top-level", story.stderr)
+
+    def test_list_open_milestones_shows_title_and_completion_criteria(self):
+        tmp, root = self.make()
+        with tmp:
+            self.write_open_milestone(root)
+            result = run(root, "--list-open-milestones")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("M-00000001 Stable delivery", result.stdout)
+        self.assertIn(
+            "Completion criteria: Users receive every release without interruption.",
+            result.stdout,
+        )
+
+    def test_list_open_milestones_says_when_none_are_open(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root, "--list-open-milestones")
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("No open milestones.", result.stdout.strip())
+
+    def test_skill_checks_which_completion_criterion_work_moves(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        list_step = skill.index("--list-open-milestones")
+        question_step = skill.index(
+            "does this work move one of these milestone completion criteria?"
+        )
+
+        self.assertLess(list_step, question_step)
+        self.assertIn("show the command output", skill)
 
     def test_autonomous_registration_requires_acceptance(self):
         tmp, root = self.make()

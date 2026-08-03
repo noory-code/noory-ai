@@ -67,6 +67,7 @@ class RoadmapRecord:
     title: str
     theme: str
     period: str
+    completion_criteria: str
     decision_refs: tuple[str, ...]
 
 
@@ -129,6 +130,7 @@ def load_roadmap_record(path: Path) -> RoadmapRecord:
         title=_heading_title(path, record_id),
         theme=(fields.get("theme") or "").strip(),
         period=_section(path, "Period"),
+        completion_criteria=_section(path, "Completion criteria"),
         decision_refs=split_scope(fields.get("decision_refs", "")),
     )
 

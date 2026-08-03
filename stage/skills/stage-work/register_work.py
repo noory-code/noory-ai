@@ -463,24 +463,50 @@ def count_open_milestones(stage_root: Path) -> int:
     return sum(milestone_decision_chain_is_open(stage_root, path) for path in paths)
 
 
-def _run_open_milestone_count_mode(argv: list[str]) -> int | None:
+def render_open_milestones(stage_root: Path) -> str:
+    """Show the outcome each open milestone expects before work attribution."""
+
+    if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
+        return "No open milestones."
+    milestones = stage_roadmap.active_milestones(stage_root)
+    if not milestones:
+        return "No open milestones."
+    lines = ["Open milestones:"]
+    for milestone in milestones:
+        title = f" {milestone.title}" if milestone.title else ""
+        criteria = milestone.completion_criteria or "(empty)"
+        lines.extend(
+            (
+                f"- {milestone.record_id}{title}",
+                f"  Completion criteria: {criteria}",
+            )
+        )
+    return "\n".join(lines)
+
+
+def _run_open_milestone_mode(argv: list[str]) -> int | None:
     """Keep the established required registration arguments byte-for-byte intact."""
 
-    if "--count-open-milestones" not in argv:
+    if not {"--count-open-milestones", "--list-open-milestones"}.intersection(argv):
         return None
-    parser = argparse.ArgumentParser(description="Count open Stage milestones.")
+    parser = argparse.ArgumentParser(description="Inspect open Stage milestones.")
     parser.add_argument("--project-root", default=".")
-    parser.add_argument("--count-open-milestones", action="store_true", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--count-open-milestones", action="store_true")
+    mode.add_argument("--list-open-milestones", action="store_true")
     args = parser.parse_args(argv)
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
-    print(count_open_milestones(stage_root))
+    if args.count_open_milestones:
+        print(count_open_milestones(stage_root))
+    else:
+        print(render_open_milestones(stage_root))
     return 0
 
 
 def main() -> int:
-    count_result = _run_open_milestone_count_mode(sys.argv[1:])
-    if count_result is not None:
-        return count_result
+    milestone_result = _run_open_milestone_mode(sys.argv[1:])
+    if milestone_result is not None:
+        return milestone_result
 
     parser = argparse.ArgumentParser(description="Scaffold a Stage work item + active.md row.")
     parser.add_argument("--project-root", default=".")

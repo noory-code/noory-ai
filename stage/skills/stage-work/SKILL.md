@@ -59,21 +59,22 @@ Do not ask a milestone question for a nested story or action. Before confirming 
 or story, run:
 
 ```text
-python3 stage/skills/stage-work/register_work.py --project-root <root> --count-open-milestones
+python3 stage/skills/stage-work/register_work.py --project-root <root> --list-open-milestones
 ```
 
-- If the command prints `0`, ask exactly: "there is no open milestone; create one before
-  registering this top-level item?" If the human answers yes, use `stage-roadmap` to create and
-  begin pursuit of the milestone before registration. If the human answers no, omit
+- If the command prints `No open milestones.`, ask exactly: "there is no open milestone; create
+  one before registering this top-level item?" If the human answers yes, use `stage-roadmap` to
+  create and begin pursuit of the milestone before registration. If the human answers no, omit
   `--milestone`.
-- If the command prints an integer greater than `0`, ask exactly: "does this belong to a
-  milestone?" If the human selects one milestone, pass its single `M-NNNNNNNN` id through
-  `--milestone`. If the human answers no, omit `--milestone`.
+- If the command lists open milestones, show the command output, including each completion
+  criterion, then ask exactly: "does this work move one of these milestone completion criteria?"
+  If the human answers yes, ask them to select that milestone and pass its single `M-NNNNNNNN` id
+  through `--milestone`. If the human answers no, omit `--milestone`.
 - Never pass more than one milestone id. `milestone:` cardinality is `0..1`.
 
-The detector counts only milestones whose valid decision chain has an effective pursuit head
-and no effective closure. A planned milestone, an invalid chain, or a milestone with no decision
-record never triggers the question.
+The listing includes only milestones whose valid decision chain has an effective pursuit head and
+no effective closure. A planned milestone, an invalid chain, or a milestone with no decision record
+never triggers the question.
 
 ## Count affected places before drafting
 

@@ -540,10 +540,11 @@ the driver idle between them.
   fail-closed with the diff shown. Reopening requires a superseding decision. A W id in any
   effective closure snapshot cannot change its `milestone:` field without a decision
   superseding that closure — enforced preventively by the write gate, not audit-only.
-- Discovery: the stage-work skill asks the milestone question iff at least one open milestone
-  exists; roadmap creation is user-initiated via the stage-roadmap skill; session context
-  renders the active-milestone table (without open-card counts in v1; an empty table renders
-  honestly).
+- Discovery: the stage-work skill shows every open milestone's completion criteria and asks which
+  criterion the proposed top-level work moves before attribution. When no milestone is open, it
+  asks whether to create one instead. Roadmap creation is user-initiated via the stage-roadmap
+  skill; session context renders the active-milestone table (without open-card counts in v1; an
+  empty table renders honestly).
 
 ## Migration contract (v3 → v4)
 
