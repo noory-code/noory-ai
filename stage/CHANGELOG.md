@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.56.0 — 2026-08-03
+
 - Stop spending an attempt when a successful executor leaves the repository unchanged and records
   a valid report. Tell the operator that the work appears complete, keep repeated identical states
   on the existing no-progress stop path, and restore the current driver-command record when an
