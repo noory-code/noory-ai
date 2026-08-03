@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keep repository-specific executor prompts from losing promotion terms to shell command
+  substitution by removing backtick quoting and pinning the no-backtick contract in the project
+  settings regression test.
+
 - Run unattended drivers in per-run Git worktrees so executor retries, cleanup, and commits cannot
   delete or absorb edits made concurrently in the human checkout. Carry only the selected
   subtree's prior driver state into the worktree, return its runtime evidence afterward, remove a

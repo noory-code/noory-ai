@@ -135,6 +135,13 @@ class TemplateV4Test(unittest.TestCase):
                 )
                 self.assertIn(expected_model, command)
 
+    def test_project_executor_prompts_do_not_run_backtick_command_substitution(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+
+        for venue, command in settings["executors"].items():
+            with self.subTest(venue=venue):
+                self.assertNotIn("`", command)
+
     def test_v4_settings_template_exposes_all_eight_model_pinning_positions(self):
         settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
         settings = json.loads(
@@ -269,22 +276,28 @@ class TemplateV4Test(unittest.TestCase):
                 )
 
     def test_executor_prompts_require_a_final_promotion_choice(self):
-        instruction = (
-            "Before exiting, set the selected card's frontmatter `promotion` to the actual "
+        project_instruction = (
+            "Before exiting, set the selected card's frontmatter 'promotion' to the actual "
             "final choice."
         )
-        promoted_instruction = (
-            "After every declared promotion path has been written, use `promoted` so the audit "
+        project_promoted_instruction = (
+            "After every declared promotion path has been written, use 'promoted' so the audit "
             "can distinguish choosing promotion from completing it."
+        )
+        template_instruction = project_instruction.replace("'promotion'", "`promotion`")
+        template_promoted_instruction = project_promoted_instruction.replace(
+            "'promoted'", "`promoted`"
         )
         project_settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
         project_commands = project_settings["executors"].values()
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
 
-        for command in (*project_commands, template_settings):
+        for command in project_commands:
             with self.subTest(command=command):
-                self.assertIn(instruction, command)
-                self.assertIn(promoted_instruction, command)
+                self.assertIn(project_instruction, command)
+                self.assertIn(project_promoted_instruction, command)
+        self.assertIn(template_instruction, template_settings)
+        self.assertIn(template_promoted_instruction, template_settings)
 
     def test_close_work_comments_do_not_describe_removed_block_scanning(self):
         source = (
