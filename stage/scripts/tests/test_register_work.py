@@ -496,6 +496,17 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn("name what was checked", skill)
         self.assertIn("Show the human the affected-place count", skill)
 
+    def test_skill_covers_each_included_outcome_with_success_criteria_before_confirmation(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        coverage_step = skill.index("## Cover included outcomes with success criteria")
+        confirm_step = skill.index("## Confirm, then register")
+
+        self.assertLess(coverage_step, confirm_step)
+        self.assertIn("every outcome allowed by `## Scope` > `### Included`", skill)
+        self.assertIn("Success criterion that proves the outcome", skill)
+        self.assertIn("Do not confirm or register while any included outcome is unmatched", skill)
+
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()
         with tmp:

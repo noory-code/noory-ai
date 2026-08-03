@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Make work registration pair every included outcome with a success criterion before confirmation,
+  so a card cannot permit a result that its reviewer was never asked to judge.
+
 - Make work registration count affected entry paths, lifecycle changes, replaced responsibilities,
   and durable results before confirmation, then fold the findings into the existing scope, risks,
   and success criteria instead of adding another card field.
