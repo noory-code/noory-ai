@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000185
+promotion: not_applicable
 review: not_required
 scope: stage/
 promotes:
@@ -60,8 +61,40 @@ decision_refs:
 
 ## Next action
 
-`python3 stage/scripts/release_plugin.py stage --bump minor` 를 돌린다. 그다음 새 버전이
-잡히는지 확인한다.
+없다. 올렸고 불러와지는 것까지 봤다.
+
+## Verification
+
+### 실측 — 2026-08-03
+
+- **버전이 같다** — 변경 기록의 `## 0.56.0 — 2026-08-03`, 두 매니페스트 모두 `0.56.0`.
+  쌓여 있던 22개가 그 이름을 받았다.
+- **원격에 올라갔다** — `61028d0c`.
+- **불러와지는 것을 봤다** — Claude 쪽은 저장소를 직접 읽어 이미 0.56.0 이었다. **코덱스 쪽은
+  0.55.1 에 멈춰 있었다.** 코덱스 작업을 한 번 돌리자 캐시가 0.56.0 으로 맞춰졌고
+  `~/.codex/plugins/cache/noory-ai/stage/0.56.0/hooks/stage_guard.py` 가 실제로 생겼다 —
+  드라이버의 사전 확인 명령이 보는 바로 그 경로다.
+
+**새 통과 기준이 첫 사용에서 값을 냈다.** "올렸으면 끝"으로 정했다면 코덱스가 옛 버전을 든
+상태가 통과로 기록됐을 것이다.
+
+- 릴리스 전 검증: 훅 356건, 스크립트 553건 통과. `audit_stage.py` 오류 0 · 경고 0.
+
+### Executed at close — 2026-08-03
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Related truth
 
