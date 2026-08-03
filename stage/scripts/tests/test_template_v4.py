@@ -158,6 +158,11 @@ class TemplateV4Test(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertNotIn("`", command)
 
+    def test_v4_settings_template_does_not_suggest_backtick_command_substitution(self):
+        settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
+
+        self.assertNotIn("`", settings_text)
+
     def test_v4_settings_template_exposes_all_eight_model_pinning_positions(self):
         settings_text = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
         settings = json.loads(
@@ -300,10 +305,6 @@ class TemplateV4Test(unittest.TestCase):
             "After every declared promotion path has been written, use 'promoted' so the audit "
             "can distinguish choosing promotion from completing it."
         )
-        template_instruction = project_instruction.replace("'promotion'", "`promotion`")
-        template_promoted_instruction = project_promoted_instruction.replace(
-            "'promoted'", "`promoted`"
-        )
         project_settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
         project_commands = project_settings["executors"].values()
         template_settings = (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8")
@@ -312,8 +313,8 @@ class TemplateV4Test(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertIn(project_instruction, command)
                 self.assertIn(project_promoted_instruction, command)
-        self.assertIn(template_instruction, template_settings)
-        self.assertIn(template_promoted_instruction, template_settings)
+        self.assertIn(project_instruction, template_settings)
+        self.assertIn(project_promoted_instruction, template_settings)
 
     def test_close_work_comments_do_not_describe_removed_block_scanning(self):
         source = (
