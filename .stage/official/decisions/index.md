@@ -53,3 +53,4 @@
 | DE-00000052 | promoted | 사용자 | [records/DE-00000052.md](records/DE-00000052.md) |
 | DE-00000053 | promoted | 사용자 | [records/DE-00000053.md](records/DE-00000053.md) |
 | DE-00000054 | promoted | 사용자 | [records/DE-00000054.md](records/DE-00000054.md) |
+| DE-00000055 | promoted | 사용자 | [records/DE-00000055.md](records/DE-00000055.md) |

@@ -5,16 +5,18 @@ kind: design
 venue: claude
 milestone: M-00000001
 autonomous: false
-acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+acceptance:
+  - "python3 stage/scripts/audit_stage.py"
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000186
+promotion: promoted
 review: not_required
 scope: .stage/, stage/docs/
-promotes:
-decision_refs:
+promotes: .stage/official/decisions/records/DE-00000055.md, .stage/official/decisions/index.md
+decision_refs: DE-00000055
 ---
 
 # W-00000186 실행자마다 체크아웃을 따로 둘지 정한다
@@ -59,8 +61,29 @@ decision_refs:
 
 ## Next action
 
-무인 실행이 이미 격리된 가지에서 도는 방식을 읽는다. 감독 실행에 같은 것을 씌우는 값이 얼마인지
-거기서 나온다.
+없다. DE-00000055 가 정했다.
+
+## Progress
+
+### 실측 — 2026-08-03
+
+**무인 실행의 "격리"는 가지만 가른다. 작업 디렉터리는 같다.** `--unattended` 는 새 가지를 만들어
+거기에 커밋할 뿐이고, 파일이 놓이는 자리는 사람이 쓰는 그 자리다(`drive.py:2040`).
+
+그리고 **실행자 시도가 실패하면 커밋 안 된 변경을 전부 되돌리고 지운다** —
+`git checkout -- .` 과 `git clean -fdq`(`drive.py:1934`, 호출은 `2354`·`2357`·`2395`).
+셋 다 무인 경로 안에만 있다. 감독 실행에는 이 동작이 없다.
+
+| | 사람이 도중에 파일을 만지면 |
+|---|---|
+| 감독 실행 | 실행자 몫으로 **섞인다** (O-00000013) |
+| 무인 실행 | **지워진다** |
+
+**O-00000013 의 피해 문장이 무인 실행에 대해서는 약하게 적혀 있었다.** 섞이는 것이 아니라
+없어진다.
+
+무인 실행은 시작할 때 작업 디렉터리가 깨끗할 것을 요구한다(`2031`). 그래서 "시작할 때는
+깨끗했는데 도중에 사람이 만졌다"가 정확히 그 상황이다.
 
 ## Related truth
 
@@ -77,6 +100,22 @@ decision_refs:
 
 ## Verification
 
+
+### Executed at close — 2026-08-03
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 

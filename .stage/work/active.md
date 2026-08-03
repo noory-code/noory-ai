@@ -6,4 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000186 | design | claude | 사람이 만진 변경과 실행자가 만든 변경을 지금 구조로는 가를 수 없다. | active | Claude | [current/W-00000186/_story.md](current/W-00000186/_story.md) |
+| W-00000187 | development | codex | 무인 실행이 사람과 같은 작업 디렉터리를 써서 실패할 때마다 사람의 편집을 지운다. | active | Claude | [current/W-00000187/_story.md](current/W-00000187/_story.md) |
