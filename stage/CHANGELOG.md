@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Keep repository-specific executor prompts from losing promotion terms to shell command
-  substitution by removing backtick quoting and pinning the no-backtick contract in the project
-  settings regression test.
+- Keep repository-specific driver commands from losing prompt terms to shell command substitution
+  by removing backtick quoting and checking every configured executor, reviewer, and review-strength
+  command in the project settings regression test.
 
 - Run unattended drivers in per-run Git worktrees so executor retries, cleanup, and commits cannot
   delete or absorb edits made concurrently in the human checkout. Carry only the selected

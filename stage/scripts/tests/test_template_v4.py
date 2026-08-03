@@ -135,11 +135,27 @@ class TemplateV4Test(unittest.TestCase):
                 )
                 self.assertIn(expected_model, command)
 
-    def test_project_executor_prompts_do_not_run_backtick_command_substitution(self):
+    def test_project_driver_commands_do_not_run_backtick_command_substitution(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        commands = {
+            **{
+                f"executor.{name}": command
+                for name, command in settings["executors"].items()
+            },
+            **{
+                f"reviewer.{name}": command
+                for name, command in settings["review"]["reviewers"].items()
+            },
+            **{
+                f"strength.{name}": command
+                for name, command in settings["review"]["strengths"].items()
+                if command is not None
+            },
+        }
 
-        for venue, command in settings["executors"].items():
-            with self.subTest(venue=venue):
+        self.assertEqual(8, len(commands))
+        for name, command in commands.items():
+            with self.subTest(name=name):
                 self.assertNotIn("`", command)
 
     def test_v4_settings_template_exposes_all_eight_model_pinning_positions(self):
