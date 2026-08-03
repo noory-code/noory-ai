@@ -7,5 +7,4 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000181 | release | claude | 오늘 실린 변경이 아직 어느 프로젝트에도 안 닿는다. | active | Claude | [current/W-00000181/_story.md](current/W-00000181/_story.md) |
-| W-00000182 | development | codex | 드라이버가 옳게 한 일을 실패로 세고, 그때마다 사람이 손으로 우회한다. | active | Claude | [current/W-00000182/_story.md](current/W-00000182/_story.md) |
-| W-00000185 | development | codex | 드라이버가 도는 동안 사람이 같은 체크아웃을 만지면 그 변경이 실행자가 한 것으로 기록된다. | active | Claude | [current/W-00000182/W-00000185.md](current/W-00000182/W-00000185.md) |
+| W-00000186 | design | claude | 사람이 만진 변경과 실행자가 만든 변경을 지금 구조로는 가를 수 없다. | active | Claude | [current/W-00000186/_story.md](current/W-00000186/_story.md) |
