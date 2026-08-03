@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/drive_parallel.py, stage/scripts/tests/, stage/docs/, stage/operations/, stage/CHANGELOG.md
 promotes:
@@ -65,8 +65,15 @@ decision_refs:
 
 ## Next action
 
-무인 실행이 지금 가지를 만드는 자리를 읽고, 같은 자리에서 디렉터리도 만들게 한다. 되돌리고
-지우는 세 자리(`drive.py:2354`·`2357`·`2395`)가 그 안에서만 돌게 한다.
+**없는 것을 만드는 게 아니다. 있는 방식을 옮긴다.** `drive_parallel.py` 가 이미 카드마다 자기
+git worktree 를 만들어 감독 실행을 병렬로 돌린다(그 파일 첫 줄이 그렇게 적고 있다). 무인
+실행만 가지를 나누고 디렉터리를 공유한다.
+
+먼저 `drive_parallel.py` 가 worktree 를 만들고 치우는 방식을 읽고, 같은 것을 무인 경로에
+쓴다. 되돌리고 지우는 세 자리(`drive.py:2354`·`2357`·`2395`)가 그 안에서만 돌게 한다.
+
+**둘이 같은 것을 두 번 만들지 않게 한다** — 공통으로 뺄 수 있으면 빼고, 못 빼는 이유가 있으면
+적는다.
 
 ## Related truth
 
