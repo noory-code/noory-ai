@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: approved
 review: not_required
 scope: .stage/
 promotes: .stage/official/decisions/records/DE-00000051.md, .stage/official/decisions/records/DE-00000030.md
@@ -81,3 +81,7 @@ DE-00000051 첫머리에 한 줄을 넣는다. 그것이 공식 기록이라 승
 
 
 ## Promotion decision
+
+`approved` — `promotes` 가 가리키는 두 공식 기록에 넣을 문장은 정해졌다. 실제 쓰기는 이 카드를
+닫은 뒤 승격 의도로 한다. 승격 게이트가 닫힌 카드에만 의도를 내주기 때문이다. 문장 원문은 작업
+로그에 있다.
