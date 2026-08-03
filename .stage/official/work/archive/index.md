@@ -155,3 +155,4 @@
 | W-00000182 | completed | [items/W-00000182/_story.md](items/W-00000182/_story.md) |
 | W-00000181 | completed | [items/W-00000181/_story.md](items/W-00000181/_story.md) |
 | W-00000186 | completed | [items/W-00000186/_story.md](items/W-00000186/_story.md) |
+| W-00000187 | completed | [items/W-00000187/_story.md](items/W-00000187/_story.md) |
