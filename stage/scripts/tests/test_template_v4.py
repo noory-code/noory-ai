@@ -14,6 +14,12 @@ V4_LOCALE_ROOT = PLUGIN_ROOT / "templates" / "v4" / "locales" / "ko"
 
 EXTRA_V4_FILES = {
     Path("decisions/index.md"),
+    Path("official/decisions/archive/README.md"),
+    Path("official/decisions/archive/index.md"),
+    Path("official/proposals/archive/README.md"),
+    Path("official/proposals/archive/index.md"),
+    Path("official/state/archive/README.md"),
+    Path("official/state/archive/index.md"),
     Path("official/work/archive/items/_epic.md"),
     Path("official/work/archive/items/_story.md"),
     Path("roadmap/milestones/index.md"),

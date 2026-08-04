@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Register decision, proposal, and state archive zones as official topology, keep references to
+  moved records resolvable, create routed archive templates for new projects, and make the audit
+  reject observations, questions, and proposals that omit required record sections.
+
 - Settle where a finished record lives and who moves it there: a spent one-shot pass, a settled
   proposal, and a closed observation or question each leave their live drawer for the family's
   archive zone under `official/`, so a reader judges by location instead of opening the file.

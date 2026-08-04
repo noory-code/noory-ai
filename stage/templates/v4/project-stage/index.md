@@ -31,6 +31,9 @@ This document routes project context to the correct Stage location.
 | Model interfaces | `official/model/interfaces/` |
 | Official decisions | `official/decisions/index.md` |
 | Official decision records | `official/decisions/records/` |
+| Archived decisions | `official/decisions/archive/` |
+| Archived proposals | `official/proposals/archive/` |
+| Archived state records | `official/state/archive/` |
 | Archived work index | `official/work/archive/index.md` |
 | Archived work items | `official/work/archive/items/` |
 | Archived retrospectives | `official/work/archive/retrospectives/` |
@@ -62,4 +65,3 @@ This document routes project context to the correct Stage location.
 ## Core rule
 
 Planned artifacts are not truth. Current artifacts are not truth. Only official artifacts are truth.
-

@@ -1540,6 +1540,102 @@ class StageAuditTest(unittest.TestCase):
         self.assertEqual(own[0].severity, "error")
         self.assertIn("state/questions", own[0].message)
 
+    def test_closed_records_are_owned_by_their_archive_locations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            records = (
+                ("official/decisions/archive/DE-00000001.md", "DE-00000001"),
+                ("official/proposals/archive/P-00000001.md", "P-00000001"),
+                ("official/state/archive/O-00000001.md", "O-00000001"),
+                ("official/state/archive/Q-00000001.md", "Q-00000001"),
+            )
+            for relative, record_id in records:
+                self.write_record(root, relative, record_id)
+
+            findings = audit_stage.Audit(root).run()
+
+        ownership_paths = {
+            finding.path for finding in findings if finding.code == "OWN001"
+        }
+        for relative, _record_id in records:
+            with self.subTest(relative=relative):
+                self.assertNotIn(f".stage/{relative}", ownership_paths)
+
+    def test_observation_question_and_proposal_require_status_sections(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            records = (
+                (
+                    "state/observations/O-00000001.md",
+                    "O-00000001",
+                    "# O-00000001 Title\n\n## Observation\n\nValue.\n\n"
+                    "## Evidence\n\nProof.\n\n## Impact\n\nImpact.\n\n"
+                    "## Next action\n\nAct.\n",
+                    "Status",
+                ),
+                (
+                    "official/state/archive/O-00000002.md",
+                    "O-00000002",
+                    "# O-00000002 Title\n\n## Observation\n\nValue.\n\n"
+                    "## Evidence\n\nProof.\n\n## Impact\n\nImpact.\n\n"
+                    "## Next action\n\nAct.\n",
+                    "Status",
+                ),
+                (
+                    "state/questions/Q-00000001.md",
+                    "Q-00000001",
+                    "# Q-00000001 Title\n\n## Question\n\nWhy?\n\n"
+                    "## Decision needed\n\nChoose.\n\n## Blocked work\n\nW.\n\n"
+                    "## Answer owner\n\nOwner.\n",
+                    "Status",
+                ),
+                (
+                    "official/state/archive/Q-00000002.md",
+                    "Q-00000002",
+                    "# Q-00000002 Title\n\n## Question\n\nWhy?\n\n"
+                    "## Decision needed\n\nChoose.\n\n## Blocked work\n\nW.\n\n"
+                    "## Answer owner\n\nOwner.\n",
+                    "Status",
+                ),
+                (
+                    "proposals/P-00000001.md",
+                    "P-00000001",
+                    "# P-00000001 Title\n\n## Proposal\n\nChange.\n\n"
+                    "## Purpose\n\nValue.\n\n## Alternatives\n\nNone.\n\n"
+                    "## Cost\n\nLow.\n\n## Risks\n\nNone.\n\n"
+                    "## Decision criteria\n\nCriteria.\n",
+                    "Status",
+                ),
+                (
+                    "official/proposals/archive/P-00000002.md",
+                    "P-00000002",
+                    "# P-00000002 Title\n\n## Proposal\n\nChange.\n\n"
+                    "## Purpose\n\nValue.\n\n## Alternatives\n\nNone.\n\n"
+                    "## Cost\n\nLow.\n\n## Risks\n\nNone.\n\n"
+                    "## Decision criteria\n\nCriteria.\n",
+                    "Status",
+                ),
+            )
+            for relative, record_id, body, _missing in records:
+                path = self.write_record(root, relative, record_id)
+                path.write_text(
+                    f"---\nid: {record_id}\ntitle: T\n---\n\n{body}",
+                    encoding="utf-8",
+                )
+
+            findings = audit_stage.Audit(root).run()
+
+        shape_findings = [finding for finding in findings if finding.code == "FAMILY002"]
+        self.assertEqual(6, len(shape_findings))
+        by_path = {finding.path: finding for finding in shape_findings}
+        for relative, _record_id, _body, missing in records:
+            with self.subTest(relative=relative):
+                finding = by_path[f".stage/{relative}"]
+                self.assertEqual("error", finding.severity)
+                self.assertIn(f"`## {missing}`", finding.message)
+
     def test_duplicate_record_id_across_files_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -221,6 +221,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "BACKLOG008",
                 "BACKLOG008",
                 "BACKLOG008",
+                "FAMILY002",
             ],
             [finding.code for finding in findings],
         )

@@ -119,6 +119,32 @@ class InitStageGitignoreTest(unittest.TestCase):
         self.assertIn("//", settings_text)
         self.assertIn('"language": "ko"', settings_text)
 
+    def test_new_project_gets_closed_record_archives_and_routes(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            stage_root = root / ".stage"
+            archive_roots = (
+                stage_root / "official" / "decisions" / "archive",
+                stage_root / "official" / "proposals" / "archive",
+                stage_root / "official" / "state" / "archive",
+            )
+            for archive_root in archive_roots:
+                with self.subTest(archive_root=archive_root):
+                    self.assertTrue((archive_root / "README.md").is_file())
+                    self.assertTrue((archive_root / "index.md").is_file())
+
+            index = (stage_root / "index.md").read_text(encoding="utf-8")
+
+        for route in (
+            "`official/decisions/archive/`",
+            "`official/proposals/archive/`",
+            "`official/state/archive/`",
+        ):
+            with self.subTest(route=route):
+                self.assertIn(route, index)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -239,6 +239,7 @@ class StageTopologyTests(unittest.TestCase):
             (
                 "decisions/pending/DE-00000009.md",
                 "official/decisions/records/DE-00000009.md",
+                "official/decisions/archive/DE-00000009.md",
             ),
             current.candidate_paths,
         )
@@ -246,6 +247,49 @@ class StageTopologyTests(unittest.TestCase):
         self.assertTrue(legacy.legacy)
         self.assertEqual(
             ("official/decisions/records/D-00000009.md",), legacy.candidate_paths
+        )
+
+    def test_closed_record_archives_are_official_reference_locations(self):
+        archives = (
+            ("decisions", "archive", "official/decisions/archive"),
+            ("proposals", "archive", "official/proposals/archive"),
+            ("state", "archive", "official/state/archive"),
+        )
+        for family, zone_name, path in archives:
+            with self.subTest(family=family):
+                zone = stage_topology.get_zone(family, zone_name)
+                self.assertEqual("official", zone.lifecycle_state)
+                self.assertEqual((f"{path}/index.md",), zone.index_surfaces)
+                self.assertEqual("official", stage_topology.resolve_lifecycle(f"{path}/record.md"))
+
+        expected = {
+            "O-00000009": (
+                "state/observations/O-00000009.md",
+                "official/state/archive/O-00000009.md",
+            ),
+            "Q-00000009": (
+                "state/questions/Q-00000009.md",
+                "official/state/archive/Q-00000009.md",
+            ),
+            "P-00000009": (
+                "proposals/P-00000009.md",
+                "official/proposals/archive/P-00000009.md",
+            ),
+        }
+        for record_id, paths in expected.items():
+            with self.subTest(record_id=record_id):
+                self.assertEqual(
+                    paths,
+                    stage_topology.resolve_artifact_reference(record_id).candidate_paths,
+                )
+
+        self.assertEqual(
+            ("state/assumptions/A-00000009.md",),
+            stage_topology.resolve_artifact_reference("A-00000009").candidate_paths,
+        )
+        self.assertEqual(
+            ("state/risks/K-00000009.md",),
+            stage_topology.resolve_artifact_reference("K-00000009").candidate_paths,
         )
 
     def test_relocation_map_is_bijective_and_uses_longest_match(self):

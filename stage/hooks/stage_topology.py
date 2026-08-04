@@ -184,6 +184,14 @@ FAMILIES: dict[str, FamilyRecord] = {
                 resolver="decision-reference",
                 origin="past/decisions/records",
             ),
+            _zone(
+                "archive",
+                "official/decisions/archive",
+                "official",
+                indexes=("official/decisions/archive/index.md",),
+                template="project-stage/official/decisions/archive",
+                resolver="decision-reference",
+            ),
         ),
     ),
     "work": FamilyRecord(
@@ -267,6 +275,14 @@ FAMILIES: dict[str, FamilyRecord] = {
                 resolver="state-prefix",
                 origin="present/state",
             ),
+            _zone(
+                "archive",
+                "official/state/archive",
+                "official",
+                indexes=("official/state/archive/index.md",),
+                template="project-stage/official/state/archive",
+                resolver="state-prefix",
+            ),
         ),
     ),
     "proposals": FamilyRecord(
@@ -280,6 +296,14 @@ FAMILIES: dict[str, FamilyRecord] = {
                 template="project-stage/proposals/_template.md",
                 resolver="proposal-reference",
                 origin="future/proposals",
+            ),
+            _zone(
+                "archive",
+                "official/proposals/archive",
+                "official",
+                indexes=("official/proposals/archive/index.md",),
+                template="project-stage/official/proposals/archive",
+                resolver="proposal-reference",
             ),
         ),
     ),
@@ -618,15 +642,19 @@ def resolve_artifact_reference(artifact_id: str) -> ArtifactReference:
     prefix, _ = parse_artifact_id(artifact_id)
     by_prefix = {
         "W": ("work/planned", "work/current", "official/work/archive/items"),
-        "DE": ("decisions/pending", "official/decisions/records"),
+        "DE": (
+            "decisions/pending",
+            "official/decisions/records",
+            "official/decisions/archive",
+        ),
         "D": ("official/decisions/records",),
         "TH": ("roadmap/themes",),
         "M": ("roadmap/milestones",),
-        "O": ("state/observations",),
-        "Q": ("state/questions",),
+        "O": ("state/observations", "official/state/archive"),
+        "Q": ("state/questions", "official/state/archive"),
         "A": ("state/assumptions",),
         "K": ("state/risks",),
-        "P": ("proposals",),
+        "P": ("proposals", "official/proposals/archive"),
     }
     paths = tuple(
         record_path(Path(root), artifact_id).as_posix()

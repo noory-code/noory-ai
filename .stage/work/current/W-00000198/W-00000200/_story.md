@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_topology.py, stage/scripts/audit_stage.py, stage/scripts/init_stage.py, stage/templates/, stage/hooks/tests/test_stage_topology.py, stage/scripts/tests/test_audit_stage.py, stage/scripts/tests/test_init_stage.py
 promotes:

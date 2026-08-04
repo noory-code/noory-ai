@@ -218,6 +218,7 @@ class Audit:
         if self.topology == ACTIVE_TOPOLOGY_V4:
             self.audit_roadmap(graph)
         self.audit_family_shapes()
+        self.audit_required_record_sections()
         self.audit_record_ownership()
         self.audit_routing()
         self.audit_catalog_sync()
@@ -1211,7 +1212,7 @@ class Audit:
                 self.stage_root / Path(root).parent for root in decision_roots
             }:
                 for path in record_paths(family_root):
-                    if path.name in {"README.md", "_template.md"}:
+                    if path.name in {"README.md", "index.md", "_template.md"}:
                         continue
                     fields = stage_guard.parse_frontmatter(path)
                     missing = [key for key in ("id", "status") if key not in fields]
@@ -1222,6 +1223,52 @@ class Audit:
                             "FAMILY001",
                             "Record does not follow its family frontmatter shape; missing: "
                             + ", ".join(missing),
+                            path,
+                        )
+
+    def audit_required_record_sections(self) -> None:
+        """Current and archived state/proposal records retain their family shape."""
+
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        required_by_prefix = {
+            "O": ("Status",),
+            "Q": ("Status",),
+            "P": ("Status",),
+        }
+        for prefix, required_sections in required_by_prefix.items():
+            candidates = stage_topology.resolve_artifact_reference(
+                f"{prefix}-00000000"
+            ).candidate_paths
+            for root in dict.fromkeys(Path(path).parent for path in candidates):
+                for path in record_paths(self.stage_root / root):
+                    if path.name in {"README.md", "index.md", "_template.md"}:
+                        continue
+                    fields = stage_guard.parse_frontmatter(path)
+                    record_id = (fields.get("id") or "").strip()
+                    if not record_id:
+                        try:
+                            heading = HEADING_ID_RE.search(path.read_text(encoding="utf-8"))
+                        except OSError:
+                            heading = None
+                        record_id = heading.group("record_id") if heading else ""
+                    if not record_id.startswith(f"{prefix}-"):
+                        continue
+                    try:
+                        text = path.read_text(encoding="utf-8")
+                    except OSError:
+                        continue
+                    headings = set(
+                        re.findall(r"^##[ \t]+(.+?)[ \t]*$", text, re.MULTILINE)
+                    )
+                    missing = [
+                        heading for heading in required_sections if heading not in headings
+                    ]
+                    if missing:
+                        rendered = ", ".join(f"`## {heading}`" for heading in missing)
+                        self.error(
+                            "FAMILY002",
+                            f"{record_id} is missing required record sections: {rendered}.",
                             path,
                         )
 

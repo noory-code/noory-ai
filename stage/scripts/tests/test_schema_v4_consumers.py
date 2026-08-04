@@ -211,7 +211,8 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             question_path.write_text(
                 (
                     "---\nid: Q-00000092\ntitle: Fixture question\n"
-                    f"work_items: {current_id}\n---\n# Q-00000092 Fixture question\n"
+                    f"work_items: {current_id}\n---\n# Q-00000092 Fixture question\n\n"
+                    "## Status\n\nopen\n"
                 ),
                 encoding="utf-8",
             )
@@ -368,6 +369,9 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 "work/current/W-00000102.md": "W-00000102",
                 "decisions/pending/DE-00000103.md": "DE-00000103",
                 "official/decisions/records/DE-00000104.md": "DE-00000104",
+                "official/decisions/archive/DE-00000110.md": "DE-00000110",
+                "official/proposals/archive/P-00000111.md": "P-00000111",
+                "official/state/archive/O-00000112.md": "O-00000112",
                 "roadmap/milestones/M-00000105.md": "M-00000105",
                 "work/current/W-00000106.md": "W-00000106",
                 "work/current/W-00000107.md": "W-00000107",
@@ -391,9 +395,10 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
         self.assertNotIn("W-00000109", lifecycle_view)
         self.assertIn("- W-00000109 W-00000109 [active]", context)
         self.assertIn("`decisions/pending`: DE-00000103", context)
-        self.assertIn(
-            "- official — `official/decisions/records`: DE-00000104", context
-        )
+        self.assertIn("`official/decisions/archive`: DE-00000110", context)
+        self.assertIn("`official/decisions/records`: DE-00000104", context)
+        self.assertIn("`official/proposals/archive`: P-00000111", context)
+        self.assertIn("`official/state/archive`: O-00000112", context)
         self.assertIn(
             "- roadmap (decision-derived lifecycle) — "
             "`roadmap/milestones`: M-00000105",
