@@ -9,9 +9,9 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_close_record.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000200
+promotion: approved
 review: not_required
 scope: stage/scripts/close_record.py, stage/scripts/tests/test_close_record.py, stage/hooks/stage_paths.py, stage/hooks/stage_runtime.py, stage/hooks/tests/test_archive_gate.py, stage/skills/, stage/CHANGELOG.md
 promotes: .stage/official/decisions/records/DE-00000057.md
@@ -89,6 +89,25 @@ decision_refs:
 
 ## Progress
 
+공식 영역 쓰기 잠금을 보관함 셋까지 열고, 닫고 되돌리는 명령과 그 스킬을 만들었다. 두 바퀴가
+걸렸다.
+
+첫 바퀴는 판정에서 물러났다 — 기준 일곱 중 여섯 통과, **"닫은 뒤 감사가 통과한다"가 실패했다.**
+감사에는 모든 제안이 살아 있는 인덱스에 줄을 가져야 한다는 규칙이 있는데, 닫힌 제안은 그 줄을
+일부러 떠난다. 실행자가 관측 갈래만 시험해서 못 봤고, 판정이 갓 만든 프로젝트에서 제안을 실제로
+닫아 보고 잡았다. 두 번째 바퀴가 그 규칙을 살아 있는 서랍에만 걸도록 좁혔다.
+
+**판정이 남긴 것 넷은 반려가 아니라 기록이다.**
+
+| 남긴 것 | 판단 |
+|---|---|
+| 보관 인덱스를 아무도 감사하지 않는다 | 받되 이 카드에서 안 한다. 기준이 요구한 적 없고, 보관 인덱스 검사는 W-00000202 가 결정 보관함까지 함께 볼 때 한 번에 놓는 것이 맞다 |
+| 되돌린 줄이 원래 자리가 아니라 인덱스 끝에 붙는다 | 받는다. 글자는 그대로고 기준은 "줄이 되살아난다"였다. 순서까지 지키려면 원래 위치도 보존해야 하는데, 되돌리기가 흔한 길이 아니라 값에 비해 비싸다 |
+| 보관된 기록의 상태 절에 "열림."과 닫은 근거가 같이 남는다 | 받는다. 본문을 고치면 바이트 되돌리기가 깨진다. 폴더가 상태이므로 산문이 무엇이라 하든 판정은 자리가 한다 |
+| 템플릿 프로젝트에서 마지막 관측을 닫으면 경고 하나 | 받는다. 목록이 비면서 템플릿의 빈 자리가 사라지는 것이고 오류가 아니다 |
+
+`stage/README.md` 와 `stage/skills/README.md` 는 범위 밖인데 실행자가 새 스킬을 기존 목록에서
+찾게 하려고 고쳤고 그 자리에서 밝혔다. 받는다 — 목록에 없는 스킬은 없는 것과 같다.
 
 ## Verification
 
@@ -97,3 +116,7 @@ decision_refs:
 
 
 ## Promotion decision
+
+DE-00000057 의 적용 위치 표에 세 보관함을 지키는 게이트를 더하는 승격을 승인한다. 이 규칙은
+앞으로의 공식 영역 쓰기를 구속하므로 카드가 완료된 뒤 통행증으로 기록하고, 기록한 뒤
+`promotion: promoted` 로 바꾼다.
