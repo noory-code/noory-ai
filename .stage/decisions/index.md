@@ -9,4 +9,5 @@
 
 | 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |
 |---|---|---|---|---|
-| DE-00000056 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | active | [pending/DE-00000056.md](pending/DE-00000056.md) |
+| DE-00000056 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | closed | [pending/DE-00000056.md](pending/DE-00000056.md) |
+| DE-00000058 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | closed | [pending/DE-00000058.md](pending/DE-00000058.md) |
