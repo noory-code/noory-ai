@@ -9,8 +9,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_archive_work.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000201
 promotion: not_applicable
 review: not_required
 scope: stage/skills/stage-archive/archive_work.py, stage/scripts/refresh_decision_index.py, stage/scripts/audit_stage.py, stage/scripts/tests/test_archive_work.py, stage/scripts/tests/test_refresh_decision_index.py, stage/scripts/tests/test_audit_stage.py, stage/CHANGELOG.md
@@ -79,6 +79,16 @@ W-00000200 이 보관 자리를 등록한 뒤에 시작한다. 자리가 없으�
 
 ## Progress
 
+한 바퀴에 통과했다. **대기 서랍에 살아 있는 허가증만 남았다** — 여섯 장이 결정 보관함으로
+가고 로드맵 추적 결정 하나만 남는다.
+
+**판정이 남긴 셋을 판단했다.**
+
+| 남긴 것 | 판단 |
+|---|---|
+| 새 경고 하나(`ROUTE001`) — 이 저장소 `index.md` 에 결정 보관함을 가리키는 줄이 없다 | 받되 W-00000203 이 한다. 플러그인 템플릿에는 이미 그 줄이 있고, 이 저장소 정리가 그 카드의 일이다 |
+| 손으로 보관하는 길에는 허가증이 안 따라간다 | 받는다. 스킬 문서의 수동 예시가 명령과 다른 계약을 지면 이 카드가 없애려던 상태가 그대로 생긴다 |
+| 원본 삭제만 실패하면 다 쓴 허가증이 다시 통과한다 | 지금 안 고친다. 순서를 뒤집으면 기록을 잃을 수 있고 그쪽이 더 나쁘다. **O-00000032** 로 남겼다 |
 
 ## Verification
 
