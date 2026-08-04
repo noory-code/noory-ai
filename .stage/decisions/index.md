@@ -16,3 +16,4 @@
 | DE-00000041 | decided | [W-00000137](../official/work/archive/items/W-00000137/_story.md) | archived | expired | [pending/DE-00000041.md](pending/DE-00000041.md) |
 | DE-00000045 | decided | [W-00000150](../official/work/archive/items/W-00000150/_story.md) | archived | expired | [pending/DE-00000045.md](pending/DE-00000045.md) |
 | DE-00000056 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | active | active | [pending/DE-00000056.md](pending/DE-00000056.md) |
+| DE-00000057 | decided | [W-00000199](../work/current/W-00000198/W-00000199/_story.md) | active | active | [pending/DE-00000057.md](pending/DE-00000057.md) |

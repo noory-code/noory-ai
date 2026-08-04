@@ -9,13 +9,13 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000198
 promotion: pending
 review: not_required
 scope: stage/docs/BLUEPRINT.md, stage/docs/SCHEMA_V5.md, stage/CHANGELOG.md, .stage/decisions/pending/, .stage/official/decisions/records/DE-00000030.md
-promotes:
-decision_refs:
+promotes: .stage/official/decisions/index.md, .stage/official/decisions/records/DE-00000057.md, .stage/official/decisions/records/DE-00000030.md
+decision_refs: DE-00000057
 ---
 
 # W-00000199 끝난 기록이 어디로 가고 누가 옮기는지 정한다
@@ -55,8 +55,9 @@ decision_refs:
 
 ## Risks
 
-- **DE-00000030 은 공식 결정이라 승격 통행증이 있어야 고칠 수 있다.** 대체 표시를 달려면
-  `scripts/promote_intent.py` 로 이 카드를 지목한 통행증이 먼저 필요하다.
+- **DE-00000030 은 공식 결정이라 이 카드가 끝난 뒤에야 고칠 수 있다.** 통행증은 카드가 완료되고
+  승격이 승인된 뒤에만 통하므로, 대체 표시는 이 카드의 마지막 걸음이다. 순서를 착각하면 카드
+  중간에 막힌다.
 - 새 결정이 DE-00000030 을 통째로 뒤집는 것처럼 읽히면 안 된다. "구속하는 결정만 승격한다"는
   그대로 살아 있고, 바뀌는 것은 안 올린 기록이 어디에 사는가 하나다.
 
@@ -69,15 +70,28 @@ decision_refs:
 
 ## Next action
 
-`official/decisions/records/DE-00000030.md` 를 고치기 위한 승격 통행증부터 낸다.
+결정 DE-00000057 을 설계 문서에 싣는다. DE-00000030 의 대체 표시는 카드를 닫은 뒤 통행증으로
+쓴다 — 통행증은 완료된 카드만 받는다.
 
 ## Related truth
 
 - DE-00000030 — "다 쓴 허가증은 승격하지 않는다"까지만 정했고 그것이 어디에 사는지는 비어 있다.
 - `stage/docs/PHILOSOPHY.md` §목적이 약속이다 — 규칙이 빈자리를 남기면 아무 일도 안 일어난다.
 
+**W-00000200 이 물려받는 제약**: 세션 첫머리 요약은 자리마다 선언된 수명주기로 묶는다. 보관
+서랍 셋을 `official` 로 선언하면 그 줄에 서랍 세 개가 더 붙고, 대신 진행 중·계획 줄에서
+스물한 장이 빠진다. 자리마다 앞의 세 개와 총 개수만 찍히므로 요약이 길어지는 폭은 세 줄이고,
+바꾸려던 방향과 맞다. 다른 값을 고르려면 이 계산부터 다시 한다.
+
 ## Progress
 
+DE-00000057 이 자리와 이동 주체를 정했다. 설계도에 §11-2 를 더해 살아 있는 서랍과 보관함을
+그림과 표로 실었고, 스키마 문서에 같은 계약을 영어로 실었다.
+
+그림을 한 번 고쳤다. 처음에는 노드 라벨에 서랍 이름 대신 그 서랍에 남는 것을 적어서, 화살표가
+"안 쓴 허가를 보관한다"로 읽혔다.
+
+DE-00000030 의 대체 표시는 아직 안 썼다 — 통행증이 완료된 카드만 받으므로 닫은 뒤에 쓴다.
 
 ## Verification
 
