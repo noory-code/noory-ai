@@ -31,6 +31,9 @@
 | 모델 인터페이스 | `official/model/interfaces/` |
 | 공식 결정 | `official/decisions/index.md` |
 | 공식 결정 레코드 | `official/decisions/records/` |
+| 보관된 결정 | `official/decisions/archive/` |
+| 보관된 제안 | `official/proposals/archive/` |
+| 보관된 상태 레코드 | `official/state/archive/` |
 | 아카이브된 작업 인덱스 | `official/work/archive/index.md` |
 | 아카이브된 작업 항목 | `official/work/archive/items/` |
 | 아카이브된 회고 | `official/work/archive/retrospectives/` |
