@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Keep answered question records out of the session's open-question view when references prevent
+  moving them, using the existing `answered` token at the start of the record's Status section.
+
 - Show each open milestone's completion criteria before top-level work registration and ask
   whether the proposed work moves one of them, while retaining the count-only CLI for existing
   callers.

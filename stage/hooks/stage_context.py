@@ -591,9 +591,29 @@ def record_files(directory: Path) -> list[Path]:
     ]
 
 
+def question_is_answered(path: Path) -> bool:
+    """Whether the question's Status section starts with the `answered` state token."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    match = re.search(
+        r"^## Status[ \t]*\r?\n(?P<body>.*?)(?=^## |\Z)",
+        text,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if match is None:
+        return False
+    body = match.group("body").lstrip()
+    return re.match(r"(?:[*_]{1,3})?answered\b", body, flags=re.IGNORECASE) is not None
+
+
 def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LIMIT) -> list[str]:
-    """Every record under `present/state/questions/` is open by definition —
-    answered questions are promoted out of the directory. Newest first."""
+    """Unanswered question records, newest first.
+
+    Answered records normally move out of this directory. A record that must remain because other
+    durable records cite it declares `answered` at the start of its Status section and is omitted.
+    """
     records: list[tuple[str, str, str]] = []
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         question_root = stage_topology.resolve_artifact_reference(
@@ -603,6 +623,8 @@ def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LI
     else:
         directory = stage_root / "present" / "state" / "questions"
     for path in record_files(directory):
+        if question_is_answered(path):
+            continue
         fields = parse_frontmatter(path)
         records.append(
             (

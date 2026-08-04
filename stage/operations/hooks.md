@@ -57,6 +57,10 @@ Writing a work item whose `parent` does not exist, points at itself, or opens a 
 
 Before `AskUserQuestion` reaches the user, the hook reminds once per question: derive the answer from the work item's Purpose and `official/canon/principles.md` first; ask only when the decision genuinely belongs to the user. Re-asking after the reminder passes.
 
+At `SessionStart`, the open-question view omits a question whose `## Status` section starts with the
+machine state token `answered` (Markdown emphasis is allowed). This exception keeps an answered
+record in `state/questions/` when durable records still cite it without presenting it as open.
+
 ## Purpose context
 
 Every `PreToolUse` result appends live purpose context when active work exists. It never blocks.

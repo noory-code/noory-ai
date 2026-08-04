@@ -2508,6 +2508,49 @@ class StageGuardTest(unittest.TestCase):
         self.assertIn("B-00000001 Selected thing (priority: high)", context)
         self.assertNotIn("Captured thing", context)
 
+    def test_open_questions_exclude_answered_records_and_keep_unanswered_records(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_stage_file(root, "settings.json", '{"schema_version": 5}\n')
+            self.write_stage_file(
+                root,
+                "state/questions/Q-00000001.md",
+                (
+                    "---\n"
+                    "id: Q-00000001\n"
+                    "title: Answered question\n"
+                    "work_items: W-00000001\n"
+                    "---\n"
+                    "# Q-00000001 Answered question\n\n"
+                    "**This question was answered.** The durable answer remains here.\n\n"
+                    "## Status\n\n"
+                    "**answered (2026-08-04)** — The evidence resolved the question.\n"
+                ),
+            )
+            self.write_stage_file(
+                root,
+                "state/questions/Q-00000002.md",
+                (
+                    "---\n"
+                    "id: Q-00000002\n"
+                    "title: Unanswered question\n"
+                    "work_items: W-00000002\n"
+                    "---\n"
+                    "# Q-00000002 Unanswered question\n\n"
+                    "## Status\n\n"
+                    "Waiting for evidence.\n"
+                ),
+            )
+
+            result = stage_guard.handle_event("session-start", {"cwd": str(root)})
+
+        context = result["hookSpecificOutput"]["additionalContext"]
+        open_questions = context.partition("### Open questions\n")[2].partition("\n### ")[0]
+        self.assertNotIn("Q-00000001", open_questions)
+        self.assertIn(
+            "Q-00000002 Unanswered question (blocks: W-00000002)", open_questions
+        )
+
     def test_question_recency_is_numeric_not_lexical(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
