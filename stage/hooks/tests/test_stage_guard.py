@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 
 HOOK_PATH = Path(__file__).resolve().parents[1] / "stage_guard.py"
+STAGE_ROOT = HOOK_PATH.parent.parent
 SPEC = importlib.util.spec_from_file_location("stage_guard", HOOK_PATH)
 stage_guard = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -2550,6 +2551,17 @@ class StageGuardTest(unittest.TestCase):
         self.assertIn(
             "Q-00000002 Unanswered question (blocks: W-00000002)", open_questions
         )
+
+    def test_question_guidance_declares_the_answered_status_token(self):
+        guidance_paths = sorted(
+            (STAGE_ROOT / "templates").glob("**/state/questions/README.md")
+        )
+
+        for path in guidance_paths:
+            with self.subTest(path=path):
+                guidance = path.read_text(encoding="utf-8")
+                self.assertIn("`## Status`", guidance)
+                self.assertIn("`answered`", guidance)
 
     def test_question_recency_is_numeric_not_lexical(self):
         with tempfile.TemporaryDirectory() as tmp:
