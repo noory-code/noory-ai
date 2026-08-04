@@ -9,8 +9,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000202
 promotion: pending
 review: not_required
 scope: .stage/, stage/CHANGELOG.md
@@ -77,6 +77,25 @@ W-00000201 의 명령이 실린 뒤에 시작한다. 그 전에 손으로 옮기
 
 ## Progress
 
+| 서랍 | 전 | 후 |
+|---|---:|---:|
+| 대기 결정 | 7 | **1** — 살아 있는 로드맵 결정 하나 |
+| 제안 | 4 | **0** |
+| 관측 | 32 | **21** — 전부 열려 있다 |
+| 질문 | 1 | **0** |
+
+보관함에 결정 여섯, 제안 넷, 상태 열둘이 들어갔다. 손으로 옮긴 파일은 하나도 없다.
+
+**상태 절이 없던 여섯 장을 판정했다.** 다섯은 열려 있고, O-00000029 하나만 닫았다 — "내가
+기억해서 적어야 하는 상태는 낡는다"는 관측인데 이 에픽이 네 서랍에서 그 자리를 없앴다.
+O-00000027 은 카드 거는 쪽이 고쳐졌는데도 안 닫았다: M-00000001 에 기준을 안 움직이는 카드
+넷이 아직 걸려 있고, 그 마일스톤을 닫을 때 근거에 적어야 한다.
+
+**명령이 O-00000001 을 거부했다** — 인덱스에 줄이 없었다. 예전에 사람이 손으로 내린 자국이다.
+줄을 되살린 뒤에 닫혔다. 옳은 거부고, 손 편집이 남긴 것이 어떻게 걸리는지 실측한 셈이다.
+
+라우팅 줄 셋을 `.stage/index.md` 에 더하고(앞 카드 판정이 넘긴 것), 빠진 템플릿 파일을
+초기화 명령으로 복구했다.
 
 ## Verification
 
