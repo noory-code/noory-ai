@@ -206,7 +206,8 @@ class RoadmapCliTest(RoadmapFixture):
             self.assertEqual(0, pursuit.returncode, pursuit.stderr)
             self.assertIn("DE-00000001", pursuit.stdout)
             self.assertIn(
-                "[M-00000001](../roadmap/milestones/M-00000001.md) | active | active |",
+                "[M-00000001](../roadmap/milestones/M-00000001.md) | active | "
+                "[pending/DE-00000001.md]",
                 decision_index,
             )
             self.assertEqual(0, registered.returncode, registered.stderr)

@@ -220,6 +220,25 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn("venue: claude", item)
         self.assertIn("decision_refs: DE-0009", item)
 
+    def test_consumed_venue_exception_is_refused_as_consumed(self):
+        tmp, root = self.make()
+        with tmp:
+            self.declare_routing(root)
+            self.write_decision(root)
+            pending = root / ".stage/decisions/pending/DE-0009.md"
+            archive = root / ".stage/official/decisions/archive/DE-0009.md"
+            archive.parent.mkdir(parents=True)
+            pending.replace(archive)
+
+            result = run(
+                root, "--title", "T", "--kind", "development", "--scope", "src",
+                "--venue", "claude", "--decision", "DE-0009",
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("already consumed", result.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
     def test_open_or_non_authorizing_decision_is_refused(self):
         tmp, root = self.make()
         with tmp:

@@ -13,6 +13,7 @@ gate checks, and is idempotent.
 Usage:
     python3 archive_work.py [--project-root .] W-00000001 [W-00000002 ...]
     python3 archive_work.py [--project-root .] --all-completed
+    python3 archive_work.py [--project-root .] --archive-consumed-decisions
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import argparse
 import re
 import shutil
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(
@@ -29,6 +31,9 @@ sys.path.insert(
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+import init_stage  # noqa: E402
+import refresh_decision_index  # noqa: E402
+import stage_topology  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     record_path,
     record_paths,
@@ -38,6 +43,7 @@ from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
+    read_settings,
     schema_migration_banner,
 )
 from stage_runtime import delete_pending_intents_for_work_item  # noqa: E402
@@ -49,6 +55,19 @@ from stage_work import (  # noqa: E402
 )
 
 TERMINAL_STATUSES = {"completed", "rejected"}
+
+
+class DecisionArchiveError(RuntimeError):
+    """A consumed decision cannot move without leaving all indexes truthful."""
+
+
+@dataclass(frozen=True)
+class DecisionArchivePlan:
+    decisions: tuple[tuple[Path, Path, str], ...]
+    archive_index_path: Path
+    archive_index_text: str
+    pending_index_path: Path
+    pending_index_text: str
 
 
 def frontmatter_field(text: str, field: str) -> str:
@@ -110,6 +129,117 @@ def append_index_row(
         return index_text  # idempotent
     body = index_text.rstrip("\n")
     return f"{body}\n{row}\n"
+
+
+def _project_language(stage_root: Path) -> str:
+    _path, data, error = read_settings(stage_root)
+    if error is None and isinstance(data, dict) and isinstance(data.get("language"), str):
+        return data["language"]
+    return "en"
+
+
+def _decision_archive_index_text(stage_root: Path, index_path: Path) -> str:
+    if index_path.is_file():
+        return index_path.read_text(encoding="utf-8")
+    source = init_stage.template_source(
+        Path("official/decisions/archive/index.md"),
+        _project_language(stage_root),
+    )
+    if not source.is_file():
+        raise DecisionArchiveError(f"decision archive index template is missing: {source}")
+    return source.read_text(encoding="utf-8")
+
+
+def _append_decision_archive_row(
+    text: str,
+    decision_id: str,
+    language: str,
+) -> str:
+    if re.search(rf"^\|\s*{re.escape(decision_id)}\s*\|", text, re.MULTILINE):
+        raise DecisionArchiveError(
+            f"decision archive index already contains {decision_id}"
+        )
+    reason = "소진됨" if language == "ko" else "consumed"
+    row = f"| {decision_id} | {reason} | [{decision_id}]({decision_id}.md) |"
+    return f"{text.rstrip(chr(13) + chr(10))}\n{row}\n"
+
+
+def prepare_consumed_decisions(
+    stage_root: Path,
+    owner_ids: set[str] | None,
+) -> DecisionArchivePlan | None:
+    """Build one validated move for spent one-item venue authorizations."""
+
+    if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
+        return None
+    if owner_ids is None:
+        archived_root = stage_root / stage_topology.card_location_for_status("archived")
+        owner_ids = {
+            frontmatter_field(path.read_text(encoding="utf-8"), "id")
+            for path in record_paths(archived_root)
+        }
+        owner_ids.discard("")
+    pending_root = stage_root / stage_topology.get_zone(
+        "decisions", "pending"
+    ).canonical_path
+    archive_zone = stage_topology.get_zone("decisions", "archive")
+    archive_root = stage_root / archive_zone.canonical_path
+    decisions: list[tuple[Path, Path, str]] = []
+    for source in record_paths(pending_root):
+        text = source.read_text(encoding="utf-8")
+        if frontmatter_field(text, "authorizes") != "venue_exception":
+            continue
+        if frontmatter_field(text, "work_item") not in owner_ids:
+            continue
+        decision_id = frontmatter_field(text, "id") or source.stem
+        destination = archive_root / source.name
+        if destination.exists():
+            raise DecisionArchiveError(
+                f"decision archive already contains {destination.name}; refusing to overwrite it"
+            )
+        decisions.append((source, destination, decision_id))
+    if not decisions:
+        return None
+
+    archive_index_path = stage_root / archive_zone.index_surfaces[0]
+    archive_index_text = _decision_archive_index_text(stage_root, archive_index_path)
+    language = _project_language(stage_root)
+    for _source, _destination, decision_id in decisions:
+        archive_index_text = _append_decision_archive_row(
+            archive_index_text, decision_id, language
+        )
+
+    pending_index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
+    pending_existing = pending_index_path.read_text(encoding="utf-8")
+    excluded_ids = frozenset(decision_id for _source, _destination, decision_id in decisions)
+    try:
+        pending_index_text = refresh_decision_index.render_index(
+            stage_root, pending_existing, excluded_ids
+        )
+    except refresh_decision_index.IndexFormatError as exc:
+        raise DecisionArchiveError(f"cannot refresh pending-decision index: {exc}") from exc
+    return DecisionArchivePlan(
+        decisions=tuple(decisions),
+        archive_index_path=archive_index_path,
+        archive_index_text=archive_index_text,
+        pending_index_path=pending_index_path,
+        pending_index_text=pending_index_text,
+    )
+
+
+def apply_consumed_decisions(plan: DecisionArchivePlan) -> int:
+    """Apply a prevalidated consumed-decision move and its two indexes."""
+
+    for _source, destination, _decision_id in plan.decisions:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+    plan.archive_index_path.parent.mkdir(parents=True, exist_ok=True)
+    for source, destination, _decision_id in plan.decisions:
+        destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    plan.archive_index_path.write_text(plan.archive_index_text, encoding="utf-8")
+    plan.pending_index_path.write_text(plan.pending_index_text, encoding="utf-8")
+    for source, _destination, _decision_id in plan.decisions:
+        source.unlink()
+    return len(plan.decisions)
 
 
 def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]:
@@ -297,6 +427,14 @@ def archive_one(
             names = ", ".join(path.name for path in failed_intents)
             return f"{item_id}: ERROR cannot delete pending intent(s): {names}"
 
+    try:
+        decision_plan = prepare_consumed_decisions(
+            stage_root,
+            {record_id for _record, record_id, *_rest in record_data},
+        )
+    except (DecisionArchiveError, OSError) as exc:
+        return f"{item_id}: ERROR cannot archive consumed decisions: {exc}"
+
     root_text = source_item.read_text(encoding="utf-8")
     root_status = frontmatter_field(root_text, "status")
     for record, _record_id, status, _ref, _present_retro in record_data:
@@ -387,9 +525,18 @@ def archive_one(
     for _record, _record_id, _status, _ref, present_retro in record_data:
         if present_retro is not None:
             present_retro.unlink()
+    try:
+        consumed_count = (
+            apply_consumed_decisions(decision_plan) if decision_plan is not None else 0
+        )
+    except OSError as exc:
+        return f"{item_id}: ERROR cannot archive consumed decisions: {exc}"
+    decision_detail = (
+        f", {consumed_count} consumed decision(s)" if consumed_count else ""
+    )
     return (
         f"{item_id}: archived hierarchy ({len(record_data)} record(s), "
-        f"final status {root_status})"
+        f"final status {root_status}{decision_detail})"
     )
 
 
@@ -397,6 +544,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Archive completed Stage work items.")
     parser.add_argument("--project-root", default=".", help="Project root (default: cwd).")
     parser.add_argument("--all-completed", action="store_true", help="Archive every completed item in review.md.")
+    parser.add_argument(
+        "--archive-consumed-decisions",
+        action="store_true",
+        help="Archive one-item venue exceptions whose work is already archived.",
+    )
     parser.add_argument("items", nargs="*", help="Work item IDs, e.g. W-00000001.")
     args = parser.parse_args()
 
@@ -412,7 +564,7 @@ def main() -> int:
     ids = list(args.items)
     if args.all_completed:
         ids = completed_ids_from_review(stage_root)
-    if not ids:
+    if not ids and not args.archive_consumed_decisions:
         print("No work items to archive.", file=sys.stderr)
         return 1
 
@@ -422,6 +574,14 @@ def main() -> int:
         result = archive_one(stage_root, item_id, blocking_children)
         print(result)
         if "ERROR" in result:
+            failed = True
+    if args.archive_consumed_decisions:
+        try:
+            plan = prepare_consumed_decisions(stage_root, None)
+            count = apply_consumed_decisions(plan) if plan is not None else 0
+            print(f"archived {count} consumed decision(s)")
+        except (DecisionArchiveError, OSError) as exc:
+            print(f"ERROR cannot archive consumed decisions: {exc}", file=sys.stderr)
             failed = True
     return 1 if failed else 0
 

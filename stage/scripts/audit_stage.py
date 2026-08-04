@@ -214,6 +214,7 @@ class Audit:
         self.audit_pending_decision_index()
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
+        self.audit_record_archive_indexes(graph)
         self.audit_future_indexes(graph)
         if self.topology == ACTIVE_TOPOLOGY_V4:
             self.audit_roadmap(graph)
@@ -985,6 +986,46 @@ class Audit:
                     f"Archive index row references a missing archived item: {row_id}",
                     index_path,
                 )
+
+    def audit_record_archive_indexes(self, graph: RecordGraph) -> None:
+        """Decision, proposal, and state archives have exact record/index parity."""
+
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        families = (
+            ("decisions", graph.decisions, ("DE-",)),
+            ("proposals", graph.proposals, ("P-",)),
+            ("state", graph.state, ("O-", "Q-")),
+        )
+        for family, nodes, prefixes in families:
+            zone = stage_topology.get_zone(family, "archive")
+            archive_root = self.stage_root / zone.canonical_path
+            index_path = self.stage_root / zone.index_surfaces[0]
+            archived = {
+                node.record_id: node.path
+                for node in nodes
+                if node.path.is_relative_to(archive_root)
+            }
+            indexed = {
+                cells[0].strip()
+                for cells in stage_guard.parse_index_rows(index_path)
+                if cells and cells[0].strip().startswith(prefixes)
+            }
+            for record_id, record_path in archived.items():
+                if record_id not in indexed:
+                    self.error(
+                        "RECORD_ARCHIVE001",
+                        f"Archived {family} record has no archive index row: {record_id}",
+                        record_path,
+                    )
+            for record_id in indexed:
+                if record_id not in archived:
+                    self.error(
+                        "RECORD_ARCHIVE002",
+                        f"{family.capitalize()} archive index row references a missing "
+                        f"record: {record_id}",
+                        index_path,
+                    )
 
     def audit_future_indexes(self, graph: RecordGraph) -> None:
         """Each future family's index owns the current index of its records

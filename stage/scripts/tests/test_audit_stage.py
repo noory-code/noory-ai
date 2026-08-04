@@ -913,6 +913,45 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("ARCHIVE004", finding_codes(findings))
 
+    def test_record_archive_indexes_require_every_archived_record(self):
+        fixtures = (
+            (
+                "official/decisions/archive/DE-0001.md",
+                "---\nid: DE-0001\nwork_item: W-0001\nstatus: decided\n---\n# DE-0001\n",
+            ),
+            ("official/proposals/archive/P-0001.md", "# P-0001 Proposal\n"),
+            (
+                "official/state/archive/O-0001.md",
+                "---\nid: O-0001\ntitle: Closed\nwork_items:\n---\n# O-0001 Closed\n",
+            ),
+        )
+        for relative, content in fixtures:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.init_stage(root)
+                path = root / ".stage" / relative
+                path.write_text(content, encoding="utf-8")
+
+                findings = audit_stage.Audit(root).run()
+
+                self.assertIn("RECORD_ARCHIVE001", finding_codes(findings))
+
+    def test_record_archive_indexes_reject_rows_without_records(self):
+        indexes = (
+            ("official/decisions/archive/index.md", "DE-9999"),
+            ("official/proposals/archive/index.md", "P-9999"),
+            ("official/state/archive/index.md", "O-9999"),
+        )
+        for relative, record_id in indexes:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.init_stage(root)
+                self.append_index_row(root, relative, record_id)
+
+                findings = audit_stage.Audit(root).run()
+
+                self.assertIn("RECORD_ARCHIVE002", finding_codes(findings))
+
     def append_index_row(self, root: Path, relative: str, first_cell: str) -> None:
         path = root / ".stage" / relative
         with path.open("a", encoding="utf-8") as handle:

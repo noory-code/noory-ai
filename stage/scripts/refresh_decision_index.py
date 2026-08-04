@@ -18,7 +18,7 @@ if str(HOOK_ROOT) not in sys.path:
 from stage_record_paths import record_paths  # noqa: E402
 import stage_roadmap  # noqa: E402
 import stage_topology  # noqa: E402
-from stage_work import WORK_FINAL_STATUSES, parse_frontmatter  # noqa: E402
+from stage_work import parse_frontmatter  # noqa: E402
 
 
 INDEX_RELATIVE = Path("decisions/index.md")
@@ -27,12 +27,14 @@ WORK_ROOTS = (Path("work/current"), Path("official/work/archive/items"))
 TABLE_HEADERS = {
     "| Decision | Status | Owner | Link |": "en",
     "| Decision | Decision status | Owner record | Owner status | Effect | Link |": "en",
+    "| Decision | Decision status | Owner record | Owner status | Link |": "en",
     "| 결정 | 상태 | 소유자 | 링크 |": "ko",
     "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 효력 | 링크 |": "ko",
+    "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |": "ko",
 }
 RENDERED_HEADERS = {
-    "en": "| Decision | Decision status | Owner record | Owner status | Effect | Link |",
-    "ko": "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 효력 | 링크 |",
+    "en": "| Decision | Decision status | Owner record | Owner status | Link |",
+    "ko": "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |",
 }
 
 
@@ -81,7 +83,9 @@ def _work_records(stage_root: Path) -> dict[str, WorkRecord]:
     return records
 
 
-def _pending_decisions(stage_root: Path) -> list[tuple[Path, dict[str, str]]]:
+def _pending_decisions(
+    stage_root: Path, excluded_ids: frozenset[str] = frozenset()
+) -> list[tuple[Path, dict[str, str]]]:
     root = stage_root / PENDING_RELATIVE
     if not root.is_dir():
         return []
@@ -89,7 +93,7 @@ def _pending_decisions(stage_root: Path) -> list[tuple[Path, dict[str, str]]]:
     for path in record_paths(root):
         fields = parse_frontmatter(path)
         decision_id = (fields.get("id") or "").strip()
-        if decision_id:
+        if decision_id and decision_id not in excluded_ids:
             decisions.append((path, fields))
     return sorted(decisions, key=lambda entry: (entry[1].get("id", ""), entry[0]))
 
@@ -110,10 +114,14 @@ def _relative_link(target: Path) -> str:
     return posixpath.relpath(target.as_posix(), INDEX_RELATIVE.parent.as_posix())
 
 
-def render_table(stage_root: Path, language: str) -> str:
+def render_table(
+    stage_root: Path,
+    language: str,
+    excluded_ids: frozenset[str] = frozenset(),
+) -> str:
     work_by_id = _work_records(stage_root)
-    lines = [RENDERED_HEADERS[language], "|---|---|---|---|---|---|"]
-    for decision_path, fields in _pending_decisions(stage_root):
+    lines = [RENDERED_HEADERS[language], "|---|---|---|---|---|"]
+    for decision_path, fields in _pending_decisions(stage_root, excluded_ids):
         decision_id = fields["id"].strip()
         decision_status = (fields.get("status") or "missing").strip() or "missing"
         owner_id = (
@@ -129,23 +137,19 @@ def render_table(stage_root: Path, language: str) -> str:
             owner_link = _relative_link(owner.relative_path)
             owner_cell = f"[{owner_id}]({owner_link})"
             owner_status = owner.status
-        effect = (
-            "expired"
-            if (
-                (fields.get("authorizes") or "").strip() == "venue_exception"
-                and owner_status in WORK_FINAL_STATUSES
-            )
-            else "active"
-        )
         decision_link = _relative_link(decision_path.relative_to(stage_root))
         lines.append(
             f"| {decision_id} | {decision_status} | {owner_cell} | {owner_status} | "
-            f"{effect} | [{decision_link}]({decision_link}) |"
+            f"[{decision_link}]({decision_link}) |"
         )
     return "\n".join(lines) + "\n"
 
 
-def render_index(stage_root: Path, existing: str) -> str:
+def render_index(
+    stage_root: Path,
+    existing: str,
+    excluded_ids: frozenset[str] = frozenset(),
+) -> str:
     lines = existing.splitlines(keepends=True)
     candidates: list[tuple[int, int, str, str]] = []
     for position, line in enumerate(lines):
@@ -177,7 +181,7 @@ def render_index(stage_root: Path, existing: str) -> str:
             "decisions/index.md must contain exactly one recognized pending-decision table"
         )
     start, end, language, newline = candidates[0]
-    rendered = render_table(stage_root, language).replace("\n", newline)
+    rendered = render_table(stage_root, language, excluded_ids).replace("\n", newline)
     return "".join(lines[:start]) + rendered + "".join(lines[end:])
 
 

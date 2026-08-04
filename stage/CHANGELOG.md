@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Move one-item venue exceptions into the decision archive when their work hierarchy is archived,
+  provide a one-time drain for exceptions whose work was archived earlier, reject reuse as already
+  consumed, and keep both decision indexes in sync. The pending-decision table now omits the
+  redundant Effect column, and the audit checks decision, proposal, and state archive indexes in
+  both directions.
+
 - Close and reopen observations, questions, and proposals with one command that moves the record,
   records the reason and proposal outcome, and updates both indexes as one recoverable transaction.
   Extend archive intents to the exact decision, proposal, and state archive records and indexes

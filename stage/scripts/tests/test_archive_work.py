@@ -495,6 +495,125 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
         self.assertIn("Summary: errors=0", audit_proc.stdout)
 
+    def test_v5_archives_the_work_items_consumed_venue_exception(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            item_id = "W-00000001"
+            retro_id = "R-00000001"
+            decision_id = "DE-00000001"
+            current = stage / f"work/current/{item_id}"
+            current.mkdir(parents=True)
+            item = current / "_story.md"
+            item.write_text(
+                V5_ITEM.format(wid=item_id, ref=retro_id).replace(
+                    "decision_refs:\n", f"decision_refs: {decision_id}\n"
+                ),
+                encoding="utf-8",
+            )
+            (stage / f"work/retrospectives/{retro_id}.md").write_text(
+                RETRO.format(ref=retro_id, wid=item_id), encoding="utf-8"
+            )
+            decision = stage / f"decisions/pending/{decision_id}.md"
+            decision.write_text(
+                (
+                    "---\n"
+                    f"id: {decision_id}\n"
+                    f"work_item: {item_id}\n"
+                    "status: decided\n"
+                    "authorizes: venue_exception\n"
+                    "---\n\n"
+                    f"# {decision_id} One-time venue exception\n\n"
+                    "## Question\n\nMay this item use another venue?\n\n"
+                    "## Principles applied\n\n- **SSOT** — one owner.\n\n"
+                    "## Chosen direction\n\nYes, once.\n"
+                ),
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, item_id)
+            audit_proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUDIT_CLI_PATH),
+                    "--project-root",
+                    str(root),
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            archived_decision = stage / f"official/decisions/archive/{decision_id}.md"
+            archived_decision_exists = archived_decision.is_file()
+            pending_decision_exists = decision.exists()
+            archive_index = (
+                stage / "official/decisions/archive/index.md"
+            ).read_text(encoding="utf-8")
+            pending_index = (stage / "decisions/index.md").read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertTrue(archived_decision_exists)
+        self.assertFalse(pending_decision_exists)
+        self.assertIn(f"| {decision_id} | consumed |", archive_index)
+        self.assertNotIn(decision_id, pending_index)
+        self.assertEqual(
+            0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr
+        )
+
+    def test_v5_can_archive_consumed_decisions_for_already_archived_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            item_id = "W-00000001"
+            decision_id = "DE-00000001"
+            archived = stage / f"official/work/archive/items/{item_id}"
+            archived.mkdir(parents=True)
+            (archived / "_story.md").write_text(
+                (
+                    "---\n"
+                    f"id: {item_id}\n"
+                    "title: Archived\n"
+                    "kind: development\n"
+                    "venue: codex\n"
+                    "status: archived\n"
+                    "terminal_disposition: accepted\n"
+                    "verification: passed\n"
+                    "retrospective: completed\n"
+                    "retrospective_ref: R-00000001\n"
+                    "promotion: not_applicable\n"
+                    "review: not_required\n"
+                    "scope: src/\n"
+                    f"decision_refs: {decision_id}\n"
+                    "---\n"
+                ),
+                encoding="utf-8",
+            )
+            decision = stage / f"decisions/pending/{decision_id}.md"
+            decision.write_text(
+                (
+                    "---\n"
+                    f"id: {decision_id}\n"
+                    f"work_item: {item_id}\n"
+                    "status: decided\n"
+                    "authorizes: venue_exception\n"
+                    "---\n"
+                ),
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, "--archive-consumed-decisions")
+
+            archived_decision = stage / f"official/decisions/archive/{decision_id}.md"
+            archived_decision_exists = archived_decision.is_file()
+            pending_decision_exists = decision.exists()
+
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertTrue(archived_decision_exists)
+        self.assertFalse(pending_decision_exists)
+        self.assertIn("archived 1 consumed decision", proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

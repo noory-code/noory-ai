@@ -43,7 +43,20 @@ It validates every record in that move unit, preserves the epic/story/action rel
 retrospective, appends one top-level `Final status` row, and drops every hierarchy row from its
 source lifecycle index. Nested stories and actions are not moved independently; they stay in place
 relative to their top-level directory. It is idempotent and stamps `terminal_disposition:
-accepted` or `rejected` on every archived record. Then verify:
+accepted` or `rejected` on every archived record. Any `authorizes: venue_exception` decision owned
+by a moved record leaves `decisions/pending/` in the same command, enters
+`official/decisions/archive/`, and updates both decision indexes. A consumed exception cannot
+authorize another work item.
+
+After adopting this behavior in a project that already has archived work, drain its earlier
+consumed exceptions once:
+
+```bash
+python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> \
+  --archive-consumed-decisions
+```
+
+Then verify:
 
 ```bash
 python3 stage/scripts/audit_stage.py --project-root <project-root>   # expect errors=0

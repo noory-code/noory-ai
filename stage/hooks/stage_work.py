@@ -498,6 +498,12 @@ def venue_exception_error(stage_root: Path, ref: str) -> str:
     fields = parse_frontmatter(path)
     if not fields:
         return f"decision {ref} not found or unreadable at {path.name}"
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        archive_root = stage_root / stage_topology.get_zone(
+            "decisions", "archive"
+        ).canonical_path
+        if path.is_relative_to(archive_root):
+            return f"decision {ref} is already consumed"
     status = (fields.get("status") or "").strip()
     if status not in DECISION_FINAL_STATUSES:
         return (

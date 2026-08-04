@@ -72,21 +72,22 @@ class RefreshDecisionIndexTest(unittest.TestCase):
         self.assertIn("사람이 쓴 설명이다.", rendered)
         self.assertIn("## 남겨 둘 절\n\n이 내용은 지우지 않는다.", rendered)
         self.assertIn(
-            "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 효력 | 링크 |",
+            "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |",
             rendered,
         )
         self.assertIn(
             "| DE-00000001 | decided | "
             "[W-00000001](../work/current/W-00000001/_story.md) | "
-            "active | active | [pending/DE-00000001.md](pending/DE-00000001.md) |",
+            "active | [pending/DE-00000001.md](pending/DE-00000001.md) |",
             rendered,
         )
         self.assertIn(
             "| DE-00000002 | decided | "
             "[W-00000002](../official/work/archive/items/W-00000002/_story.md) | "
-            "archived | expired | [pending/DE-00000002.md](pending/DE-00000002.md) |",
+            "archived | [pending/DE-00000002.md](pending/DE-00000002.md) |",
             rendered,
         )
+        self.assertNotIn("효력", rendered)
         self.assertLess(rendered.index("DE-00000001"), rendered.index("DE-00000002"))
 
     def test_refuses_an_unrecognized_table_without_changing_the_file(self):

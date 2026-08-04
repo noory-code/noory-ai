@@ -311,8 +311,8 @@ class CloseWorkTest(unittest.TestCase):
         index.write_text(
             (
                 "# Pending decisions\n\n"
-                "| Decision | Decision status | Owner record | Owner status | Effect | Link |\n"
-                "|---|---|---|---|---|---|\n"
+                "| Decision | Decision status | Owner record | Owner status | Link |\n"
+                "|---|---|---|---|---|\n"
             ),
             encoding="utf-8",
         )
@@ -400,14 +400,15 @@ class CloseWorkTest(unittest.TestCase):
             check = python_command(
                 "from pathlib import Path\n"
                 f"text = Path({str(index)!r}).read_text(encoding='utf-8')\n"
-                "assert '| active | active |' in text"
+                "assert '| active | [pending/' in text"
             )
 
             proc = run(root, "W-00000001", "--check", check)
             rendered = index.read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn("| completed | expired |", rendered)
+        self.assertIn("| completed | [pending/", rendered)
+        self.assertNotIn("Effect", rendered)
 
     def test_close_refuses_unrecognized_pending_decision_index_before_mutation(self):
         tmp, root = self.make()
