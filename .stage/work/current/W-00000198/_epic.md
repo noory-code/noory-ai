@@ -9,8 +9,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000203
 promotion: pending
 review: not_required
 scope: stage/hooks/, stage/scripts/, stage/skills/, stage/templates/, stage/docs/, stage/CHANGELOG.md, .stage/
@@ -93,6 +93,16 @@ W-00000199 부터. 보관 자리와 이동 주체를 결정으로 못박고, DE-
 
 ## Progress
 
+스토리 다섯이 순서대로 끝났다. 규칙(W-00000199) → 자리(W-00000200) → 닫는 명령과 게이트
+(W-00000201) → 허가증 이동과 보관 인덱스 검사(W-00000202) → 이 저장소 비우기(W-00000203).
+
+**네 서랍이 살아 있는 것만 든다.** 대기 결정 7→1, 제안 4→0, 관측 32→21, 질문 1→0.
+
+판정이 두 번 진짜 결함을 잡았다 — 제안을 닫으면 감사가 깨지는 것, 그리고 보관 도중 삭제만
+실패하면 다 쓴 허가증이 되살아나는 창(O-00000032 로 남김).
+
+드라이버에서 관측 셋이 나왔다: O-00000030(잘린 바퀴에서 일이 끝나면 카드가 못 나온다),
+O-00000031(액션 없는 스토리가 최소 시간 한도를 받는다), O-00000032.
 
 ## Verification
 
