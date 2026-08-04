@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.57.0 — 2026-08-04
+
 - Move one-item venue exceptions into the decision archive when their work hierarchy is archived,
   provide a one-time drain for exceptions whose work was archived earlier, reject reuse as already
   consumed, and keep both decision indexes in sync. The pending-decision table now omits the
