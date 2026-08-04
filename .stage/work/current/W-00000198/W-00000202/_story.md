@@ -13,7 +13,7 @@ retrospective: pending
 retrospective_ref:
 promotion: pending
 review: not_required
-scope: stage/skills/stage-archive/archive_work.py, stage/scripts/refresh_decision_index.py, stage/scripts/tests/test_archive_work.py, stage/scripts/tests/test_refresh_decision_index.py
+scope: stage/skills/stage-archive/archive_work.py, stage/scripts/refresh_decision_index.py, stage/scripts/audit_stage.py, stage/scripts/tests/test_archive_work.py, stage/scripts/tests/test_refresh_decision_index.py, stage/scripts/tests/test_audit_stage.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
 ---
@@ -42,6 +42,9 @@ decision_refs:
   그 칸을 어디에 둘지 같이 정한다.
 - 이미 보관된 카드에 딸린 허가증 여섯 장을 옮기는 일회성 경로. 그 카드들은 이미 끝나서
   보관 명령이 다시 안 돈다.
+- **보관 인덱스를 감사가 본다.** 지금 결정·제안·상태 보관 인덱스는 줄을 지워도 아무도 안 잡는다.
+  살아 있는 서랍의 인덱스에는 그 검사가 있는데 보관함에는 없다(W-00000201 판정이 남긴 것).
+  세 보관함을 한 번에 놓는다.
 
 ### Excluded
 
@@ -63,6 +66,7 @@ decision_refs:
 - 대기 서랍에 아직 안 쓴 허가증만 남는다.
 - 이미 보관된 카드의 허가증 여섯 장이 명령으로 옮겨진다.
 - 다 쓴 허가증을 다시 쓰려 하면 등록이 "이미 소진됐다"고 말한다.
+- 보관 인덱스에서 줄을 지우면 감사가 잡는다. 세 보관함 다.
 
 ## Next action
 
