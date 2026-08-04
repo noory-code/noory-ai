@@ -161,3 +161,4 @@
 | W-00000154 | rejected | [items/W-00000154/_story.md](items/W-00000154/_story.md) |
 | W-00000195 | completed | [items/W-00000195/_story.md](items/W-00000195/_story.md) |
 | W-00000196 | completed | [items/W-00000196/_story.md](items/W-00000196/_story.md) |
+| W-00000198 | completed | [items/W-00000198/_epic.md](items/W-00000198/_epic.md) |
