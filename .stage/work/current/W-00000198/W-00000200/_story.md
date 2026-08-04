@@ -9,8 +9,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_topology.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000199
 promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_topology.py, stage/scripts/audit_stage.py, stage/scripts/init_stage.py, stage/templates/, stage/hooks/tests/test_stage_topology.py, stage/scripts/tests/test_audit_stage.py, stage/scripts/tests/test_init_stage.py
@@ -77,6 +77,23 @@ decision_refs:
 
 ## Progress
 
+세 보관 자리를 등록하고, 참조 후보 경로·감사 소유 위치·초기화 템플릿·마이그레이션·라우팅을
+같은 등록부에 맞췄다. 필수 절 검사가 붙었다.
+
+**드라이버로 세 바퀴를 돌렸고 마지막에 막혔다.** 첫 바퀴가 900초에 잘렸는데 일은 거의 끝났고,
+잘린 실행자가 두 번째 바퀴 도중에 보고문을 뒤늦게 써 넣어 "보고문 둘"로 물렀으며, 세 번째
+바퀴는 고칠 것이 없어 파일이 안 바뀌자 제자리걸음으로 막혔다. 감독 세션이 검사를 직접 돌려
+닫았다. 되돌리기를 안 쓴 이유는 사람이 다시 정할 것이 없기 때문이다.
+
+**실행자가 범위를 넘은 다섯 파일을 판단했다.**
+
+| 파일 | 왜 넘었나 | 판단 |
+|---|---|---|
+| `stage/scripts/stage_schema_v4_migration.py` | 옮겨 온 프로젝트도 세 서랍을 받아야 함 | 받는다. 카드 목적이 "새 프로젝트"만 말했지만 옮겨 온 쪽을 빼면 같은 구멍이 남는다 |
+| `stage/CHANGELOG.md` | 플러그인 변경 규칙 | 받는다. 저장소 규칙이 요구한다 |
+| `stage/scripts/tests/test_audit_link_pin.py` | 새 감사 결과 순서 고정 | 받는다. 안 고치면 기존 시험이 깨진다 |
+| `stage/scripts/tests/test_schema_v4_consumers.py` | 세션 요약의 공식 줄 검증 | 받는다. 보관함이 요약에 어떻게 뜨는지가 이 카드의 결과다 |
+| `stage/scripts/tests/test_template_v4.py` | 새 템플릿 묶음 검증 | 받는다 |
 
 ## Verification
 
