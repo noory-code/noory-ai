@@ -386,10 +386,23 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  PendingD["decisions/pending\n아직 안 쓴 일회성 허가"] -->|"카드 보관"| ArchD["official/decisions/archive\n다 쓴 허가"]
-  Proposals["proposals\n결론 안 난 제안"] -->|"닫는 명령"| ArchP["official/proposals/archive\n실림 / 접힘 / 절반"]
-  StateLive["state/observations\nstate/questions\n살아 있는 관측과 질문"] -->|"닫는 명령"| ArchS["official/state/archive\n닫힌 관측 / 답한 질문"]
-  Records["official/decisions/records\n지금 구속하는 규칙"]
+  subgraph Live["살아 있는 서랍"]
+    PendingD["decisions/pending"]
+    Proposals["proposals"]
+    StateLive["state/observations\nstate/questions"]
+  end
+
+  subgraph Arch["보관함 (official/)"]
+    ArchD["decisions/archive\n다 쓴 허가"]
+    ArchP["proposals/archive\n실림 / 접힘 / 절반"]
+    ArchS["state/archive\n닫힌 관측 / 답한 질문"]
+  end
+
+  PendingD -->|"그 허가를 쓴 카드가 보관될 때"| ArchD
+  Proposals -->|"닫는 명령"| ArchP
+  StateLive -->|"닫는 명령"| ArchS
+
+  Records["official/decisions/records\n지금 구속하는 규칙 — 안 움직인다"]
 ```
 
 | 갈래 | 옮기는 주체 | 왜 그쪽인가 |
