@@ -13,6 +13,12 @@ import stage_topology
 # schema-v3 projects so audit and migration never strand an older harness.
 STAGE_OFFICIAL_ROOT = ".stage/official"
 STAGE_OFFICIAL_ARCHIVE_ROOT = f"{STAGE_OFFICIAL_ROOT}/work/archive"
+STAGE_OFFICIAL_ARCHIVE_ROOTS = (
+    STAGE_OFFICIAL_ARCHIVE_ROOT,
+    f"{STAGE_OFFICIAL_ROOT}/decisions/archive",
+    f"{STAGE_OFFICIAL_ROOT}/proposals/archive",
+    f"{STAGE_OFFICIAL_ROOT}/state/archive",
+)
 
 ACTIVE_TOPOLOGY_V3 = "v3"
 ACTIVE_TOPOLOGY_V4 = "v4"
@@ -407,9 +413,9 @@ def path_targets_stage_official(path: str) -> bool:
 
 
 def path_targets_stage_official_archive(path: str) -> bool:
-    """Whether a canonical path targets the schema-v4 work archive."""
+    """Whether a canonical path targets any schema-v4 archive zone."""
 
-    return _path_targets_stage_zone(path, STAGE_OFFICIAL_ARCHIVE_ROOT)
+    return any(_path_targets_stage_zone(path, root) for root in STAGE_OFFICIAL_ARCHIVE_ROOTS)
 
 
 def path_targets_stage_past(path: str) -> bool:

@@ -64,7 +64,9 @@ On Codex, hooks run only after a one-time trust approval in the interactive TUI 
 
 ## Skills
 
-Entry skills: `stage-init`, `stage-work`, `stage-audit`, `stage-decision`, `stage-retrospective`, `stage-archive`, `stage-handoff`, `stage-roadmap`, `stage-migrate`, `stage-discuss`. Descriptions: `skills/README.md`.
+Entry skills: `stage-init`, `stage-work`, `stage-audit`, `stage-decision`, `stage-retrospective`,
+`stage-close-record`, `stage-archive`, `stage-handoff`, `stage-roadmap`, `stage-migrate`, and
+`stage-discuss`. Descriptions: `skills/README.md`.
 
 ## CLI helpers
 

@@ -992,6 +992,10 @@ class Audit:
         every ID-bearing row has a record. Roadmap theme rows carry no record
         ID and are not checked."""
         if self.topology == ACTIVE_TOPOLOGY_V4:
+            planned_proposals_root = (
+                self.stage_root
+                / stage_topology.get_zone("proposals", "planned").canonical_path
+            )
             families = (
                 (
                     stage_topology.get_zone("work", "planned").index_surfaces[0],
@@ -1001,7 +1005,11 @@ class Audit:
                 ),
                 (
                     stage_topology.get_zone("proposals", "planned").index_surfaces[0],
-                    [(node.record_id, node.path) for node in graph.proposals],
+                    [
+                        (node.record_id, node.path)
+                        for node in graph.proposals
+                        if node.path.is_relative_to(planned_proposals_root)
+                    ],
                     ("P",),
                     ("PROPOSAL001", "PROPOSAL002"),
                 ),

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Close and reopen observations, questions, and proposals with one command that moves the record,
+  records the reason and proposal outcome, and updates both indexes as one recoverable transaction.
+  Extend archive intents to the exact decision, proposal, and state archive records and indexes
+  while keeping every other official path behind the promotion gate. The audit now asks only
+  proposals still in the live drawer for a row in `proposals/index.md`, so closing one no longer
+  reports the record as missing from an index it deliberately left.
+
 - Register decision, proposal, and state archive zones as official topology, keep references to
   moved records resolvable, create routed archive templates for new projects, and make the audit
   reject observations, questions, and proposals that omit required record sections.

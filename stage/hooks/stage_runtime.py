@@ -449,6 +449,37 @@ def intent_validation_blocker(
                 "Stage archive gate violation: an archive intent may only target "
                 f"`.stage/{archive_root}/`."
             )
+        relative_targets = [
+            entry_relative_to_workspace(path, workspace_root) for path in target_paths
+        ]
+        record_archive_patterns = (
+            r"\.stage/official/decisions/archive/(?:DE-\d{3,}\.md|index\.md)",
+            r"\.stage/official/proposals/archive/(?:P-\d{3,}\.md|index\.md)",
+            r"\.stage/official/state/archive/(?:(?:O|Q)-\d{3,}\.md|index\.md)",
+        )
+        record_archive_targets = [
+            path
+            for path in relative_targets
+            if any(re.fullmatch(pattern, path) for pattern in record_archive_patterns)
+        ]
+        if record_archive_targets:
+            if len(record_archive_targets) != len(relative_targets):
+                return (
+                    "Stage archive gate violation: record archive targets must be exact "
+                    "decision, proposal, observation, question, or matching archive index paths."
+                )
+            blockers = item_completion_blockers(item) if item_is_completed(item) else []
+            if blockers or not item_is_completed(item):
+                detail = (
+                    " / ".join(blockers)
+                    if blockers
+                    else f"{work_item_id}: status `{item.status}`"
+                )
+                return (
+                    "Stage archive gate violation: a record archive intent must name a completed "
+                    f"work item. {detail}"
+                )
+            return ""
         item_targets = [path for path in target_paths if archive_target_item_id(path, workspace_root)]
         retro_targets = [path for path in target_paths if archive_target_retro_id(path, workspace_root)]
         # The archive index row carries the item's final status (the transition
