@@ -78,12 +78,15 @@ flowchart TB
 
   Official --> Canon["canon\n원칙 / 용어 / 불변 조건"]
   Official --> Model["model\n구조 / 경계 / 인터페이스"]
-  Official --> Decisions["decisions\n승격된 결정"]
+  Official --> Decisions["decisions\n승격된 결정 + 다 쓴 허가"]
   Official --> Archive["work/archive\n보관된 작업 기록 + 회고"]
+  Official --> ProposalArchive["proposals/archive\n실린 / 접힌 / 절반 제안"]
+  Official --> StateArchive["state/archive\n닫힌 관측 / 답한 질문"]
 
   Canon --> CanonRecords["*/\n개별 원칙 / 용어 / 불변 조건"]
   Model --> ModelRecords["components / boundaries / interfaces"]
   Decisions --> DecisionRecords["records\n개별 결정 SSOT (DE- id 유지)"]
+  Decisions --> DecisionArchive["archive\n효력이 끝난 일회성 허가"]
   Archive --> ArchiveRecords["items / retrospectives\n보관 작업 기록과 회고"]
 
   Work --> Planned["planned\n계획 카드 + views (planned 보조 뷰)"]
@@ -374,6 +377,29 @@ flowchart TB
 
   Rule --> Durable["지속 가능한 문서 구조"]
 ```
+
+## 11-2. 끝난 기록이 사는 자리
+
+**폴더가 상태다.** 살아 있는 서랍에 있으면 아직 유효하고, 보관함에 있으면 끝났다. 사람이 파일을
+열지 않고 자리만 보고 판단한다. 상태를 말하는 frontmatter 칸은 따로 두지 않는다 — 자리와 칸이
+둘 다 상태를 말하면 어긋난다(DE-00000057).
+
+```mermaid
+flowchart LR
+  PendingD["decisions/pending\n아직 안 쓴 일회성 허가"] -->|"카드 보관"| ArchD["official/decisions/archive\n다 쓴 허가"]
+  Proposals["proposals\n결론 안 난 제안"] -->|"닫는 명령"| ArchP["official/proposals/archive\n실림 / 접힘 / 절반"]
+  StateLive["state/observations\nstate/questions\n살아 있는 관측과 질문"] -->|"닫는 명령"| ArchS["official/state/archive\n닫힌 관측 / 답한 질문"]
+  Records["official/decisions/records\n지금 구속하는 규칙"]
+```
+
+| 갈래 | 옮기는 주체 | 왜 그쪽인가 |
+|---|---|---|
+| 일회성 허가 | 카드를 보관하는 명령 | 효력이 카드 상태에서 계산된다. 사람이 판정할 것이 없다 |
+| 제안 | 닫는 명령 | 실렸는지 접혔는지는 사람이 판정한다. 결과를 `accepted` / `rejected` / `partial` 로 남긴다 |
+| 관측 / 질문 | 닫는 명령 | 해소됐는지는 사람이 판정한다. 근거는 본문에 남는다 |
+
+**사람이 손으로 옮기는 길은 없다.** 손으로 옮기는 자리를 남기면 인덱스가 따로 낡는다. 되돌리는
+길도 닫는 명령이 함께 가진다. 기록은 어느 경우에도 안 지운다.
 
 ## 12. 완성도와 회고 게이트
 

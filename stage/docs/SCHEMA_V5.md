@@ -65,6 +65,28 @@ record different histories.
 - Starting a rejected planned card remains invalid. Its next lifecycle transition is direct
   archival, not start.
 
+## Finished record locations
+
+A record's directory owns whether it is still live. Live drawers hold only records that still
+apply; a finished record moves to its family's archive zone under `official/`. No record type
+carries a status field for this — the location is the single owner (DE-00000057).
+
+| Live zone | Archive zone | Mover |
+|---|---|---|
+| `decisions/pending` | `official/decisions/archive` | `archive_work.py`, with the card that consumed the pass |
+| `proposals` | `official/proposals/archive` | the close command |
+| `state/observations`, `state/questions` | `official/state/archive` | the close command |
+
+`official/decisions/records` is unchanged: it holds decisions that still bind future work.
+
+- A one-shot venue pass (`authorizes: venue_exception`) is never promoted into
+  `official/decisions/records`. It moves to the decision archive when its work item archives.
+- A proposal records its outcome as `accepted`, `rejected`, or `partial`. Location states that it
+  is finished; the outcome field states which of the three.
+- An observation or question keeps its closure reason in its body. Reopening is the same
+  command in reverse.
+- No lifecycle path moves these records by hand, and no path deletes one.
+
 ## Runtime boundary
 
 `stage_record_paths.record_paths()` is the recursive filesystem boundary. Runtime work consumers

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Settle where a finished record lives and who moves it there: a spent one-shot pass, a settled
+  proposal, and a closed observation or question each leave their live drawer for the family's
+  archive zone under `official/`, so a reader judges by location instead of opening the file.
+
 - Keep answered question records out of the session's open-question view when references prevent
   moving them, using the existing `answered` token at the start of the record's Status section.
 
