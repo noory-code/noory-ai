@@ -9,8 +9,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000204
 promotion: pending
 review: not_required
 scope: stage/CHANGELOG.md, stage/.claude-plugin/plugin.json, stage/.codex-plugin/plugin.json
@@ -66,6 +66,13 @@ decision_refs:
 - DE-00000054 — 릴리스 종류의 통과 기준은 "올렸다"가 아니라 "쓸 수 있다"다.
 
 ## Progress
+
+0.56.0 → 0.57.0. 변경 기록 여섯 묶음에 제목이 붙었고 두 매니페스트가 같은 값을 말한다.
+커밋 `16c0b4b8` 로 푸시 완료.
+
+**쓸 수 있는지 확인했다.** 코덱스 캐시가 처음에는 0.57.0 을 못 집었고(알려진 문제), 코덱스를
+한 번 돌리자 집었다. 클로드 쪽 마켓플레이스 캐시는 이 세션 밖에서 동기화되므로 여기서는
+확인 못 했다.
 
 
 ## Verification
