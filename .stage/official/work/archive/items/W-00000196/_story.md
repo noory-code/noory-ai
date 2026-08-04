@@ -6,11 +6,12 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000197
+promotion: not_applicable
 review: not_required
 scope: .stage/, stage/templates/, stage/hooks/, stage/CHANGELOG.md
 promotes:
@@ -76,6 +77,16 @@ W-00000197 이 화면 쪽을 맡는다. 기록 쪽은 이 카드가 끝냈다.
 
 ## Verification
 
+
+### Executed at close — 2026-08-04
+
+```
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+```
 
 ## Retrospective
 
