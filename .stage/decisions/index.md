@@ -11,4 +11,3 @@
 |---|---|---|---|---|
 | DE-00000056 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | closed | [pending/DE-00000056.md](pending/DE-00000056.md) |
 | DE-00000058 | decided | [M-00000002](../roadmap/milestones/M-00000002.md) | closed | [pending/DE-00000058.md](pending/DE-00000058.md) |
-| DE-00000059 | decided | [W-00000208](../work/current/W-00000206/W-00000208/_story.md) | active | [pending/DE-00000059.md](pending/DE-00000059.md) |

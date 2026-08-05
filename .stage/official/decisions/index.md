@@ -55,3 +55,4 @@
 | DE-00000054 | promoted | 사용자 | [records/DE-00000054.md](records/DE-00000054.md) |
 | DE-00000055 | promoted | 사용자 | [records/DE-00000055.md](records/DE-00000055.md) |
 | DE-00000057 | promoted | 사용자 | [records/DE-00000057.md](records/DE-00000057.md) |
+| DE-00000059 | promoted | 사용자 | [records/DE-00000059.md](records/DE-00000059.md) |

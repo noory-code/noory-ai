@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000206
-promotion: pending
+promotion: promoted
 review: not_required
 scope: .stage/decisions/, stage/docs/, stage/CHANGELOG.md
 promotes: .stage/official/decisions/index.md, .stage/official/decisions/records/DE-00000059.md
@@ -75,7 +75,71 @@ DE-00000059 가 셋을 막기로 하고, **못 잡는 자리 하나를 같은 �
 ## Verification
 
 
+### Executed at close — 2026-08-05
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+Stage audit: /Users/woogis/Workspace/repo/noory-ai/.stage
+OK: no findings
+Summary: errors=0, warnings=0
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 361 tests in 1.435s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (249 earlier lines omitted)
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1785927293
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1785927293. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp0c6xdo1e/unattended/W-00000001-1785927293
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 577 tests in 94.799s
+
+OK
+```
+
 ## Retrospective
 
+R-00000206.
 
 ## Promotion decision
+
+DE-00000059 를 공식으로 올렸다 — 앞으로의 등록을 구속한다.
