@@ -9,8 +9,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000208
 promotion: pending
 review: not_required
 scope: stage/skills/stage-work/, stage/docs/PHILOSOPHY.md, stage/hooks/, stage/CHANGELOG.md
@@ -83,6 +83,15 @@ W-00000207 — 캐내는 절차를 쓰고 등록 스킬의 순서를 뒤집는�
 
 ## Progress
 
+**순서가 뒤집혔다.** 등록 스킬의 첫 절이 "이 일이 얼마나 큰가"에서 "무엇보다 먼저 목적을
+캐낸다"로 바뀌었고, 규모·종류·범위가 그 뒤로 내려갔다(W-00000207).
+
+**기계가 막는다.** 목적이나 끝나는 자리가 비면 등록이 거부하고, 거부 문구가 "칸이 비었다"가
+아니라 "사람에게 물어서 그 답을 넣어라"로 말한다(W-00000209). 못 잡는 것 하나 — 지어낸 목적 —
+은 DE-00000059 에 명시했다.
+
+옛 카드 32장은 경고로 남는다. 눈에 보이되 아무것도 안 막고, v5 마이그레이션도 그 경고에
+안 걸린다.
 
 ## Verification
 

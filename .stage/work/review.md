@@ -8,3 +8,4 @@
 |---|---|---|---|---|
 | W-00000207 | passed | completed | not_applicable | [current/W-00000206/W-00000207/_story.md](current/W-00000206/W-00000207/_story.md) |
 | W-00000208 | passed | completed | approved | [current/W-00000206/W-00000208/_story.md](current/W-00000206/W-00000208/_story.md) |
+| W-00000209 | passed | completed | not_applicable | [current/W-00000206/W-00000209/_story.md](current/W-00000206/W-00000209/_story.md) |

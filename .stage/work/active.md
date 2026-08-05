@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000206 | documentation | claude | 지금 등록은 규모부터 묻고 목적은 상위 문서에서 찾으라고만 해서 상위 문서가 없으면 내가 저장소를 뒤져 목적 | active | Claude | [current/W-00000206/_epic.md](current/W-00000206/_epic.md) |
-| W-00000209 | development | codex | 목적과 끝나는 자리가 비어도 카드가 만들어져서 목적이 일의 결과로 적히므로, 등록과 감사가 빈 카드를 거부해 | active | Claude | [current/W-00000206/W-00000209/_story.md](current/W-00000206/W-00000209/_story.md) |
