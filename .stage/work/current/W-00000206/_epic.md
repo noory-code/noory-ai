@@ -1,0 +1,93 @@
+---
+id: W-00000206
+title: 일을 시작하기 전에 목적부터 캐낸다
+kind: documentation
+venue: claude
+milestone: M-00000001
+autonomous: false
+acceptance:
+  - "python3 stage/scripts/audit_stage.py --project-root ."
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: not_required
+scope: stage/skills/stage-work/, stage/docs/PHILOSOPHY.md, stage/hooks/, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000206 일을 시작하기 전에 목적부터 캐낸다
+
+## Purpose
+
+지금 등록은 규모부터 묻고 목적은 상위 문서에서 찾으라고만 해서 상위 문서가 없으면 내가 저장소를 뒤져 목적을 지어내므로, 무엇을 하고 싶은지를 먼저 캐내고 합의한 뒤에 규모와 범위가 나오게 순서를 뒤집는다
+
+## Stories
+
+- W-00000207 — 등록이 목적부터 캐내는 순서로 바뀐다 (documentation)
+- W-00000208 — 그 순서가 실제로 걸리는 자리를 정한다 (design)
+
+208 이 정한 뒤에 구현 카드가 하나 더 나온다. 지금 걸면 무엇을 만들지 내가 지어내게 된다.
+
+## User value
+
+"X 해줘"라고 하면 내가 저장소를 뒤져 그럴듯한 목적을 지어내는 대신 무엇을 이루려는지부터
+묻는다. 사용자가 지칠 때까지 밀지 않아도 목적이 나온다.
+
+## Scope
+
+### Included
+
+- 캐내는 절차를 쓴다: 여러 번 묻는다. 멈추는 자리는 **셋을 지어내지 않고 쓸 수 있을 때**다 —
+  무엇을 이루려는지 한 문장, 어느 큰 성취에 닿는지, 끝났다는 걸 무엇으로 아는지.
+- 등록의 순서를 뒤집는다. 지금은 규모부터 판단하고 목적을 그 뒤에 상위 문서에서 찾는다.
+  앞으로는 목적을 캐내고 합의한 뒤에 규모·종류·범위·기준이 나온다.
+- 그 순서가 실제로 걸리는 자리를 정한다.
+
+### Excluded
+
+- 등록 카드에 칸을 새로 만들지 않는다. W-00000190 이 질문 셋을 넣었는데도 같은 실수가 여덟 번
+  더 났다 — 묻는 칸을 늘리는 것으로는 안 바뀐다.
+- 사람이 어떻게 답해야 하는지는 안 정한다. 캐내는 쪽이 바뀔 일이다.
+
+## Risks
+
+- **적어 두는 것으로는 사용자가 정한 끝나는 자리를 못 넘는다.** 스킬 본문은 내가 읽고 안 읽고를
+  스스로 정하는 자리다. 208 이 여기에 답해야 하고, 답이 "장치는 못 만든다"로 나오면 이 에픽은
+  기준을 못 채운 채로 닫힌다.
+- 캐묻는 쪽으로 너무 기울면 반대로 답답해진다. 멈추는 자리를 셋으로 못박은 것이 그 방벽이다.
+
+## Success criteria
+
+- 다음에 "X 해줘"를 들었을 때 규모가 아니라 목적을 먼저 묻는다.
+- 셋을 지어내지 않고 쓸 수 있을 때까지 묻고, 다 채워지면 더 안 묻는다.
+- 목적을 안 캐내고 시작하면 무엇이 어디서 막는지가 결정으로 적혀 있다.
+
+## Next action
+
+W-00000207 — 캐내는 절차를 쓰고 등록 스킬의 순서를 뒤집는다.
+
+## Related truth
+
+- `stage/docs/PHILOSOPHY.md` §일감은 사용자의 의도에서 나온다 — 등록 전에 셋을 받으라고 이미
+  말한다. 캐내는 방법이 비어 있다.
+- `stage/skills/stage-work/SKILL.md` — 첫 절이 "규모부터 판단하라"이고, 목적은 그 뒤에
+  "상위 문서에서 찾아라"로 나온다. 상위 문서가 없을 때의 답이 없다.
+- W-00000190 — 등록에 질문 셋을 넣은 카드. 그 뒤에도 같은 실수가 여덟 번 났다.
+
+
+## Related truth
+
+
+## Progress
+
+
+## Verification
+
+
+## Retrospective
+
+
+## Promotion decision
