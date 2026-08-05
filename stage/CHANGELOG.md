@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Draw out what the human wants to achieve before judging how large the work is: registration now
+  opens with a procedure that keeps asking until the purpose, the achievement it reaches, and the
+  finish line are all answered without invention, and moves scale, kind, scope, and criteria after
+  that agreement. An upstream document confirms a purpose rather than supplying one, so the case
+  where none exists no longer leaves the answer to be inferred from repository records.
+
 ## 0.57.0 — 2026-08-04
 
 - Move one-item venue exceptions into the decision archive when their work hierarchy is archived,

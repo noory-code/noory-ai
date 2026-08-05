@@ -1,6 +1,6 @@
 ---
 name: stage-work
-description: Register a Stage work item before you touch governed files. Use this whenever you start a task, feature, fix, refactor, or doc change in a project that has a `.stage/` harness — plan the work, confirm scope with the human, then create the item and its `active.md` row. Registering first is not optional: the hook denies governed writes when no work item is open, so reach for this at the very start of any Stage work, even if the user just says "let's build X" without mentioning Stage.
+description: Draw out what the human wants to achieve, then register a Stage work item before you touch governed files. Use this whenever you start a task, feature, fix, refactor, or doc change in a project that has a `.stage/` harness — ask until the purpose, the achievement it reaches, and the finish line are answered, agree on the work, and only then judge scale and create the item. Registering first is not optional: the hook denies governed writes when no work item is open, so reach for this at the very start of any Stage work, even if the user just says "let's build X" or "it doesn't work" without mentioning Stage.
 ---
 
 # Stage Work Registration
@@ -12,9 +12,41 @@ Registering mid-task leaves early commits ungated (R-00000001's learning).
 
 `.stage/` itself is not governed source, so the item file and `active.md` are free to create.
 
-## Judge the scale first
+## Draw out the purpose before anything else
 
-Start with: **"How large is this work?"** Do not start by offering to create one card.
+**Ask what the human wants to achieve, and keep asking until you can write three things without
+inventing any of them:**
+
+- **The one sentence** — what they want to achieve, not what is broken.
+- **The larger achievement it reaches** — which milestone criterion moves, or none.
+- **How they will know it is done** — a result they will experience.
+
+Do not judge scale, name a kind, propose a card, or open a file before those three are answered.
+Scale, kind, scope, and success criteria are all downstream: they only have answers once the
+purpose is settled. Judging size first means sizing the visible breakage instead.
+
+**One question is never enough.** The first answer names a symptom; the purpose surfaces after
+several exchanges. Ask again, in a different direction, rather than accepting the first answer
+and starting.
+
+**The stopping rule is what you received, not the human's patience.** When any of the three is
+still blank, you have not asked enough. When all three are answered, stop asking and proceed —
+asking further past that point wastes the human's time.
+
+Never fill a blank from repository records. Commits, open observations, and existing cards produce
+a plausible purpose that is a repetition of what already exists, not what this human is trying to
+achieve. **"It doesn't work" carries a purpose too** — something was being attempted; draw out
+what, instead of taking the breakage story at face value.
+
+An upstream SSOT (initiative, epic, plan doc) confirms a stated purpose; it does not supply one.
+When none exists, ask — that is the case this procedure is for.
+
+Confirm the three back to the human and get agreement that this is the work to do. Only then
+continue.
+
+## Judge the scale
+
+With the purpose agreed, ask: **"How large is this work?"**
 
 - `epic` — several stories must combine to deliver the outcome.
 - `story` — one coherent outcome, either top-level or inside an epic.
@@ -23,8 +55,7 @@ Start with: **"How large is this work?"** Do not start by offering to create one
 An action can never be top-level. If no story exists, establish the story first, then register the
 action beneath it. The folder path is the hierarchy SSOT; never add or maintain a `parent:` field.
 
-After judging scale, locate the real purpose in the upstream SSOT (initiative / epic / plan doc).
-Do not guess. If the purpose answers an open question, the question may be unnecessary.
+If the purpose answers an open question, the question may be unnecessary.
 
 ## One hierarchy, three lifecycle columns
 
