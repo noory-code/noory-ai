@@ -9,12 +9,12 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000206
 promotion: pending
 review: not_required
 scope: .stage/decisions/, stage/docs/, stage/CHANGELOG.md
-promotes:
+promotes: .stage/official/decisions/index.md, .stage/official/decisions/records/DE-00000059.md
 decision_refs: DE-00000059
 ---
 
@@ -65,6 +65,12 @@ decision_refs: DE-00000059
 
 ## Progress
 
+실측이 결정을 갈랐다. `--purpose` 가 선택 항목이고 기본값이 빈 문자열이라 **목적이 아예 없는
+카드가 만들어진다.** 감사도 카드의 목적을 안 본다. 그 사실을 보기 전에는 "이미 묻고 있으니 더 할
+게 없다"고 생각했다.
+
+DE-00000059 가 셋을 막기로 하고, **못 잡는 자리 하나를 같은 결정에 명시했다.** 지어낸 목적은
+기계가 못 잡는다. 잡는 척하면 다음 사람이 그걸 믿고 안 본다.
 
 ## Verification
 
