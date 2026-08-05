@@ -163,3 +163,4 @@
 | W-00000196 | completed | [items/W-00000196/_story.md](items/W-00000196/_story.md) |
 | W-00000198 | completed | [items/W-00000198/_epic.md](items/W-00000198/_epic.md) |
 | W-00000204 | completed | [items/W-00000204/_story.md](items/W-00000204/_story.md) |
+| W-00000206 | completed | [items/W-00000206/_epic.md](items/W-00000206/_epic.md) |
