@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Refuse work registration until an agreed purpose and at least one user-observable success
+  criterion are supplied, write every supplied criterion into planned and current cards, and make
+  the audit reject either answer when it is empty on planned or current work. Report the same
+  omissions as non-blocking warnings on archived work, including during schema-v5 migration.
+
 - Draw out what the human wants to achieve before judging how large the work is: registration now
   opens with a procedure that keeps asking until the purpose, the achievement it reaches, and the
   finish line are all answered without invention, and moves scale, kind, scope, and criteria after

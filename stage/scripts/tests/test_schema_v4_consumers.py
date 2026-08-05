@@ -67,6 +67,8 @@ def active_card(item_id: str, *, decision_refs: str = "") -> str:
         f"decision_refs: {decision_refs}\n"
         "---\n\n"
         f"# {item_id} Schema dispatch fixture\n"
+        "\n## Purpose\n\nDeliver the requested outcome.\n"
+        "\n## Success criteria\n\n- The user observes the requested outcome.\n"
     )
 
 
@@ -184,7 +186,9 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 (
                     f"---\nid: {planned_id}\ntitle: Planned fixture\nkind: development\n"
                     "venue: codex\nstatus: selected\npriority: high\n---\n"
-                    f"# {planned_id} Planned fixture\n"
+                    f"# {planned_id} Planned fixture\n\n"
+                    "## Purpose\n\nDeliver the requested outcome.\n\n"
+                    "## Success criteria\n\n- The user observes the requested outcome.\n"
                 ),
                 encoding="utf-8",
             )

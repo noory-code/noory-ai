@@ -29,12 +29,15 @@ BACKLOG_WITH_TRAILING_SECTION = (
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
-    if (
-        "--scale" not in args
-        and "--count-open-milestones" not in args
-        and "--list-open-milestones" not in args
-    ):
+    milestone_mode = (
+        "--count-open-milestones" in args or "--list-open-milestones" in args
+    )
+    if "--scale" not in args and not milestone_mode:
         args = ("--scale", "story", *args)
+    if "--purpose" not in args and not milestone_mode:
+        args = (*args, "--purpose", "Deliver the requested outcome")
+    if "--success-criterion" not in args and not milestone_mode:
+        args = (*args, "--success-criterion", "The user can observe the requested outcome")
     return subprocess.run(
         [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
     )
@@ -489,6 +492,155 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn("acceptance", proc.stderr)
         self.assertFalse(story_path(root, "current", "W-00000001").exists())
 
+    def test_registration_refuses_missing_purpose_with_actionable_guidance(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI),
+                    "--project-root",
+                    str(root),
+                    "--scale",
+                    "story",
+                    "--title",
+                    "Focused purpose",
+                    "--kind",
+                    "chore",
+                    "--scope",
+                    "src",
+                    "--success-criterion",
+                    "The user can observe the requested outcome",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("ask the human what they want to achieve", proc.stderr)
+        self.assertIn("--purpose", proc.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
+    def test_registration_refuses_blank_purpose(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Focused purpose",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--purpose",
+                "   ",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("ask the human what they want to achieve", proc.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
+    def test_registration_refuses_missing_success_criterion_with_actionable_guidance(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(CLI),
+                    "--project-root",
+                    str(root),
+                    "--scale",
+                    "story",
+                    "--title",
+                    "Observable finish",
+                    "--kind",
+                    "chore",
+                    "--scope",
+                    "src",
+                    "--purpose",
+                    "Deliver the requested outcome",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("ask the human how they will know the work is done", proc.stderr)
+        self.assertIn("--success-criterion", proc.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
+    def test_registration_refuses_blank_success_criterion(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Observable finish",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--success-criterion",
+                "   ",
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("ask the human how they will know the work is done", proc.stderr)
+        self.assertFalse(story_path(root, "current", "W-00000001").exists())
+
+    def test_registration_writes_every_success_criterion(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title",
+                "Observable finish",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--success-criterion",
+                "The user sees the first result",
+                "--success-criterion",
+                "The user sees the second result",
+            )
+            body = story_path(root, "current", "W-00000001").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            "## Success criteria\n\n"
+            "- The user sees the first result\n"
+            "- The user sees the second result\n",
+            body,
+        )
+
+    def test_planned_registration_writes_success_criterion(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--backlog",
+                "--title",
+                "Observable finish",
+                "--kind",
+                "chore",
+                "--scope",
+                "src",
+                "--success-criterion",
+                "The user sees the planned result",
+            )
+            body = story_path(root, "planned", "W-00000001").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            "## Success criteria\n\n- The user sees the planned result\n",
+            body,
+        )
+
     def test_current_registration_refuses_more_than_one_purpose_sentence(self):
         tmp, root = self.make()
         with tmp:
@@ -612,6 +764,16 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertIn("every outcome allowed by `## Scope` > `### Included`", skill)
         self.assertIn("Success criterion that proves the outcome", skill)
         self.assertIn("Do not confirm or register while any included outcome is unmatched", skill)
+
+    def test_skill_requires_purpose_and_success_criteria_at_registration(self):
+        skill = SKILL.read_text(encoding="utf-8")
+
+        self.assertIn('--purpose "<one agreed sentence>"', skill)
+        self.assertIn("--success-criterion", skill)
+        self.assertIn('"<one user-observable result>"', skill)
+        self.assertIn("refuses either input when it is missing or blank", skill)
+        self.assertIn("planned and current", skill)
+        self.assertIn("warnings on archived cards", skill)
 
     def test_increments_past_max_including_archive(self):
         tmp, root = self.make()

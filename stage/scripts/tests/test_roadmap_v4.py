@@ -41,8 +41,13 @@ audit_stage = load_module("roadmap_v4_audit_stage", AUDIT)
 
 
 def run_cli(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
-    if cli == REGISTER and "--scale" not in args and "--count-open-milestones" not in args:
+    inspect_mode = "--count-open-milestones" in args or "--list-open-milestones" in args
+    if cli == REGISTER and "--scale" not in args and not inspect_mode:
         args = ("--scale", "story", *args)
+    if cli == REGISTER and "--purpose" not in args and not inspect_mode:
+        args = (*args, "--purpose", "Deliver the requested outcome")
+    if cli == REGISTER and "--success-criterion" not in args and not inspect_mode:
+        args = (*args, "--success-criterion", "The user observes the requested outcome")
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,

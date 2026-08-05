@@ -55,7 +55,12 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         else:
             path = base / filename / "_story.md"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"---\n{body}---\n# {defaults['id']} Test work\n", encoding="utf-8")
+        path.write_text(
+            f"---\n{body}---\n# {defaults['id']} Test work\n\n"
+            "## Purpose\n\nDeliver the requested outcome.\n\n"
+            "## Success criteria\n\n- The user observes the requested outcome.\n",
+            encoding="utf-8",
+        )
         return path
 
     def write_retro(self, root: Path, retro_id: str, work_item: str) -> Path:
@@ -99,7 +104,12 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         else:
             path = base / filename / "_story.md"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"---\n{body}---\n# {defaults['id']}\n", encoding="utf-8")
+        path.write_text(
+            f"---\n{body}---\n# {defaults['id']}\n\n"
+            "## Purpose\n\nDeliver the requested outcome.\n\n"
+            "## Success criteria\n\n- The user observes the requested outcome.\n",
+            encoding="utf-8",
+        )
         return path
 
     def append_index(self, root: Path, index_name: str, item_id: str) -> None:

@@ -207,6 +207,38 @@ class SchemaV5MigrationTest(unittest.TestCase):
                 (stage_root / migration.JOURNAL_RELATIVE).exists()
             )
 
+    def test_post_migration_audit_warnings_do_not_roll_back_migration(self):
+        temporary, project_root, stage_root = self.make_project()
+        with temporary:
+            write_card(
+                stage_root / "work/current/W-00000003.md",
+                "W-00000003",
+                status="active",
+            )
+            warning = audit_stage.Finding(
+                "warning",
+                "WORK029",
+                "Archived work has no success criteria.",
+                ".stage/official/work/archive/items/W-00000001.md",
+            )
+            output = io.StringIO()
+
+            with redirect_stdout(output):
+                result = migration.migrate(
+                    project_root,
+                    dry_run=False,
+                    audit=True,
+                    audit_findings=lambda _root: [warning],
+                )
+
+            self.assertEqual(0, result, output.getvalue())
+            self.assertFalse(
+                (stage_root / migration.MAINTENANCE_MARKER_RELATIVE).exists()
+            )
+            self.assertFalse(
+                (stage_root / migration.JOURNAL_RELATIVE).exists()
+            )
+
     def test_preexisting_audit_warning_is_reported_but_does_not_block_migration(self):
         temporary, project_root, stage_root = self.make_project()
         with temporary:

@@ -35,6 +35,10 @@ migrate_stage = load_module("migrate_stage_cards", SCRIPT_ROOT / "migrate_stage.
 def run_cli(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
     if cli == REGISTER and "--scale" not in args:
         args = ("--scale", "story", *args)
+    if cli == REGISTER and "--purpose" not in args:
+        args = (*args, "--purpose", "Deliver the requested outcome")
+    if cli == REGISTER and "--success-criterion" not in args:
+        args = (*args, "--success-criterion", "The user observes the requested outcome")
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -444,13 +448,15 @@ class BacklogMigrationTest(unittest.TestCase):
         (items / "B-00000002-open.md").write_text(
             "---\nid: B-00000002\ntitle: Still wanted\nkind: chore\nparent:\n"
             "status: triaged\npriority: low\n---\n"
-            "# B-00000002 Still wanted\n\n## Purpose\n\nKeep me.\n",
+            "# B-00000002 Still wanted\n\n## Purpose\n\nKeep me.\n\n"
+            "## Success criteria\n\n- The planned outcome remains available.\n",
             encoding="utf-8",
         )
         (items / "B-00000003-child.md").write_text(
             "---\nid: B-00000003\ntitle: Child idea\nkind: chore\nparent: B-00000002\n"
             "status: captured\npriority:\n---\n"
-            "# B-00000003 Child idea\n\n## Purpose\n\nChild.\n",
+            "# B-00000003 Child idea\n\n## Purpose\n\nChild.\n\n"
+            "## Success criteria\n\n- The child outcome remains available.\n",
             encoding="utf-8",
         )
         index = stage_root / "future" / "backlog" / "index.md"

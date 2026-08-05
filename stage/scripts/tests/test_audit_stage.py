@@ -105,6 +105,8 @@ class StageAuditTest(unittest.TestCase):
                 f"decision_refs: {decision_refs}\n"
                 "---\n"
                 f"# {item_id} Test work\n"
+                "\n## Purpose\n\nDeliver the requested outcome.\n"
+                "\n## Success criteria\n\n- The user observes the requested outcome.\n"
             ),
             encoding="utf-8",
         )
@@ -172,12 +174,111 @@ class StageAuditTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         if frontmatter:
             path.write_text(
-                f"---\nid: {item_id}\ntitle: Test\nkind:\nstatus: {status}\npriority:\n---\n# {item_id}\n",
+                f"---\nid: {item_id}\ntitle: Test\nkind:\nstatus: {status}\npriority:\n---\n"
+                f"# {item_id}\n\n## Purpose\n\nDeliver the requested outcome.\n\n"
+                "## Success criteria\n\n- The user observes the requested outcome.\n",
                 encoding="utf-8",
             )
         else:
             path.write_text(f"# {item_id} Legacy item\n\n## Status\n\n`captured`\n", encoding="utf-8")
         return path
+
+    def test_audit_rejects_empty_purpose_on_current_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            path = self.write_work_item(root)
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                text.replace(
+                    "## Purpose\n\nDeliver the requested outcome.\n",
+                    "## Purpose\n\n",
+                ),
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK028", finding_codes(findings))
+        finding = next(finding for finding in findings if finding.code == "WORK028")
+        self.assertIn("ask the human what they want to achieve", finding.message)
+
+    def test_audit_rejects_empty_success_criteria_on_current_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            path = self.write_work_item(root)
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                text.replace(
+                    "## Success criteria\n\n- The user observes the requested outcome.\n",
+                    "## Success criteria\n\n",
+                ),
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("WORK029", finding_codes(findings))
+        finding = next(finding for finding in findings if finding.code == "WORK029")
+        self.assertIn("ask the human how they will know the work is done", finding.message)
+
+    def test_audit_rejects_empty_outcomes_on_planned_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            path = self.write_backlog_item(root)
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                text.replace(
+                    "## Purpose\n\nDeliver the requested outcome.\n",
+                    "## Purpose\n\n",
+                ).replace(
+                    "## Success criteria\n\n- The user observes the requested outcome.\n",
+                    "## Success criteria\n\n",
+                ),
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        self.assertIn("BACKLOG011", finding_codes(findings))
+        self.assertIn("BACKLOG010", finding_codes(findings))
+
+    def test_audit_warns_about_empty_outcomes_in_archived_history(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            path = self.write_work_item(root, location="archive")
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                text.replace(
+                    "## Purpose\n\nDeliver the requested outcome.\n",
+                    "## Purpose\n\n",
+                ).replace(
+                    "## Success criteria\n\n- The user observes the requested outcome.\n",
+                    "## Success criteria\n\n",
+                ),
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+        outcome_findings = [
+            finding
+            for finding in findings
+            if finding.code in {"WORK028", "WORK029"}
+        ]
+        self.assertEqual(
+            [("warning", "WORK028"), ("warning", "WORK029")],
+            [(finding.severity, finding.code) for finding in outcome_findings],
+        )
+        self.assertTrue(
+            all(
+                "do not invent a historical answer" in finding.message
+                for finding in outcome_findings
+            )
+        )
 
     def write_retrospective(self, root: Path, *, retro_id: str = "R-0001", work_item: str = "W-0001") -> Path:
         path = root / ".stage" / "work" / "retrospectives" / f"{retro_id}.md"

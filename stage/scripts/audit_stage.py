@@ -84,6 +84,10 @@ HEADING_ID_RE = re.compile(r"^#\s+(?P<record_id>(?:DE|[WRDOQAKBPM])-\d{3,})\b", 
 V4_RECORD_ID_RE = re.compile(
     r"^(?P<prefix>DE|TH|[WRDOQAKBPM])-\d{3,}$"
 )
+MARKDOWN_SECTION_RE = re.compile(
+    r"^## (?P<heading>[^\n]+)\s*$\n(?P<body>.*?)(?=^## |\Z)",
+    re.MULTILINE | re.DOTALL,
+)
 # Locations without an ID prefix still need index.md routing coverage.
 ROUTING_ONLY_LOCATIONS: tuple[str, ...] = (
     "past/canon/principles",
@@ -179,6 +183,48 @@ class Audit:
 
     def error(self, code: str, message: str, path: Path | str = "") -> None:
         self.findings.append(Finding("error", code, message, self.display_path(path)))
+
+    def audit_work_outcomes(
+        self, path: Path, *, planned: bool, archived: bool = False
+    ) -> None:
+        """Report missing answers, without blocking on settled history."""
+
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            return
+        sections = {
+            match.group("heading").strip(): match.group("body").strip()
+            for match in MARKDOWN_SECTION_RE.finditer(text)
+        }
+        prefix = "BACKLOG" if planned else "WORK"
+        report = self.warning if archived else self.error
+        if not sections.get("Purpose"):
+            message = (
+                "Purpose is empty in archived work — do not invent a historical answer; "
+                "ask the human before registering future work."
+                if archived
+                else "Purpose is empty — ask the human what they want to achieve and "
+                "record their answer before starting work."
+            )
+            report(
+                f"{prefix}{'011' if planned else '028'}",
+                message,
+                path,
+            )
+        if not sections.get("Success criteria"):
+            message = (
+                "Success criteria are empty in archived work — do not invent a "
+                "historical answer; ask the human before registering future work."
+                if archived
+                else "Success criteria are empty — ask the human how they will know "
+                "the work is done and record their answer before starting work."
+            )
+            report(
+                f"{prefix}{'010' if planned else '029'}",
+                message,
+                path,
+            )
 
     def warning(self, code: str, message: str, path: Path | str = "") -> None:
         self.findings.append(Finding("warning", code, message, self.display_path(path)))
@@ -372,6 +418,12 @@ class Audit:
         item = audited_item.item
         path = item.path
         direct_planned_rejection = is_direct_planned_rejection_archive(audited_item)
+
+        self.audit_work_outcomes(
+            path,
+            planned=False,
+            archived=audited_item.location == "archive",
+        )
 
         for field in REQUIRED_WORK_FIELDS:
             if direct_planned_rejection and field in PLANNED_REJECTION_OPTIONAL_FIELDS:
@@ -666,6 +718,7 @@ class Audit:
         card moves to present/work/items/."""
         for node in graph.backlog:
             path = node.path
+            self.audit_work_outcomes(path, planned=True)
             item_id = node.record_id
             status = (node.fields.get("status") or "").strip().lower()
             if status not in WORK_PLANNED_STATUSES:

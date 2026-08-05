@@ -749,13 +749,12 @@ def migrate(
             if audit_findings is None:
                 import audit_stage
 
-                findings = [
-                    finding
-                    for finding in audit_stage.Audit(project_root).run()
-                    if finding.code not in {"TEMPLATE002", "TEMPLATE004"}
-                ]
+                findings = audit_stage.Audit(project_root).run()
             else:
                 findings = audit_findings(project_root)
+            findings = [
+                finding for finding in findings if finding.severity == "error"
+            ]
             if findings:
                 detail = "; ".join(
                     f"{finding.severity.upper()} {finding.code}"

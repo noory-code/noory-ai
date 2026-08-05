@@ -117,6 +117,10 @@ def run_migrate(
 def run_tool(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     if cli == REGISTER and "--scale" not in args:
         args = ("--scale", "story", *args)
+    if cli == REGISTER and "--purpose" not in args:
+        args = (*args, "--purpose", "Deliver the requested outcome")
+    if cli == REGISTER and "--success-criterion" not in args:
+        args = (*args, "--success-criterion", "The user observes the requested outcome")
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
@@ -198,7 +202,8 @@ class MigrationAdversarialFixture(unittest.TestCase):
             "---\n\n"
             "# W-00000001 Contract X migration fixture\n\n"
             "## Purpose\n\nPreserve legacy and stable decision identity.\n\n"
-            "## Scope\n\n\n## Success criteria\n\n\n## Related truth\n\n"
+            "## Scope\n\n\n## Success criteria\n\n- The migration preserves the work.\n\n"
+            "## Related truth\n\n"
             "## Progress\n\n\n## Verification\n\n\n## Retrospective\n\n"
             "## Promotion decision\n",
             encoding="utf-8",

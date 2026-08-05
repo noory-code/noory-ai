@@ -65,8 +65,10 @@ whole to `work/current/` when work starts, and archived whole under `official/wo
 closed. The lifecycle CLIs derive these paths; never select them manually. Two flows create work:
 
 - **Capture for later**: `register_work.py --backlog --scale <scale> --title "..." --kind <kind>
-  --scope "<this record's paths>" [--parent W-NNNNNNNN]` — a planned record (`status: captured`) in
-  `work/planned/` and its index. No venue/split checks run during capture.
+  --scope "<this record's paths>" --purpose "<one agreed sentence>" --success-criterion
+  "<one user-observable result>" [--success-criterion "<another result>"] [--parent
+  W-NNNNNNNN]` — a planned record (`status: captured`) in `work/planned/` and its index. No
+  venue/split checks run during capture.
 - **Start now**: the flow below (direct current registration), or start an existing planned card
   with `python3 stage/scripts/start_work.py --project-root <root> W-NNNNNNNN --scope "..."` — the
   mover moves the top-level directory, sets `active`, requires scope, derives the venue, and
@@ -171,7 +173,10 @@ next free number, writes the card, and updates the owning index:
 - Every scale asks for one `## Purpose` sentence, `## User value`, `## Scope`, `## Risks`,
   `## Success criteria`, and `## Next action`. Registration refuses `--purpose` when a `.`, `!`,
   or `?` sentence boundary is followed by more text; it does not impose a character limit.
-  Lower levels name only their own contribution instead of repeating an ancestor's purpose.
+  Pass the agreed sentence with `--purpose` and repeat `--success-criterion` for every agreed
+  finish line. Registration refuses either input when it is missing or blank and tells the
+  executor to ask the human for the answer. Lower levels name only their own contribution instead
+  of repeating an ancestor's purpose.
 
   | Scale | Scale-specific sections |
   |---|---|
@@ -183,8 +188,9 @@ next free number, writes the card, and updates the owning index:
   fills: `## Related truth`, `## Progress`, `## Verification`, `## Retrospective`, and
   `## Promotion decision`. Capturing a card for later (`--backlog`) does not exempt it. A card that
   leaves its questions empty is a note, and whoever picks it up will invent the missing answer.
-  A planned card with an empty body cannot be started: the driver refuses an item whose acceptance
-  command is missing, and a human reading it has to redo the thinking that was skipped.
+  The audit rejects an empty `## Purpose` or `## Success criteria` section on planned and current
+  cards. It reports the same omissions as warnings on archived cards, where later answers would
+  rewrite settled history.
 
 - Store the smallest command that fails when this card's own result breaks — one test file, or one
   test name. A card that only changes documents can store the audit alone. If the command can fail
@@ -229,8 +235,9 @@ outcome belongs to this item; otherwise remove or narrow the outcome in `### Inc
 
 1. Show the human the affected-place count, included-outcome coverage, purpose, scope, and success
    criteria. Get confirmation before executing — this is the one human checkpoint in the flow.
-2. Run `register_work.py` with the confirmed values. The CLI writes the card and the active index
-   row in the topology selected by `.stage/settings.json`.
+2. Run `register_work.py` with the confirmed `--purpose` and one or more
+   `--success-criterion` values. The CLI writes both answers, the card, and the active index row in
+   the topology selected by `.stage/settings.json`.
 3. Verify: `python3 stage/scripts/audit_stage.py --project-root <project-root>` (expect errors=0).
 
 ## Then work

@@ -43,6 +43,10 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess:
 def run_tool(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
     if cli == REGISTER and "--scale" not in args:
         args = ("--scale", "story", *args)
+    if cli == REGISTER and "--purpose" not in args:
+        args = (*args, "--purpose", "Deliver the requested outcome")
+    if cli == REGISTER and "--success-criterion" not in args:
+        args = (*args, "--success-criterion", "The user observes the requested outcome")
     return subprocess.run(
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,

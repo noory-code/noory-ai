@@ -10,7 +10,7 @@ Usage:
     register_work.py --project-root . --title "..." --kind feature \
         --scope "stage/skills, stage/scripts" --scale story \
         [--parent W-00000007] [--venue claude] [--owner Claude] \
-        [--purpose "..."] [--id W-00000008]
+        --purpose "..." --success-criterion "..." [--id W-00000008]
 """
 
 from __future__ import annotations
@@ -109,6 +109,13 @@ def purpose_has_multiple_sentences(purpose: str) -> bool:
     return first_end is not None and bool(one_line[first_end.end() :].strip())
 
 
+def fill_list_section(text: str, heading: str, values: list[str]) -> str:
+    """Fill an empty Markdown section with one bullet per supplied value."""
+
+    rendered = "".join(f"- {value}\n" for value in values)
+    return text.replace(f"## {heading}\n\n", f"## {heading}\n\n{rendered}", 1)
+
+
 def existing_numbers(stage_root: Path) -> set[int]:
     numbers: set[int] = set()
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
@@ -200,6 +207,7 @@ def fill_item(
     venue: str,
     scope: str,
     purpose: str,
+    success_criteria: list[str],
     review: bool,
     autonomous: bool,
     acceptance: list[str],
@@ -221,8 +229,8 @@ def fill_item(
         text = set_field(text, "review", "pending")  # opt this item into a required review
     if decision:
         text = set_field(text, "decision_refs", decision)
-    if purpose:
-        text = text.replace("## Purpose\n\n", f"## Purpose\n\n{purpose}\n", 1)
+    text = text.replace("## Purpose\n\n", f"## Purpose\n\n{purpose}\n", 1)
+    text = fill_list_section(text, "Success criteria", success_criteria)
     return text
 
 
@@ -381,8 +389,8 @@ def register_backlog_card(stage_root: Path, args) -> int:
         text = set_optional_field(text, "scope", args.scope, after="review")
         if args.priority:
             text = set_field(text, "priority", args.priority)
-        if args.purpose:
-            text = text.replace("## Purpose\n\n", f"## Purpose\n\n{args.purpose}\n", 1)
+        text = text.replace("## Purpose\n\n", f"## Purpose\n\n{args.purpose}\n", 1)
+        text = fill_list_section(text, "Success criteria", args.success_criterion)
         return text
 
     parent_path = None
@@ -528,6 +536,12 @@ def main() -> int:
     parser.add_argument("--owner", default="Claude")
     parser.add_argument("--purpose", default="")
     parser.add_argument(
+        "--success-criterion",
+        action="append",
+        default=[],
+        help="User-observable finish line written under Success criteria (repeatable).",
+    )
+    parser.add_argument(
         "--milestone",
         action="append",
         default=[],
@@ -564,8 +578,34 @@ def main() -> int:
         help="Optional ordering hint for a planned card (shown in the backlog index).",
     )
     args = parser.parse_args()
+    stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
+    schema_blocker = schema_migration_banner(stage_root)
+    if schema_blocker:
+        print(schema_blocker, file=sys.stderr)
+        return 2
+
     args.acceptance = [command for command in args.acceptance if command.strip()]
-    if args.purpose and purpose_has_multiple_sentences(args.purpose):
+    args.purpose = args.purpose.strip()
+    args.success_criterion = [
+        " ".join(criterion.split()) for criterion in args.success_criterion
+    ]
+    if not args.purpose:
+        print(
+            "refusing: ask the human what they want to achieve, then pass the answer "
+            "with --purpose",
+            file=sys.stderr,
+        )
+        return 1
+    if not args.success_criterion or any(
+        not criterion for criterion in args.success_criterion
+    ):
+        print(
+            "refusing: ask the human how they will know the work is done, then pass "
+            "the answer with --success-criterion",
+            file=sys.stderr,
+        )
+        return 1
+    if purpose_has_multiple_sentences(args.purpose):
         print("refusing: purpose must be one sentence", file=sys.stderr)
         return 1
     if args.autonomous and not args.acceptance:
@@ -575,11 +615,6 @@ def main() -> int:
         )
         return 1
 
-    stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
-    schema_blocker = schema_migration_banner(stage_root)
-    if schema_blocker:
-        print(schema_blocker, file=sys.stderr)
-        return 2
     if len(args.milestone) > 1:
         print("--milestone accepts at most one M-NNNNNNNN value", file=sys.stderr)
         return 2
@@ -701,6 +736,7 @@ def main() -> int:
             venue=args.venue,
             scope=args.scope,
             purpose=args.purpose,
+            success_criteria=args.success_criterion,
             review=args.review,
             autonomous=args.autonomous,
             acceptance=args.acceptance,

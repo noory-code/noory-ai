@@ -94,7 +94,8 @@ class V3ToV4MigrationTest(unittest.TestCase):
             "---\n\n"
             "# W-00000001 Migration fixture\n\n"
             "## Purpose\n\nExercise migration.\n\n"
-            "## Scope\n\n\n## Success criteria\n\n\n## Related truth\n\n"
+            "## Scope\n\n\n## Success criteria\n\n- The migration preserves the work.\n\n"
+            "## Related truth\n\n"
             "## Progress\n\n\n## Verification\n\n\n## Retrospective\n\n"
             "## Promotion decision\n",
             encoding="utf-8",
@@ -433,7 +434,7 @@ class V3ToV4MigrationTest(unittest.TestCase):
             root = Path(tmp)
             stage_root = self.make_v3_project(root)
             finding = audit_stage.Finding(
-                "warning", "TEST001", "injected strict-audit failure"
+                "error", "TEST001", "injected strict-audit failure"
             )
             with patch.object(
                 migrate_stage,
