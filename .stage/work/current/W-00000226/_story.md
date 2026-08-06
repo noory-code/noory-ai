@@ -9,8 +9,8 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000225
 promotion: pending
 review: not_required
 scope: stage/skills/stage-drive/SKILL.md, stage/CHANGELOG.md
@@ -78,9 +78,32 @@ decision_refs:
 
 ## Progress
 
+DE-00000062 의 첫 팀원 실행. 세 바퀴 돌았고 병합 `9f8bf996`. 스킬에 명령 시간 한도를 설명하는
+절이 생겼다 — 카드 선언 크기(미완 자식·범위 항목·성공 기준 중 최댓값)에 900초를 곱한 값이
+기본이고, 직접 줄 때는 표 두 행이 각각 숫자를 내놓고 둘 다 참이면 큰 쪽을 쓴다.
+
+**카드가 본 것보다 낡은 자리가 많았다.** 카드는 스킬 한 곳을 봤는데 실제로는 셋이었고, 그중
+가장 낡은 것이 스킬 자신이 "규칙의 주인"이라고 지목한 `stage/docs/SCHEMA_V4.md` 였다. 팀원이
+둘을 범위 넘음으로 신고하고 고쳤다 — 그 문서(수용, 주인이 어긋나면 스킬만 고쳐도 소용없음)와
+`--timeout` 도움말 문자열(수용, "subtree-derived"가 이제 틀린 말).
 
 ## Verification
 
+인수는 감독이 직접 돌렸다(감사 오류 0, 드라이버 시험 85, 훅 시험 361, `--help` 확인). 판정은
+codex 가 세 바퀴 봤다.
+
+기준 1·3 통과 — 판정자가 `max(1, 2, 3) * 900 = 2700` 을 직접 계산하고 `split_scope`,
+`declared_success_criteria_count`, `subtree_limits` 기준선을 코드로 대조했다.
+
+**기준 2 는 끝내 통과 못 했고, 그것이 이 카드가 남기는 기록이다.** 판정이 두 바퀴에 걸쳐
+서로 다른 진짜 결함을 잡았고 둘 다 고쳤다 — 형용사가 판단을 대신하던 조건("여러 곳"), 그리고
+표의 두 행이 동시에 참일 때 값이 하나로 안 정해지던 것. 남은 지적("디렉터리 아래 어느 파일을
+셀지엔 판단이 든다")은 **기각했다**: 판정자 자신이 코드에 그런 임계값이 없음을 확인했고,
+없는 규칙을 지어 적는 것은 이 프로젝트의 정직 원칙이 금지한다.
+
+**기준 자체가 채울 수 없게 쓰였다.** "모든 경우를 추측 없는 조건으로"는 판단이 본질인 경우가
+남아 있는 한 도달 불가다. 카드를 쓴 쪽(감독)의 잘못이고, 그래서 네 번째 바퀴를 돌리는 대신
+여기 적고 닫는다. 세 바퀴가 실제 개선을 냈으므로 기준이 무익했던 것은 아니다.
 
 ## Retrospective
 
