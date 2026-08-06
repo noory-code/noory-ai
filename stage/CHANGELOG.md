@@ -9,6 +9,18 @@
   project and work-item bindings before their fixtures run. A direct test-file discovery now uses
   the same shared environment sanitizer as the full hook suite.
 
+- Resume an interrupted supervised driver with `--resume`: a completed executor checkpoint skips
+  straight to acceptance and independent review, while a reviewer checkpoint restarts only the
+  independent review. Refuse either shortcut when repository state changed after the checkpoint,
+  and make `--reset-attempts` target the item carrying the interrupted role instead of the next
+  ready item.
+
+- Let a supervised driver recover work completed by a truncated executor: when the repository is
+  unchanged, passing acceptance now counts as progress and still proceeds to independent review,
+  while failed acceptance still blocks. Derive the default command timeout from the largest of the
+  target card's declared scope, success criteria, and unfinished child count so only small cards use
+  the 900-second floor.
+
 - Point the initialization skill's manual fallback at the template tree the helper actually
   deploys. It named the previous topology, so a `.stage/` built by hand from it carried that
   topology's schema marker and every mutation gate refused it. The same sentence now records why
