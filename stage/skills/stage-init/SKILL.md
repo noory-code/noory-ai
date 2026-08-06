@@ -34,7 +34,12 @@ headings) stay language-neutral in every language. Ask the user which language t
 documents should use when their conversation language and the project's instruction language
 differ.
 
-If the helper is unavailable, create the same structure as `templates/project-stage/`.
+If the helper is unavailable, copy `templates/v4/project-stage/` — the tree the helper deploys,
+whose `v4` names the active topology rather than the schema version — and overlay
+`templates/v4/locales/<tag>/` on it for a non-English language.
+
+`templates/project-stage/` is the previous topology and stays for projects that have not migrated:
+the audit compares such a project against it, and migration reads its `operations/verification.md`.
 
 ## Required structure
 
@@ -52,6 +57,9 @@ If the helper is unavailable, create the same structure as `templates/project-st
     interfaces/
   official/decisions/
     records/
+    archive/
+  official/state/archive/
+  official/proposals/archive/
   official/work/archive/
     items/
     retrospectives/

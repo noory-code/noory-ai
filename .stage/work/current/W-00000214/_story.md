@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/skills/stage-init/SKILL.md, stage/CHANGELOG.md
 promotes:
@@ -73,6 +73,9 @@ decision_refs:
 
 ## Progress
 
+초기화 스킬의 손 작업 문장은 헬퍼가 배포하는 트리(`templates/v4/project-stage/`)와 언어별
+덧씌우기 자리를 가리키고, 이전 세대 트리가 남아 있는 이유를 바로 다음 줄이 밝힌다. 같은 파일의
+필요한 구조 블록은 결정·상태·제안 보관 칸을 포함해 그 트리와 같은 칸을 말한다.
 
 ## Verification
 
@@ -81,3 +84,6 @@ decision_refs:
 
 
 ## Promotion decision
+
+not_applicable — 이 카드는 결정 기록을 걸지 않고 승격 경로도 선언하지 않는다
+(`promotes`, `decision_refs` 둘 다 비어 있음).
