@@ -142,13 +142,17 @@ class StageAuditTest(unittest.TestCase):
         work_item: str = "W-0001",
         status: str = "decided",
         principles: str = "SSOT — one owning location for this rule.",
+        authorizes: str = "",
     ) -> Path:
         path = root / ".stage" / "decisions" / "pending" / f"{decision_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
+        authorizes_line = f"authorizes: {authorizes}\n" if authorizes else ""
         path.write_text(
             (
-                f"---\nid: {decision_id}\nwork_item: {work_item}\nstatus: {status}\n---\n"
-                f"# {decision_id}\n\n## Question\n\nQ\n\n## Principles applied\n\n{principles}\n\n## Chosen direction\n\nX\n"
+                f"---\nid: {decision_id}\nwork_item: {work_item}\nstatus: {status}\n"
+                f"{authorizes_line}---\n"
+                f"# {decision_id}\n\n## Question\n\nQ\n\n## Principles applied\n\n"
+                f"{principles}\n\n## Chosen direction\n\nX\n"
             ),
             encoding="utf-8",
         )
@@ -1788,6 +1792,37 @@ class StageAuditTest(unittest.TestCase):
         self.assertEqual(
             len([finding for finding in findings if finding.code == "SSOT001"]), 2
         )
+
+    def test_same_decision_in_pending_and_archive_is_reported_as_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            self.write_work_item(root, decision_refs="DE-0001")
+            self.append_active_index(root, "W-0001")
+            source = self.write_decision(root, authorizes="venue_exception")
+            audit_stage.refresh_decision_index.refresh_index(root)
+            self.assertEqual([], audit_stage.Audit(root).run())
+
+            destination = root / ".stage/official/decisions/archive" / source.name
+            destination.write_bytes(source.read_bytes())
+            archive_index = destination.parent / "index.md"
+            with archive_index.open("a", encoding="utf-8") as handle:
+                handle.write("| DE-0001 | venue exception consumed | [record](DE-0001.md) |\n")
+
+            findings = audit_stage.Audit(root).run()
+
+        duplicate_paths = {
+            ".stage/decisions/pending/DE-0001.md",
+            ".stage/official/decisions/archive/DE-0001.md",
+        }
+        duplicate_errors = [
+            finding
+            for finding in findings
+            if finding.severity == "error"
+            and finding.path in duplicate_paths
+            and "DE-0001" in finding.message
+        ]
+        self.assertTrue(duplicate_errors)
 
     def test_work_item_duplicates_stay_with_work007(self):
         with tempfile.TemporaryDirectory() as tmp:
