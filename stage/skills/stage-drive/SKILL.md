@@ -217,6 +217,21 @@ malformed, or non-approving verdict file fails the review, as does a nonzero rev
 The step records attempt state under `.stage/.runtime/driver/`, then prints the outcome and the
 recommended next action.
 
+If the driver process stops after recording a completed-stage checkpoint, continue that same
+attempt with:
+
+```bash
+python3 "<driver>" --project-root <project-root> --resume <TARGET_ID>
+```
+
+Do not use another `--execute` while an interrupted role remains. Resume selects the item carrying
+that role, compares the repository with its saved checkpoint, and refuses to skip work if anything
+changed afterward. An `executor` checkpoint runs acceptance and independent review; a `reviewer`
+checkpoint reruns only the independent reviewer. If the executor died before a completed checkpoint
+was recorded, or a person deliberately changed or committed its result, use `--reset-attempts`
+with a one-line reason before starting a new executor turn. The reset targets the interrupted item,
+not whichever leaf would otherwise run next.
+
 It does **not** commit, close the card, escalate, promote official truth, advance the parent, or
 move on to the next item. Those stay with the human supervising the run, so the recommended next
 action is something a person still performs.

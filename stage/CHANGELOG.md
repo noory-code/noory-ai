@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Resume an interrupted supervised driver with `--resume`: a completed executor checkpoint skips
+  straight to acceptance and independent review, while a reviewer checkpoint restarts only the
+  independent review. Refuse either shortcut when repository state changed after the checkpoint,
+  and make `--reset-attempts` target the item carrying the interrupted role instead of the next
+  ready item.
+
 - Let a supervised driver recover work completed by a truncated executor: when the repository is
   unchanged, passing acceptance now counts as progress and still proceeds to independent review,
   while failed acceptance still blocks. Derive the default command timeout from the largest of the
