@@ -100,6 +100,42 @@ class DriveParallelTest(unittest.TestCase):
         )
         return driver
 
+    def make_fake_unattended_driver(self, directory: Path, expected_count: int) -> Path:
+        driver = directory / "fake_unattended_drive.py"
+        driver.write_text(
+            textwrap.dedent(
+                f"""\
+                import argparse
+                import json
+                import time
+                from pathlib import Path
+
+                parser = argparse.ArgumentParser()
+                parser.add_argument("--project-root", required=True)
+                parser.add_argument("--unattended", action="store_true")
+                parser.add_argument("target")
+                args = parser.parse_args()
+                root = Path(args.project_root).resolve()
+                assert Path.cwd().resolve() == root
+                assert args.unattended
+                gate = root.parent / "unattended-started"
+                gate.mkdir(exist_ok=True)
+                (gate / args.target).write_text(
+                    json.dumps({{"project_root": str(root), "unattended": args.unattended}}),
+                    encoding="utf-8",
+                )
+                deadline = time.monotonic() + 5
+                while len(list(gate.iterdir())) < {expected_count}:
+                    if time.monotonic() >= deadline:
+                        raise SystemExit("drivers did not overlap")
+                    time.sleep(0.01)
+                print(f"{{args.target}} ran unattended from {{root}}")
+                """
+            ),
+            encoding="utf-8",
+        )
+        return driver
+
     def add_current_cards(
         self,
         root: Path,
@@ -422,6 +458,41 @@ class DriveParallelTest(unittest.TestCase):
             self.assertIn(f"{target} ran in {tree.resolve()} on {branch}", output.getvalue())
             self.assertIn(f"Merge branch: {branch}", output.getvalue())
 
+    def test_unattended_runs_drivers_from_project_without_parallel_worktrees(self) -> None:
+        module = load_module()
+        tmp, root = self.make_repository()
+        temporary_root = Path(tmp.name)
+        worktree_root = temporary_root / "worktrees"
+        driver = self.make_fake_unattended_driver(temporary_root, expected_count=2)
+        targets = ["W-00000001", "W-00000002"]
+        self.add_current_cards(root, targets)
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=driver,
+                unattended=True,
+            )
+
+        self.assertEqual(0, result)
+        self.assertFalse(worktree_root.exists())
+        branches = git(root, "branch", "--format=%(refname:short)")
+        for target in targets:
+            observation = json.loads(
+                (temporary_root / "unattended-started" / target).read_text(encoding="utf-8")
+            )
+            self.assertEqual(str(root.resolve()), observation["project_root"])
+            self.assertTrue(observation["unattended"])
+            self.assertNotIn(f"stage/worktree/{target}", branches)
+            self.assertIn(
+                f"{target} ran unattended from {root.resolve()}",
+                output.getvalue(),
+            )
+            self.assertNotIn(f"Merge branch: stage/worktree/{target}", output.getvalue())
+
     def test_creation_failure_cleans_every_tree_and_branch_from_the_attempt(self) -> None:
         module = load_module()
         _, root = self.make_repository()
@@ -561,6 +632,38 @@ class DriveParallelTest(unittest.TestCase):
             f"{targets[0]} <-> {targets[1]}: {shared_path}",
             errors.getvalue(),
         )
+
+    def test_unattended_rejects_overlapping_scopes_before_running_a_driver(self) -> None:
+        module = load_module()
+        _, root = self.make_repository()
+        targets = ["W-00000001", "W-00000002"]
+        shared_path = "stage/scripts/drive_parallel.py"
+        self.add_current_cards(
+            root,
+            targets,
+            scopes={target: shared_path for target in targets},
+        )
+        worktree_root = root.parent / "worktrees"
+        errors = io.StringIO()
+
+        with (
+            mock.patch.object(module, "create_worktree") as create,
+            mock.patch.object(module, "run_driver") as run_driver,
+            contextlib.redirect_stderr(errors),
+        ):
+            result = module.run_parallel(
+                root,
+                targets,
+                worktree_root=worktree_root,
+                driver_path=module.DRIVER,
+                unattended=True,
+            )
+
+        self.assertEqual(1, result)
+        create.assert_not_called()
+        run_driver.assert_not_called()
+        self.assertFalse(worktree_root.exists())
+        self.assertIn("scope overlap", errors.getvalue())
 
     def test_non_overlapping_scopes_run_without_an_override(self) -> None:
         module = load_module()
@@ -751,6 +854,23 @@ class DriveParallelTest(unittest.TestCase):
             args = module.parse_args()
 
         self.assertTrue(args.allow_overlap)
+
+    def test_unattended_is_available_from_the_command_line(self) -> None:
+        module = load_module()
+
+        with mock.patch.object(
+            sys,
+            "argv",
+            [
+                str(SCRIPT),
+                "--unattended",
+                "W-00000001",
+                "W-00000002",
+            ],
+        ):
+            args = module.parse_args()
+
+        self.assertTrue(args.unattended)
 
     def test_limits_concurrent_drivers_to_configured_worker_count(self) -> None:
         module = load_module()
@@ -1321,6 +1441,30 @@ class DriveParallelTest(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertIn(f"No retained worktree or branch for {target}", output.getvalue())
         self.assertNotIn("Removed worktree and branch", output.getvalue())
+
+    def test_unattended_cleanup_reports_that_parallel_created_nothing(self) -> None:
+        module = load_module()
+        targets = ["W-00000001", "W-00000002"]
+        output = io.StringIO()
+
+        with (
+            mock.patch.object(
+                sys,
+                "argv",
+                [str(SCRIPT), "--unattended", "--cleanup", *targets],
+            ),
+            mock.patch.object(module, "cleanup_targets") as cleanup,
+            contextlib.redirect_stdout(output),
+        ):
+            result = module.main()
+
+        self.assertEqual(0, result)
+        cleanup.assert_not_called()
+        for target in targets:
+            self.assertIn(
+                f"No parallel worktree was created for unattended target {target}",
+                output.getvalue(),
+            )
 
     def test_cleanup_rmtree_fallback_runs_for_registered_worktree(self) -> None:
         module = load_module()
