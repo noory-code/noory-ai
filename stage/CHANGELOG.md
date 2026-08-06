@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.59.0 — 2026-08-06
+
 - Pin the audit's fail-closed behavior when the same consumed venue-exception decision remains in
   both the pending drawer and the decision archive.
 
