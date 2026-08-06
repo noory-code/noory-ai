@@ -6,4 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000228 | development | codex | 여러 카드를 무인으로 동시에 돌리려면 지금은 사람이 카드마다 드라이버 명령을 따로 띄워야 하므로, 병렬 명령 | active | Claude | [current/W-00000228/_story.md](current/W-00000228/_story.md) |
+| W-00000230 | ops | codex | 무인 실행은 카드를 스스로 닫고 격리된 가지에만 쓰므로 결과가 본 가지에 들어가려면 사람이 병합해야 하는데, | active | Claude | [current/W-00000230/_story.md](current/W-00000230/_story.md) |

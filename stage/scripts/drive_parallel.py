@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run supervised Stage driver steps in card-specific Git worktrees."""
+"""Run Stage drivers for multiple cards in parallel."""
 
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ def real_git_environment() -> dict[str, str]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run one supervised Stage driver step per card in parallel worktrees."
+        description="Run one Stage driver per card in parallel."
     )
     parser.add_argument(
         "--project-root",
@@ -104,6 +104,14 @@ def parse_args() -> argparse.Namespace:
         type=positive_integer,
         default=DEFAULT_DRIVER_TIMEOUT,
         help=f"Seconds allowed for each driver (default: {DEFAULT_DRIVER_TIMEOUT}).",
+    )
+    parser.add_argument(
+        "--unattended",
+        action="store_true",
+        help=(
+            "Pass --unattended to each driver and let the driver manage its own "
+            "worktree."
+        ),
     )
     parser.add_argument(
         "--cleanup",
@@ -154,7 +162,12 @@ def worktree_specs(worktree_root: Path, targets: list[str]) -> list[WorktreeSpec
     ]
 
 
-def validate_specs(project_root: Path, specs: list[WorktreeSpec]) -> str:
+def validate_specs(
+    project_root: Path,
+    specs: list[WorktreeSpec],
+    *,
+    require_available_worktrees: bool = True,
+) -> str:
     status, top_level = run_git(project_root, ["rev-parse", "--show-toplevel"])
     if status != 0:
         return f"project root is not a Git worktree: {top_level.strip()}"
@@ -181,6 +194,8 @@ def validate_specs(project_root: Path, specs: list[WorktreeSpec]) -> str:
             return f"cannot resolve current work item {spec.target}: {exc}"
         if not card_path.is_file():
             return f"current work item does not exist: {spec.target}"
+        if not require_available_worktrees:
+            continue
         if spec.path.exists() or spec.path.is_symlink():
             return f"worktree path already exists for {spec.target}: {spec.path}"
         status, output = run_git(
@@ -602,29 +617,33 @@ def run_driver(
     driver_path: Path,
     *,
     timeout: int,
+    project_root: Path | None = None,
+    unattended: bool = False,
 ) -> DriverResult:
+    run_root = project_root.resolve() if unattended and project_root else spec.path
     command = [
         sys.executable,
         str(driver_path),
         "--project-root",
-        str(spec.path),
-        "--execute",
+        str(run_root),
+        "--unattended" if unattended else "--execute",
         spec.target,
     ]
     environment = real_git_environment()
-    environment["CLAUDE_PROJECT_DIR"] = str(spec.path)
-    environment["PROJECT_ROOT"] = str(spec.path)
+    environment["CLAUDE_PROJECT_DIR"] = str(run_root)
+    environment["PROJECT_ROOT"] = str(run_root)
     try:
         result = subprocess.run(
             command,
-            cwd=str(spec.path),
+            cwd=str(run_root),
             capture_output=True,
             env=environment,
             text=True,
             timeout=timeout,
         )
     except subprocess.TimeoutExpired:
-        reaper_status = reap_after_timeout(spec)
+        reaper_spec = WorktreeSpec(spec.target, run_root, spec.branch)
+        reaper_status = reap_after_timeout(reaper_spec)
         return DriverResult(
             spec,
             124,
@@ -645,14 +664,17 @@ def run_driver(
     )
 
 
-def print_result(result: DriverResult) -> None:
+def print_result(result: DriverResult, *, unattended: bool = False) -> None:
     print(f"{result.spec.target}: driver exited with status {result.returncode}")
     if result.stdout:
         print(result.stdout.rstrip())
     if result.stderr:
         print(result.stderr.rstrip(), file=sys.stderr)
-    print(f"Worktree: {result.spec.path}")
-    print(f"Merge branch: {result.spec.branch}")
+    if unattended:
+        print("Worktree: managed by the unattended driver")
+    else:
+        print(f"Worktree: {result.spec.path}")
+        print(f"Merge branch: {result.spec.branch}")
 
 
 def run_parallel(
@@ -664,12 +686,15 @@ def run_parallel(
     max_workers: int = DEFAULT_MAX_WORKERS,
     driver_timeout: int = DEFAULT_DRIVER_TIMEOUT,
     allow_overlap: bool = False,
+    unattended: bool = False,
 ) -> int:
     project_root = project_root.resolve()
     worktree_root = worktree_root.resolve()
     driver_path = driver_path.resolve()
 
-    if worktree_root == project_root or project_root in worktree_root.parents:
+    if not unattended and (
+        worktree_root == project_root or project_root in worktree_root.parents
+    ):
         print("ERROR: worktree root must be outside the project worktree", file=sys.stderr)
         return 2
     if len(set(targets)) != len(targets):
@@ -690,7 +715,11 @@ def run_parallel(
         return 2
 
     specs = worktree_specs(worktree_root, targets)
-    validation_error = validate_specs(project_root, specs)
+    validation_error = validate_specs(
+        project_root,
+        specs,
+        require_available_worktrees=not unattended,
+    )
     if validation_error:
         print(f"ERROR: {validation_error}", file=sys.stderr)
         return 1
@@ -701,52 +730,69 @@ def run_parallel(
         if not allow_overlap:
             return 1
 
-    root_created = not worktree_root.exists()
-    try:
-        worktree_root.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        print(f"ERROR: cannot create worktree root {worktree_root}: {exc}", file=sys.stderr)
-        return 1
-
-    created: list[WorktreeSpec] = []
-    for spec in specs:
-        creation_error = create_worktree(project_root, spec)
-        if creation_error:
-            cleanup_errors: list[str] = []
-            for cleanup_spec in [spec, *reversed(created)]:
-                cleanup_errors.extend(
-                    cleanup_worktree(project_root, cleanup_spec).errors
-                )
-            if root_created:
-                try:
-                    worktree_root.rmdir()
-                except OSError:
-                    pass
+    if not unattended:
+        root_created = not worktree_root.exists()
+        try:
+            worktree_root.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
             print(
-                f"ERROR: cannot create worktree for {spec.target}: {creation_error}",
+                f"ERROR: cannot create worktree root {worktree_root}: {exc}",
                 file=sys.stderr,
             )
-            for error in cleanup_errors:
-                print(f"ERROR: {error}", file=sys.stderr)
             return 1
-        created.append(spec)
+
+        created: list[WorktreeSpec] = []
+        for spec in specs:
+            creation_error = create_worktree(project_root, spec)
+            if creation_error:
+                cleanup_errors: list[str] = []
+                for cleanup_spec in [spec, *reversed(created)]:
+                    cleanup_errors.extend(
+                        cleanup_worktree(project_root, cleanup_spec).errors
+                    )
+                if root_created:
+                    try:
+                        worktree_root.rmdir()
+                    except OSError:
+                        pass
+                print(
+                    f"ERROR: cannot create worktree for {spec.target}: {creation_error}",
+                    file=sys.stderr,
+                )
+                for error in cleanup_errors:
+                    print(f"ERROR: {error}", file=sys.stderr)
+                return 1
+            created.append(spec)
 
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=min(max_workers, len(specs))
     ) as executor:
-        futures = {
-            spec.target: executor.submit(
-                run_driver,
-                spec,
-                driver_path,
-                timeout=driver_timeout,
-            )
-            for spec in specs
-        }
+        if unattended:
+            futures = {
+                spec.target: executor.submit(
+                    run_driver,
+                    spec,
+                    driver_path,
+                    timeout=driver_timeout,
+                    project_root=project_root,
+                    unattended=True,
+                )
+                for spec in specs
+            }
+        else:
+            futures = {
+                spec.target: executor.submit(
+                    run_driver,
+                    spec,
+                    driver_path,
+                    timeout=driver_timeout,
+                )
+                for spec in specs
+            }
         results = [futures[spec.target].result() for spec in specs]
 
     for result in results:
-        print_result(result)
+        print_result(result, unattended=unattended)
     return 0 if all(result.returncode == 0 for result in results) else 1
 
 
@@ -801,6 +847,12 @@ def cleanup_targets(
     return 1 if failed else 0
 
 
+def report_unattended_cleanup(targets: list[str]) -> int:
+    for target in targets:
+        print(f"No parallel worktree was created for unattended target {target}")
+    return 0
+
+
 def main() -> int:
     args = parse_args()
     if args.force_cleanup and not args.cleanup:
@@ -813,6 +865,8 @@ def main() -> int:
         else project_root.parent / f"{project_root.name}-stage-worktrees"
     )
     if args.cleanup:
+        if args.unattended:
+            return report_unattended_cleanup(args.targets)
         return cleanup_targets(
             project_root,
             args.targets,
@@ -826,6 +880,7 @@ def main() -> int:
         max_workers=args.max_workers,
         driver_timeout=args.driver_timeout,
         allow_overlap=args.allow_overlap,
+        unattended=args.unattended,
     )
 
 

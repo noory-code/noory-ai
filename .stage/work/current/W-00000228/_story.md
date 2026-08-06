@@ -7,12 +7,12 @@ milestone:
 autonomous: true
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: not_required
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000228
+promotion: not_applicable
+review: passed
 scope: stage/scripts/drive_parallel.py, stage/scripts/tests/test_drive_parallel.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -75,6 +75,52 @@ decision_refs:
 
 ## Verification
 
+
+### Executed at close — 2026-08-06
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q
+[exit 0]
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp3giiin86/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp3giiin86/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+Removed worktree and branch for W-00000001
+Removed worktree and branch for W-00000001
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpx7wnb6mg/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpx7wnb6mg/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+W-00000003: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpx7wnb6mg/worktrees/W-00000003
+Merge branch: stage/worktree/W-00000003
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpcdkery02/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpcdkery02/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpqrb1t10c/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpqrb1t10c/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+----------------------------------------------------------------------
+Ran 33 tests in 4.270s
+
+OK
+```
+
+### Independent review at close — 2026-08-06
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000228.md
+```
 
 ## Retrospective
 
