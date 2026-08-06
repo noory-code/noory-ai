@@ -7,7 +7,8 @@ milestone:
 autonomous: true
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000228
