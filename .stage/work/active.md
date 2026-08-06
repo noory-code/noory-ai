@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000226 | documentation | claude | 드라이버는 카드마다 다른 명령 시간을 주는데 스킬이 그 산정 방식도 직접 지정하는 방법도 안 적어 두어 운영 | active | Claude | [current/W-00000226/_story.md](current/W-00000226/_story.md) |
