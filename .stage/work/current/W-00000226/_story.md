@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: completed
 retrospective_ref: R-00000225
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/skills/stage-drive/SKILL.md, stage/CHANGELOG.md
 promotes:

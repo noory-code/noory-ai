@@ -115,6 +115,64 @@ so it will not run it. Unattended mode narrows eligibility further to `active` a
 `autonomous: true`; for a parent target, it searches the whole subtree rather than only direct
 children, while a leaf target can select only itself.
 
+## The card's declared size sets the command timeout
+
+One per-command timeout bounds each executor, acceptance, and reviewer command. The driver fixes it
+once at run start. Without `--timeout` it is the largest of three declaration signals, times 900
+seconds:
+
+| Signal | How it is counted |
+|---|---|
+| Unfinished leaves at or below the target | Never below one, so a runnable leaf counts itself |
+| Entries in the card's `scope` | Split on commas and semicolons |
+| Items under the card's `## Success criteria` | Top-level list items only; indented sub-items do not count |
+
+A leaf card declaring two scope entries and three success criteria therefore gets
+`max(1, 2, 3) * 900 = 2700` seconds. The 900-second floor is what the derivation produces at its
+smallest — a card declaring one of everything — not what an ordinary card receives.
+
+Override it with a positive number of seconds, on a dry run, `--execute`, `--resume`, or
+`--unattended`:
+
+```bash
+python3 "<driver>" --project-root <project-root> --timeout 5400 --execute <TARGET_ID>
+```
+
+The override replaces the derived value outright and applies to every command in the run.
+
+Decide it with a count, not a judgment. Take the declared size from the three rows above, then count
+the files the card will change — read its Actions and Next action, and expand any `scope` entry
+naming a directory into the files under it the card will touch:
+
+| Checkable before the run | Seconds it asks for |
+|---|---|
+| That file count exceeds the declared size | `file count * 900` |
+| A prior round on this card timed out | Twice the seconds that round had; its `### Driver failure` entry in the shared work log names them |
+| Neither | None — the derived value already covers the work |
+
+Both rows can hold at once. When they do, pass the larger of the two numbers, so exactly one value
+always falls out of the table.
+
+A `scope` entry naming a directory counts 1 however many files it holds, which is the most frequent
+reason the file count exceeds the declared size. The dry run does not print the derived timeout —
+its `Execution time` line reports command time already used against the run's global limit, not the
+per-command limit — so take the declared size from the card.
+
+Two cases offer no count beforehand: a card whose paths are unknown until it starts, and a card
+whose one file needs many edit-and-test rounds rather than a single pass. No threshold covers those
+honestly, so overshoot deliberately instead. The two errors do not cost the same — too large costs
+only the delay before a hung command gives up, too small costs the whole round and the work inside
+it.
+
+A truncated command costs the round, not an attempt: the driver reads a timeout as venue
+infrastructure failure and says so rather than counting a failed card attempt. Raising the number
+does not reserve time, only allow it. In `--unattended` each command is additionally clamped to the
+run's remaining wall-clock budget, so an override above that ceiling changes nothing until the
+ceiling moves too.
+
+`drive_parallel.py`'s `--driver-timeout` bounds one whole driver invocation instead of one command
+inside it; the two do not substitute for each other.
+
 ## Two settings gates, both fail closed
 
 **`executors` must exist before anything runs.** The `executors` object in `.stage/settings.json`
@@ -328,8 +386,10 @@ it is a missing decision, and an unbounded autonomous loop is forbidden. Configu
 `max_attempts_per_item`, `max_iterations`, and `max_wall_clock_seconds` together, or the run does
 not begin. `max_attempts_per_item` remains fixed per selected action. The configured iteration and
 wall-clock values are minimums; at run start the driver raises them to at least
-`unfinished leaves * attempts` and `unfinished leaves * per-command timeout`, respectively, so a
-top-level run has enough budget for its actual subtree.
+`unfinished leaves * attempts` and `unfinished leaves * 900` — or `unfinished leaves * --timeout`
+when an override was given — so a top-level run has enough budget for its actual subtree. The
+derived per-command timeout does not enter that floor, so a card's declared size never scales the
+global time budget twice.
 
 **Status: reviewed in code and known code defects closed, but never exercised on real work.** The
 unattended loop has been through independent code review, and the defects those reviews identified

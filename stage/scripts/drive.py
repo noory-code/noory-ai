@@ -122,8 +122,8 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help=(
-            "Override the subtree-derived per-command timeout in seconds "
-            f"(derived minimum: {MIN_COMMAND_TIMEOUT_SECONDS})."
+            "Override the per-command timeout derived from the target card's "
+            f"declared size, in seconds (derived minimum: {MIN_COMMAND_TIMEOUT_SECONDS})."
         ),
     )
     parser.add_argument(

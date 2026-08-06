@@ -448,7 +448,7 @@ If the target has any non-terminal child, each iteration selects the next ready 
 the target's subtree exactly as before (autonomous, `active`, non-empty acceptance, itself a leaf);
 the target is never selected directly. If the target has no non-terminal child, unattended mode
 selects only that target when it meets the same eligibility rules. It runs the item's executor with
-a timeout derived at run start from unfinished subtree leaves, bounded by the remaining global
+a timeout derived at run start from the target's declared size, bounded by the remaining global
 wall-clock budget, and a disposable Git index. The venue preflight runs before every selected
 executor turn and cannot spend an attempt. The driver's later scoped `git add` and commit use the
 real index, so executor index isolation does not change unattended commits.
@@ -529,12 +529,16 @@ field is accepted. `max_attempts_per_item` caps attempts for one work item;
 `max_wall_clock_seconds` key retains its name for settings compatibility. Supervised mode applies
 it to accumulated executor, acceptance, and reviewer command time; unattended mode applies it to
 wall-clock time because no human pause exists between its iterations. At target
-run start, the default per-command timeout is `unfinished leaf count * 900` seconds, so one leaf
-keeps the former 900-second floor and larger subtrees receive more time. `--timeout SECONDS`
-explicitly overrides that derived value. The driver raises global iteration and time
-ceilings to at least `unfinished leaf count * max_attempts_per_item` and `unfinished leaf count *
-per-action timeout baseline`, respectively. This ties each execution budget to the actual subtree
-without changing the per-action attempt cap or multiplying the time floor twice. An absent
+run start, the default per-command timeout is the target's declared size times 900 seconds, where
+declared size is the largest of its unfinished leaf count (never below one), its `scope` entry
+count, and the number of top-level list items under its `## Success criteria` heading. Only a
+target declaring one of each receives the 900-second floor; a larger declaration receives
+proportionally more time. `--timeout SECONDS` explicitly overrides that derived value. The driver
+raises global iteration and time ceilings to at least `unfinished leaf count *
+max_attempts_per_item` and `unfinished leaf count * per-action timeout baseline`, respectively,
+where that baseline is 900 seconds or the `--timeout` override rather than the derived per-command
+timeout. This ties each execution budget to the actual subtree without changing the per-action
+attempt cap or multiplying the time floor twice. An absent
 object means no limits are configured. `stage_paths.load_limits_config()` returns `(limits, "")`
 for a valid object, `(None, "")` when it is absent, or `(None, error)` for an unreadable or
 malformed shape. Every enforcement caller must fail closed on a non-empty error. The driver owns
