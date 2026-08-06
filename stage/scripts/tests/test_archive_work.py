@@ -405,7 +405,59 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             self.assertIn("already archived", proc.stdout)
 
-    def test_v4_archives_one_top_level_hierarchy_as_one_move_unit(self):
+    def test_v4_all_completed_archives_independent_story_with_action_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            story_id = "W-00000001"
+            action_id = "W-00000002"
+            story_retro_id = "R-00000001"
+            action_retro_id = "R-00000002"
+            current = stage / f"work/current/{story_id}"
+            current.mkdir(parents=True)
+            (current / "_story.md").write_text(
+                V5_ITEM.format(wid=story_id, ref=story_retro_id),
+                encoding="utf-8",
+            )
+            (current / f"{action_id}.md").write_text(
+                V5_ITEM.format(wid=action_id, ref=action_retro_id), encoding="utf-8"
+            )
+            for item_id, retro_id in (
+                (story_id, story_retro_id),
+                (action_id, action_retro_id),
+            ):
+                (stage / "work/retrospectives" / f"{retro_id}.md").write_text(
+                    RETRO.format(ref=retro_id, wid=item_id), encoding="utf-8"
+                )
+            review_path = stage / "work/review.md"
+            review_path.write_text(
+                review_path.read_text(encoding="utf-8")
+                + f"| {action_id} | passed | completed | not_applicable | "
+                f"[current/{story_id}/{action_id}.md]"
+                f"(current/{story_id}/{action_id}.md) |\n"
+                + f"| {story_id} | passed | completed | not_applicable | "
+                f"[current/{story_id}/_story.md](current/{story_id}/_story.md) |\n",
+                encoding="utf-8",
+            )
+
+            proc = run_cli(root, "--all-completed")
+
+            self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+            self.assertTrue(
+                (stage / f"official/work/archive/items/{story_id}/_story.md").is_file()
+            )
+            self.assertTrue(
+                (
+                    stage
+                    / f"official/work/archive/items/{story_id}/{action_id}.md"
+                ).is_file()
+            )
+            self.assertEqual(1, len(proc.stdout.strip().splitlines()), proc.stdout)
+            self.assertIn(story_id, proc.stdout)
+            self.assertNotIn(action_id, proc.stdout)
+
+    def test_v4_all_completed_archives_one_top_level_hierarchy_as_one_move_unit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             stage = root / ".stage"
@@ -453,7 +505,7 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            proc = run_cli(root, "W-00000001")
+            proc = run_cli(root, "--all-completed")
             audit_proc = subprocess.run(
                 [
                     sys.executable,
@@ -492,6 +544,9 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertEqual(1, archive_index.count("| W-00000001 | completed |"))
         self.assertNotIn("| W-00000002 |", archive_index)
         self.assertNotIn("| W-00000003 |", archive_index)
+        self.assertEqual(1, len(proc.stdout.strip().splitlines()), proc.stdout)
+        self.assertNotIn("W-00000002", proc.stdout)
+        self.assertNotIn("W-00000003", proc.stdout)
         self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
         self.assertIn("Summary: errors=0", audit_proc.stdout)
 
