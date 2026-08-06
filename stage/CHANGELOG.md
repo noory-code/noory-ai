@@ -8,6 +8,9 @@
   the older tree remains — the audit and the migration still read it for unmigrated projects — and the
   required-structure block lists the decision, state, and proposal archive containers it omitted.
 
+- Make `archive_work.py --all-completed` select only top-level work hierarchies, so one run
+  archives each hierarchy once while still finding an independent story.
+
 ## 0.58.0 — 2026-08-06
 
 - Refuse work registration until an agreed purpose and at least one user-observable success

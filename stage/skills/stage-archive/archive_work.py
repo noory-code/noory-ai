@@ -38,6 +38,7 @@ from stage_record_paths import (  # noqa: E402
     record_path,
     record_paths,
     top_level_item_path,
+    work_record_scale,
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 from stage_paths import (  # noqa: E402
@@ -276,7 +277,9 @@ def _planned_paths(stage_root: Path) -> tuple[str, str]:
 
 
 def completed_ids_from_review(stage_root: Path) -> list[str]:
-    _, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
+    current_relative, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
+    current_root = stage_root / current_relative
+    hierarchical = active_topology(stage_root) == ACTIVE_TOPOLOGY_V4
     review = stage_root / review_relative
     if not review.exists():
         return []
@@ -289,7 +292,14 @@ def completed_ids_from_review(stage_root: Path) -> list[str]:
         item = current_items.get(cells[0])
         if item is None:
             continue
-        if item.status in TERMINAL_STATUSES:
+        is_top_level = True
+        if hierarchical:
+            move_unit = top_level_item_path(current_root, item.path)
+            is_top_level = (
+                item.path.parent == move_unit
+                and work_record_scale(current_root, item.path) in {"epic", "story"}
+            )
+        if item.status in TERMINAL_STATUSES and is_top_level:
             ids.append(cells[0])
     return ids
 
