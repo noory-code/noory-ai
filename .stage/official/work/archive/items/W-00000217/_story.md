@@ -1,16 +1,17 @@
 ---
-id: W-00000219
-title: 죽은 드라이버를 그 자리에서 이어 간다
+id: W-00000217
+title: 드라이버가 잘리거나 죽어도 하니스 안에서 이어 간다
 kind: fix
 venue: codex
-milestone:
+milestone: M-00000003
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
-retrospective_ref: R-00000222
+retrospective_ref: R-00000223
 promotion: not_applicable
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
@@ -18,69 +19,63 @@ promotes:
 decision_refs:
 ---
 
-# W-00000219 죽은 드라이버를 그 자리에서 이어 간다
+# W-00000217 드라이버가 잘리거나 죽어도 하니스 안에서 이어 간다
 
 ## Purpose
 
-드라이버가 도중에 죽으면 이어 갈 명령이 없어 사람이 대신 검증하게 되므로, running_role 이 가리키는 다음 단계부터 이어 가는 명령을 만들고 되돌리기가 표시를 든 카드를 겨누게 한다
+드라이버가 시간 한도에 잘리거나 도중에 죽으면 다 된 일도 카드가 갇히고 사람이 대신 검증하게 되므로, 드라이버가 끝난 일을 스스로 알아보고 죽은 자리에서 이어 가게 한다
 
-## Source
+## Actions
 
-O-00000017 실측(W-00000157): 실행자 → 인수 검사 → 판정 도중 드라이버가 죽으면 앞 단계 결과는
-남는데 이어 갈 명령이 없다. `running_role` 이 어디까지 갔는지 이미 들고 있다. 다시 `--execute`
-하면 실행자부터라 "변화 없음"으로 죽고, 사람이 대신 검증하게 된다.
-O-00000026 실측(W-00000183, W-00000200): `--reset-attempts` 가 "지금 실행할 차례인 카드"
-(`select_next_ready_leaf`, `drive.py:2589`)를 겨눠 표시를 든 카드와 어긋날 수 있고, 시도와
-시작 시각만 되돌리고 기준점(`last_fingerprint`)은 안 건드려(`drive.py:321` 근처) 사람이 대신
-커밋한 뒤에는 되살릴 명령이 없다 — 남는 길이 runtime 기록을 손으로 지우는 것뿐이었다.
+- [W-00000218](W-00000218.md) — 잘린 바퀴의 끝난 일을 드라이버가 알아본다 (갇힘을 없앤다)
+- [W-00000219](W-00000219.md) — 죽은 드라이버를 그 자리에서 이어 간다 (이어가기 명령)
 
 ## User value
 
-드라이버가 죽어도 runtime 기록을 손으로 지우는 일이 없어진다. 이어가기 한 명령이면 그
-자리부터 가고, 독립 판정(만든 쪽 ≠ 보는 쪽)이 죽은 바퀴에서도 지켜진다.
+카드가 커도, 세션이 끊겨도 드라이버를 다시 걸면 그 자리부터 간다. 지금은 잘리면 시도만 타고
+카드가 갇히며, 죽으면 사람이 검사를 손으로 돌려 닫는다 — 만든 쪽과 보는 쪽이 갈리지 않는다.
 
 ## Scope
 
 ### Included
 
-- 이어가기 명령: runtime 기록의 `running_role` 이 가리키는 다음 단계부터 돌린다. 실행자가
-  끝난 상태면 실행자를 건너뛰고 인수 검사·판정만 돈다.
-- 안전 확인: 이어가기 전에 작업 트리가 죽은 시점 이후 바뀌었는지 본다. 바뀌었으면 건너뛰지
-  않고 그 사실을 알린다 — 조용히 낡은 결과를 판정하지 않는다.
-- `--reset-attempts` 겨냥 수정: 다음 실행할 카드가 아니라 실행 중 표시를 든 카드를 겨눈다.
-  사람이 실행자의 결과를 대신 커밋한 정상 흐름 뒤에는 기준점도 함께 되돌린다.
-- 회귀 시험을 `test_drive.py` 에 더한다.
+- 두 액션이 전부다. 잘린 바퀴 인식 + 시간 한도 산정(W-00000218), 죽은 자리 이어가기 +
+  되돌리기 겨냥(W-00000219).
 
 ### Excluded
 
-- 죽음 자체의 감지(살아 있는 실행과 죽은 표시의 구분)는 안 한다. O-00000026 이 밝혀 적고
-  넘어간 자리이고, 이 액션은 사람이 "죽었다"를 아는 상태에서 이어 가는 길을 만든다.
-
-## Dependencies
-
-W-00000218 이 먼저다. 같은 파일을 만지고, 제자리걸음 판정이 바뀌면 이어가기의 "변화 없음"
-처리도 그 위에 선다.
+- 무인 실행(unattended) 경로의 동작 변화는 목적이 요구하는 만큼만. 무인 쪽 계약은
+  DE-00000055 가 소유한다.
+- 워크트리 환경 준비는 형제 카드 W-00000220 몫이다.
 
 ## Risks
 
-- 이어가기가 실행자를 건너뛰는 것은 작업 트리가 안 바뀌었을 때만 안전하다. 안전 확인이
-  이 액션의 핵심 계약이다.
-- 기준점을 되돌리는 것은 판정 근거를 옮기는 일이다. 사람이 커밋한 경우로 좁게 연다.
+- 드라이버는 이 저장소의 실행 기둥이다. 판정 우회가 생기면 안 된다 — "인수 통과 = 진전"이
+  판정(리뷰)을 건너뛰는 길이 되면 독립 검증이 죽는다. 인수 통과는 판정으로 **넘어가는**
+  조건이지 판정을 **대신하는** 조건이 아니다.
+- `test_drive.py` 는 넓은 시험 묶음이라 무관한 회귀도 잡는다. 이 카드에서는 그게 의도다
+  (드라이버 전체가 카드의 결과물이다).
 
 ## Success criteria
 
-- 실행자가 끝난 뒤 죽은 상태에서 이어가기 명령이 실행자를 건너뛰고 인수 검사와 판정만 돌린다
-- 이어가기 전에 작업 트리가 그 사이 바뀌었으면 건너뛰지 않고 그 사실을 알린다
-- --reset-attempts 가 실행 중 표시를 든 카드를 겨누고, 사람이 대신 커밋한 뒤에는 기준점도 함께 되돌린다
+- 시간 한도로 잘린 뒤 작업 트리가 그대로면 드라이버가 인수 검사를 먼저 돌리고, 통과하면 그 바퀴를 제자리걸음이 아니라 진전으로 처리한다
+- 액션 없는 스토리의 명령 시간 한도가 자식 수가 아니라 카드가 선언한 크기 신호에서 나온다
+- 드라이버가 죽은 카드를 running_role 이 가리키는 다음 단계부터 이어 가는 명령이 있다
+- 되돌리기가 다음 실행할 카드가 아니라 실행 중 표시를 든 그 카드를 겨눈다
 
 ## Next action
 
-runtime 기록(`.stage/.runtime/driver/W-*.json`)의 `running_role` 값별로 어느 단계부터 돌지
-표를 만들고, 이어가기 진입점을 `drive.py` 인자로 연다.
+W-00000218 부터. 두 액션 다 `stage/scripts/drive.py` 를 만지므로 순서대로 간다.
 
 ## Related truth
 
-- O-00000017, O-00000026 — 위 Source 가 요약한 실측 원문. 이 액션이 닫히면 둘 다 닫을 후보다.
+- O-00000030 — 네 고리(잘림 → 늦은 보고 → 고칠 것 없음 → 제자리걸음 판정)가 이어져 카드가
+  갇힌 실측. W-00000200 이 세 바퀴로 전부 밟았다.
+- O-00000031 — 액션 없는 스토리가 크기와 무관하게 최소 900초를 받는 실측.
+- O-00000017 — 판정 도중 죽은 뒤 이어 갈 명령이 없어 사람이 대신 검증한 실측 (W-00000157).
+- O-00000026 — 되돌리기가 표시 든 카드가 아니라 다음 실행할 카드를 겨눈 것, 그리고 사람이
+  대신 커밋하면 기준점이 안 맞아 되살릴 명령이 없는 것 (`drive.py:2589`, `drive.py:321` 근처).
+- 넷 다 이 스토리가 닫히면 닫을 후보다. 남는 절반이 있으면 그 절반만 남게 고쳐 쓴다.
 
 
 ## Progress
@@ -95,12 +90,12 @@ runtime 기록(`.stage/.runtime/driver/W-*.json`)의 `running_role` 값별로 �
 $ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
 [exit 0]
 ... (52 earlier lines omitted)
-$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpjxi5j3zh/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpedofpb2o/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
 [exit 0]
 
 Independent reviewer result:
 $ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
-    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpjxi5j3zh/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpedofpb2o/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
 except SystemExit as exc:
     if exc.code not in (None, 0):
         raise
@@ -132,19 +127,19 @@ Iteration: 1/unlimited
 Execution time: 0s/unlimited
 WARNING: preflights.codex is not configured; continuing without a venue health check
 ----------------------------------------------------------------------
-Ran 85 tests in 27.017s
+Ran 85 tests in 26.996s
 
 OK
 
 $ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
 [exit 0]
 ... (52 earlier lines omitted)
-$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpjc3jbgt9/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpw3ihhs0w/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
 [exit 0]
 
 Independent reviewer result:
 $ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
-    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpjc3jbgt9/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpw3ihhs0w/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
 except SystemExit as exc:
     if exc.code not in (None, 0):
         raise
@@ -176,7 +171,7 @@ Iteration: 1/unlimited
 Execution time: 0s/unlimited
 WARNING: preflights.codex is not configured; continuing without a venue health check
 ----------------------------------------------------------------------
-Ran 85 tests in 28.278s
+Ran 85 tests in 27.753s
 
 OK
 ```
