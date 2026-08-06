@@ -317,6 +317,15 @@ does not run commands, create `.stage/.runtime/`, or update run state.
 executor -> each stored acceptance check -> independent reviewer
 ```
 
+If that supervised process stops after a stage checkpoint, `drive.py --resume <TARGET_ID>`
+continues the same attempt. An `executor` checkpoint skips the executor and starts with the stored
+acceptance commands. A `reviewer` checkpoint skips both executor and acceptance and restarts the
+independent reviewer. Resume first compares the current repository-only fingerprint with the
+checkpoint. A mismatch refuses the shortcut, so a person cannot silently review results that were
+edited after the interrupted driver recorded them. An executor interrupted before it records a
+completed-stage checkpoint is not resumable and must go through an explicit attempt reset before
+another executor turn.
+
 Before the executor runs, the driver copies the real Git index to a disposable executor index,
 passes it through `GIT_INDEX_FILE`, and records the existing untracked paths. The executor and all
 of its child Git processes use that disposable index, so `git add` never changes the human's real
@@ -384,7 +393,12 @@ Execute mode stores untracked state at
       "attempt_count": 1,
       "last_fingerprint": "<sha256>",
       "last_no_change_fingerprint": "<sha256-or-empty>",
-      "running_role": null
+      "running_role": "reviewer",
+      "resume_repository_fingerprint": "<sha256>",
+      "resume_review_changed_paths": ["stage/scripts/drive.py"],
+      "resume_acceptance_output": ["<raw acceptance output>"],
+      "resume_previous_verdict": null,
+      "resume_reasoned_no_change": false
     }
   }
 }
@@ -394,17 +408,23 @@ In supervised mode, `execution_seconds` accumulates only the time spent running 
 acceptance, and reviewer commands. Time between driver invocations does not spend this budget.
 Legacy state without `execution_seconds` starts at zero, so a long human pause cannot block the
 next command before it runs. `started_at_unix` records when the run state began and is reset by
-`--reset-attempts`, but it does not enforce the supervised time ceiling. An explicit reset clears
-the selected item's stale `running_role` after an interrupted turn, while a running role recorded
-for any other item still blocks the reset.
+`--reset-attempts`, but it does not enforce the supervised time ceiling. A reset first targets the
+one item carrying a stale `running_role`; when none exists, it uses the next ready item. Multiple
+recorded roles fail closed. The reset clears that item's attempt count, progress fingerprints,
+resume checkpoint, and stale role, while another simultaneously recorded role still blocks a
+direct reset of one item.
 
-Immediately before an external executor or reviewer turn, `running_role` is written as
-`executor` or `reviewer`; it returns to `null` after that turn. A supervisor that times out the
-driver can therefore select the correct venue reaper without inferring the active role from work
-log headings. Supervised attempt and iteration counters are persisted with the executor role before
-the executor starts, and completed command time is persisted after each executor, acceptance, and
-reviewer command. A driver killed during a round therefore spends that round's attempt and iteration
-even when the active command cannot report its final elapsed time.
+Immediately before an executor turn, `running_role` is written as `executor` without a resume
+fingerprint. After the executor exits successfully, the driver validates its report and changed
+paths, records the repository fingerprint and review inputs, and retains `executor` to mean that
+acceptance is next. Immediately before independent review, it updates the checkpoint and writes
+`reviewer`. A normal end clears the role and all resume-only fields. A supervisor can therefore
+select the correct venue reaper while a command is active, and `--resume` can distinguish a
+completed stage from an executor that died before its result was recorded. Supervised attempt and
+iteration counters are persisted before the executor starts, and completed command time is
+persisted after each executor, acceptance, and reviewer command. A driver killed during a round
+therefore spends that round's attempt and iteration even when the active command cannot report its
+final elapsed time.
 
 The `NO-PROGRESS` fingerprint is SHA-256 over staged and unstaged tracked changes (`git diff HEAD`,
 or separate staged and unstaged diffs when `HEAD` is unborn), the path and content hash of each

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Plan or execute one supervised Stage driver step.
+"""Plan, execute, or resume one supervised Stage driver step.
 
 The driver selects a READY leaf from the requested target: an eligible target
 itself when it has no unfinished children, otherwise one of its eligible
 children. Dry run is the default and has no side effects. ``--execute`` runs
 exactly one executor -> acceptance -> independent-review sequence and records
-runtime attempt state, but never commits, closes, escalates, promotes, creates
-work, or advances a parent.
+runtime attempt state. ``--resume`` continues one checkpointed interrupted
+sequence without rerunning completed stages. Neither mode commits, closes,
+escalates, promotes, creates work, or advances a parent.
 """
 
 from __future__ import annotations
@@ -76,6 +77,10 @@ from stage_work import (  # noqa: E402
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
 MIN_COMMAND_TIMEOUT_SECONDS = 900
+SUCCESS_CRITERIA_HEADING_RE = re.compile(
+    r"(?m)^##[ \t]+Success criteria[ \t]*\r?$"
+)
+TOP_LEVEL_LIST_ITEM_RE = re.compile(r"(?m)^[-*+][ \t]+\S")
 RECOMMEND_PASS = (
     "verification+judge passed → ready to commit + close_work"
 )
@@ -132,6 +137,11 @@ def parse_args() -> argparse.Namespace:
         help="Reset the selected item's attempt limit state after human correction.",
     )
     parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume one interrupted supervised round from its recorded role.",
+    )
+    parser.add_argument(
         "--reason",
         help="Required one-line reason for --reset-attempts.",
     )
@@ -161,6 +171,40 @@ def select_next_ready_leaf(
         iter(sorted(candidates, key=lambda item: (item.item_id, item.path.as_posix()))),
         None,
     )
+
+
+def interrupted_item(
+    state: dict[str, Any],
+    items: list[WorkItem],
+) -> tuple[WorkItem | None, str]:
+    """Resolve the one item whose persisted role marks an interrupted round."""
+
+    interrupted_ids = sorted(
+        item_id
+        for item_id, item_state in state["items"].items()
+        if item_state.get("running_role") is not None
+    )
+    if not interrupted_ids:
+        return None, "no interrupted driver role is recorded"
+    if len(interrupted_ids) != 1:
+        return None, (
+            "driver run state has multiple interrupted roles: "
+            + ", ".join(interrupted_ids)
+        )
+    interrupted_id = interrupted_ids[0]
+    matches = [item for item in items if item.item_id == interrupted_id]
+    if len(matches) != 1:
+        return None, (
+            f"interrupted item {interrupted_id} must resolve to exactly one "
+            f"current work item; found {len(matches)}"
+        )
+    item = matches[0]
+    if item.status not in {"active", "review"} or not item.acceptance:
+        return None, (
+            f"interrupted item {interrupted_id} is not an active or review item "
+            "with non-empty acceptance"
+        )
+    return item, ""
 
 
 def new_run_state(target_id: str, now: float) -> dict[str, Any]:
@@ -219,6 +263,25 @@ def load_run_state(
         base_head = item_state.get("base_head", "")
         executor_changed_paths = item_state.get("executor_changed_paths", [])
         running_role = item_state.get("running_role")
+        resume_repository_fingerprint = item_state.get(
+            "resume_repository_fingerprint",
+            "",
+        )
+        resume_review_changed_paths = item_state.get(
+            "resume_review_changed_paths",
+            [],
+        )
+        resume_acceptance_output = item_state.get(
+            "resume_acceptance_output",
+            [],
+        )
+        resume_previous_verdict = item_state.get(
+            "resume_previous_verdict",
+        )
+        resume_reasoned_no_change = item_state.get(
+            "resume_reasoned_no_change",
+            False,
+        )
         if type(attempt_count) is not int or attempt_count < 0:
             return None, (
                 f"driver run state {item_id}.attempt_count must be a "
@@ -251,6 +314,35 @@ def load_run_state(
             return None, (
                 f"driver run state {item_id}.running_role must be "
                 "executor, reviewer, or null"
+            )
+        if not isinstance(resume_repository_fingerprint, str):
+            return None, (
+                f"driver run state {item_id}.resume_repository_fingerprint "
+                "must be a string"
+            )
+        for field, value in (
+            ("resume_review_changed_paths", resume_review_changed_paths),
+            ("resume_acceptance_output", resume_acceptance_output),
+        ):
+            if (
+                not isinstance(value, list)
+                or any(not isinstance(entry, str) for entry in value)
+            ):
+                return None, (
+                    f"driver run state {item_id}.{field} must be an array of strings"
+                )
+        if resume_previous_verdict is not None and not isinstance(
+            resume_previous_verdict,
+            dict,
+        ):
+            return None, (
+                f"driver run state {item_id}.resume_previous_verdict must be "
+                "an object or null"
+            )
+        if type(resume_reasoned_no_change) is not bool:
+            return None, (
+                f"driver run state {item_id}.resume_reasoned_no_change must be "
+                "a boolean"
             )
     return state, ""
 
@@ -323,6 +415,14 @@ def reset_attempts(
         "last_no_change_fingerprint": "",
         "running_role": None,
     }
+    for field in (
+        "resume_repository_fingerprint",
+        "resume_review_changed_paths",
+        "resume_acceptance_output",
+        "resume_previous_verdict",
+        "resume_reasoned_no_change",
+    ):
+        state["items"][item_id].pop(field, None)
     with log_stream:
         try:
             write_run_state(state_path, state)
@@ -354,9 +454,9 @@ def write_running_role(
     item_state: dict[str, Any],
     role: str | None,
 ) -> None:
-    """Persist the active external venue role before control leaves the driver."""
+    """Persist an active role or its latest completed-stage resume checkpoint."""
 
-    state["items"][item_id] = {
+    updated = {
         "attempt_count": item_state["attempt_count"],
         "last_fingerprint": item_state["last_fingerprint"],
         "last_no_change_fingerprint": item_state.get(
@@ -367,6 +467,17 @@ def write_running_role(
         "executor_changed_paths": item_state.get("executor_changed_paths", []),
         "running_role": role,
     }
+    if role is not None:
+        for field in (
+            "resume_repository_fingerprint",
+            "resume_review_changed_paths",
+            "resume_acceptance_output",
+            "resume_previous_verdict",
+            "resume_reasoned_no_change",
+        ):
+            if field in item_state:
+                updated[field] = item_state[field]
+    state["items"][item_id] = updated
     write_run_state(path, state)
 
 
@@ -1764,6 +1875,36 @@ def unfinished_subtree_leaf_count(
     )
 
 
+def declared_success_criteria_count(item: WorkItem) -> int:
+    """Count top-level list items in the card's success-criteria section."""
+
+    try:
+        text = item.path.read_text(encoding="utf-8")
+    except OSError:
+        return 0
+    heading = SUCCESS_CRITERIA_HEADING_RE.search(text)
+    if heading is None:
+        return 0
+    next_heading = re.search(r"(?m)^##[ \t]+", text[heading.end() :])
+    section_end = (
+        heading.end() + next_heading.start()
+        if next_heading is not None
+        else len(text)
+    )
+    return len(TOP_LEVEL_LIST_ITEM_RE.findall(text[heading.end() : section_end]))
+
+
+def declared_command_size(target_id: str, items: list[WorkItem]) -> int:
+    """Return the largest declared or structural size signal for one target."""
+
+    target = next(item for item in items if item.item_id == target_id)
+    return max(
+        unfinished_subtree_leaf_count(target_id, items),
+        len(target.scope),
+        declared_success_criteria_count(target),
+    )
+
+
 def subtree_command_timeout(
     target_id: str,
     items: list[WorkItem],
@@ -1774,10 +1915,7 @@ def subtree_command_timeout(
 
     if requested is not None:
         return requested
-    return (
-        unfinished_subtree_leaf_count(target_id, items)
-        * MIN_COMMAND_TIMEOUT_SECONDS
-    )
+    return declared_command_size(target_id, items) * MIN_COMMAND_TIMEOUT_SECONDS
 
 
 def subtree_limits(
@@ -2879,7 +3017,13 @@ def main() -> int:
         if "\n" in args.reason or "\r" in args.reason:
             print_escalation("--reason must be one line")
             return 2
-        if args.execute or args.unattended or args.skip_preflight or args.timeout is not None:
+        if (
+            args.execute
+            or args.unattended
+            or args.resume
+            or args.skip_preflight
+            or args.timeout is not None
+        ):
             print_escalation(
                 "--reset-attempts cannot be combined with execution options"
             )
@@ -2887,6 +3031,9 @@ def main() -> int:
         args.reason = args.reason.strip()
     elif args.reason is not None:
         print_escalation("--reason requires --reset-attempts")
+        return 2
+    if args.resume and (args.execute or args.unattended or args.skip_preflight):
+        print_escalation("--resume cannot be combined with other execution modes")
         return 2
     if args.timeout is not None and args.timeout <= 0:
         print_escalation("--timeout must be a positive integer")
@@ -2913,13 +3060,22 @@ def main() -> int:
         )
         return 1
     if args.reset_attempts:
-        item = select_next_ready_leaf(args.target, items)
+        state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
+        state, state_error = load_run_state(state_path, args.target, time.time())
+        if state_error or state is None:
+            print_escalation(state_error or "driver run state is unavailable")
+            return 1
+        item, interrupted_error = interrupted_item(state, items)
+        if item is None and interrupted_error == "no interrupted driver role is recorded":
+            item = select_next_ready_leaf(args.target, items)
+        elif interrupted_error:
+            print_escalation(interrupted_error)
+            return 1
         if item is None:
             print_escalation(
                 "target has no active or review leaf with non-empty acceptance"
             )
             return 1
-        state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
         reset_ok, reset_error = reset_attempts(
             state_path=state_path,
             stage_root=stage_root,
@@ -2953,7 +3109,32 @@ def main() -> int:
             time.time(),
         )
 
-    item = select_next_ready_leaf(args.target, items)
+    state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
+    now = time.time()
+    state, state_error = load_run_state(state_path, args.target, now)
+    if state_error or state is None:
+        print_escalation(state_error or "driver run state is unavailable")
+        return 1
+
+    resume_role: str | None = None
+    if args.resume:
+        item, interrupted_error = interrupted_item(state, items)
+        if interrupted_error or item is None:
+            print_escalation(interrupted_error or "interrupted item is unavailable")
+            return 1
+        resume_role = state["items"][item.item_id]["running_role"]
+    else:
+        interrupted, interrupted_error = interrupted_item(state, items)
+        if interrupted is not None:
+            print_escalation(
+                f"interrupted driver role is recorded for {interrupted.item_id}; "
+                "use --resume or --reset-attempts"
+            )
+            return 1
+        if interrupted_error != "no interrupted driver role is recorded":
+            print_escalation(interrupted_error)
+            return 1
+        item = select_next_ready_leaf(args.target, items)
     if item is None:
         unfinished_children = non_terminal_children(args.target, items)
         reason = (
@@ -3000,22 +3181,15 @@ def main() -> int:
         print_escalation("cannot resolve independent reviewer venue")
         return 1
 
-    state_path = stage_root / ".runtime" / "driver" / f"{args.target}.json"
-    now = time.time()
-    state, state_error = load_run_state(state_path, args.target, now)
-    if state_error or state is None:
-        print_escalation(state_error or "driver run state is unavailable")
-        return 1
-
     item_state = state["items"].get(
         item.item_id,
         {"attempt_count": 0, "last_fingerprint": "", "base_head": ""},
     )
-    attempt = item_state["attempt_count"] + 1
-    iteration = state["iteration_count"] + 1
+    attempt = item_state["attempt_count"] + (0 if args.resume else 1)
+    iteration = state["iteration_count"] + (0 if args.resume else 1)
     execution_seconds = state["execution_seconds"]
     print_plan(
-        execute=args.execute,
+        execute=args.execute or args.resume,
         target_id=args.target,
         item=item,
         executor_command=executor_command,
@@ -3049,10 +3223,10 @@ def main() -> int:
                 print(f"WARNING: cannot record attempt-cap reaping: {exc}")
         print_escalation(blocker)
         return 1
-    if not args.execute:
+    if not args.execute and not args.resume:
         print("Outcome: plan only — no commands ran and no run state was written")
         return 0
-    if not run_preflight(
+    if not args.resume and not run_preflight(
         stage_root=stage_root,
         project_root=project_root,
         item=item,
@@ -3073,12 +3247,39 @@ def main() -> int:
         **item_state,
         "attempt_count": attempt,
     }
+    if args.resume:
+        saved_repository_fingerprint = item_state.get(
+            "resume_repository_fingerprint",
+            "",
+        )
+        if not saved_repository_fingerprint:
+            print_escalation(
+                "interrupted driver state has no completed-stage checkpoint; "
+                "use --reset-attempts before another executor turn"
+            )
+            return 1
+        try:
+            current_repository_fingerprint = repository_fingerprint(project_root)
+        except RuntimeError as exc:
+            print_escalation(f"cannot inspect repository before resume: {exc}")
+            return 1
+        if current_repository_fingerprint != saved_repository_fingerprint:
+            print_escalation(
+                "repository changed after the interrupted driver checkpoint; "
+                "refusing to skip completed stages"
+            )
+            return 1
+        print(f"Resuming after completed {resume_role}")
 
     step_ok = True
     failure = ""
     reviewer_blocked = False
     infrastructure_failed = False
-    acceptance_output: list[str] = []
+    acceptance_output: list[str] = list(
+        item_state.get("resume_acceptance_output", [])
+        if resume_role == "reviewer"
+        else []
+    )
     changed_paths: list[str] = list(
         item_state.get("executor_changed_paths", [])
     )
@@ -3093,22 +3294,33 @@ def main() -> int:
         log_path = ensure_work_log(stage_root, item.item_id)
         verdict_file = review_verdict_path(stage_root, item.item_id)
         durable_log = read_work_log(log_path)
-        append_driver_commands_to_work_log(
-            log_path,
-            executor_command=executor_command,
-            reviewer_command=reviewer_command,
-        )
+        if not args.resume:
+            append_driver_commands_to_work_log(
+                log_path,
+                executor_command=executor_command,
+                reviewer_command=reviewer_command,
+            )
         log_before = read_work_log(log_path)
-        previous_verdict, _previous_verdict_error = (
-            load_driver_review_verdict(verdict_file)
+        previous_verdict = (
+            item_state.get("resume_previous_verdict")
+            if args.resume
+            else load_driver_review_verdict(verdict_file)[0]
         )
         pending_findings = (
-            review_verdict_failures(verdict_file)
+            [
+                str(entry["criterion"])
+                for entry in previous_verdict["criteria"]
+                if entry["verdict"] == "FAIL"
+            ]
             if previous_verdict is not None
             else []
         )
-        repository_before = repository_fingerprint(project_root)
-        repository_paths_before = repository_path_snapshot(project_root)
+        if not args.resume:
+            repository_before = repository_fingerprint(project_root)
+            repository_paths_before = repository_path_snapshot(project_root)
+        else:
+            repository_before = item_state["resume_repository_fingerprint"]
+            repository_paths_before = {}
     except RuntimeError as exc:
         print_escalation(f"cannot prepare executor observation: {exc}")
         return 1
@@ -3119,177 +3331,196 @@ def main() -> int:
         previous_verdict_file = temporary_root / "previous-review-verdict.json"
         failed_criteria_file = temporary_root / "failed-review-criteria.json"
         current_verdict_file = temporary_root / "current-review-verdict.json"
-        if index_existed and index_path is not None:
-            try:
-                shutil.copyfile(index_path, executor_index)
-            except OSError as exc:
-                print_escalation(
-                    f"cannot prepare disposable Git index for executor: {exc}"
-                )
-                return 1
-        state["iteration_count"] = iteration
-        try:
-            write_running_role(
-                state_path,
-                state,
-                item.item_id,
-                in_progress_item_state,
-                "executor",
-            )
-        except OSError as exc:
-            print_escalation(f"cannot persist executor running role: {exc}")
-            return 1
-
-        (
-            executor_ok,
-            executor_evidence,
-            _executor_raw,
-            executor_seconds,
-        ) = timed_run_check(
-            executor_command,
-            args.timeout,
-            project_root,
-            env=executor_environment(
-                item,
-                project_root,
-                log_path,
-                verdict_file,
-                executor_index if index_path is not None else None,
-                items=items,
-            ),
-        )
-        execution_seconds += executor_seconds
-        state["execution_seconds"] = execution_seconds
-        try:
-            write_run_state(state_path, state)
-        except OSError as exc:
-            print_escalation(f"cannot persist executor execution time: {exc}")
-            return 1
-        infrastructure_failed = (
-            not executor_ok and infrastructure_failure(executor_evidence)
-        )
-        print(f"Executor result:\n{executor_evidence}")
-        try:
-            log_after_executor = read_work_log(log_path)
-            log_after_executor, executor_log_error = reconcile_executor_work_log(
-                log_path,
-                durable_log,
-                log_before,
-                log_after_executor,
-            )
-        except RuntimeError as exc:
-            log_after_executor = log_before
-            executor_log_error = str(exc)
-        dispositions, disposition_error = executor_review_dispositions(
-            log_before,
-            log_after_executor,
-            pending_findings,
-        )
-        reasoned_no_change = (
-            bool(pending_findings)
-            and not disposition_error
-            and bool(dispositions)
-            and all(
-                entry["disposition"] in {"decline", "defer"}
-                for entry in dispositions
-            )
-        )
-        executor_reaped = reap_turn(
-            stage_root=stage_root,
-            project_root=project_root,
-            log_path=log_path,
-            item_path=item.path,
-            venue=item.venue,
-            role="executor",
-            timeout=args.timeout,
-        )
-        try:
-            write_running_role(
-                state_path,
-                state,
-                item.item_id,
-                in_progress_item_state,
-                None,
-            )
-        except OSError as exc:
-            print_escalation(f"cannot clear executor running role: {exc}")
-            return 1
-
         unchanged_repository = False
-        try:
-            repository_after = repository_fingerprint(project_root)
-            repository_paths_after = repository_path_snapshot(project_root)
-            changed_paths = cumulative_executor_changed_paths(
-                changed_paths,
-                repository_paths_before,
-                repository_paths_after,
+        if args.resume:
+            executor_ok = True
+            executor_evidence = "resumed from a completed executor checkpoint"
+            executor_log_error = ""
+            reasoned_no_change = bool(
+                item_state.get("resume_reasoned_no_change", False)
             )
-            review_changed_paths = changed_repository_paths(
-                repository_paths_before,
-                repository_paths_after,
+            executor_reaped = True
+            repository_after = item_state["resume_repository_fingerprint"]
+            review_changed_paths = list(
+                item_state.get("resume_review_changed_paths", [])
             )
-        except RuntimeError as exc:
-            step_ok = False
-            failure = f"cannot inspect repository after executor: {exc}"
-
-        if step_ok:
-            if executor_log_error:
-                step_ok = False
-                failure = executor_log_error
-            elif not executor_reaped:
-                step_ok = False
-                failure = (
-                    "executor reap command failed"
-                    if executor_ok
-                    else "executor command and reap command failed"
+        else:
+            if index_existed and index_path is not None:
+                try:
+                    shutil.copyfile(index_path, executor_index)
+                except OSError as exc:
+                    print_escalation(
+                        f"cannot prepare disposable Git index for executor: {exc}"
+                    )
+                    return 1
+            state["iteration_count"] = iteration
+            try:
+                write_running_role(
+                    state_path,
+                    state,
+                    item.item_id,
+                    in_progress_item_state,
+                    "executor",
                 )
-            elif not executor_ok:
-                step_ok = False
-                failure = "executor command failed"
-            else:
-                report_error = executor_report_error(
+            except OSError as exc:
+                print_escalation(f"cannot persist executor running role: {exc}")
+                return 1
+
+            (
+                executor_ok,
+                executor_evidence,
+                _executor_raw,
+                executor_seconds,
+            ) = timed_run_check(
+                executor_command,
+                args.timeout,
+                project_root,
+                env=executor_environment(
+                    item,
+                    project_root,
+                    log_path,
+                    verdict_file,
+                    executor_index if index_path is not None else None,
+                    items=items,
+                ),
+            )
+            execution_seconds += executor_seconds
+            state["execution_seconds"] = execution_seconds
+            try:
+                write_run_state(state_path, state)
+            except OSError as exc:
+                print_escalation(f"cannot persist executor execution time: {exc}")
+                return 1
+            infrastructure_failed = (
+                not executor_ok and infrastructure_failure(executor_evidence)
+            )
+            print(f"Executor result:\n{executor_evidence}")
+            try:
+                log_after_executor = read_work_log(log_path)
+                log_after_executor, executor_log_error = reconcile_executor_work_log(
+                    log_path,
+                    durable_log,
                     log_before,
                     log_after_executor,
-                    changed_paths,
-                    pending_findings,
-                    ignored_paths=[
-                        log_path.relative_to(project_root).as_posix()
-                    ],
                 )
-                if report_error:
-                    step_ok = False
-                    failure = report_error
-                elif (
-                    repository_after == repository_before
-                    and not reasoned_no_change
-                ):
-                    unchanged_repository = True
+            except RuntimeError as exc:
+                log_after_executor = log_before
+                executor_log_error = str(exc)
+            dispositions, disposition_error = executor_review_dispositions(
+                log_before,
+                log_after_executor,
+                pending_findings,
+            )
+            reasoned_no_change = (
+                bool(pending_findings)
+                and not disposition_error
+                and bool(dispositions)
+                and all(
+                    entry["disposition"] in {"decline", "defer"}
+                    for entry in dispositions
+                )
+            )
+            try:
+                repository_after = repository_fingerprint(project_root)
+                repository_paths_after = repository_path_snapshot(project_root)
+                changed_paths = cumulative_executor_changed_paths(
+                    changed_paths,
+                    repository_paths_before,
+                    repository_paths_after,
+                )
+                review_changed_paths = changed_repository_paths(
+                    repository_paths_before,
+                    repository_paths_after,
+                )
+            except RuntimeError as exc:
+                step_ok = False
+                failure = f"cannot inspect repository after executor: {exc}"
 
-            if step_ok and not unchanged_repository:
+            if step_ok:
+                if executor_log_error:
+                    step_ok = False
+                    failure = executor_log_error
+                elif not executor_ok:
+                    step_ok = False
+                    failure = "executor command failed"
+                else:
+                    report_error = executor_report_error(
+                        log_before,
+                        log_after_executor,
+                        changed_paths,
+                        pending_findings,
+                        ignored_paths=[
+                            log_path.relative_to(project_root).as_posix()
+                        ],
+                    )
+                    if report_error:
+                        step_ok = False
+                        failure = report_error
+                    elif (
+                        repository_after == repository_before
+                        and not reasoned_no_change
+                    ):
+                        unchanged_repository = True
+
+            if step_ok:
+                executor_checkpoint = {
+                    **in_progress_item_state,
+                    "executor_changed_paths": changed_paths,
+                    "resume_repository_fingerprint": repository_after,
+                    "resume_review_changed_paths": review_changed_paths,
+                    "resume_acceptance_output": [],
+                    "resume_previous_verdict": previous_verdict,
+                    "resume_reasoned_no_change": reasoned_no_change,
+                }
                 try:
-                    changed_paths_file.write_text(
-                        json.dumps(
-                            (
-                                review_changed_paths
-                                if previous_verdict is not None
-                                else changed_paths
-                            ),
-                            indent=2,
-                        )
-                        + "\n",
-                        encoding="utf-8",
+                    write_running_role(
+                        state_path,
+                        state,
+                        item.item_id,
+                        executor_checkpoint,
+                        "executor",
                     )
                 except OSError as exc:
-                    step_ok = False
-                    failure = (
-                        "cannot write driver-observed paths for review: "
-                        f"{exc}"
+                    print_escalation(f"cannot persist executor checkpoint: {exc}")
+                    return 1
+
+            executor_reaped = reap_turn(
+                stage_root=stage_root,
+                project_root=project_root,
+                log_path=log_path,
+                item_path=item.path,
+                venue=item.venue,
+                role="executor",
+                timeout=args.timeout,
+            )
+            if step_ok and not executor_reaped:
+                step_ok = False
+                failure = "executor reap command failed"
+
+        if step_ok:
+            try:
+                changed_paths_file.write_text(
+                    json.dumps(
+                        (
+                            review_changed_paths
+                            if previous_verdict is not None
+                            else changed_paths
+                        ),
+                        indent=2,
                     )
+                    + "\n",
+                    encoding="utf-8",
+                )
+            except OSError as exc:
+                step_ok = False
+                failure = (
+                    "cannot write driver-observed paths for review: "
+                    f"{exc}"
+                )
         if (
             step_ok
             and not changed_paths
             and not reasoned_no_change
-            and not unchanged_repository
         ):
             step_ok = False
             failure = (
@@ -3307,7 +3538,7 @@ def main() -> int:
             except RuntimeError as exc:
                 failure = f"{failure}; {exc}"
 
-        if step_ok and not unchanged_repository:
+        if step_ok and resume_role != "reviewer":
             for command in item.acceptance:
                 accepted, evidence, raw, acceptance_seconds = timed_run_check(
                     command,
@@ -3332,7 +3563,37 @@ def main() -> int:
                     infrastructure_failed = infrastructure_failure(evidence)
                     break
 
-        if step_ok and not unchanged_repository:
+        # Passing acceptance turns an unchanged executor round into progress.
+        # Failing acceptance remains an ordinary failed attempt.
+        unchanged_repository = False
+
+        if step_ok:
+            try:
+                reviewer_checkpoint_fingerprint = repository_fingerprint(project_root)
+                reviewer_checkpoint = {
+                    **in_progress_item_state,
+                    "executor_changed_paths": changed_paths,
+                    "resume_repository_fingerprint": reviewer_checkpoint_fingerprint,
+                    "resume_review_changed_paths": review_changed_paths,
+                    "resume_acceptance_output": acceptance_output,
+                    "resume_previous_verdict": previous_verdict,
+                    "resume_reasoned_no_change": reasoned_no_change,
+                }
+                write_running_role(
+                    state_path,
+                    state,
+                    item.item_id,
+                    reviewer_checkpoint,
+                    "reviewer",
+                )
+            except RuntimeError as exc:
+                step_ok = False
+                failure = f"cannot inspect repository before reviewer: {exc}"
+            except OSError as exc:
+                print_escalation(f"cannot persist reviewer checkpoint: {exc}")
+                return 1
+
+        if step_ok:
             try:
                 clear_review_verdict(verdict_file)
                 if previous_verdict is not None:
@@ -3351,7 +3612,7 @@ def main() -> int:
                 step_ok = False
                 failure = f"cannot prepare narrow review inputs: {exc}"
 
-        if step_ok and not unchanged_repository:
+        if step_ok:
             reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_verdict_file = (
@@ -3385,17 +3646,6 @@ def main() -> int:
                         ),
                     }
                 )
-            try:
-                write_running_role(
-                    state_path,
-                    state,
-                    item.item_id,
-                    in_progress_item_state,
-                    "reviewer",
-                )
-            except OSError as exc:
-                print_escalation(f"cannot persist reviewer running role: {exc}")
-                return 1
             (
                 reviewed,
                 review_evidence,
@@ -3506,6 +3756,20 @@ def main() -> int:
     try:
         current_fingerprint = fingerprint(project_root, acceptance_output)
     except RuntimeError as exc:
+        try:
+            write_running_role(
+                state_path,
+                state,
+                item.item_id,
+                state["items"][item.item_id],
+                None,
+            )
+        except OSError as clear_exc:
+            print_escalation(
+                f"cannot inspect changes for progress: {exc}; "
+                f"cannot clear interrupted role: {clear_exc}"
+            )
+            return 1
         print_escalation(f"cannot inspect changes for progress: {exc}")
         return 1
     previous_fingerprint = item_state["last_fingerprint"]

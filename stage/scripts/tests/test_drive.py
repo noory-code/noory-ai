@@ -290,6 +290,8 @@ def write_card(
     venue: str = "codex",
     promotion: str = "pending",
     acceptance: tuple[str, ...] = (),
+    scope: tuple[str, ...] = (),
+    success_criteria: tuple[str, ...] = (),
 ) -> None:
     current_root = stage_root / "work/current"
     if not parent:
@@ -312,6 +314,9 @@ def write_card(
         rendered_acceptance = "\n" + "\n".join(
             f"  - {json.dumps(command)}" for command in acceptance
         )
+    rendered_criteria = "".join(
+        f"- {criterion}\n" for criterion in success_criteria
+    )
     path.write_text(
         (
             "---\n"
@@ -320,7 +325,10 @@ def write_card(
             f"status: {status}\n"
             f"promotion: {promotion}\n"
             f"acceptance: {rendered_acceptance}\n"
-            "---\n"
+            f"scope: {', '.join(scope)}\n"
+            "---\n\n"
+            "## Success criteria\n\n"
+            f"{rendered_criteria}"
         ),
         encoding="utf-8",
     )
@@ -1017,7 +1025,7 @@ class DriveTest(unittest.TestCase):
                 "last_fingerprint": "old-fingerprint",
                 "base_head": "base-head",
                 "executor_changed_paths": ["changed.txt"],
-                "running_role": None,
+                "running_role": "reviewer",
             }
             state["items"]["W-00000003"] = {
                 "attempt_count": 1,
@@ -1039,10 +1047,64 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn(
-            "cannot reset attempts while executor is running for W-00000003",
+            "driver run state has multiple interrupted roles: "
+            "W-00000002, W-00000003",
             result.stdout,
         )
         self.assertEqual(before, after)
+
+    def test_reset_attempts_targets_the_item_with_the_interrupted_role(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            write_card(
+                stage_root,
+                "W-00000003",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            drive = self.load_module()
+            state_path = stage_root / ".runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 1,
+                "last_fingerprint": "next-ready-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["next-ready.txt"],
+                "running_role": None,
+            }
+            state["items"]["W-00000003"] = {
+                "attempt_count": 3,
+                "last_fingerprint": "interrupted-fingerprint",
+                "base_head": "base-head",
+                "executor_changed_paths": ["interrupted.txt"],
+                "running_role": "executor",
+            }
+            drive.write_run_state(state_path, state)
+
+            result = self.run_cli(
+                root,
+                "--reset-attempts",
+                "--reason",
+                "The interrupted card was corrected.",
+            )
+            updated = json.loads(state_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Reset attempts for W-00000003", result.stdout)
+        self.assertEqual(
+            "next-ready-fingerprint",
+            updated["items"]["W-00000002"]["last_fingerprint"],
+        )
+        self.assertEqual(0, updated["items"]["W-00000003"]["attempt_count"])
+        self.assertEqual("", updated["items"]["W-00000003"]["last_fingerprint"])
+        self.assertIsNone(updated["items"]["W-00000003"]["running_role"])
 
     def test_reset_attempts_resets_limit_state_and_logs_reason(self):
         tmp, root = self.make_project()
@@ -1304,18 +1366,52 @@ class DriveTest(unittest.TestCase):
         self.assertNotIn("WARNING: reapers.", result.stdout)
         self.assertNotIn("Driver warning", log)
 
-    def test_execute_reports_first_unchanged_repository_without_spending_attempt(self):
+    def test_execute_unchanged_repository_runs_acceptance_before_review(self):
+        completed_path = "already-complete.txt"
+        acceptance_marker = "acceptance-ran.txt"
+        reviewer = python_command(
+            "import json, os\n"
+            "from pathlib import Path\n"
+            "changed = json.loads(Path(os.environ["
+            "'STAGE_CHANGED_PATHS_FILE']).read_text(encoding='utf-8'))\n"
+            f"assert changed == [{completed_path!r}]\n"
+            "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
+            "    json.dumps({'criteria': [{'criterion': 'criterion', "
+            "'verdict': 'PASS', 'reason': 'the completed work passed review'}], "
+            "'approved': True}), encoding='utf-8')\n"
+        )
         tmp, root = self.make_project(
-            executor=reporting_python_command("pass", []),
+            executor=reporting_python_command("pass", [completed_path]),
+            reviewer=reviewer,
         )
         with tmp:
             write_card(
                 root / ".stage",
                 "W-00000002",
                 parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
+                acceptance=(
+                    python_command(
+                        "from pathlib import Path; "
+                        f"Path({acceptance_marker!r}).write_text("
+                        "'ran', encoding='utf-8')"
+                    ),
+                ),
             )
             initialize_git(root)
+            (root / completed_path).write_text("done\n", encoding="utf-8")
+            drive = self.load_module()
+            state_path = root / ".stage/.runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 1,
+                "last_fingerprint": "",
+                "last_no_change_fingerprint": "",
+                "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
+                "executor_changed_paths": [completed_path],
+                "running_role": None,
+            }
+            drive.write_run_state(state_path, state)
 
             result = self.run_cli(root, "--execute")
             state = json.loads(
@@ -1323,40 +1419,108 @@ class DriveTest(unittest.TestCase):
                     root / ".stage/.runtime/driver/W-00000001.json"
                 ).read_text(encoding="utf-8")
             )
+            acceptance_result = (root / acceptance_marker).read_text(
+                encoding="utf-8"
+            )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("work appears complete", result.stdout)
-        self.assertIn("attempt was not spent", result.stdout)
-        self.assertIn("close_work.py", result.stdout)
-        self.assertNotIn("Acceptance result:", result.stdout)
-        self.assertNotIn("Independent reviewer result:", result.stdout)
-        self.assertEqual(0, state["items"]["W-00000002"]["attempt_count"])
+        self.assertIn("Acceptance result:", result.stdout)
+        self.assertIn("Independent reviewer result:", result.stdout)
+        self.assertIn(
+            "executor, acceptance, and independent reviewer passed",
+            result.stdout,
+        )
+        self.assertEqual("ran", acceptance_result)
+        self.assertEqual(2, state["items"]["W-00000002"]["attempt_count"])
 
-    def test_execute_repeated_unchanged_repository_stops_as_no_progress(self):
+    def test_command_timeout_uses_declared_size_and_unfinished_children(self):
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                "W-00000001",
+                scope=("one", "two", "three", "four"),
+                success_criteria=("first", "second"),
+            )
+            drive = self.load_module()
+            scope_items = drive.load_all_work_items(stage_root)
+
+            self.assertEqual(
+                4 * drive.MIN_COMMAND_TIMEOUT_SECONDS,
+                drive.subtree_command_timeout(
+                    "W-00000001", scope_items, requested=None
+                ),
+            )
+
+            write_card(
+                stage_root,
+                "W-00000001",
+                scope=("one",),
+                success_criteria=("first",),
+            )
+            for suffix in range(2, 5):
+                write_card(
+                    stage_root,
+                    f"W-0000000{suffix}",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                )
+            child_items = drive.load_all_work_items(stage_root)
+
+            self.assertEqual(
+                3 * drive.MIN_COMMAND_TIMEOUT_SECONDS,
+                drive.subtree_command_timeout(
+                    "W-00000001", child_items, requested=None
+                ),
+            )
+            self.assertEqual(
+                17,
+                drive.subtree_command_timeout(
+                    "W-00000001", child_items, requested=17
+                ),
+            )
+
+    def test_execute_unchanged_repository_stops_when_acceptance_fails(self):
+        completed_path = "already-complete.txt"
+        reviewer_marker = "reviewer-ran.txt"
         tmp, root = self.make_project(
-            executor=reporting_python_command("pass", []),
+            executor=reporting_python_command("pass", [completed_path]),
+            reviewer=python_command(
+                "from pathlib import Path; "
+                f"Path({reviewer_marker!r}).write_text('ran', encoding='utf-8')"
+            ),
         )
         with tmp:
             write_card(
                 root / ".stage",
                 "W-00000002",
                 parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
+                acceptance=(python_command("raise SystemExit(9)"),),
             )
             initialize_git(root)
+            (root / completed_path).write_text("done\n", encoding="utf-8")
+            drive = self.load_module()
+            state_path = root / ".stage/.runtime/driver/W-00000001.json"
+            state_path.parent.mkdir(parents=True)
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 1,
+                "last_fingerprint": "",
+                "last_no_change_fingerprint": "",
+                "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
+                "executor_changed_paths": [completed_path],
+                "running_role": None,
+            }
+            drive.write_run_state(state_path, state)
 
-            first = self.run_cli(root, "--execute")
-            second = self.run_cli(root, "--execute")
-            state = json.loads(
-                (
-                    root / ".stage/.runtime/driver/W-00000001.json"
-                ).read_text(encoding="utf-8")
-            )
+            result = self.run_cli(root, "--execute")
 
-        self.assertEqual(0, first.returncode, first.stdout + first.stderr)
-        self.assertNotEqual(0, second.returncode)
-        self.assertIn("NO-PROGRESS", second.stdout)
-        self.assertEqual(0, state["items"]["W-00000002"]["attempt_count"])
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("Acceptance result:", result.stdout)
+        self.assertIn("acceptance check failed", result.stdout)
+        self.assertNotIn("Independent reviewer result:", result.stdout)
+        self.assertFalse((root / reviewer_marker).exists())
 
     def test_execute_unchanged_repository_without_report_still_fails(self):
         tmp, root = self.make_project(executor=PASS_COMMAND)
@@ -2936,10 +3100,16 @@ class DriveTest(unittest.TestCase):
 
             state = json.loads(state_path.read_text(encoding="utf-8"))
             item_state = state["items"][selected]
+            resumed = self.run_cli(root, "--resume")
 
         self.assertEqual(1, state["iteration_count"])
         self.assertEqual(1, item_state["attempt_count"])
         self.assertEqual("executor", item_state["running_role"])
+        self.assertNotEqual(0, resumed.returncode)
+        self.assertIn(
+            "interrupted driver state has no completed-stage checkpoint",
+            resumed.stdout,
+        )
 
     def test_completed_executor_time_survives_termination_during_reaping(self):
         target = "W-00000001"
@@ -2990,10 +3160,163 @@ class DriveTest(unittest.TestCase):
             )
             item_state = state["items"][selected]
 
+            resumed = self.run_cli(root, "--resume")
+            resumed_state = json.loads(
+                (
+                    stage_root / f".runtime/driver/{target}.json"
+                ).read_text(encoding="utf-8")
+            )
+            log = (
+                stage_root / f".runtime/driver/logs/{selected}.md"
+            ).read_text(encoding="utf-8")
+
         self.assertEqual(1, state["iteration_count"])
         self.assertGreater(state["execution_seconds"], 0.0)
         self.assertEqual(1, item_state["attempt_count"])
         self.assertEqual("executor", item_state["running_role"])
+        self.assertTrue(item_state["resume_repository_fingerprint"])
+        self.assertEqual(0, resumed.returncode, resumed.stdout + resumed.stderr)
+        self.assertIn("Resuming after completed executor", resumed.stdout)
+        self.assertNotIn("Executor result:", resumed.stdout)
+        self.assertIn("Acceptance result:", resumed.stdout)
+        self.assertIn("Independent reviewer result:", resumed.stdout)
+        self.assertEqual(
+            1,
+            sum(line == "### Executor report" for line in log.splitlines()),
+        )
+        self.assertIsNone(resumed_state["items"][selected]["running_role"])
+
+    def test_resume_refuses_to_skip_executor_after_repository_changes(self):
+        target = "W-00000001"
+        selected = "W-00000002"
+        tmp, root = self.make_project()
+        with tmp:
+            stage_root = root / ".stage"
+            write_card(
+                stage_root,
+                selected,
+                parent=target,
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            state_path = stage_root / f".runtime/driver/{target}.json"
+            state = drive.new_run_state(target, 1.0)
+            state["iteration_count"] = 1
+            state["items"][selected] = {
+                "attempt_count": 1,
+                "last_fingerprint": "",
+                "last_no_change_fingerprint": "",
+                "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
+                "executor_changed_paths": ["executor-work.txt"],
+                "running_role": "executor",
+                "resume_repository_fingerprint": drive.repository_fingerprint(root),
+                "resume_review_changed_paths": ["executor-work.txt"],
+                "resume_acceptance_output": [],
+                "resume_previous_verdict": None,
+            }
+            drive.write_run_state(state_path, state)
+            (root / "changed-after-driver-death.txt").write_text(
+                "changed\n", encoding="utf-8"
+            )
+
+            result = self.run_cli(root, "--resume")
+            unchanged_state = json.loads(state_path.read_text(encoding="utf-8"))
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(
+            "repository changed after the interrupted driver checkpoint",
+            result.stdout,
+        )
+        self.assertEqual("executor", unchanged_state["items"][selected]["running_role"])
+
+    def test_resume_from_reviewer_skips_executor_and_acceptance(self):
+        target = "W-00000001"
+        selected = "W-00000002"
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker_root = Path(marker_tmp)
+            executor_marker = marker_root / "executor-count"
+            acceptance_marker = marker_root / "acceptance-count"
+            reviewer_marker = marker_root / "reviewer-count"
+
+            def increment(path: Path) -> str:
+                return (
+                    f"path = Path({str(path)!r}); "
+                    "path.write_text(str(int(path.read_text(encoding='utf-8')) + 1) "
+                    "if path.exists() else '1', encoding='utf-8')"
+                )
+
+            executor = reporting_python_command(
+                "from pathlib import Path; "
+                + increment(executor_marker)
+                + "; Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            )
+            acceptance = python_command(
+                "from pathlib import Path; " + increment(acceptance_marker)
+            )
+            reviewer = approving_reviewer_command(
+                "from pathlib import Path; " + increment(reviewer_marker)
+            )
+            tmp, root = self.make_project(executor=executor, reviewer=reviewer)
+            with tmp:
+                stage_root = root / ".stage"
+                write_card(
+                    stage_root,
+                    selected,
+                    parent=target,
+                    acceptance=(acceptance,),
+                )
+                initialize_git(root)
+                drive = self.load_module()
+                state_path = stage_root / f".runtime/driver/{target}.json"
+                argv = [
+                    str(SCRIPT),
+                    "--project-root",
+                    str(root),
+                    "--execute",
+                    target,
+                ]
+
+                def terminate_after_review(*_args, **kwargs):
+                    if kwargs["role"] == "reviewer":
+                        raise SystemExit("simulated termination after reviewer")
+                    return True
+
+                with (
+                    mock.patch.object(sys, "argv", argv),
+                    mock.patch.object(
+                        drive,
+                        "reap_turn",
+                        side_effect=terminate_after_review,
+                    ),
+                    self.assertRaisesRegex(
+                        SystemExit,
+                        "simulated termination after reviewer",
+                    ),
+                ):
+                    drive.main()
+
+                interrupted = json.loads(state_path.read_text(encoding="utf-8"))
+                resumed = self.run_cli(root, "--resume")
+                completed = json.loads(state_path.read_text(encoding="utf-8"))
+                executor_count = executor_marker.read_text(encoding="utf-8")
+                acceptance_count = acceptance_marker.read_text(encoding="utf-8")
+                reviewer_count = reviewer_marker.read_text(encoding="utf-8")
+
+        self.assertEqual(
+            "reviewer",
+            interrupted["items"][selected]["running_role"],
+        )
+        self.assertEqual(0, resumed.returncode, resumed.stdout + resumed.stderr)
+        self.assertIn("Resuming after completed reviewer", resumed.stdout)
+        self.assertNotIn("Executor result:", resumed.stdout)
+        self.assertNotIn("Acceptance result:", resumed.stdout)
+        self.assertIn("Independent reviewer result:", resumed.stdout)
+        self.assertEqual("1", executor_count)
+        self.assertEqual("1", acceptance_count)
+        self.assertEqual("2", reviewer_count)
+        self.assertIsNone(completed["items"][selected]["running_role"])
 
     def test_identical_fingerprint_flags_no_progress(self):
         tmp, root = self.make_project(

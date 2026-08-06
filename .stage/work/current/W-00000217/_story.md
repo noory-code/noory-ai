@@ -7,11 +7,11 @@ milestone: M-00000003
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000223
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/drive.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
 promotes:
@@ -82,6 +82,98 @@ W-00000218 부터. 두 액션 다 `stage/scripts/drive.py` 를 만지므로 순�
 
 ## Verification
 
+
+### Executed at close — 2026-08-06
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (52 earlier lines omitted)
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpedofpb2o/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpedofpb2o/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+except SystemExit as exc:
+    if exc.code not in (None, 0):
+        raise
+import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Acceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Independent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 85 tests in 26.996s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (52 earlier lines omitted)
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpw3ihhs0w/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpw3ihhs0w/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+except SystemExit as exc:
+    if exc.code not in (None, 0):
+        raise
+import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Acceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Independent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 85 tests in 27.753s
+
+OK
+```
 
 ## Retrospective
 
