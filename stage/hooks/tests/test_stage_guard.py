@@ -13,6 +13,15 @@ from pathlib import Path
 from unittest.mock import patch
 
 
+HOOK_TEST_ROOT = Path(__file__).resolve().parent
+if str(HOOK_TEST_ROOT) not in sys.path:
+    sys.path.insert(0, str(HOOK_TEST_ROOT))
+
+from hook_test_environment import sanitize_current_hook_environment  # noqa: E402
+
+
+sanitize_current_hook_environment()
+
 HOOK_PATH = Path(__file__).resolve().parents[1] / "stage_guard.py"
 STAGE_ROOT = HOOK_PATH.parent.parent
 SPEC = importlib.util.spec_from_file_location("stage_guard", HOOK_PATH)
