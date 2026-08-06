@@ -169,3 +169,4 @@
 | W-00000211 | rejected | [items/W-00000211/_story.md](items/W-00000211/_story.md) |
 | W-00000213 | rejected | [items/W-00000213/_story.md](items/W-00000213/_story.md) |
 | W-00000215 | rejected | [items/W-00000215/_story.md](items/W-00000215/_story.md) |
+| W-00000212 | completed | [items/W-00000212/_story.md](items/W-00000212/_story.md) |

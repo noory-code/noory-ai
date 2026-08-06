@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000212 | fix | codex | 보관 명령의 --all-completed 가 리뷰 표의 액션 행을 따로 보관 단위로 잡아 계층을 만나면 중간 | active | Claude | [current/W-00000212/_story.md](current/W-00000212/_story.md) |
