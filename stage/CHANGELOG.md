@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keep the Stage guard tests independent of the shell that starts them by clearing inherited
+  project and work-item bindings before their fixtures run. A direct test-file discovery now uses
+  the same shared environment sanitizer as the full hook suite.
+
 - Point the initialization skill's manual fallback at the template tree the helper actually
   deploys. It named the previous topology, so a `.stage/` built by hand from it carried that
   topology's schema marker and every mutation gate refused it. The same sentence now records why
