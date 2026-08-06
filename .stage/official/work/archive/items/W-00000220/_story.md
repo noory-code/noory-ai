@@ -7,11 +7,12 @@ milestone: M-00000003
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q"
-status: active
+status: archived
+terminal_disposition: rejected
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000220
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/drive_parallel.py, stage/scripts/tests/test_drive_parallel.py, stage/CHANGELOG.md
 promotes:
@@ -72,11 +73,20 @@ W-00000221 부터. 측정 없이 준비를 고치면 짐작 수리다.
 
 ## Progress
 
+한 바퀴 만에 스토리의 전제가 무너졌다. 측정(W-00000221)이 "본 체크아웃과 워크트리는 이미
+같다 — 클로드 실행자는 어디서든 명령 실행 권한이 없다"를 확인했다. 그동안 claude venue
+카드가 통과한 것은 드라이버가 인수 검사를 대신 돌리기 때문이다. 없앨 차이가 없으므로 준비
+단계를 고칠 일(W-00000222)도 없다.
 
 ## Verification
 
+성공 기준 둘 다 존재하지 않는 차이를 전제한다. 판정 반려와 감독 세션의 대칭 탐침이 근거다.
 
 ## Retrospective
 
+R-00000220 참조.
 
 ## Promotion decision
+
+not_applicable — 결정 기록 없음. 물림: 진짜 남는 물음은 "클로드 실행자에게 권한을 줄 것인가,
+클로드 venue 실행을 에이전트 팀으로 바꿀 것인가"이고, 그것은 사람이 정할 설계 카드다.
