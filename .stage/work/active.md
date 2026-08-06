@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000228 | development | codex | 여러 카드를 무인으로 동시에 돌리려면 지금은 사람이 카드마다 드라이버 명령을 따로 띄워야 하므로, 병렬 명령 | active | Claude | [current/W-00000228/_story.md](current/W-00000228/_story.md) |
-| W-00000229 | fix | codex | 목적이 비어 있는 옛 카드를 만질 때 쓰기마다 붙는 목적 안내가 보여 줄 것이 없어 조용히 지나가므로, 그  | active | Claude | [current/W-00000229/_story.md](current/W-00000229/_story.md) |

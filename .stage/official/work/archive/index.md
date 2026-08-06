@@ -178,3 +178,4 @@
 | W-00000225 | completed | [items/W-00000225/_story.md](items/W-00000225/_story.md) |
 | W-00000226 | completed | [items/W-00000226/_story.md](items/W-00000226/_story.md) |
 | W-00000227 | completed | [items/W-00000227/_story.md](items/W-00000227/_story.md) |
+| W-00000229 | rejected | [items/W-00000229/_story.md](items/W-00000229/_story.md) |
