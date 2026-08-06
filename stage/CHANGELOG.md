@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.60.0 — 2026-08-06
+
 - Let the parallel driver pass `--unattended` to every selected card without creating a second
   layer of worktrees. Scope-overlap checks still run before any driver starts, supervised runs keep
   their existing worktree flow, and unattended cleanup reports that the parallel command created
