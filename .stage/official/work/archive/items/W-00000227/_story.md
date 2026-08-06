@@ -7,7 +7,8 @@ milestone:
 autonomous: true
 acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000226
