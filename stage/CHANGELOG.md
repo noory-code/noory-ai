@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Pin the audit's fail-closed behavior when the same consumed venue-exception decision remains in
+  both the pending drawer and the decision archive.
+
 - Point the initialization skill's manual fallback at the template tree the helper actually
   deploys. It named the previous topology, so a `.stage/` built by hand from it carried that
   topology's schema marker and every mutation gate refused it. The same sentence now records why

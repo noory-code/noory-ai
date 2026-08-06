@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/tests/test_audit_stage.py, stage/CHANGELOG.md
 promotes:
