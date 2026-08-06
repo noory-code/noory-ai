@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- State in the driver skill where a command's time limit comes from, so an operator can see it
+  before a large card is truncated rather than after: the derivation from the card's declared size,
+  the conditions that call for an explicit `--timeout`, and what a truncated round costs. Correct
+  the same derivation in the schema contract and the `--timeout` help text, which both still
+  described the superseded leaf-count-only formula, and correct the unattended wall-clock floor's
+  baseline in the skill.
+
 ## 0.59.0 — 2026-08-06
 
 - Pin the audit's fail-closed behavior when the same consumed venue-exception decision remains in
