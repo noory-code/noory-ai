@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Point the initialization skill's manual fallback at the template tree the helper actually
+  deploys. It named the previous topology, so a `.stage/` built by hand from it carried that
+  topology's schema marker and every mutation gate refused it. The same sentence now records why
+  the older tree remains — the audit and the migration still read it for unmigrated projects — and the
+  required-structure block lists the decision, state, and proposal archive containers it omitted.
+
 ## 0.58.0 — 2026-08-06
 
 - Refuse work registration until an agreed purpose and at least one user-observable success
