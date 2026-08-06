@@ -175,3 +175,4 @@
 | W-00000220 | rejected | [items/W-00000220/_story.md](items/W-00000220/_story.md) |
 | W-00000224 | completed | [items/W-00000224/_story.md](items/W-00000224/_story.md) |
 | W-00000217 | completed | [items/W-00000217/_story.md](items/W-00000217/_story.md) |
+| W-00000225 | completed | [items/W-00000225/_story.md](items/W-00000225/_story.md) |
