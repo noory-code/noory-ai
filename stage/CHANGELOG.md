@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Let a supervised driver recover work completed by a truncated executor: when the repository is
+  unchanged, passing acceptance now counts as progress and still proceeds to independent review,
+  while failed acceptance still blocks. Derive the default command timeout from the largest of the
+  target card's declared scope, success criteria, and unfinished child count so only small cards use
+  the 900-second floor.
+
 - Point the initialization skill's manual fallback at the template tree the helper actually
   deploys. It named the previous topology, so a `.stage/` built by hand from it carried that
   topology's schema marker and every mutation gate refused it. The same sentence now records why

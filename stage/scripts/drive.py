@@ -76,6 +76,10 @@ from stage_work import (  # noqa: E402
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
 MIN_COMMAND_TIMEOUT_SECONDS = 900
+SUCCESS_CRITERIA_HEADING_RE = re.compile(
+    r"(?m)^##[ \t]+Success criteria[ \t]*\r?$"
+)
+TOP_LEVEL_LIST_ITEM_RE = re.compile(r"(?m)^[-*+][ \t]+\S")
 RECOMMEND_PASS = (
     "verification+judge passed → ready to commit + close_work"
 )
@@ -1764,6 +1768,36 @@ def unfinished_subtree_leaf_count(
     )
 
 
+def declared_success_criteria_count(item: WorkItem) -> int:
+    """Count top-level list items in the card's success-criteria section."""
+
+    try:
+        text = item.path.read_text(encoding="utf-8")
+    except OSError:
+        return 0
+    heading = SUCCESS_CRITERIA_HEADING_RE.search(text)
+    if heading is None:
+        return 0
+    next_heading = re.search(r"(?m)^##[ \t]+", text[heading.end() :])
+    section_end = (
+        heading.end() + next_heading.start()
+        if next_heading is not None
+        else len(text)
+    )
+    return len(TOP_LEVEL_LIST_ITEM_RE.findall(text[heading.end() : section_end]))
+
+
+def declared_command_size(target_id: str, items: list[WorkItem]) -> int:
+    """Return the largest declared or structural size signal for one target."""
+
+    target = next(item for item in items if item.item_id == target_id)
+    return max(
+        unfinished_subtree_leaf_count(target_id, items),
+        len(target.scope),
+        declared_success_criteria_count(target),
+    )
+
+
 def subtree_command_timeout(
     target_id: str,
     items: list[WorkItem],
@@ -1774,10 +1808,7 @@ def subtree_command_timeout(
 
     if requested is not None:
         return requested
-    return (
-        unfinished_subtree_leaf_count(target_id, items)
-        * MIN_COMMAND_TIMEOUT_SECONDS
-    )
+    return declared_command_size(target_id, items) * MIN_COMMAND_TIMEOUT_SECONDS
 
 
 def subtree_limits(
@@ -3265,7 +3296,7 @@ def main() -> int:
                 ):
                     unchanged_repository = True
 
-            if step_ok and not unchanged_repository:
+            if step_ok:
                 try:
                     changed_paths_file.write_text(
                         json.dumps(
@@ -3289,7 +3320,6 @@ def main() -> int:
             step_ok
             and not changed_paths
             and not reasoned_no_change
-            and not unchanged_repository
         ):
             step_ok = False
             failure = (
@@ -3307,7 +3337,7 @@ def main() -> int:
             except RuntimeError as exc:
                 failure = f"{failure}; {exc}"
 
-        if step_ok and not unchanged_repository:
+        if step_ok:
             for command in item.acceptance:
                 accepted, evidence, raw, acceptance_seconds = timed_run_check(
                     command,
@@ -3332,7 +3362,11 @@ def main() -> int:
                     infrastructure_failed = infrastructure_failure(evidence)
                     break
 
-        if step_ok and not unchanged_repository:
+        # Passing acceptance turns an unchanged executor round into progress.
+        # Failing acceptance remains an ordinary failed attempt.
+        unchanged_repository = False
+
+        if step_ok:
             try:
                 clear_review_verdict(verdict_file)
                 if previous_verdict is not None:
@@ -3351,7 +3385,7 @@ def main() -> int:
                 step_ok = False
                 failure = f"cannot prepare narrow review inputs: {exc}"
 
-        if step_ok and not unchanged_repository:
+        if step_ok:
             reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_verdict_file = (
