@@ -165,3 +165,7 @@
 | W-00000204 | completed | [items/W-00000204/_story.md](items/W-00000204/_story.md) |
 | W-00000206 | completed | [items/W-00000206/_epic.md](items/W-00000206/_epic.md) |
 | W-00000210 | completed | [items/W-00000210/_story.md](items/W-00000210/_story.md) |
+| W-00000214 | completed | [items/W-00000214/_story.md](items/W-00000214/_story.md) |
+| W-00000211 | rejected | [items/W-00000211/_story.md](items/W-00000211/_story.md) |
+| W-00000213 | rejected | [items/W-00000213/_story.md](items/W-00000213/_story.md) |
+| W-00000215 | rejected | [items/W-00000215/_story.md](items/W-00000215/_story.md) |

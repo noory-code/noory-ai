@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
-status: active
+status: archived
+terminal_disposition: rejected
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000213
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/CHANGELOG.md
 promotes:
@@ -74,11 +75,27 @@ decision_refs:
 
 ## Progress
 
+워크트리 병렬 실행 1바퀴. 실행자(코덱스)가 소스를 안 바꾸고 카드를 거절했다 — 카드의 전제
+"목적 표시가 세션에 한 번만 뜬다"가 `0f84289c`(0.56.0)에서 죽었다. 지금 장치는 목적을 매
+도구 호출마다 다시 계산해 붙이고, 아낄 소모 상태가 없다. 판정자(클로드)가 훅을 직접 돌려
+확인했다: 빈 목적 카드로 두 번 호출 → 두 번 다 목적 줄 없음, 상태 파일 없음; 본문을 채운
+뒤 호출 → 바로 목적이 뜬다. 감독 세션도 코드에서 같은 것을 확인했다.
 
 ## Verification
 
+판정: 기준 둘 다 PASS(전제가 죽어 이미 참), approved, 거절이 맞다는 판정. 소견 처분 —
+
+- O-00000018 은 절반만 죽었다: "한 번만 뜬다"는 사라졌지만 "목적이 빈 카드는 보여 줄 게
+  없다"는 실측으로 살아 있다 → **수용.** 관측을 산 절반만 남게 고쳐 쓴다.
+- 인수 시험이 환경에 흔들린다: `CLAUDE_PROJECT_DIR` 가 설정돼 있으면 144개가 실패한다
+  (`resolve_workspace_root` 가 페이로드 `cwd` 보다 그 변수를 먼저 본다) → **수용.** 새 관측
+  O-00000033 으로 적는다.
 
 ## Retrospective
 
+R-00000213 참조.
 
 ## Promotion decision
+
+not_applicable — 결정 기록 없음, 승격 경로 없음. 카드 자체는 물림(2026-08-06, 감독 세션):
+전제가 한 세대 전 코드를 말하고 있었다.

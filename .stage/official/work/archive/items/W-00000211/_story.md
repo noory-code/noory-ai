@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_refresh_guidance.py -q"
-status: active
+status: archived
+terminal_disposition: rejected
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000211
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/refresh_guidance.py, stage/scripts/tests/test_refresh_guidance.py, stage/CHANGELOG.md
 promotes:
@@ -75,11 +76,27 @@ decision_refs:
 
 ## Progress
 
+워크트리 병렬 실행 1바퀴. 실행자(코덱스)가 소스를 한 줄도 안 바꾸고 중복으로 판정했다 —
+W-00000142(`94ef8ba5`, 2026-07-30)가 같은 판정 규칙과 회귀 시험을 이미 실었다. 판정자
+(클로드)가 임시 프로젝트 실측으로 확인했다: 기본 실행이 설명 못 하는 줄 둘을 가진 문서를
+건너뛰며 이유와 다음 행동을 보고하고, 경로를 지정하면 통째로 교체하고, 빈 표 문서는 행
+합치기가 그대로 돈다. 시험 20개 통과.
 
 ## Verification
 
+판정: 기준 셋 다 PASS, approved. 판정자 소견 둘의 처분 —
+
+- 빈 그릇을 배포하는 문서의 표 밖 줄은 이 보호 밖이고, 그것만 보고 O-00000012 를 닫지 말 것
+  → **수용.** 그 갈래는 DE-00000042 가 합치기로 두기로 정한 동작이라, O-00000012 를 닫는
+  기록에 그 사실을 함께 적는다.
+- 실행자가 경계 넘음으로 선언한 작업 로그가 Changed paths 배열에 없음 → **기각.** 로그는
+  게이트가 빼는 자리고 판정자 스스로 비차단으로 봤다.
 
 ## Retrospective
 
+R-00000211 참조.
 
 ## Promotion decision
+
+not_applicable — 결정 기록 없음, 승격 경로 없음. 카드 자체는 물림(2026-08-06, 감독 세션):
+전제 "코드에 아직 없다"가 등록 시점에 이미 거짓이었다.
