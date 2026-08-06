@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.58.0 — 2026-08-06
+
 - Refuse work registration until an agreed purpose and at least one user-observable success
   criterion are supplied, write every supplied criterion into planned and current cards, and make
   the audit reject either answer when it is empty on planned or current work. Report the same
