@@ -11,11 +11,11 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: approved
 review: not_required
 scope: .stage/decisions/
 promotes:
-decision_refs:
+decision_refs: DE-00000066
 ---
 
 # W-00000239 들이는 커밋이 담을 것을 실측에 맞게 다시 정한다
