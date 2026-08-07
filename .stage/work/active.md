@@ -7,6 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000234 | design | claude | 실행이 끝난 결과를 본 가지로 들이려면 감시 대상 소스를 커밋해야 하는데 그 시점에는 열린 작업이 없어 커밋 | active | Claude | [current/W-00000234/_story.md](current/W-00000234/_story.md) |
-| W-00000235 | fix | codex | 드라이버가 카드를 옳게 거절한 실행을 커밋 실패로 막고 병렬 실행끼리 같은 회고 번호를 집어, 사람이 그 뒤 | active | Claude | [current/W-00000235/_story.md](current/W-00000235/_story.md) |
-| W-00000236 | fix | codex | 실행자 계약이 카드 frontmatter 쓰기를 요구하는데 그 파일이 카드 선언 범위 밖이라 담을 것이 없어 | active | Claude | [current/W-00000235/W-00000236.md](current/W-00000235/W-00000236.md) |
-| W-00000237 | fix | codex | 회고 번호를 자기 워크트리만 훑어 정하는데 병렬 실행은 서로를 못 보므로 같은 번호를 집어 병합에서 충돌하니 | active | Claude | [current/W-00000235/W-00000237.md](current/W-00000235/W-00000237.md) |
