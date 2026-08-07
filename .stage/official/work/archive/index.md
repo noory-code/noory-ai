@@ -184,3 +184,4 @@
 | W-00000231 | completed | [items/W-00000231/_story.md](items/W-00000231/_story.md) |
 | W-00000232 | completed | [items/W-00000232/_story.md](items/W-00000232/_story.md) |
 | W-00000233 | completed | [items/W-00000233/_story.md](items/W-00000233/_story.md) |
+| W-00000235 | completed | [items/W-00000235/_story.md](items/W-00000235/_story.md) |
