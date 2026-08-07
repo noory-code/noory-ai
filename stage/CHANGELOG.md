@@ -9,6 +9,15 @@
   amending an existing rule usually beats adding a new one. Machine-written retrospectives leave
   the section for whoever merges the run.
 
+- Lift six rules out of the retrospectives that had been carrying them. Deciding now counts six
+  kinds of site instead of code alone — the two most often missed, gates and audit rules, are
+  exactly what a change that moves a record always touches. Every decision now names what would
+  prove it wrong. Registering work rejects a success criterion the executor cannot reach inside
+  its own scope, requires running an observation's premise rather than reading it, and forbids
+  both coining a word and using your own paraphrase of the human as evidence. Driving treats an
+  executor's numbers as a claim to re-count, marks measured facts as measured when briefing, and
+  never asks for something to be left out of a report.
+
 ## 0.61.0 — 2026-08-07
 
 - Write roadmap pursuit and closure decisions straight into

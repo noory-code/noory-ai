@@ -37,8 +37,25 @@ Apply the gates in order.
 ## Count where it applies
 
 A decision that governs behavior applies wherever that behavior is invoked — not where you
-happened to be looking. Before writing the record, find every invocation in the code and list
-them. Grep for the call, do not recall it from memory.
+happened to be looking. Before writing the record, find every site and list it. Grep for it, do
+not recall it from memory.
+
+**Call sites are one kind of six.** Counting only the code is the single most repeated failure in
+this project's retrospectives, and the list below is what those retrospectives converged on, one
+kind at a time, each after a card shipped short.
+
+| Kind | What to look for | Learned from |
+|---|---|---|
+| Code | every call of the behavior | — |
+| Config | settings keys, command strings, environment variables the behavior reads | R-00000101 |
+| Documents and indexes | prose that describes the behavior, and any index or derived view it writes | R-00000101, R-00000198 |
+| Failure paths | what each site leaves behind when it fails, not only when it succeeds | R-00000099 |
+| Gates | the hooks that allow or deny this behavior | R-00000199 |
+| Audit rules | the checks that read the records this behavior writes | R-00000200, R-00000203 |
+
+The last two are what a change that **moves a record** always touches, and always the ones left
+out. Writing and committing are separate sites even for the same path — they run different checks
+(R-00000171, R-00000173).
 
 Fill the record's `## Where this applies` with one row per site: the file and line, and which
 config or contract each site reads. Two sites that share a command string, a config key, or an
@@ -48,6 +65,17 @@ command receives obliges every caller to supply it.
 A decision with a single site says so explicitly. An empty section means the count was never
 done, and the sites left out surface later as defects: one place gets fixed, the others keep the
 old behavior or break outright.
+
+## Say what would prove the decision wrong
+
+Every record carries one line naming the observation that would overturn it. Not a caveat — a
+thing that could happen, which if it did means this decision no longer holds.
+
+A decision without it is unfalsifiable, and when reality contradicts it later nobody can tell
+whether the decision was wrong or merely applied wrongly. This project overturned a decision three
+hours after writing it and had to re-derive the grounds from scratch because that line was missing
+(R-00000165). Every record since that carried the line has had it pay off, including one where the
+predecessor's line settled the successor's judgement (R-00000180).
 
 ## Priority values
 

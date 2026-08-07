@@ -41,6 +41,15 @@ what, instead of taking the breakage story at face value.
 An upstream SSOT (initiative, epic, plan doc) confirms a stated purpose; it does not supply one.
 When none exists, ask — that is the case this procedure is for.
 
+**Your own summary of what the human said is not evidence either.** Paraphrasing shifts words, and
+the shifted word then stands in the card as though the human chose it — this project moved "report
+without doing" to "report after doing" that way (R-00000169) and used a summarized account of the
+human's experience as grounds (R-00000205, R-00000208). Quote what they said, or ask again.
+
+**Never coin a word.** A compound you assembled from an English term means nothing to the reader
+and everything to you. Say what the thing does. Before using a name, check that someone says it out
+loud (R-00000156).
+
 Confirm the three back to the human and get agreement that this is the work to do. Only then
 continue.
 
@@ -108,6 +117,20 @@ python3 stage/skills/stage-work/register_work.py --project-root <root> --list-op
 The listing includes only milestones whose valid decision chain has an effective pursuit head and
 no effective closure. A planned milestone, an invalid chain, or a milestone with no decision record
 never triggers the question.
+
+## Run the premise before turning an observation into a card
+
+An observation records what was true when someone wrote it. By the time it becomes a card, the code
+may already have moved — and a card built on a stale premise sends the executor to do work that is
+already done. Four such cards shipped in one day here, and every executor correctly refused them
+(R-00000211, R-00000212, R-00000213).
+
+**Reading the code is not enough. Run the behavior once.** Reading only catches a premise that was
+never true; running catches one that stopped being true. Both cards that a read-through would have
+passed were caught by someone executing the command (R-00000227, R-00000239).
+
+This applies hardest to gates and hooks, which change fastest and whose behavior is least visible
+in the source.
 
 ## Count affected places before drafting
 
@@ -230,6 +253,25 @@ Show this table during confirmation:
 
 Do not confirm or register while any included outcome is unmatched. Add a criterion when the
 outcome belongs to this item; otherwise remove or narrow the outcome in `### Included`.
+
+### A criterion the executor cannot reach is not a criterion
+
+Ask of each one: **can whoever runs this card satisfy it inside this card's own scope?** If it
+needs a later card, another venue, or a person's judgement after the run, it is a follow-up step,
+not a finish line — and a card carrying it can never close honestly.
+
+Three shapes fail this test and have each shipped in this project:
+
+- **The result lands outside the scope.** The card cannot write there, so it cannot finish
+  (R-00000216, R-00000232).
+- **The criterion asks for a state of mind.** "Without guessing", "confident that" — when judgement
+  is the work itself, requiring its absence makes the bar unreachable. Write the result the
+  judgement produces instead (R-00000225).
+- **The criterion answers the question the card exists to ask.** A card that decides something
+  cannot have the decision pre-written in its own finish line (R-00000162).
+
+Prefer a criterion stated as a result a person experiences over one that counts structure. A
+structural check ("the section exists") passes while the purpose stays unmet (R-00000139).
 
 ## Confirm, then register
 

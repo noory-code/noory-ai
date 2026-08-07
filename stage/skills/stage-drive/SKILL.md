@@ -189,6 +189,26 @@ so its variable syntax is platform-specific.
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and
 the driver refuses rather than letting a venue grade its own work.
 
+## What the executor reports is a claim, not a measurement
+
+Re-count any number the executor reports before a judgement rests on it, and open the source behind
+any "I verified this" before repeating it. A report is what the run believes happened; it can be
+sincere and still wrong (R-00000207, R-00000208, R-00000232).
+
+The same duty runs the other way. When you hand the executor something you measured, mark it as
+measured and say how — search, sample size, what you opened. A caution written as a bare statement
+comes back as a finding in the executor's record, with your wording and none of your uncertainty
+(R-00000231, R-00000236). Separate **what I saw** from **what I was told** in every brief.
+
+An executor that re-counts what the supervisor handed it is not doubting the supervisor; it is
+doubting both accounts at once, which is the only version that catches anything. That re-count
+overturned three of four stated grounds in one card here (R-00000238), and the population turned
+out to be eighteen where the brief said four.
+
+**Never ask the executor to leave something out of its report.** Harness setup and card work are
+separated inside the report, not hidden from it. A security check caught this project doing exactly
+that (R-00000225).
+
 ## Executor autonomy and report contract
 
 Before acting, the executor decides whether the selected action itself serves its stated purpose.
