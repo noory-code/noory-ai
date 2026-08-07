@@ -2549,8 +2549,11 @@ class DriveTest(unittest.TestCase):
 
             with (
                 mock.patch.object(sys, "argv", argv),
+                # The snapshot builder calls this from driver_repository's own
+                # namespace, so patching the name drive re-exports would not
+                # reach it.
                 mock.patch.object(
-                    drive,
+                    sys.modules["driver_repository"],
                     "git_untracked_paths",
                     side_effect=enumerations,
                 ),

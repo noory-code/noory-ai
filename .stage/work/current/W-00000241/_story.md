@@ -12,7 +12,7 @@ retrospective: pending
 retrospective_ref:
 promotion: pending
 review: not_required
-scope: stage/scripts/drive.py, stage/scripts/drive_parallel.py, stage/scripts/tests/, stage/CHANGELOG.md, .stage/decisions/
+scope: stage/scripts/, stage/scripts/tests/, stage/CHANGELOG.md, .stage/decisions/
 promotes:
 decision_refs: DE-00000067
 ---
