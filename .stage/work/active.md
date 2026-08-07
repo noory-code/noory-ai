@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000232 | documentation | claude | 절차가 시키는 대로 도구의 워크트리 격리 옵션으로 팀원을 띄우면 tmux 창이 안 생겨 사람이 옆에서 볼 수 | active | Claude | [current/W-00000232/_story.md](current/W-00000232/_story.md) |
