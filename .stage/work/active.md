@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000205 | design | claude | 로드맵 결정이 처음부터 제자리에 쓰이게 한다 | active | claude | [current/W-00000205/_story.md](current/W-00000205/_story.md) |

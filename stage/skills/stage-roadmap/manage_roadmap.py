@@ -108,6 +108,35 @@ def _template_for(zone_name: str) -> Path:
     return PLUGIN_ROOT / "templates" / "v4" / zone.template_source
 
 
+def _chain_decision_target(stage_root: Path) -> tuple[Path, str, Path]:
+    """Where a roadmap chain decision is born, and the body it is born with.
+
+    A chain decision is settled the moment this command writes it: the command
+    already validated the transition, and nothing verifies it afterwards. It
+    therefore goes straight into the official records zone, so no later step has
+    to carry it there. The pending zone's template still supplies the body,
+    because the official zone's template predates decision frontmatter.
+    """
+    zone = stage_topology.get_zone("decisions", "official")
+    directory = stage_root / zone.canonical_path
+    template_source = stage_topology.get_zone("decisions", "pending").template_source
+    template_path = PLUGIN_ROOT / "templates" / "v4" / str(template_source)
+    if not directory.is_dir() or not template_path.is_file():
+        raise RuntimeError("official-decision directory or bundled template is missing")
+    return (
+        directory,
+        template_path.read_text(encoding="utf-8"),
+        stage_root / zone.index_surfaces[0],
+    )
+
+
+def _chain_decision_row(decision_id: str, milestone_id: str) -> str:
+    return (
+        f"| {decision_id} | decided | {milestone_id} | "
+        f"[records/{decision_id}.md](records/{decision_id}.md) |"
+    )
+
+
 def _roadmap_existing_ids(stage_root: Path) -> list[str]:
     return [
         record.record_id
@@ -362,20 +391,18 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
         print(f"refusing: milestone decision chain is not openable: {detail}", file=sys.stderr)
         return 1
 
-    pending_zone = stage_topology.get_zone("decisions", "pending")
-    pending_dir = stage_root / pending_zone.canonical_path
-    template_path = PLUGIN_ROOT / "templates" / "v4" / str(pending_zone.template_source)
-    if not pending_dir.is_dir() or not template_path.is_file():
-        raise RuntimeError("pending-decision directory or bundled template is missing")
+    records_dir, template, records_index = _chain_decision_target(stage_root)
     _validate_decision_index(stage_root)
-    template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
-        pending_dir,
+        records_dir,
         "DE",
         _decision_existing_ids(stage_root),
         lambda item_id: _decision_content(template, item_id, milestone),
     )
     _append_decision_ref(milestone_path, decision_id)
+    _ensure_index_row(
+        records_index, decision_id, _chain_decision_row(decision_id, args.milestone)
+    )
     refresh_decision_index.refresh_index(stage_root.parent)
     print(f"{args.milestone}: pursuit active via {decision_id}")
     return 0
@@ -418,17 +445,10 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
             print(f"- {blocker}", file=sys.stderr)
         return 1
 
-    pending_zone = stage_topology.get_zone("decisions", "pending")
-    pending_dir = stage_root / pending_zone.canonical_path
-    template_path = PLUGIN_ROOT / "templates" / "v4" / str(
-        pending_zone.template_source
-    )
-    if not pending_dir.is_dir() or not template_path.is_file():
-        raise RuntimeError("pending-decision directory or bundled template is missing")
+    records_dir, template, records_index = _chain_decision_target(stage_root)
     _validate_decision_index(stage_root)
-    template = template_path.read_text(encoding="utf-8")
     decision_id = _create_atomic(
-        pending_dir,
+        records_dir,
         "DE",
         _decision_existing_ids(stage_root),
         lambda item_id: _closure_decision_content(
@@ -441,6 +461,9 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         ),
     )
     _append_decision_ref(milestone_path, decision_id)
+    _ensure_index_row(
+        records_index, decision_id, _chain_decision_row(decision_id, args.milestone)
+    )
     refresh_decision_index.refresh_index(stage_root.parent)
     print(
         f"{args.milestone}: closed via {decision_id} "

@@ -210,10 +210,19 @@ class RoadmapCliTest(RoadmapFixture):
 
             self.assertEqual(0, pursuit.returncode, pursuit.stderr)
             self.assertIn("DE-00000001", pursuit.stdout)
+            self.assertTrue(
+                (root / ".stage/official/decisions/records/DE-00000001.md").exists()
+            )
+            self.assertFalse(
+                (root / ".stage/decisions/pending/DE-00000001.md").exists()
+            )
+            self.assertNotIn("DE-00000001", decision_index)
             self.assertIn(
-                "[M-00000001](../roadmap/milestones/M-00000001.md) | active | "
-                "[pending/DE-00000001.md]",
-                decision_index,
+                "| DE-00000001 | decided | M-00000001 | "
+                "[records/DE-00000001.md](records/DE-00000001.md) |",
+                (root / ".stage/official/decisions/index.md").read_text(
+                    encoding="utf-8"
+                ),
             )
             self.assertEqual(0, registered.returncode, registered.stderr)
             self.assertEqual(0, audited.returncode, audited.stdout + audited.stderr)

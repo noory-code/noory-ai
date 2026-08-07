@@ -159,7 +159,7 @@ class CloseMilestoneCliTest(ClosureFixture):
             self.assertIn("W-00000002", result.stderr)
             self.assertIn("status captured", result.stderr)
             self.assertFalse(
-                (root / ".stage/decisions/pending/DE-00000002.md").exists()
+                (root / ".stage/official/decisions/records/DE-00000002.md").exists()
             )
 
     def test_captures_exact_sorted_basis_dispositions_and_attestation(self):
@@ -183,12 +183,18 @@ class CloseMilestoneCliTest(ClosureFixture):
             result = self.close(root, "CI, release notes, and rollback drill passed.")
 
             self.assertEqual(0, result.returncode, result.stderr)
-            decision = root / ".stage/decisions/pending/DE-00000002.md"
+            decision = root / ".stage/official/decisions/records/DE-00000002.md"
             text = decision.read_text(encoding="utf-8")
-            decision_index = (root / ".stage/decisions/index.md").read_text(
-                encoding="utf-8"
+            self.assertNotIn(
+                "DE-00000002",
+                (root / ".stage/decisions/index.md").read_text(encoding="utf-8"),
             )
-            self.assertIn("DE-00000002", decision_index)
+            self.assertIn(
+                "| DE-00000002 | decided | M-00000001 |",
+                (root / ".stage/official/decisions/index.md").read_text(
+                    encoding="utf-8"
+                ),
+            )
             self.assertIn("transition: closure", text)
             self.assertIn("predecessor: DE-00000001", text)
             self.assertIn("| W-00000001 | accepted |", text)
@@ -226,7 +232,7 @@ class ClosurePromotionRevalidationTest(ClosureFixture):
         )
         result = self.close(root)
         self.assertEqual(0, result.returncode, result.stderr)
-        return tmp, root, root / ".stage/decisions/pending/DE-00000002.md"
+        return tmp, root, root / ".stage/official/decisions/records/DE-00000002.md"
 
     def test_live_basis_match_passes(self):
         tmp, root, decision = self.closed_fixture()
@@ -323,7 +329,7 @@ class ReopenStateTest(ClosureFixture):
             closed = self.close(root)
             self.assertEqual(0, closed.returncode, closed.stderr)
             stage_root = root / ".stage"
-            reopen = stage_root / "decisions/pending/DE-00000003.md"
+            reopen = stage_root / "official/decisions/records/DE-00000003.md"
             reopen.write_text(
                 "---\n"
                 "id: DE-00000003\n"
@@ -405,49 +411,17 @@ class ClosureEndToEndTest(ClosureFixture):
             closed = self.close(root, "Both delivery outcomes satisfy the criterion.")
             self.assertEqual(0, closed.returncode, closed.stderr)
             closure_id = "DE-00000002"
-            pending = stage_root / "decisions/pending" / f"{closure_id}.md"
-            official_relative = (
-                f".stage/official/decisions/records/{closure_id}.md"
+            # The closure lands in the official records zone as the command
+            # writes it. Nothing carries it there afterwards, so re-attribution
+            # must already be denied with no promotion step in between.
+            self.assertTrue(
+                (
+                    stage_root / "official/decisions/records" / f"{closure_id}.md"
+                ).is_file()
             )
-            promoter = stage_root / "work/current/W-00000099.md"
-            promoter.write_text(
-                "---\n"
-                "id: W-00000099\n"
-                "title: Promote closure fixture\n"
-                "status: completed\n"
-                "verification: passed\n"
-                "retrospective: completed\n"
-                "promotion: approved\n"
-                f"promotes: {official_relative}\n"
-                "scope:\n"
-                "---\n",
-                encoding="utf-8",
+            self.assertFalse(
+                (stage_root / "decisions/pending" / f"{closure_id}.md").exists()
             )
-            intent = stage_guard.write_intent_file(
-                stage_root,
-                {"type": "promotion", "work_item": "W-00000099"},
-                official_relative,
-            )
-            self.assertIsNotNone(intent)
-            promote_payload = {
-                "tool_name": "Bash",
-                "cwd": str(root),
-                "session_id": "closure-e2e",
-                "tool_input": {
-                    "command": (
-                        f"mv .stage/decisions/pending/{closure_id}.md "
-                        f"{official_relative}"
-                    )
-                },
-            }
-            promotion_gate = stage_guard.handle_event(
-                "pre-tool-use", promote_payload
-            )
-            self.assertEqual({}, promotion_gate)
-            set_field(pending, "status", "promoted")
-            official = stage_root / "official/decisions/records" / pending.name
-            pending.replace(official)
-            stage_guard.handle_event("post-tool-use", promote_payload)
 
             illegal_payload = {
                 "tool_name": "Edit",

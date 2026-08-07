@@ -28,6 +28,7 @@ import stage_guard  # noqa: E402
 import guidance_docs  # noqa: E402
 import refresh_decision_index  # noqa: E402
 import stage_roadmap  # noqa: E402
+import stage_roadmap_closure  # noqa: E402
 import stage_records  # noqa: E402
 import stage_topology  # noqa: E402
 import stage_work  # noqa: E402
@@ -573,6 +574,27 @@ class Audit:
             # Status and principle-citation checks run once over all decision
             # records in audit_orphan_records, so they are not repeated here.
 
+    def audit_closure_basis(self, node: Any) -> None:
+        """A closure's frozen card list must still match the live cards.
+
+        A milestone closure freezes the exact work ids and their terminal
+        dispositions. The freeze is only worth having if something re-reads it
+        afterwards, so the audit compares it against the live cards on every
+        run — closure records settle where the command writes them and are
+        never carried anywhere later.
+        """
+        transition = (node.fields.get("transition") or "").strip().lower()
+        if transition not in stage_roadmap.CLOSURE_TRANSITIONS:
+            return
+        for diff in stage_roadmap_closure.closure_basis_diff(
+            self.stage_root, node.path
+        ):
+            self.error(
+                "ROADMAP010",
+                f"Closure basis no longer matches the live work cards: {diff}",
+                node.path,
+            )
+
     def audit_decision_principles(self, decision_path: Path) -> None:
         try:
             text = decision_path.read_text(encoding="utf-8")
@@ -830,6 +852,7 @@ class Audit:
                     node.path,
                 )
             self.audit_decision_principles(node.path)
+            self.audit_closure_basis(node)
             roadmap_node = roadmap_by_id.get(roadmap_item)
             if roadmap_node is not None:
                 declared = set(

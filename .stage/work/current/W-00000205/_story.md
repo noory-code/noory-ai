@@ -2,15 +2,20 @@
 id: W-00000205
 title: 로드맵 결정이 처음부터 제자리에 쓰이게 한다
 kind: design
-venue:
+venue: claude
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/skills/stage-roadmap/, stage/hooks/stage_paths.py, stage/hooks/stage_runtime.py, stage/scripts/refresh_decision_index.py, stage/docs/, stage/CHANGELOG.md, .stage/decisions/
+scope: stage/skills/stage-roadmap/, stage/hooks/stage_paths.py, stage/hooks/stage_runtime.py, stage/scripts/refresh_decision_index.py, stage/docs/, stage/CHANGELOG.md, .stage/decisions/, .stage/official/decisions/
+promotes:
+decision_refs:
 ---
 
 # W-00000205 로드맵 결정이 처음부터 제자리에 쓰이게 한다
@@ -69,3 +74,13 @@ scope: stage/skills/stage-roadmap/, stage/hooks/stage_paths.py, stage/hooks/stag
 
 규칙부터 정한다 — 사슬 결정에 "결정했지만 아직 안 정착"인 중간이 필요한가. 필요 없다면
 명령이 처음부터 공식에 쓰는 것이 맞다.
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

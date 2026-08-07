@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Write roadmap pursuit and closure decisions straight into
+  `official/decisions/records/`, and add their row to the official decision index in the same
+  command. These decisions are settled the moment the command validates the transition and
+  writes them, so no one has to remember to carry them out of the pending drawer, and the
+  pending decision table now lists only decisions that are genuinely waiting.
+
+- Audit a milestone closure's frozen work-card basis on every run (`ROADMAP010`). The check
+  used to run only when a person promoted the closure record; that step no longer exists, so a
+  card whose `terminal_disposition` drifts after closure is now caught by the audit instead.
+
 - Derive unattended driver retrospective IDs from their work item IDs, so isolated parallel runs
   cannot select the same retrospective number. Refuse an occupied ID owned by another work item
   instead of silently moving to the next free number.

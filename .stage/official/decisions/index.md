@@ -54,5 +54,14 @@
 | DE-00000053 | promoted | 사용자 | [records/DE-00000053.md](records/DE-00000053.md) |
 | DE-00000054 | promoted | 사용자 | [records/DE-00000054.md](records/DE-00000054.md) |
 | DE-00000055 | promoted | 사용자 | [records/DE-00000055.md](records/DE-00000055.md) |
+| DE-00000056 | decided | M-00000002 | [records/DE-00000056.md](records/DE-00000056.md) |
 | DE-00000057 | promoted | 사용자 | [records/DE-00000057.md](records/DE-00000057.md) |
+| DE-00000058 | decided | M-00000002 | [records/DE-00000058.md](records/DE-00000058.md) |
 | DE-00000059 | promoted | 사용자 | [records/DE-00000059.md](records/DE-00000059.md) |
+| DE-00000060 | decided | M-00000001 | [records/DE-00000060.md](records/DE-00000060.md) |
+| DE-00000061 | decided | M-00000003 | [records/DE-00000061.md](records/DE-00000061.md) |
+| DE-00000062 | promoted | 사용자 | [records/DE-00000062.md](records/DE-00000062.md) |
+| DE-00000063 | decided | M-00000003 | [records/DE-00000063.md](records/DE-00000063.md) |
+| DE-00000064 | decided | M-00000004 | [records/DE-00000064.md](records/DE-00000064.md) |
+| DE-00000065 | promoted | 사용자 | [records/DE-00000065.md](records/DE-00000065.md) |
+| DE-00000066 | promoted | 사용자 | [records/DE-00000066.md](records/DE-00000066.md) |

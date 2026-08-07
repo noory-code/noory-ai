@@ -566,87 +566,22 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             )
             self.assertEqual(0, closed_milestone.returncode, closed_milestone.stderr)
             closure_id = "DE-00000002"
-            pending = stage_root / f"decisions/pending/{closure_id}.md"
+            closure_relative = f".stage/official/decisions/records/{closure_id}.md"
+            closure = stage_root / f"official/decisions/records/{closure_id}.md"
+            self.assertFalse(
+                (stage_root / f"decisions/pending/{closure_id}.md").exists()
+            )
             self.assertIn(
-                "| W-00000001 | accepted |", pending.read_text(encoding="utf-8")
+                "| W-00000001 | accepted |", closure.read_text(encoding="utf-8")
             )
             self.assert_audit_clean(root)
 
-            promoter = run_tool(
-                REGISTER,
-                root,
-                "--title",
-                "Promote migrated closure",
-                "--kind",
-                "development",
-                "--scope",
-                "promotion-fixture",
-                "--venue",
-                "codex",
-            )
-            self.assertEqual(0, promoter.returncode, promoter.stderr)
-            promoter_card = stage_root / "work/current/W-00000002/_story.md"
-            official_relative = f".stage/official/decisions/records/{closure_id}.md"
-            set_field(promoter_card, "promotes", official_relative)
-            self.add_retrospective(
-                stage_root, promoter_card, "W-00000002", "R-00000002"
-            )
-            closed_promoter = self.close_work(
-                root, "W-00000002", promotion="approved"
-            )
-            self.assertEqual(0, closed_promoter.returncode, closed_promoter.stderr)
-            self.assert_audit_errors(
-                root,
-                [
-                    (
-                        "WORK027",
-                        ".stage/work/current/W-00000002/_story.md",
-                    )
-                ],
-            )
-
-            intent = stage_guard.write_intent_file(
-                stage_root,
-                {"type": "promotion", "work_item": "W-00000002"},
-                official_relative,
-            )
-            self.assertIsNotNone(intent)
-            promotion_payload = {
-                "tool_name": "Bash",
-                "cwd": str(root),
-                "session_id": "migrated-lifecycle",
-                "tool_input": {
-                    "command": (
-                        f"mv .stage/decisions/pending/{closure_id}.md "
-                        f"{official_relative}"
-                    )
-                },
-            }
-
+            # With no promotion step left to re-check the frozen basis, the
+            # audit is what catches a card that drifted after closure.
             set_field(archived_card, "terminal_disposition", "rejected")
-            denied_promotion = stage_guard.handle_event(
-                "pre-tool-use", promotion_payload
-            )
-            denial_reason = denied_promotion["hookSpecificOutput"][
-                "permissionDecisionReason"
-            ]
-            self.assertEqual(
-                "deny",
-                denied_promotion["hookSpecificOutput"]["permissionDecision"],
-            )
-            self.assertIn("promotion revalidation", denial_reason.lower())
-            self.assertIn("expected terminal_disposition `accepted`", denial_reason)
+            self.assert_audit_errors(root, [("ROADMAP010", closure_relative)])
 
             set_field(archived_card, "terminal_disposition", "accepted")
-            allowed_promotion = stage_guard.handle_event(
-                "pre-tool-use", promotion_payload
-            )
-            self.assertEqual({}, allowed_promotion)
-            set_field(pending, "status", "promoted")
-            official = stage_root / f"official/decisions/records/{closure_id}.md"
-            pending.replace(official)
-            stage_guard.handle_event("post-tool-use", promotion_payload)
-            set_field(promoter_card, "promotion", "promoted")
             self.assert_audit_clean(root)
 
             reattribution_payload = {
@@ -673,14 +608,6 @@ class MigratedProjectLifecycleAdversarialTest(MigrationAdversarialFixture):
             )
             self.assertIn(closure_id, reattribution_reason)
             self.assertIn("re-attribution", reattribution_reason.lower())
-            self.assert_audit_clean(root)
-
-            archived_promoter = run_tool(ARCHIVE, root, "W-00000002")
-            self.assertEqual(
-                0,
-                archived_promoter.returncode,
-                archived_promoter.stdout + archived_promoter.stderr,
-            )
             self.assert_audit_clean(root)
 
 
