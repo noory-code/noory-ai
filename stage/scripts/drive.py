@@ -40,7 +40,7 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR, RETROSPECTIVE_DIR):
         sys.path.insert(0, str(import_dir))
 
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
-from stage_record_paths import record_path, record_paths  # noqa: E402
+from stage_record_paths import record_path  # noqa: E402
 from close_work import (  # noqa: E402
     clear_review_verdict,
     clip,
@@ -1521,7 +1521,6 @@ def timed_run_check(
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
 ESCALATE_WORK = STAGE_ROOT / "scripts" / "escalate_work.py"
-RETRO_ID_RE = re.compile(r"^R-(\d+)(?:-.*)?\.md$")
 RETRO_SECTIONS = (
     "Work",
     "Decision points",
@@ -1677,15 +1676,12 @@ def retryable_review_infrastructure_failure(
     return verdict_error in {"", "review verdict file is missing"}
 
 
-def next_retro_id(stage_root: Path) -> str:
-    highest = 0
-    for relative in ("work/retrospectives", "official/work/archive/retrospectives"):
-        root = stage_root / relative
-        for path in record_paths(root, pattern="R-*.md") if root.exists() else ():
-            match = RETRO_ID_RE.fullmatch(path.name)
-            if match:
-                highest = max(highest, int(match.group(1)))
-    return f"R-{highest + 1:08d}"
+def retrospective_id_for_work_item(item_id: str) -> str:
+    """Derive the one retrospective ID reserved for a work item."""
+
+    if not WORK_ID_RE.fullmatch(item_id):
+        raise ValueError(f"invalid work item ID for retrospective: {item_id}")
+    return f"R-{item_id[2:]}"
 
 
 def set_frontmatter_field(text: str, name: str, value: str) -> str:
@@ -1707,7 +1703,20 @@ def write_driver_retrospective(
     thin — a human reviews it when merging the run branch (DE-24, mode A).
     """
 
-    retro_id = next_retro_id(stage_root)
+    try:
+        retro_id = retrospective_id_for_work_item(item.item_id)
+    except ValueError as exc:
+        return "", str(exc)
+    path = record_path(stage_root / "work" / "retrospectives", retro_id)
+    if path.exists():
+        existing_owner = parse_frontmatter(path).get("work_item", "")
+        if existing_owner != item.item_id:
+            owner = existing_owner or "an unknown work item"
+            return (
+                "",
+                f"cannot write retrospective {retro_id}: already belongs to {owner}, "
+                f"not {item.item_id}",
+            )
     note = "driver-generated (사람 머지 검토 대상)"
     # Neutral wording: this is written BEFORE close_work verifies. It must not
     # claim success — the item's Verification (stamped by close_work) is the
@@ -1731,7 +1740,6 @@ def write_driver_retrospective(
     body = f"---\nid: {retro_id}\nwork_item: {item.item_id}\n---\n\n# {retro_id} {item.item_id} 무인 드라이버 회고\n"
     for heading in RETRO_SECTIONS:
         body += f"\n## {heading}\n\n{sections[heading]}\n"
-    path = record_path(stage_root / "work" / "retrospectives", retro_id)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("x", encoding="utf-8") as handle:

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Derive unattended driver retrospective IDs from their work item IDs, so isolated parallel runs
+  cannot select the same retrospective number. Refuse an occupied ID owned by another work item
+  instead of silently moving to the next free number.
+
 - Always include the active work card in unattended executor commits. When an executor changes
   only that card, both supervised and unattended runs now record the result as a rejection, keep
   the attempt available, skip acceptance and review, and hand the decision to a person instead of

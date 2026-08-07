@@ -466,6 +466,59 @@ class DriveTest(unittest.TestCase):
         promotion_index = command.index("--promotion") + 1
         self.assertEqual("not_applicable", command[promotion_index])
 
+    def test_driver_retrospective_ids_follow_work_items_across_isolated_projects(self):
+        drive = self.load_module()
+        results: list[tuple[str, str, Path]] = []
+
+        for item_id in ("W-00000227", "W-00000228"):
+            tmp, root = self.make_project()
+            self.addCleanup(tmp.cleanup)
+            stage_root = root / ".stage"
+            write_card(stage_root, item_id)
+            item = next(
+                item
+                for item in drive.load_all_work_items(stage_root)
+                if item.item_id == item_id
+            )
+
+            retro_id, error = drive.write_driver_retrospective(stage_root, item)
+            results.append((retro_id, error, stage_root))
+
+        self.assertEqual(
+            ["R-00000227", "R-00000228"],
+            [retro_id for retro_id, _, _ in results],
+        )
+        for retro_id, error, stage_root in results:
+            self.assertEqual("", error)
+            retrospective = stage_root / "work" / "retrospectives" / f"{retro_id}.md"
+            self.assertTrue(retrospective.is_file())
+
+    def test_driver_retrospective_refuses_id_owned_by_another_work_item(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        stage_root = root / ".stage"
+        write_card(stage_root, "W-00000041")
+        retrospective_root = stage_root / "work" / "retrospectives"
+        retrospective_root.mkdir(parents=True)
+        (retrospective_root / "R-00000041.md").write_text(
+            "---\nid: R-00000041\nwork_item: W-00000099\n---\n",
+            encoding="utf-8",
+        )
+        drive = self.load_module()
+        item = next(
+            item
+            for item in drive.load_all_work_items(stage_root)
+            if item.item_id == "W-00000041"
+        )
+
+        retro_id, error = drive.write_driver_retrospective(stage_root, item)
+
+        self.assertEqual("", retro_id)
+        self.assertIn("R-00000041", error)
+        self.assertIn("W-00000099", error)
+        self.assertIn("W-00000041", error)
+        self.assertFalse((retrospective_root / "R-00000042.md").exists())
+
     def test_item_commit_always_includes_the_work_card(self):
         tmp, root = self.make_project()
         with tmp:
