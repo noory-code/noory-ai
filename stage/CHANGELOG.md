@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.61.0 — 2026-08-07
+
 - Write roadmap pursuit and closure decisions straight into
   `official/decisions/records/`, and add their row to the official decision index in the same
   command. These decisions are settled the moment the command validates the transition and
