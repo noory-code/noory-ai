@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000234 | design | claude | 실행이 끝난 결과를 본 가지로 들이려면 감시 대상 소스를 커밋해야 하는데 그 시점에는 열린 작업이 없어 커밋 | active | Claude | [current/W-00000234/_story.md](current/W-00000234/_story.md) |
-| W-00000235 | fix | codex | 드라이버가 카드를 옳게 거절한 실행을 커밋 실패로 막고 병렬 실행끼리 같은 회고 번호를 집어, 사람이 그 뒤 | active | Claude | [current/W-00000235/_story.md](current/W-00000235/_story.md) |
