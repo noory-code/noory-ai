@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Split the driver into thirteen modules, one job each: reading the repository and writing to it,
+  the supervised round and the unattended loop, run state, lifecycle calls, per-venue commands,
+  the work log and screen output, child-process environments, the isolated worktree, reviewer
+  verdicts, and work-tree queries. `drive.py` is now the entry point and nothing else — it
+  validates arguments, resolves the target, checks limits, prints the plan, and hands off. No file
+  exceeds 1000 lines; the largest is the unattended loop. Function bodies moved unchanged, so the
+  only rewritten call is the supervised round's new signature.
+
 - List every gate in `hooks/README.md` — what each one protects, when it fires, and the move that
   clears it. A gate was only discoverable by hitting it, and the existing prose named about half of
   them. Six hierarchy messages, the registration and commit messages, and the enum message now name
