@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Always include the active work card in unattended executor commits. When an executor changes
+  only that card, both supervised and unattended runs now record the result as a rejection, keep
+  the attempt available, skip acceptance and review, and hand the decision to a person instead of
+  escalating a commit failure.
+
 ## 0.60.0 — 2026-08-06
 
 - Let the parallel driver pass `--unattended` to every selected card without creating a second
