@@ -11,11 +11,11 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: approved
 review: not_required
 scope: .stage/decisions/, .stage/operations/
 promotes:
-decision_refs:
+decision_refs: DE-00000065
 ---
 
 # W-00000234 실행 결과를 들이는 명령이 게이트를 어떻게 지나는지 정한다

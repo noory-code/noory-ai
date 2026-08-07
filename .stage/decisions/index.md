@@ -15,3 +15,4 @@
 | DE-00000061 | decided | [M-00000003](../roadmap/milestones/M-00000003.md) | closed | [pending/DE-00000061.md](pending/DE-00000061.md) |
 | DE-00000063 | decided | [M-00000003](../roadmap/milestones/M-00000003.md) | closed | [pending/DE-00000063.md](pending/DE-00000063.md) |
 | DE-00000064 | decided | [M-00000004](../roadmap/milestones/M-00000004.md) | active | [pending/DE-00000064.md](pending/DE-00000064.md) |
+| DE-00000065 | decided | [W-00000234](../work/current/W-00000234/_story.md) | active | [pending/DE-00000065.md](pending/DE-00000065.md) |
