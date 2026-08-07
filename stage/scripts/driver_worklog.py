@@ -36,6 +36,23 @@ RECOMMEND_ESCALATE = (
     "attempt cap reached / no progress / global limit exceeded → escalate_work"
 )
 
+# Two outcomes that look like failure and are not. An executor that changed
+# nothing may have found the work already done, and one that changed only its
+# own card is rejecting the card. Both are reported without spending an attempt.
+UNCHANGED_REPOSITORY_NOTICE = (
+    "executor left repository state unchanged; work appears complete; "
+    "attempt was not spent"
+)
+UNCHANGED_REPOSITORY_NEXT_ACTION = (
+    "run close_work.py manually to verify and review the apparent completion"
+)
+EXECUTOR_REJECTION_NOTICE = (
+    "executor rejected the work item after changing only its work card"
+)
+EXECUTOR_REJECTION_NEXT_ACTION = (
+    "review the executor's reason, then withdraw or redesign the work item"
+)
+
 
 def append_failure_to_work_log(
     log_path: Path,

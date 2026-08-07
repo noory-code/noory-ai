@@ -196,10 +196,18 @@ def write_review_verdict(
 
 
 def load_module():
+    # Each test stubs collaborators on the modules that own them, so those
+    # modules have to be rebuilt per test the way the driver itself is.
+    for name in [n for n in sys.modules if n.startswith("driver_")]:
+        del sys.modules[name]
     spec = importlib.util.spec_from_file_location("stage_drive_unattended", SCRIPT)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
+    # The unattended loop resolves its collaborators in its own namespace, so a
+    # stub has to replace the name there rather than the one drive re-exports.
+    module.unattended = sys.modules["driver_unattended"]
+    module.lifecycle = sys.modules["driver_lifecycle"]
     return module
 
 
@@ -325,8 +333,8 @@ class UnattendedTest(unittest.TestCase):
             set_status(str(project_root), item_id, "blocked")
             return True, ""
 
-        drive.close_via_close_work = stub_close
-        drive.escalate_via_escalate_work = stub_escalate
+        drive.unattended.close_via_close_work = stub_close
+        drive.unattended.escalate_via_escalate_work = stub_escalate
 
     def fail_lifecycle_commit(self, drive, fragment: str, calls: list[str]) -> None:
         def stub_commit_lifecycle(project_root, message):
@@ -335,7 +343,7 @@ class UnattendedTest(unittest.TestCase):
                 return False, "simulated lifecycle commit failure"
             return True, ""
 
-        drive.commit_lifecycle = stub_commit_lifecycle
+        drive.unattended.commit_lifecycle = stub_commit_lifecycle
 
     def commit_all(self, root: Path) -> None:
         git(root, "add", "-A")
@@ -373,7 +381,7 @@ class UnattendedTest(unittest.TestCase):
             encoding="utf-8",
         )
         drive = load_module()
-        drive.CLOSE_WORK = close_work
+        drive.lifecycle.CLOSE_WORK = close_work
 
         with mock.patch.dict(
             os.environ,
@@ -855,7 +863,7 @@ class UnattendedTest(unittest.TestCase):
                 )
                 return True, ""
 
-            drive.close_via_close_work = stub_close
+            drive.unattended.close_via_close_work = stub_close
 
             rc = drive.run_unattended(
                 self.args(root, "W-00000001"),
@@ -979,7 +987,7 @@ class UnattendedTest(unittest.TestCase):
                 )
                 return True, ""
 
-            drive.close_via_close_work = stub_close
+            drive.unattended.close_via_close_work = stub_close
 
             rc = drive.run_unattended(
                 self.args(root, "W-00000001"),
@@ -1041,8 +1049,8 @@ class UnattendedTest(unittest.TestCase):
             )
             return True
 
-        drive.close_via_close_work = stub_close
-        drive.escalate_and_commit = stub_escalate
+        drive.unattended.close_via_close_work = stub_close
+        drive.unattended.escalate_and_commit = stub_escalate
 
         rc = drive.run_unattended(
             self.args(root, "W-00000001"),
@@ -1115,7 +1123,7 @@ class UnattendedTest(unittest.TestCase):
                 )
                 return True, ""
 
-            drive.close_via_close_work = stub_close
+            drive.unattended.close_via_close_work = stub_close
 
             rc = drive.run_unattended(
                 self.args(root, "W-00000001"),
@@ -1161,7 +1169,7 @@ class UnattendedTest(unittest.TestCase):
             )
             return True, ""
 
-        drive.close_via_close_work = stub_close
+        drive.unattended.close_via_close_work = stub_close
 
         rc = drive.run_unattended(
             self.args(root, "W-00000001"),
@@ -1558,7 +1566,7 @@ class UnattendedTest(unittest.TestCase):
             )
             return True
 
-        drive.escalate_and_commit = stub_escalate_and_commit
+        drive.unattended.escalate_and_commit = stub_escalate_and_commit
 
         self.commit_all(root)
         exclude_path = root / git_out(root, "rev-parse", "--git-path", "info/exclude")
@@ -1609,7 +1617,7 @@ class UnattendedTest(unittest.TestCase):
         drive = load_module()
         calls: list = []
         self.install_stubs(drive, calls)
-        drive.subtree_limits = (
+        drive.unattended.subtree_limits = (
             lambda configured, target_id, items, *, per_action_seconds: configured
         )
 
@@ -1770,8 +1778,8 @@ class UnattendedTest(unittest.TestCase):
             )
             return True
 
-        drive.close_via_close_work = stub_close
-        drive.escalate_and_commit = stub_escalate
+        drive.unattended.close_via_close_work = stub_close
+        drive.unattended.escalate_and_commit = stub_escalate
         self.fail_lifecycle_commit(drive, "pre-close lifecycle (retry)", lifecycle_calls)
 
         self.commit_all(root)
@@ -1813,8 +1821,8 @@ class UnattendedTest(unittest.TestCase):
             )
             return True
 
-        drive.close_via_close_work = stub_close
-        drive.escalate_and_commit = stub_escalate_and_commit
+        drive.unattended.close_via_close_work = stub_close
+        drive.unattended.escalate_and_commit = stub_escalate_and_commit
 
         self.commit_all(root)
         rc = drive.run_unattended(
@@ -1846,7 +1854,7 @@ class UnattendedTest(unittest.TestCase):
         drive = load_module()
         escalation_reasons: list[str] = []
 
-        drive.close_via_close_work = (
+        drive.unattended.close_via_close_work = (
             lambda project_root, item_id, extra_checks, timeout: (
                 False,
                 "$ python acceptance.py\n[exit 1]\nacceptance failure sentinel",
@@ -1863,7 +1871,7 @@ class UnattendedTest(unittest.TestCase):
             )
             return True
 
-        drive.escalate_and_commit = stub_escalate_and_commit
+        drive.unattended.escalate_and_commit = stub_escalate_and_commit
 
         self.commit_all(root)
         rc = drive.run_unattended(
@@ -1928,7 +1936,7 @@ class UnattendedTest(unittest.TestCase):
         )
         drive = load_module()
 
-        drive.audit_check = lambda project_root: audit_command
+        drive.unattended.audit_check = lambda project_root: audit_command
 
         closed, error = drive.close_ready_ancestors(
             root,
@@ -1967,7 +1975,7 @@ class UnattendedTest(unittest.TestCase):
             encoding="utf-8",
         )
         drive = load_module()
-        drive.audit_check = lambda project_root: python_command("pass")
+        drive.unattended.audit_check = lambda project_root: python_command("pass")
 
         closed, error = drive.close_ready_ancestors(
             root,
@@ -2002,7 +2010,7 @@ class UnattendedTest(unittest.TestCase):
             encoding="utf-8",
         )
         drive = load_module()
-        drive.audit_check = lambda project_root: python_command("pass")
+        drive.unattended.audit_check = lambda project_root: python_command("pass")
 
         closed, error = drive.close_ready_ancestors(
             root,
@@ -2024,7 +2032,7 @@ class UnattendedTest(unittest.TestCase):
         calls: list = []
         self.install_stubs(drive, calls)
 
-        original_close = drive.close_via_close_work
+        original_close = drive.unattended.close_via_close_work
 
         def fail_parent_close(
             project_root, item_id, extra_checks, timeout, promotion_default=None
@@ -2033,7 +2041,7 @@ class UnattendedTest(unittest.TestCase):
                 return False, "simulated parent close failure"
             return original_close(project_root, item_id, extra_checks, timeout)
 
-        drive.close_via_close_work = fail_parent_close
+        drive.unattended.close_via_close_work = fail_parent_close
         self.fail_lifecycle_commit(drive, "ancestor aggregation (lifecycle)", [])
 
         self.commit_all(root)
@@ -2079,8 +2087,8 @@ class UnattendedTest(unittest.TestCase):
             set_status(str(project_root), item_id, "blocked")
             return True, ""
 
-        drive.close_via_close_work = stub_close
-        drive.escalate_via_escalate_work = stub_escalate
+        drive.unattended.close_via_close_work = stub_close
+        drive.unattended.escalate_via_escalate_work = stub_escalate
 
         self.commit_all(root)
         rc = drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
