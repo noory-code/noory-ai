@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000242 | design | claude | 막는 자리 열넷을 세고 겹치는 것을 합친다 | active | claude | [current/W-00000242/_story.md](current/W-00000242/_story.md) |
