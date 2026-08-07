@@ -2,14 +2,19 @@
 id: W-00000242
 title: 막는 자리 열넷을 세고 겹치는 것을 합친다
 kind: design
-venue:
+venue: claude
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/hooks/, stage/docs/, .stage/decisions/
+scope: stage/hooks/, stage/hooks/tests/, stage/docs/, stage/CHANGELOG.md, .stage/decisions/
+promotes:
+decision_refs:
 ---
 
 # W-00000242 막는 자리 열넷을 세고 겹치는 것을 합친다
@@ -41,3 +46,13 @@ scope: stage/hooks/, stage/docs/, .stage/decisions/
 - 막히는 메시지마다 다음에 무엇을 하면 되는지가 한 줄로 들어 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

@@ -689,12 +689,14 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
                 expected = "story" if scale == "action" else "epic"
                 return (
                     "Stage hierarchy gate violation: "
-                    f"{expected} record not found at folder parent: {parent_path}"
+                    f"{expected} record not found at folder parent: {parent_path}. "
+                    f"Register the {expected} first, then place this record inside it."
                 )
             if parent_id == self_id:
                 return (
                     "Stage hierarchy gate violation: a work item cannot be "
-                    f"its own folder parent: {parent_id}"
+                    f"its own folder parent: {parent_id}. Move the record into the "
+                    "folder of the item it belongs under."
                 )
             if (
                 parent_status in WORK_FINAL_STATUSES
@@ -702,7 +704,8 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
             ):
                 return (
                     "Stage hierarchy gate violation: cannot open a child under "
-                    f"a finalized folder parent ({parent_status}): {parent_id}"
+                    f"a finalized folder parent ({parent_status}): {parent_id}. "
+                    "Register the new work under an open parent, or at top level."
                 )
             continue
 
@@ -713,17 +716,24 @@ def hierarchy_blocker(workspace_root: Path, payload: dict[str, Any], name: str) 
         target_stem = Path(relative).stem
         self_id = projected_id_by_stem.get(target_stem, target_stem)
         if parent_id in {target_stem, self_id}:
-            return f"Stage hierarchy gate violation: a work item cannot be its own parent: {parent_id}"
+            return (
+                "Stage hierarchy gate violation: a work item cannot be its own parent: "
+                f"{parent_id}. Name the item this one belongs under, or drop the field."
+            )
 
         parent_status = status_by_id.get(parent_id)
         if parent_status is None:
-            return f"Stage hierarchy gate violation: parent work item not found: {parent_id}"
+            return (
+                "Stage hierarchy gate violation: parent work item not found: "
+                f"{parent_id}. Register that item first, or name one that exists."
+            )
 
         child_status = (frontmatter_field_from_text(projected, "status") or "active").lower()
         if parent_status in WORK_FINAL_STATUSES and child_status in WORK_OPEN_STATUSES:
             return (
                 "Stage hierarchy gate violation: cannot open a child under a finalized parent "
-                f"({parent_status}): {parent_id}"
+                f"({parent_status}): {parent_id}. Register the new work under an open "
+                "parent, or at top level."
             )
     return ""
 

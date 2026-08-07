@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- List every gate in `hooks/README.md` — what each one protects, when it fires, and the move that
+  clears it. A gate was only discoverable by hitting it, and the existing prose named about half of
+  them. Six hierarchy messages, the registration and commit messages, and the enum message now name
+  a next step instead of only stating the violation. A test pins the gate surface so a new gate
+  cannot land without a row.
+
 - Give a retrospective a separate `## Rule candidate` section, so the sentence that binds all
   future work stops sharing a heading with the card to run next. A candidate becomes a rule on one
   of two countable tests — it happened twice, or something outside the harness had to catch it —

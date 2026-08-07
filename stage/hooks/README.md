@@ -9,6 +9,37 @@ This directory owns the hooks that apply Stage principles at execution time.
 - `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop`: writes `.stage/.runtime/sessions/<session_id>.md`.
 
+## Every gate, and what to do when one fires
+
+Fourteen checks can deny a call. You learn one exists by hitting it, so here they all are. Each row
+names what it protects and the move that clears it — the message itself carries the same move, and
+a row whose message does not is a defect in the message, not in this table.
+
+| Gate | Protects | Fires when | Clears by |
+|---|---|---|---|
+| Registration | work having a purpose | a governed file is written with no open work item | registering one — `stage-work`, or `skills/stage-work/register_work.py` |
+| Commit | the same, at commit time | governed paths are committed with no open item, or an item's own verification, retrospective, or promotion is unfinished | the same, or finishing the named item |
+| Promotion intent | official truth changing unwitnessed | `.stage/official/` is written without a matching pending intent | `stage-retrospective`, then `scripts/promote_intent.py` |
+| Closure revalidation | a milestone closure's frozen card list | a closure record is promoted while a card in its basis drifted | restoring the card, or a reopen decision |
+| Re-attribution | the same list, at write time | a frozen card's `milestone:` changes | a decided reopen decision that supersedes the closure |
+| Hierarchy | the parent/child tree | the parent is unknown, is the item itself, or is already finalized | naming an existing open parent, or registering at top level |
+| Enum validity | status fields meaning one thing | a work field carries a value outside its set | using one of the values the message lists |
+| Schema version | the project and plugin agreeing | the project is behind the enforced schema | `stage-migrate` |
+| Migration marker | one migration at a time | a migration is mid-flight | letting its owner finish, or the `stage-migrate` abort path |
+| Settings integrity | knowing what is governed at all | `.stage/settings.json` is unreadable or malformed | repairing that file first |
+| `.stage` deletion | the whole record | a recursive delete would take `.stage` or an ancestor | deleting only the specific files |
+| Retired roots | one location per record | a write targets a schema-v3 root | the v4 path the message names |
+| Script suffix | running on every host | an OS-specific executable lands inside `.stage` | Python or Markdown instead |
+| Inline interpreter | the gates being able to see the write | inline code (`python -c`, a heredoc) names `.stage` | Write/Edit, or a named script file |
+
+Two of these are one check reached two ways: registration and re-attribution each run once for
+write tools and once for shell commands. They are listed once because the fix is the same.
+
+One more check denies without being a write gate. Asking the human (`AskUserQuestion`,
+`request_user_input`) is denied **once per question**, with a reminder to derive the answer from
+the work's purpose and the canon principles first. Asking again passes — it exists to make you
+re-read, not to stop you.
+
 ## Blocking criteria
 
 - Deleting `.stage` entirely is forbidden — recursive `rm`/`rmdir`/`Remove-Item` and `find .stage -delete`/`-exec rm` are all blocked, including behind find's pre-path traversal options (`find -L .stage -delete`) and the `--` end-of-options separator. A recursive delete rooted at an ancestor of `.stage` (`rm -rf .`, `find . -delete`) is denied even when a find filter is present — the hook does not evaluate find expressions, so scope destructive sweeps below `.stage`'s branch (e.g. `find src -name '*.pyc' -delete`). Write targets are resolved through existing symlinks and `..` first, so an aliased path cannot dodge classification.

@@ -636,7 +636,8 @@ def source_registration_blocker(
         return (
             "Stage registration gate violation: before modifying governed files, establish a story "
             "first, then register an active work item in "
-            f"`.stage/{current_root}/`. "
+            f"`.stage/{current_root}/` — run the stage-work skill, or "
+            "`skills/stage-work/register_work.py`. "
             "Targets without active work: " + ", ".join(source_paths[:5])
         )
     return (
@@ -668,7 +669,8 @@ def commit_blocker(workspace_root: Path, paths: list[str]) -> str:
     if not any(item_is_open(item) for item in items):
         return (
             "Stage commit gate violation: before committing governed files, register an open work "
-            "item. Targets without open work: " + ", ".join(source_paths[:5])
+            "item — run the stage-work skill, or `skills/stage-work/register_work.py`. "
+            "Targets without open work: " + ", ".join(source_paths[:5])
         )
     return ""
 
@@ -738,7 +740,8 @@ def work_item_enum_error(text: str, relative: str = "") -> str:
         if value and value not in valid:
             return (
                 f"Stage enum gate violation: work item `{field_name}: {value}` is not one of "
-                f"{sorted(valid)}."
+                f"{sorted(valid)}. Set the field to one of those, or let the lifecycle "
+                "command that owns this transition write it."
             )
     return ""
 
