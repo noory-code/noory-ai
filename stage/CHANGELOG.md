@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Give a retrospective a separate `## Rule candidate` section, so the sentence that binds all
+  future work stops sharing a heading with the card to run next. A candidate becomes a rule on one
+  of two countable tests — it happened twice, or something outside the harness had to catch it —
+  and `stage-retrospective/rule-promotion.md` owns those tests, where the rule goes, and why
+  amending an existing rule usually beats adding a new one. Machine-written retrospectives leave
+  the section for whoever merges the run.
+
 ## 0.61.0 — 2026-08-07
 
 - Write roadmap pursuit and closure decisions straight into

@@ -1528,6 +1528,7 @@ RETRO_SECTIONS = (
     "Context that helped",
     "Context that was missing",
     "Next changes",
+    "Rule candidate",
     "Promotion decision",
 )
 
@@ -1733,6 +1734,9 @@ def write_driver_retrospective(
         "Context that helped": f"{note}: 항목 acceptance가 종료를 결정적으로 판정.",
         "Context that was missing": f"{note}: 반성적 회고는 사람이 브랜치 머지 시 보완.",
         "Next changes": f"{note}: 사람이 격리 브랜치를 검토·머지.",
+        # A run cannot judge from inside whether its own behavior should bind
+        # future cards, so it leaves the rule candidate to whoever merges it.
+        "Rule candidate": f"{note}: 머지하는 사람이 채운다 — 이 실행이 남긴 규칙 후보가 있으면.",
         "Promotion decision": (
             f"{note}: 항목 Verification의 결과를 따른다(close_work가 acceptance·독립 판정 통과 시에만 completed로 스탬프)."
         ),

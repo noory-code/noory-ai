@@ -23,4 +23,7 @@ work_item: W-00000000
 ## Next changes
 
 
+## Rule candidate
+
+
 ## Promotion decision
