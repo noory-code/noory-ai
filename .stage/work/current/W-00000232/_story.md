@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: .stage/operations/claude-venue.md
 promotes:
@@ -76,6 +76,17 @@ decision_refs:
 
 
 ## Progress
+
+- `.stage/operations/claude-venue.md` 감독 모드 절차의 팀원 실행 걸음을 고쳤다. 격리 옵션을
+  주지 말라는 금지와 무엇을 잃는지, 팀원이 스스로 워크트리를 만들어 그 안에서만 일하는
+  방법(브랜치 확인·명령마다 경로 넘기기 포함)이 절차에 들어갔다.
+- 판정 반려 뒤 문구를 좁혔다. 3번 걸음이 Agent 도구의 `isolation` 인자를 이름으로 부르고
+  "다른 값이 아니라 인자가 없어야 한다"로 확인 가능해졌고, 창 관측은 각 팔 한 번씩임을 날짜와
+  함께 밝히면서 갈라 재지 않은 변수도 같이 적었다. 시험되지 않은 "끼어들 수 없다"는 뺐다.
+- 같은 문서 2번 걸음의 이유를 실측에 맞췄다. "기준점이 세션 HEAD 를 따라오지 않아"는 새
+  방법에서 거짓이다 — 워크트리를 `HEAD` 에서 만들므로 기준점은 세션 HEAD 다. 카드 등록을
+  먼저 커밋하라는 지시는 남되, 이유가 "새로 만든 워크트리는 본 체크아웃의 커밋 안 된 변경을
+  안 가져온다"로 바뀌었다.
 
 
 ## Verification
