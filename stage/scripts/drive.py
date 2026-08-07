@@ -82,6 +82,26 @@ from driver_worklog import (  # noqa: E402
     print_preflight_blocker,
     reconcile_executor_work_log,
 )
+from driver_git import (  # noqa: E402
+    commit_item,
+    commit_lifecycle,
+    create_run_branch,
+    current_head,
+    current_head_or_empty,
+    restore_item_output,
+    run_branch_name,
+    run_git,
+)
+from driver_worktree import (  # noqa: E402
+    create_unattended_worktree,
+    current_branch,
+    discard_worktree,
+    preserve_unattended_runtime,
+    remove_unattended_worktree,
+    seed_unattended_runtime,
+    unattended_worktree_path,
+    worktree_clean,
+)
 from driver_subtree import (  # noqa: E402
     MIN_COMMAND_TIMEOUT_SECONDS,
     SUCCESS_CRITERIA_HEADING_RE,
@@ -595,113 +615,6 @@ RETRO_SECTIONS = (
 )
 
 
-def run_git(project_root: Path, args: list[str], timeout: int = 120) -> tuple[bool, str]:
-    """Run one git command; return (ok, combined output). Never raises."""
-
-    try:
-        proc = subprocess.run(
-            ["git", *args],
-            cwd=str(project_root),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired:
-        return False, f"git {' '.join(args[:2])} timed out after {timeout}s"
-    except OSError as exc:
-        return False, str(exc)
-    return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
-
-
-def run_branch_name(target_id: str, now: float) -> str:
-    """Return the branch owned by one unattended run."""
-
-    return f"stage/driver/{target_id}-{int(now)}"
-
-
-def create_run_branch(project_root: Path, target_id: str, now: float) -> tuple[str, str]:
-    """Create and check out an isolated run branch; NEVER commit to the base branch.
-
-    Returns (branch_name, error). An existing branch (idempotent re-run) is
-    checked out rather than recreated.
-    """
-
-    branch = run_branch_name(target_id, now)
-    exists, _ = run_git(project_root, ["rev-parse", "--verify", "--quiet", branch])
-    verb = ["checkout", branch] if exists else ["checkout", "-b", branch]
-    ok, out = run_git(project_root, verb)
-    if not ok:
-        return "", f"cannot create/checkout run branch {branch}: {out.strip()}"
-    return branch, ""
-
-
-def commit_item(
-    project_root: Path,
-    item: WorkItem,
-    base_head: str = "",
-) -> tuple[bool, str]:
-    """Replace prior round checkpoints with one cumulative item commit."""
-
-    if not current_branch(project_root).startswith("stage/driver/"):
-        return False, "refusing item commit: HEAD is not on a stage/driver run branch"
-    if base_head:
-        ok, current = run_git(project_root, ["rev-parse", "HEAD"])
-        if not ok:
-            return False, f"cannot resolve item checkpoint HEAD: {current.strip()}"
-        if current.strip() != base_head:
-            ok, out = run_git(project_root, ["reset", "--soft", base_head])
-            if not ok:
-                return False, f"cannot squash prior item checkpoints: {out.strip()}"
-    try:
-        card_path = work_card_relative_path(project_root, item)
-    except RuntimeError as exc:
-        return False, f"refusing item commit: {exc}"
-    commit_paths = list(
-        dict.fromkeys([path for path in item.scope if path] + [card_path])
-    )
-    ok, out = run_git(project_root, ["add", "--", *commit_paths])
-    if not ok:
-        return False, f"git add failed: {out.strip()}"
-    ok, out = run_git(
-        project_root,
-        ["commit", "-m", f"driver: {item.item_id} executor output"],
-    )
-    if not ok and "nothing to commit" in out:
-        return True, "nothing to commit"
-    return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
-
-
-def restore_item_output(project_root: Path, base_head: str) -> tuple[bool, str]:
-    """Remove item checkpoint commits while retaining their files for human handoff."""
-
-    ok, out = run_git(project_root, ["reset", "--mixed", base_head])
-    return (True, "") if ok else (
-        False,
-        f"cannot restore uncommitted item output at attempt cap: {out.strip()}",
-    )
-
-
-def current_head(project_root: Path) -> tuple[str, str]:
-    ok, out = run_git(project_root, ["rev-parse", "HEAD"])
-    return (out.strip(), "") if ok else ("", f"cannot resolve HEAD: {out.strip()}")
-
-
-def current_head_or_empty(project_root: Path) -> tuple[str, str]:
-    """Return HEAD, or an empty basis for an unborn/non-Git repository."""
-
-    index_path, index_error = git_index_path(project_root)
-    if index_error:
-        return "", index_error
-    if index_path is None:
-        return "", ""
-    head_exists, head_error = git_head_exists(project_root)
-    if head_error:
-        return "", head_error
-    if not head_exists:
-        return "", ""
-    return current_head(project_root)
-
-
 def retrospective_id_for_work_item(item_id: str) -> str:
     """Derive the one retrospective ID reserved for a work item."""
 
@@ -952,188 +865,6 @@ def close_ready_ancestors(
         closed.append(current)
         current = "" if current == target_id else parent.parent
     return closed, ""
-
-
-def current_branch(project_root: Path) -> str:
-    ok, out = run_git(project_root, ["rev-parse", "--abbrev-ref", "HEAD"])
-    return out.strip() if ok else ""
-
-
-def worktree_clean(project_root: Path) -> bool:
-    ok, out = run_git(project_root, ["status", "--porcelain"])
-    return ok and out.strip() == ""
-
-
-def discard_worktree(project_root: Path) -> None:
-    """Drop a failed attempt's uncommitted changes so the next iteration starts clean."""
-
-    run_git(project_root, ["checkout", "--", "."])
-    run_git(
-        project_root,
-        ["clean", "-fdq", "-e", f"/{STAGE_RUNTIME_PREFIX}"],
-    )
-
-
-def unattended_worktree_path(
-    project_root: Path,
-    target_id: str,
-    now: float,
-    *,
-    worktree_root: Path | None = None,
-) -> Path:
-    """Return the separate checkout path for one unattended run."""
-
-    root = (
-        worktree_root.resolve()
-        if worktree_root is not None
-        else project_root.parent / f"{project_root.name}-stage-unattended"
-    )
-    return (root / f"{target_id}-{int(now)}").resolve()
-
-
-def create_unattended_worktree(
-    project_root: Path,
-    target_id: str,
-    now: float,
-    *,
-    worktree_root: Path | None = None,
-) -> tuple[Path | None, str, str]:
-    """Create an unattended worktree without switching the human checkout."""
-
-    path = unattended_worktree_path(
-        project_root,
-        target_id,
-        now,
-        worktree_root=worktree_root,
-    )
-    branch = run_branch_name(target_id, now)
-    if path.exists() or path.is_symlink():
-        return None, "", f"unattended worktree path already exists: {path}"
-    exists, out = run_git(
-        project_root,
-        ["rev-parse", "--verify", "--quiet", branch],
-    )
-    if exists:
-        return None, "", f"unattended run branch already exists: {branch}"
-    if out.strip():
-        return None, "", f"cannot inspect unattended run branch {branch}: {out.strip()}"
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        return None, "", f"cannot create unattended worktree root {path.parent}: {exc}"
-    ok, out = run_git(
-        project_root,
-        ["worktree", "add", "-b", branch, str(path), "HEAD"],
-    )
-    if not ok:
-        return None, "", (
-            f"cannot create unattended worktree {path} on {branch}: {out.strip()}"
-        )
-    return path, branch, ""
-
-
-def remove_unattended_worktree(project_root: Path, path: Path) -> str:
-    """Remove a clean unattended worktree while retaining its handoff branch."""
-
-    ok, out = run_git(project_root, ["worktree", "remove", str(path)])
-    if not ok:
-        detail = out.strip() or "git worktree remove failed"
-        return f"cannot remove unattended worktree {path}: {detail}"
-    try:
-        path.parent.rmdir()
-    except OSError:
-        pass
-    return ""
-
-
-def seed_unattended_runtime(
-    stage_root: Path,
-    run_stage_root: Path,
-    target_id: str,
-    items: list[WorkItem],
-) -> str:
-    """Copy only the selected subtree's prior driver state into its worktree."""
-
-    by_id = {item.item_id: item for item in items}
-    item_ids = {
-        item.item_id
-        for item in items
-        if item.item_id == target_id or is_in_subtree(item, target_id, by_id)
-    }
-    relative_paths = [Path(f"driver/{target_id}.json")]
-    for item_id in sorted(item_ids):
-        relative_paths.extend(
-            (
-                Path(f"driver/logs/{item_id}.md"),
-                Path(f"driver/verdicts/{item_id}.json"),
-            )
-        )
-    source_root = stage_root / ".runtime"
-    destination_root = run_stage_root / ".runtime"
-    try:
-        for relative_path in relative_paths:
-            source = source_root / relative_path
-            if not source.is_file():
-                continue
-            destination = destination_root / relative_path
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, destination)
-    except OSError as exc:
-        return f"cannot seed unattended runtime evidence: {exc}"
-    return ""
-
-
-def preserve_unattended_runtime(run_stage_root: Path, stage_root: Path) -> str:
-    """Move ignored runtime evidence back to the human checkout before cleanup."""
-
-    source = run_stage_root / ".runtime"
-    if not source.exists():
-        return ""
-    destination = stage_root / ".runtime"
-    try:
-        shutil.copytree(source, destination, dirs_exist_ok=True)
-        shutil.rmtree(source)
-    except OSError as exc:
-        return f"cannot preserve unattended runtime evidence from {source}: {exc}"
-    return ""
-
-
-def commit_lifecycle(project_root: Path, message: str) -> tuple[bool, str]:
-    """Commit the Stage lifecycle records (.stage/) to the run branch — never the base branch."""
-
-    if not current_branch(project_root).startswith("stage/driver/"):
-        return False, "refusing lifecycle commit: HEAD is not on a stage/driver run branch"
-    ok, out = run_git(
-        project_root,
-        ["add", "--update", "--", ".stage"],
-    )
-    if not ok:
-        return False, f"git add tracked .stage paths failed: {out.strip()}"
-    ok, out = run_git(
-        project_root,
-        ["ls-files", "--others", "--exclude-standard", "-z", "--", ".stage"],
-    )
-    if not ok:
-        return False, f"cannot list untracked lifecycle paths: {out.strip()}"
-    untracked_paths = [
-        path
-        for path in out.split("\0")
-        if path and not path.startswith(STAGE_RUNTIME_PREFIX)
-    ]
-    if untracked_paths:
-        ok, out = run_git(project_root, ["add", "--", *untracked_paths])
-        if not ok:
-            return False, f"git add untracked lifecycle paths failed: {out.strip()}"
-    ok, staged_paths = run_git(
-        project_root,
-        ["diff", "--cached", "--name-only"],
-    )
-    if not ok:
-        return False, f"cannot inspect staged lifecycle paths: {staged_paths.strip()}"
-    if not staged_paths.strip():
-        return True, "nothing to commit"
-    ok, out = run_git(project_root, ["commit", "-m", message])
-    return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
 
 
 def remaining_timeout(now: float, wall_clock: int, per_command: int) -> int:
