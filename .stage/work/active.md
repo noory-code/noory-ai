@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000233 | documentation | claude | 팀원을 띄울 때 모델을 안 정하면 부모 세션 모델을 그대로 물려받아 문구 다듬기 같은 기계적인 일에도 제일  | active | Claude | [current/W-00000233/_story.md](current/W-00000233/_story.md) |
