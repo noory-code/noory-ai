@@ -5,7 +5,8 @@ kind: development
 venue: claude
 milestone:
 autonomous: false
-acceptance: []
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q -k Drive"
 status: active
 verification: pending
 retrospective: pending

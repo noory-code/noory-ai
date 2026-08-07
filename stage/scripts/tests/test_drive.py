@@ -3292,7 +3292,7 @@ class DriveTest(unittest.TestCase):
             with (
                 mock.patch.object(sys, "argv", argv),
                 mock.patch.object(
-                    drive,
+                    sys.modules["driver_supervised"],
                     "timed_run_check",
                     side_effect=terminate_during_executor,
                 ),
@@ -3347,7 +3347,7 @@ class DriveTest(unittest.TestCase):
             with (
                 mock.patch.object(sys, "argv", argv),
                 mock.patch.object(
-                    drive,
+                    sys.modules["driver_supervised"],
                     "reap_turn",
                     side_effect=SystemExit("simulated driver termination"),
                 ),
@@ -3491,7 +3491,7 @@ class DriveTest(unittest.TestCase):
                 with (
                     mock.patch.object(sys, "argv", argv),
                     mock.patch.object(
-                        drive,
+                        sys.modules["driver_supervised"],
                         "reap_turn",
                         side_effect=terminate_after_review,
                     ),
