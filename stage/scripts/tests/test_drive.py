@@ -3118,8 +3118,9 @@ class DriveTest(unittest.TestCase):
             item = drive.load_all_work_items(root / ".stage")[0]
             missing_output = io.StringIO()
             with (
+                # run_preflight reads this from driver_venues' own namespace.
                 mock.patch.object(
-                    drive,
+                    sys.modules["driver_venues"],
                     "load_preflights_config",
                     return_value=None,
                 ),
@@ -3137,7 +3138,7 @@ class DriveTest(unittest.TestCase):
             declared_output = io.StringIO()
             with (
                 mock.patch.object(
-                    drive,
+                    sys.modules["driver_venues"],
                     "load_preflights_config",
                     return_value={"codex": None},
                 ),
@@ -3153,7 +3154,7 @@ class DriveTest(unittest.TestCase):
                 )
 
             with mock.patch.object(
-                drive,
+                sys.modules["driver_venues"],
                 "load_preflights_config",
                 return_value={"codex": PASS_COMMAND},
             ):
