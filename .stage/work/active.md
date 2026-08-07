@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000241 | development | codex | 드라이버를 책임별로 나눈다 | active | codex | [current/W-00000241/_story.md](current/W-00000241/_story.md) |

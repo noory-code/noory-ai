@@ -2,14 +2,19 @@
 id: W-00000241
 title: 드라이버를 책임별로 나눈다
 kind: development
-venue:
+venue: claude
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/scripts/drive.py, stage/scripts/drive_parallel.py, stage/scripts/tests/
+scope: stage/scripts/drive.py, stage/scripts/drive_parallel.py, stage/scripts/tests/, stage/CHANGELOG.md, .stage/decisions/
+promotes:
+decision_refs: DE-00000067
 ---
 
 # W-00000241 드라이버를 책임별로 나눈다
@@ -41,3 +46,13 @@ scope: stage/scripts/drive.py, stage/scripts/drive_parallel.py, stage/scripts/te
 - 한 파일을 열었을 때 그 파일이 무슨 책임을 지는지 파일 이름만으로 말할 수 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
