@@ -186,3 +186,4 @@
 | W-00000233 | completed | [items/W-00000233/_story.md](items/W-00000233/_story.md) |
 | W-00000235 | completed | [items/W-00000235/_story.md](items/W-00000235/_story.md) |
 | W-00000234 | completed | [items/W-00000234/_story.md](items/W-00000234/_story.md) |
+| W-00000238 | rejected | [items/W-00000238/_story.md](items/W-00000238/_story.md) |

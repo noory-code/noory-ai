@@ -7,11 +7,12 @@ milestone: M-00000004
 autonomous: true
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q"
-status: active
+status: archived
+terminal_disposition: rejected
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000237
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/land_run.py, stage/scripts/tests/test_land_run.py, stage/CHANGELOG.md, .stage/operations/claude-venue.md, stage/skills/stage-drive/SKILL.md
 promotes:
@@ -98,17 +99,35 @@ decision_refs:
 - W-00000236(보관됨) — 드라이버가 카드 파일을 선언 범위와 함께 담게 한 카드. 이 명령은 그
   목록에 회고 파일을 하나 더 얹는다.
 - M-00000004 완료 기준 첫째의 뒤쪽 절반이 이 카드다. 앞쪽 절반(자격 결정)은 W-00000234 가 했다.
-
-## Related truth
-
+- O-00000040 — 이 실행이 찾아낸 것. 명세가 왜 지금 상태로 구현 불가인지.
 
 ## Progress
 
+무인 실행 한 바퀴. 실행자가 임시 구현과 시험(329줄)을 만들어 보다 **명세의 모순**을 찾고,
+만든 것을 되돌린 뒤 카드를 거절했다. 그 판단이 맞다 — 감독이 확인했다.
+
+**DE-00000065 의 조건 3이 담을 수 있는 것을 셋으로 못박는데**(선언 범위, 카드 파일, 회고
+파일) **카드를 닫으면 반드시 바뀌는 두 인덱스**(`.stage/work/active.md`, `.stage/work/
+review.md`)가 그 셋 밖이다. 오늘 무인으로 닫힌 카드들의 종료 커밋이 실제로 그 둘을 담는다
+(`driver: W-00000237 closed` 의 변경 목록). 그러니 이 명세대로 만든 명령은 정상적으로 끝난
+실행을 끝까지 못 들인다.
+
+**드라이버가 이 거절을 막힘으로 처리했다.** 실행자가 만들던 것을 되돌리자 카드가 선언한
+`land_run.py` 가 없어졌고, 담기가 `pathspec did not match any files` 로 통째로 실패했다.
+O-00000034 의 두 번째 방아쇠이고 그 관측에 적었다.
 
 ## Verification
 
+성공 기준 넷은 명세가 구현 가능할 때만 뜻이 있다. 지금은 아니다.
+
+**판정 다섯 바퀴가 못 잡은 것을 구현 시도 한 번이 잡았다.** 결정문을 읽는 것으로는 안 보였고,
+만들어 보려 할 때 드러났다. 이 카드가 남기는 것이 그 실측이다.
 
 ## Retrospective
 
+R-00000237 참조.
 
 ## Promotion decision
+
+not_applicable — 결정 기록을 걸지 않았고 승격 경로도 없다. 카드 자체는 물림: 명세가 지금
+상태로 구현 불가다. DE-00000065 를 잇는 결정이 서면 다시 세운다.
