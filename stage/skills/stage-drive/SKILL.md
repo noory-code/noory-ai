@@ -40,10 +40,21 @@ driver has a 3600-second default timeout; use `--driver-timeout <positive-second
 Use `--worktree-root <path>` to choose a different parent directory.
 
 The command prints each driver status, worktree path, and `Merge branch:
-stage/worktree/<card-id>`. It does not commit, close, merge, or remove a successful worktree. After
-reviewing and completing the card in that worktree, the human commits the branch and merges the
-printed branch. If any worktree creation fails, every tree and branch created by that invocation
-is cleaned up when Git exposes enough state to do so. If Git creates the branch but fails before
+stage/worktree/<card-id>`. It does not close a successful card. After reviewing and completing the
+card in that worktree, resolve `land_run.py` from `../../scripts/land_run.py` relative to this skill
+and run the following command. Use the same absolute-path rule as `drive.py`:
+
+```bash
+python3 "<land-run>" --project-root <project-root> --worktree <worktree-path> <card-id>
+```
+
+The landing command copies the ignored run log back to the project checkout, commits only the
+card's declared scope plus the completed card and ancestor lifecycle records and registry-declared
+current-work indexes, merges with `--no-ff --no-commit`, and removes the worktree and branch. It
+refuses a non-final card, incomplete completion fields, a missing retrospective, a dirty project
+checkout, any path outside that allowance, and a merge conflict. If any worktree creation fails,
+every tree and branch created by that invocation is cleaned up when Git exposes enough state to do
+so. If Git creates the branch but fails before
 registering the worktree, the branch can remain; the command reports that cleanup failure and a
 later `--cleanup` can remove the retained branch without requiring the absent path. A driver
 failure keeps its worktree and branch for inspection. The command refuses to create any worktree
@@ -369,7 +380,11 @@ prepares the neutral retrospective required by the closure gate; a failed attemp
 temporary lifecycle material, while a passing attempt closes the card and then closes parents as
 their children go terminal. It works on a fresh isolated
 `stage/driver/<target>-<unixtime>` branch and refuses to start if the working tree is dirty, so the
-base branch is never touched; the human reviews and merges that branch.
+base branch is never touched. After a successful leaf run, the driver removes its clean worktree
+but retains the branch and prints both names. Review the result, then run the landing command above
+with that printed path; it recreates the absent worktree when exactly one matching retained branch
+exists. A parent run that changed descendant lifecycle records is outside the landing command's
+target-and-ancestors allowance and remains an explicit handoff instead of being widened silently.
 
 The card's `max_attempts_per_item` limit is the reviewer/executor round-trip limit. The reviewer
 writes `criteria` objects and `approved` to `STAGE_REVIEW_VERDICT_FILE`. The next executor receives

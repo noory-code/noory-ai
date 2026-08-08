@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/land_run.py, stage/scripts/tests/test_land_run.py, stage/CHANGELOG.md, .stage/operations/claude-venue.md, stage/skills/stage-drive/SKILL.md
 promotes:
@@ -140,3 +140,6 @@ decision_refs:
 
 
 ## Promotion decision
+
+not_applicable — 이 카드는 새 결정을 소유하거나 승격하지 않는다. 이미 승격된 DE-00000065 와
+DE-00000066 을 구현한다.
