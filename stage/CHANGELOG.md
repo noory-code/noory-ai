@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Give session start an `### Open observations` list derived from the observation records
+  themselves: every open record, newest first, one bounded line carrying its ID, title, and how
+  many days it has been open. It replaces the character-capped dump of the observation index,
+  which cut its tail — and the tail is always the newest records, so the problem written down
+  yesterday was the one nobody saw today. The list is uncapped by count and never carries a record
+  body, so it stays complete without growing the payload. Observations declare `opened:` in
+  frontmatter; a record without it still lists, marked `(open ?)`. Filesystem timestamps cannot
+  serve here — a fresh clone or a worktree checkout stamps every record with today.
+
+- Say what a truncated session snippet is hiding. `Active work` and `Review candidates` are still
+  read under a character cap, and the cap used to end in a bare `...`, which reads as a complete
+  document. It now names how many lines are missing and which file to open for the rest.
+
 - Split the driver into thirteen modules, one job each: reading the repository and writing to it,
   the supervised round and the unattended loop, run state, lifecycle calls, per-venue commands,
   the work log and screen output, child-process environments, the isolated worktree, reviewer

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 # Sibling modules load by bare name; make the hooks dir importable whether this
@@ -36,6 +36,9 @@ from stage_runtime import latest_session_summaries  # noqa: E402  (after sys.pat
 
 
 def read_if_exists(path: Path, limit: int = 1400) -> str:
+    """A bounded snippet of one file, and — when the cap bites — how much of it
+    the session is NOT seeing. A silent tail cut reads as a complete document,
+    so the marker names the loss and where to read the rest."""
     if not path.exists():
         return ""
     try:
@@ -44,7 +47,10 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
         return ""
     if len(text) <= limit:
         return text
-    return text[:limit].rstrip() + "\n..."
+    kept = text[:limit].rstrip()
+    dropped = len(text.splitlines()) - len(kept.splitlines())
+    location = f"{path.parent.name}/{path.name}"
+    return kept + f"\n…{dropped} more lines truncated — read `{location}` in full"
 
 
 LIFECYCLE_VIEW_RECORD_LIMIT = 3
@@ -280,25 +286,25 @@ def session_context(workspace_root: Path) -> str:
         parts.append("\n" + derived_lifecycle_view(stage_root))
         parts.append("\n" + active_milestone_table(stage_root))
         parts.append("\n" + work_hierarchy_view(stage_root))
-        state_index = next(
-            path
-            for path in stage_topology.get_zone("state", "current").index_surfaces
-            if path.endswith("current.md")
-        )
         active_index, review_index = stage_topology.get_zone(
             "work", "current"
         ).index_surfaces
         snippets: list[tuple[str, Path | None]] = [
-            ("Current state", stage_root / state_index),
             ("Active work", stage_root / active_index),
             ("Review candidates", stage_root / review_index),
         ]
     else:
         snippets = [
-            ("Current state", stage_root / "present" / "state" / "current.md"),
             ("Active work", stage_root / "present" / "work" / "active.md"),
             ("Review candidates", stage_root / "present" / "work" / "review.md"),
         ]
+    # The observation index file (`state/current.md`) owns nothing this view
+    # does not derive from the records themselves, and reading it through a
+    # character cap is what dropped the newest observations. The derived list
+    # replaces it rather than duplicating it.
+    observations = open_observation_lines(stage_root)
+    if observations:
+        parts.append("\n### Open observations\n" + "\n".join(observations))
     for title, path in snippets:
         body = read_if_exists(path) if path is not None else ""
         if body:
@@ -606,6 +612,56 @@ def question_is_answered(path: Path) -> bool:
         return False
     body = match.group("body").lstrip()
     return re.match(r"(?:[*_]{1,3})?answered\b", body, flags=re.IGNORECASE) is not None
+
+
+def observation_root(stage_root: Path) -> Path:
+    """The directory holding open observations. Closed ones leave it for the
+    official archive, so every record found here is still open."""
+    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
+        family_root = stage_topology.resolve_artifact_reference(
+            "O-00000000"
+        ).candidate_paths[0].rsplit("/", 1)[0]
+        return stage_root / family_root
+    return stage_root / "present" / "state" / "observations"
+
+
+def days_open(opened: str, today: date) -> int | None:
+    """Days since the record declared it opened; None when undeclared or
+    unparseable. Filesystem timestamps are not a substitute — a fresh clone or
+    a git worktree checkout stamps every record with today."""
+    try:
+        return (today - date.fromisoformat(opened.strip())).days
+    except ValueError:
+        return None
+
+
+def open_observation_lines(stage_root: Path, today: date | None = None) -> list[str]:
+    """Every open observation, newest first, one bounded line each.
+
+    Uncapped by count on purpose. A count cap drops the tail, the tail is the
+    newest records, and an observation nobody sees is an observation nobody
+    closes — which is the whole failure this view exists to end. Size stays
+    bounded per record instead: a line carries the ID, the title, and how long
+    the record has been open, never its body.
+    """
+    today = today or datetime.now(timezone.utc).date()
+    records: list[tuple[str, str, str]] = []
+    for path in record_files(observation_root(stage_root)):
+        fields = parse_frontmatter(path)
+        records.append(
+            (
+                fields.get("id") or path.stem,
+                fields.get("title") or "",
+                fields.get("opened") or "",
+            )
+        )
+    records.sort(key=lambda entry: id_sort_key(entry[0]), reverse=True)
+    lines: list[str] = []
+    for item_id, title, opened in records:
+        age = days_open(opened, today) if opened else None
+        suffix = f" (open {age}d)" if age is not None else " (open ?)"
+        lines.append(bounded_record_line(item_id, title, suffix))
+    return lines
 
 
 def open_question_lines(stage_root: Path, limit: int = SESSION_CONTEXT_RECORD_LIMIT) -> list[str]:

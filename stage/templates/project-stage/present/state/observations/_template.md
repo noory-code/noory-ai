@@ -1,6 +1,7 @@
 ---
 id: O-00000000
 title: Title
+opened: YYYY-MM-DD
 work_items:
 ---
 

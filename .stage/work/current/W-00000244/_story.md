@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: .stage/operations/, stage/hooks/, stage/hooks/tests/, stage/scripts/, stage/skills/stage-work/, stage/CHANGELOG.md, .stage/decisions/, .stage/state/
 promotes:
