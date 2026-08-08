@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000244 | design | claude | 열린 관측을 읽는 쪽을 만든다 | active | claude | [current/W-00000244/_story.md](current/W-00000244/_story.md) |
