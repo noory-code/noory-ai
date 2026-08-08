@@ -10,7 +10,7 @@ acceptance:
 status: active
 verification: pending
 retrospective: pending
-retrospective_ref:
+retrospective_ref: retrospectives/R-00000244.md
 promotion: not_applicable
 review: not_required
 scope: .stage/operations/, stage/hooks/, stage/hooks/tests/, stage/scripts/, stage/skills/stage-work/, stage/CHANGELOG.md, .stage/decisions/, .stage/state/
@@ -158,6 +158,9 @@ O-00000036→W-00000249, O-00000034·O-00000035→W-00000250, O-00000020→W-000
   셋째가 그것을 요구한다. 받는다.
 - `.stage/work/current/W-00000244/_story.md` — 카드는 자기 경로를 자기 scope 에 안 적으므로
   늘 넘는 자리다(O-00000034).
+- `stage/operations/verification.md` — 감독이 넘었다. 회고의 규칙 후보가 승격 조건을 만족해
+  기존 항목을 고쳤다(R-00000244). 플러그인이 소유하는 자리라 이 저장소만이 아니라 스테이지를
+  까는 모든 프로젝트에 걸린다.
 
 ### 남은 구멍
 

@@ -11,6 +11,13 @@
   frontmatter; a record without it still lists, marked `(open ?)`. Filesystem timestamps cannot
   serve here — a fresh clone or a worktree checkout stamps every record with today.
 
+- Require a stored verification check to discriminate: revert the change and the check must break.
+  A pass observed on a command that already passed before the change is not evidence. Pattern
+  selection (`-k`, `-p`, a path glob) is where this goes wrong — the pattern can select a suite
+  that never touches the changed code, or select nothing at all, which unittest reports as
+  `Ran 0 tests ... OK` with exit zero. The rule asks for the confirmation when the check is
+  stored, not at close, because by close the card is already resting on it.
+
 - Say what a truncated session snippet is hiding. `Active work` and `Review candidates` are still
   read under a character cap, and the cap used to end in a bare `...`, which reads as a complete
   document. It now names how many lines are missing and which file to open for the rest.
