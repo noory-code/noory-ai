@@ -114,6 +114,20 @@ Return the following.
 - Routing location: `official/` or the owning mutable responsibility family.
 - The retrospective note needed after execution.
 
+## Close what the decision answered
+
+A decision usually exists because an observation or a question asked for it. Promoting the decision
+does not close that record, and nothing in the harness notices the two now disagree — the audit
+checks links, not whether a record's `## Next action` has become false.
+
+So the record keeps asking for a decision that already stands. The next reader takes it at its
+word and registers a card for work that shipped. That happened here one day after the decision
+promoted: the card was registered, started, and rejected on its first step (R-00000245).
+
+**Promote the decision and close the record it answered in the same pass.** When the record is only
+partly answered, say in its `## Status` which part the decision settled and rewrite `## Next
+action` to whatever is genuinely left. Either way the record must stop asking for what now exists.
+
 ## Hook connection
 
 Modifying `.stage/official/` counts as official promotion. For an intentional promotion, finish

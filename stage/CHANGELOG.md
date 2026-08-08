@@ -11,6 +11,17 @@
   frontmatter; a record without it still lists, marked `(open ?)`. Filesystem timestamps cannot
   serve here — a fresh clone or a worktree checkout stamps every record with today.
 
+- Close the record a decision answered in the same pass that promotes the decision. Nothing in the
+  harness notices when the two disagree — the audit checks links, not whether a `## Next action`
+  has gone false — so the record keeps asking for a decision that already stands, and the next
+  reader registers a card for work that shipped. That happened one day after a promotion here.
+
+- Extend the stale-premise check to observations that call for an artifact rather than a change.
+  The existing rule says to run the behavior once, which catches a premise that stopped being true
+  in code. A decision record, a document, or a command has no behavior to run: it can already
+  exist, promoted and superseding the record the observation cites, while the observation still
+  reads as if nothing happened. Open the place the artifact would live before writing the card.
+
 - Require a stored verification check to discriminate: revert the change and the check must break.
   A pass observed on a command that already passed before the change is not evidence. Pattern
   selection (`-k`, `-p`, a path glob) is where this goes wrong — the pattern can select a suite

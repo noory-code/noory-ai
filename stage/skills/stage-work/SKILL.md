@@ -132,6 +132,16 @@ passed were caught by someone executing the command (R-00000227, R-00000239).
 This applies hardest to gates and hooks, which change fastest and whose behavior is least visible
 in the source.
 
+**When the observation calls for an artifact rather than a change — a decision record, a document,
+a command — open the place it would live before writing the card.** There is no behavior to run
+here, so the check above does not fire: the artifact can already exist, promoted and superseding
+the very record the observation cites, and the observation still reads as if nothing happened. One
+card was registered, started, and rejected on exactly that (R-00000245); the decision it meant to
+write had shipped the previous day.
+
+An observation's `## Next action` is a claim from the day it was written, not a work order. Confirm
+it is still true — that is what makes the card's purpose the human's, not the record's.
+
 ## Count affected places before drafting
 
 Before writing scope, risks, or success criteria, ask: **"Where can this change have an effect?"**
