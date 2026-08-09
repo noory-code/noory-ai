@@ -8,7 +8,8 @@ autonomous: true
 acceptance:
   - "test -f stage/scripts/tests/test_driver_git.py && python3 -m unittest discover -s stage/scripts/tests -p test_driver_git.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000253
