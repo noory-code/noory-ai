@@ -14,7 +14,6 @@
 | W-00000246 | 세션 시작이 프로젝트 규칙을 싣게 한다 | design | captured |  |  | [W-00000246/_story.md](W-00000246/_story.md) |
 | W-00000247 | 인라인 인터프리터를 셸 인자로 넘겨도 게이트가 걸리게 한다 | design | captured |  |  | [W-00000247/_story.md](W-00000247/_story.md) |
 | W-00000249 | 마일스톤 완료 기준을 여러 개 받게 한다 | fix | captured |  |  | [W-00000249/_story.md](W-00000249/_story.md) |
-| W-00000250 | 무인 실행이 끝난 뒤 사람이 잇는 구간에서 게이트가 안 막게 한다 | design | captured |  |  | [W-00000250/_story.md](W-00000250/_story.md) |
 | W-00000251 | 실행하는 쪽이 자기 카드의 파일 목록을 못 넓히게 한다 | design | captured |  |  | [W-00000251/_story.md](W-00000251/_story.md) |
 
 ## 상태 값

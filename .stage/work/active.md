@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000250 | design | claude | 무인 실행이 끝난 뒤 사람이 잇는 구간에서 게이트가 안 막게 한다 | active | claude | [current/W-00000250/_story.md](current/W-00000250/_story.md) |
