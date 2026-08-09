@@ -195,3 +195,4 @@
 | W-00000241 | completed | [items/W-00000241/_story.md](items/W-00000241/_story.md) |
 | W-00000244 | completed | [items/W-00000244/_story.md](items/W-00000244/_story.md) |
 | W-00000248 | rejected | [items/W-00000248/_story.md](items/W-00000248/_story.md) |
+| W-00000252 | completed | [items/W-00000252/_story.md](items/W-00000252/_story.md) |
