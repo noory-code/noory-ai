@@ -62,6 +62,7 @@
 | 작업 종류별 검증 기준 | `operations/verification.md` |
 | 발견 처리 규칙 | `operations/discovery.md` |
 | claude venue 실행 방식 | `operations/claude-venue.md` |
+| 세션에 붙은 훅과 빈 자리 | `operations/session-hooks.md` |
 | 공통 운영 규칙 | 설치된 Stage 플러그인의 플러그인 소유 `operations/` |
 
 ## 핵심 규칙
