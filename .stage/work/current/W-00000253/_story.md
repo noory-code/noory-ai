@@ -12,7 +12,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/driver_git.py, stage/scripts/driver_unattended.py, stage/scripts/tests/test_driver_git.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
 promotes:
@@ -117,3 +117,5 @@ decision_refs:
 
 
 ## Promotion decision
+
+`promotion: not_applicable` — 이미 승격된 DE-00000068 을 구현하며 새로 승격할 기록은 없다.

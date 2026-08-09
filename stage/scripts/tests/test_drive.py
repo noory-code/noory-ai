@@ -546,7 +546,7 @@ class DriveTest(unittest.TestCase):
                 if item.item_id == "W-00000001"
             )
 
-            committed, error = drive.commit_item(root, item, base_head)
+            committed, error, omitted_paths = drive.commit_item(root, item, base_head)
             committed_paths = set(
                 git(root, "show", "--pretty=format:", "--name-only", "HEAD")
                 .stdout.strip()
@@ -554,6 +554,7 @@ class DriveTest(unittest.TestCase):
             )
 
         self.assertTrue(committed, error)
+        self.assertEqual([], omitted_paths)
         self.assertEqual(
             {
                 ".stage/work/current/W-00000001/_story.md",
@@ -664,6 +665,55 @@ class DriveTest(unittest.TestCase):
         self.assertIn("Reason: executor rejected the work item", log)
         self.assertEqual(0, state["items"]["W-00000001"]["attempt_count"])
         self.assertEqual({card_relative}, committed_paths)
+
+    def test_unattended_item_commit_records_omitted_missing_scope_paths(self):
+        card_relative = ".stage/work/current/W-00000001/_story.md"
+        missing_path = "not-created.txt"
+        change_card = (
+            "import os; from pathlib import Path; "
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH']); "
+            "card.write_text(card.read_text(encoding='utf-8').replace("
+            "'promotion: pending', 'promotion: not_applicable'), encoding='utf-8')"
+        )
+        tmp, root = self.make_project(
+            executor=reporting_python_command(change_card, [card_relative]),
+            limits={
+                "max_attempts_per_item": 1,
+                "max_iterations": 1,
+                "max_wall_clock_seconds": 3600,
+            },
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000001",
+                autonomous=True,
+                acceptance=(PASS_COMMAND,),
+                scope=(missing_path,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            args = mock.Mock(
+                target="W-00000001",
+                timeout=30,
+                limit_action_seconds=30,
+                skip_preflight=True,
+            )
+
+            with redirect_stdout(io.StringIO()) as output:
+                result = drive.run_unattended(
+                    args,
+                    root,
+                    root / ".stage",
+                    drive.time.time(),
+                )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, result, output.getvalue())
+        self.assertIn(missing_path, log)
+        self.assertIn("omitted missing declared paths", log)
 
     def test_shell_command_joins_for_windows(self):
         # cmd.exe does NOT strip single quotes, so quoting the POSIX way would hand
