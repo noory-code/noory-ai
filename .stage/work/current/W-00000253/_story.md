@@ -1,0 +1,119 @@
+---
+id: W-00000253
+title: 담을 경로 중 아직 없는 것을 걸러 낸다
+kind: development
+venue: codex
+milestone: M-00000004
+autonomous: true
+acceptance:
+  - "test -f stage/scripts/tests/test_driver_git.py && python3 -m unittest discover -s stage/scripts/tests -p test_driver_git.py -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: not_required
+scope: stage/scripts/driver_git.py, stage/scripts/driver_unattended.py, stage/scripts/tests/test_driver_git.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000253 담을 경로 중 아직 없는 것을 걸러 낸다
+
+## Purpose
+
+카드를 옳게 거절한 실행이 담기 실패로 판정돼 시도를 태우고 카드가 막힘으로 남으므로, DE-00000068 이 정한 대로 담을 목록에서 아직 없는 경로를 걸러 내고 뺀 것을 기록에 남긴다
+
+## Actions
+
+없음 — 함수 하나를 고치고 그 시험을 붙이는 한 덩어리다.
+
+## User value
+
+실행자가 "이 카드는 틀렸다"고 옳게 판단했을 때 그 판단이 그대로 사람에게 온다. 지금은 하니스
+오류로 덮여서, 사람이 원인을 찾으려면 실행 가지의 결정 기록까지 열어야 한다.
+
+## Scope
+
+### Included
+
+**명세는 DE-00000068 이다.** 무엇을 남기고 무엇을 뺄지, 왜 그렇게 하는지가 거기 있다. 새로
+정할 것이 아니라 그대로 싣는다.
+
+- **거르기를 넣는다.** `stage/scripts/driver_git.py:93-96` 의 `commit_item` 이 목록을 넘기기
+  전에 거른다. 남기는 조건은 둘 중 하나다 — **디스크에 있거나, 그 경로 표현이 추적 중인 파일을
+  하나라도 가리키거나.** 거른 뒤 `git add -A` 로 담는다.
+- **뺀 것을 기록에 남긴다.** `commit_item` 이 뺀 경로를 돌려주고, 부르는 쪽
+  (`driver_unattended.py:527`)이 그것을 공유 실행 기록에 적는다. 지금은 성공했을 때 돌아온
+  문구를 안 쓴다.
+- 시험을 `stage/scripts/tests/test_driver_git.py` 에 새로 만든다.
+
+**시험이 덮어야 할 네 모양** — DE-00000068 의 Follow-up 이 이름으로 적었다.
+
+| 모양 | 무엇을 확인하나 |
+|---|---|
+| 선언한 파일이 아직 없다 | 나머지가 담긴다 |
+| 선언한 디렉터리가 아직 없다 | 나머지가 담긴다 |
+| 선언한 디렉터리가 통째로 지워졌다 | **그 삭제가 담긴다** — 파일 존재만으로 거르면 여기서 잃는다 |
+| 뺀 경로가 있다 | 그 이름이 실행 기록에 남는다 |
+
+### Excluded
+
+- 실행자 계약을 안 고친다. `promotion` 쓰기는 그대로 둔다.
+- 무인 루프의 걸음 순서를 안 바꾼다. 담기가 성공하면 그 뒤의 거절 처리
+  (`driver_unattended.py:536`)가 이미 제대로 돈다.
+- 커밋 게이트와 승격 게이트를 안 건드린다.
+- `land_run.py` 와 `commit_lifecycle` 은 안 고친다. DE-00000068 이 세었고 같은 고장에 안
+  걸린다.
+
+## Risks
+
+- **파일 존재만으로 거르면 삭제를 잃는다.** `git ls-files -- doomed/` 는 `doomed/x.py` 를 내지
+  `doomed/` 를 안 낸다. 그래서 "그 문자열이 추적 목록에 있는가"로 쓰면 디렉터리 항목이 전부
+  빠진다. DE-00000068 이 실측으로 확인한 자리다.
+- **조용히 빼면 O-00000020 과 같은 모양이 된다.** 무엇이 안 담겼는지가 아무 데도 안 남는다.
+  기록에 남기는 것이 이 카드의 절반이다.
+- **이 카드 자신이 그 고장을 밟는다.** 선언한 `stage/scripts/tests/test_driver_git.py` 가 아직
+  없다. 실행자가 이 카드를 거절하면 지금 코드로는 담기가 통째로 실패한다 — 고치려는 바로 그
+  자리다.
+
+## Success criteria
+
+- 선언한 경로 중 아직 없는 것이 있어도 나머지가 담기고, 뺀 경로 이름이 실행 기록에 남는다
+- 선언한 디렉터리가 통째로 지워진 실행에서 그 삭제가 담긴다
+- 카드만 고치고 거절한 실행이 담기 실패가 아니라 거절로 읽힌다
+
+## Next action
+
+**`DE-00000068.md` 를 먼저 읽는다.** 남기는 조건, 왜 파일 존재만으로는 안 되는지, 왜 없는 것은
+빼면서 남는 것은 거절하는지가 거기 있다. 그 결정이 이 카드의 명세다.
+
+그다음 `stage/scripts/driver_git.py` 의 `commit_item`(93-105줄)과 그것을 부르는
+`driver_unattended.py:527-534` 를 읽는다.
+
+**저장된 인수 명령 둘 중 첫째가 `test -f` 로 시험 파일의 실재를 먼저 본다** — 파일을 안 만들면
+`unittest` 가 `Ran 0 tests ... OK` 에 exit 0 을 내기 때문이다(R-00000244). 둘째는 기존
+`test_drive.py` 90개가 안 깨지는지 본다.
+
+## Related truth
+
+- DE-00000068 — 이 카드의 명세. 남기는 조건과 그 근거, 시험이 덮어야 할 네 모양.
+- O-00000034 — 이 고장의 관측. **구현 뒤에도 바로 안 닫는다** — 거절한 실행이 시도를 안 태우는지
+  실측이 나온 뒤에 닫는다(DE-00000068 의 Follow-up).
+- O-00000020 — 뺀 것을 조용히 두면 안 되는 이유.
+- DE-00000066 — 목록 **밖**이 올라와 있으면 거절하라고 정한 결정. 이 카드는 반대 방향인데
+  근거가 갈린다. DE-00000068 이 왜 갈리는지 답한다.
+- M-00000004 완료 기준 둘째가 이 카드다.
+
+
+## Progress
+
+
+## Verification
+
+
+## Retrospective
+
+
+## Promotion decision
