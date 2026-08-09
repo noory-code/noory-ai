@@ -524,7 +524,9 @@ def run_unattended(
             print_escalation(f"HEAD left the run branch {branch}; aborting")
             return 1
 
-        commit_ok, commit_message = commit_item(project_root, item, base_head)
+        commit_ok, commit_message, omitted_commit_paths = commit_item(
+            project_root, item, base_head
+        )
         if not commit_ok:
             discard_worktree(project_root)
             if not escalate_and_commit(
@@ -532,6 +534,21 @@ def run_unattended(
             ):
                 return 1
             continue
+        if omitted_commit_paths:
+            try:
+                append_driver_notice_to_work_log(
+                    log_path,
+                    reason=(
+                        "item commit omitted missing declared paths: "
+                        + json.dumps(omitted_commit_paths, ensure_ascii=False)
+                    ),
+                    recommended_next_action=(
+                        "continue with the remaining declared paths"
+                    ),
+                )
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
 
         if executor_rejected:
             try:

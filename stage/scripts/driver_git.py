@@ -73,36 +73,60 @@ def commit_item(
     project_root: Path,
     item: WorkItem,
     base_head: str = "",
-) -> tuple[bool, str]:
-    """Replace prior round checkpoints with one cumulative item commit."""
+) -> tuple[bool, str, list[str]]:
+    """Replace prior round checkpoints with one cumulative item commit.
+
+    Return paths omitted because they neither exist nor select tracked files.
+    """
 
     if not current_branch(project_root).startswith("stage/driver/"):
-        return False, "refusing item commit: HEAD is not on a stage/driver run branch"
+        return False, "refusing item commit: HEAD is not on a stage/driver run branch", []
     if base_head:
         ok, current = run_git(project_root, ["rev-parse", "HEAD"])
         if not ok:
-            return False, f"cannot resolve item checkpoint HEAD: {current.strip()}"
+            return False, f"cannot resolve item checkpoint HEAD: {current.strip()}", []
         if current.strip() != base_head:
             ok, out = run_git(project_root, ["reset", "--soft", base_head])
             if not ok:
-                return False, f"cannot squash prior item checkpoints: {out.strip()}"
+                return False, f"cannot squash prior item checkpoints: {out.strip()}", []
     try:
         card_path = work_card_relative_path(project_root, item)
     except RuntimeError as exc:
-        return False, f"refusing item commit: {exc}"
-    commit_paths = list(
+        return False, f"refusing item commit: {exc}", []
+    declared_paths = list(
         dict.fromkeys([path for path in item.scope if path] + [card_path])
     )
-    ok, out = run_git(project_root, ["add", "--", *commit_paths])
+    commit_paths: list[str] = []
+    omitted_paths: list[str] = []
+    for path in declared_paths:
+        if (project_root / path).exists():
+            commit_paths.append(path)
+            continue
+        ok, tracked = run_git(project_root, ["ls-files", "-z", "--", path])
+        if not ok:
+            return False, f"cannot inspect declared path {path}: {tracked.strip()}", []
+        if tracked:
+            commit_paths.append(path)
+        else:
+            omitted_paths.append(path)
+    if not commit_paths:
+        return (
+            False,
+            "refusing item commit: no declared paths exist or select tracked files",
+            [],
+        )
+    ok, out = run_git(project_root, ["add", "-A", "--", *commit_paths])
     if not ok:
-        return False, f"git add failed: {out.strip()}"
+        return False, f"git add failed: {out.strip()}", []
     ok, out = run_git(
         project_root,
         ["commit", "-m", f"driver: {item.item_id} executor output"],
     )
     if not ok and "nothing to commit" in out:
-        return True, "nothing to commit"
-    return (True, "") if ok else (False, f"git commit failed: {out.strip()}")
+        return True, "nothing to commit", omitted_paths
+    if not ok:
+        return False, f"git commit failed: {out.strip()}", []
+    return True, "", omitted_paths
 
 
 def restore_item_output(project_root: Path, base_head: str) -> tuple[bool, str]:

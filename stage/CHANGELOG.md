@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Let unattended item commits continue when a declared path was never created. The driver now
+  keeps paths that exist or select tracked files, records omitted paths in the shared work log,
+  and still stages whole-directory deletions.
+
 - Add `land_run.py` to bring one completed leaf run into the project checkout in one guarded
   command. It preserves the ignored run log, records the work item and source branch in both the
   run and merge commits, accepts only declared scope plus the target-and-ancestor lifecycle
