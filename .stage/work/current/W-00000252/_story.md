@@ -7,12 +7,12 @@ milestone: M-00000004
 autonomous: true
 acceptance:
   - "test -f stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: not_required
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000252
+promotion: not_applicable
+review: passed
 scope: stage/scripts/land_run.py, stage/scripts/tests/test_land_run.py, stage/CHANGELOG.md, .stage/operations/claude-venue.md, stage/skills/stage-drive/SKILL.md
 promotes:
 decision_refs:
@@ -136,7 +136,28 @@ decision_refs:
 ## Verification
 
 
+### Executed at close — 2026-08-08
+
+```
+$ test -f stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q
+[exit 0]
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+----------------------------------------------------------------------
+Ran 18 tests in 4.557s
+
+OK
+```
+
+### Independent review at close — 2026-08-08
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000252.md
+```
+
 ## Retrospective
 
 
 ## Promotion decision
+
+not_applicable — 이 카드는 새 결정을 소유하거나 승격하지 않는다. 이미 승격된 DE-00000065 와
+DE-00000066 을 구현한다.

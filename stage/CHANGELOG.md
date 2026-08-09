@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add `land_run.py` to bring one completed leaf run into the project checkout in one guarded
+  command. It preserves the ignored run log, records the work item and source branch in both the
+  run and merge commits, accepts only declared scope plus the target-and-ancestor lifecycle
+  records and registry-derived indexes, aborts conflicts before a merge commit, and reuses the
+  parallel driver's cleanup contract. The Claude teammate procedure now declares
+  `stage/teammate/<card>-<name>` branches and points successful runs at this command.
+
 - Give session start an `### Open observations` list derived from the observation records
   themselves: every open record, newest first, one bounded line carrying its ID, title, and how
   many days it has been open. It replaces the character-capped dump of the observation index,
