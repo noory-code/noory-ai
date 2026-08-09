@@ -6,4 +6,3 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
-| W-00000250 | passed | completed | approved | [current/W-00000250/_story.md](current/W-00000250/_story.md) |
