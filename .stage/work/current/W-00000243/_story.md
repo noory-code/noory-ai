@@ -10,7 +10,7 @@ status: completed
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000258
-promotion: approved
+promotion: promoted
 review: not_required
 scope: .stage/operations/, stage/skills/stage-decision/, .stage/decisions/, .stage/state/, stage/CHANGELOG.md
 promotes: .stage/official/decisions/records/DE-00000071.md
