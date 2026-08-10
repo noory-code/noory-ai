@@ -8,12 +8,12 @@ autonomous: true
 acceptance:
   - "grep -q repeatable stage/scripts/tests/test_roadmap_v4.py && python3 -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p 'test_roadmap*.py' -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: not_required
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000249
+promotion: not_applicable
+review: passed
 scope: stage/skills/stage-roadmap/manage_roadmap.py, stage/scripts/tests/test_roadmap_v4.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -95,6 +95,30 @@ decision_refs:
 ## Progress
 
 ## Verification
+
+### Executed at close — 2026-08-10
+
+```
+$ grep -q repeatable stage/scripts/tests/test_roadmap_v4.py && python3 -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 14 tests in 2.746s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p 'test_roadmap*.py' -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 23 tests in 5.228s
+
+OK
+```
+
+### Independent review at close — 2026-08-10
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000249.md
+```
 
 ## Retrospective
 
