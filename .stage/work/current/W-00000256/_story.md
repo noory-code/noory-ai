@@ -1,0 +1,131 @@
+---
+id: W-00000256
+title: 실행 전후의 카드 파일 목록을 대조해 달라졌으면 보고에 남긴다
+kind: development
+venue: codex
+milestone:
+autonomous: true
+acceptance:
+  - "grep -q widened stage/scripts/tests/test_drive.py && python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: not_required
+scope: stage/scripts/driver_unattended.py, stage/scripts/driver_repository.py, stage/scripts/tests/test_drive.py, stage/skills/stage-drive/SKILL.md, stage/CHANGELOG.md
+promotes:
+decision_refs:
+---
+
+# W-00000256 실행 전후의 카드 파일 목록을 대조해 달라졌으면 보고에 남긴다
+
+## Purpose
+
+실행하는 쪽이 카드의 파일 목록을 스스로 넓히면 범위를 넘었다는 사실이 카드에서 사라지고 보고에만 남으므로, DE-00000070 이 정한 대로 드라이버가 실행 전후를 대조해 달라진 것을 보고에 남긴다
+
+## Actions
+
+
+## User value
+
+
+## Scope
+
+### Included
+
+
+### Excluded
+
+
+## Risks
+
+
+## Success criteria
+
+- 실행하는 쪽이 카드의 scope 를 넓힌 판에서 그 사실이 실행 기록에 남는다
+- scope 를 안 바꾼 판에서는 그 알림이 안 나온다
+- scope 만 넓히고 아무것도 안 한 판이 실행자의 카드 거절로 안 읽힌다
+
+## Actions
+
+없음 — 대조 하나를 넣고 그 시험을 붙이는 한 덩어리다.
+
+## User value
+
+카드만 읽어도 무엇이 범위를 넘었는지 보인다. 지금은 실행 기록을 따로 열어야 알고, 안 열면
+그 일이 처음부터 카드 몫이었던 것으로 읽힌다.
+
+## Scope
+
+### Included
+
+**명세는 DE-00000070 이다.** 무엇을 대조하고 왜 그것으로 충분한지가 거기 있다.
+
+- **대조를 넣는다.** 무인 루프가 카드를 고를 때 읽은 `scope` 를 이미 메모리에 들고 있다
+  (`driver_unattended.py:181-182`). 실행이 끝난 뒤 카드를 다시 읽어 그 한 필드만 대 본다.
+  달라졌으면 실행 기록에 남긴다.
+- **거절 판정을 갈라 준다.** `executor_changed_only_work_card`
+  (`driver_repository.py:171-178`)는 바뀐 경로가 카드 하나면 거절로 읽는다. `scope` 만 넓힌
+  판도 그 모양이라 지금은 거절로 오인된다. 같은 대조가 이 자리를 갈라야 한다.
+- **계약 문구에 한 줄 넣는다.** `stage/skills/stage-drive/SKILL.md` 의 실행자 계약에
+  "카드의 `scope` 를 바꾸지 않는다 — 넓힐지는 사람이 정하고, 넘었으면 보고로만 남긴다".
+
+**시험이 덮어야 할 세 모양:**
+
+| 모양 | 무엇을 확인하나 |
+|---|---|
+| `scope` 를 넓힌 판 | 그 사실이 실행 기록에 남는다 |
+| `scope` 를 안 바꾼 판 | 그 알림이 안 나온다 |
+| `scope` 만 넓히고 아무것도 안 한 판 | 거절로 안 읽힌다 |
+
+### Excluded
+
+- **`.stage/settings.json` 과 `.stage/operations/claude-venue.md` 는 안 건드린다.** 계약
+  문구가 들어갈 자리 셋 중 둘인데, 이 프로젝트의 설정과 절차라 감독이 손으로 넣는다.
+  **실행하는 쪽이 자기가 지금 따르고 있는 지시문을 고치는 것은 이 카드가 피한다.**
+- 감독 실행과 팀원 실행은 안 잡는다. 담는 명령이 없어 대 볼 자리가 없다. DE-00000070 이 그
+  비대칭을 적었다.
+- 훅을 안 고친다. `scope` 쓰기를 막지 않는다 — 사람이 넓혀야 할 때가 있고 훅은 누가 쓰는지
+  모른다.
+
+## Risks
+
+- **비대칭을 잊으면 잘못 닫는다.** 이 대조는 무인에서만 돈다. 성공 기준 셋이 다 무인 이야기다.
+- 거절 판정을 갈라 줄 때 기존 시험이 깨질 수 있다. 인수 명령이 `test_drive.py` 전체를 본다.
+- **알림이 재시도마다 쌓인다.** 실행 기록은 덧붙이는 문서라 같은 줄이 여러 번 나올 수 있다.
+  W-00000255 에서 같은 모양을 받았고 해가 없었다.
+
+## Next action
+
+**`DE-00000070.md` 를 먼저 읽는다.** 왜 말하는 것만으로 부족한지(관측의 사례에서 보고도 되고
+판정도 통과했는데 카드가 기록을 잃었다), 그리고 어느 실행 방식에서 무엇이 참인지가 거기 있다.
+
+고칠 자리 둘: `driver_unattended.py:181-182`·`:527`(카드를 들고 있다가 담는 자리)과
+`driver_repository.py:171-178`(카드만 바뀐 것을 거절로 읽는 자리).
+
+**저장된 인수 명령이 `grep -q widened` 로 시험 파일을 먼저 본다** — 지금 그 낱말이 0번
+나오므로, 시험을 안 쓰면 이 검사가 막는다. 기존 91개는 고치기 전에도 통과하기
+때문이다(R-00000244).
+
+## Related truth
+
+- DE-00000070 — 이 카드의 명세. 대조가 무엇을 보고 왜 그것으로 되는지.
+- O-00000020 — 이 고장의 관측. **그 사례는 감독 실행이라 이 카드가 못 잡는다.** 관측은 이
+  카드 뒤에도 열려 있다.
+- W-00000255 — 같은 모양(명령이 알리고 강제하지 않는다)을 먼저 만든 카드. 참고가 된다.
+
+
+## Related truth
+
+
+## Progress
+
+
+## Verification
+
+
+## Retrospective
+
+
+## Promotion decision
