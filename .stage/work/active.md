@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000246 | design | claude | 세션 시작이 프로젝트 규칙을 싣게 한다 | active | claude | [current/W-00000246/_story.md](current/W-00000246/_story.md) |
-| W-00000255 | development | codex | 세션이 읽은 뒤에 규칙 파일이 바뀌면 아무도 안 알려 줘서 낡은 규칙으로 계속 도므로, DE-00000069 | active | Claude | [current/W-00000255/_story.md](current/W-00000255/_story.md) |
