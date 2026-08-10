@@ -77,6 +77,64 @@ hours after writing it and had to re-derive the grounds from scratch because tha
 (R-00000165). Every record since that carried the line has had it pay off, including one where the
 predecessor's line settled the successor's judgement (R-00000180).
 
+## Build the losing option once before choosing
+
+Review does not catch a specification that cannot be built. One decision here drew five
+independent review rounds and twenty-two findings — two of them security holes — and none of them
+reached the contradiction that the first implementation attempt hit on its first pass
+(R-00000237). Another fixed a file list by hand, shipped on paper, and cost a different project
+its data (R-00000141). A third was written, then implemented, and the implementation surfaced a
+check that the record's own text could not show was about to disappear (R-00000239).
+
+**The step: produce the difference between the option you are about to choose and the option you
+are about to reject, as real output, before writing the record.** Throw the code away. Only what
+came out goes in the record.
+
+### When it fires
+
+Both must hold.
+
+- The decision fixes something that will be executed against inputs — an allow list, a filter, a
+  set of conditions, an order of steps, what a command receives or returns.
+- **The options differ in what they produce on some input, and one run makes that difference
+  visible.** Running only the winner proves nothing; a winner that works is not a loser that
+  fails. Run the loser too, on the input where they disagree.
+
+It does not fire when the options differ only over time or in volume. One decision here chose
+between loading rule filenames into a session and loading the rule bodies; what settled it was
+that a body copied into a session becomes a second owner that never updates, which no single run
+shows. A character count settled it, and counting is cheaper. It also does not fire when nothing is
+executed at all — a decision that assigns ownership, names a location, or grants a one-time venue
+exception.
+
+### What the input has to be
+
+Real, not invented. A finished run's actual change list, the command a record quoted, the
+repository's own files. The cases here that paid off found the input already lying around: the
+neighbouring commit (R-00000237), the command the observation itself quoted (R-00000247), a run
+another record had already captured ten days earlier. Constructing the state is fine when it is
+faithful and cheap — one decision built a repository whose declared directory had been wiped
+wholesale, and that state is the whole reason its two candidate filters diverged (R-00000250).
+
+Counting is a run too, and an uncounted count is not evidence: a `grep` for `blocker` returned
+fourteen where a test returned ten (R-00000242).
+
+If reaching the input requires building the thing this decision specifies, the try is not a
+throwaway and this step does not apply. Write the record and say in `## Follow-up` that it was not
+tried. The implementation card then carries the burden, and refusing that card is the correct
+outcome when the specification does not hold.
+
+### Where the result goes
+
+An `###` subsection under `## Chosen direction`, named for what came out rather than for the fact
+that a try happened — "why filtering on existence alone loses deletions", not "what the trial
+showed". One table of what each candidate produced on the shared input, and the one line of
+underlying behavior that explains the difference (R-00000250).
+
+A sibling step guards the other direction. `stage-work`'s "Run the premise before turning an
+observation into a card" checks whether a claim someone already made is still true. This one
+checks a specification that is not true yet, because nobody has written it down before now.
+
 ## Priority values
 
 When principles conflict, use this value order.
