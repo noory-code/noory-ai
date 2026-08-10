@@ -9,7 +9,7 @@ acceptance: []
 status: active
 verification: pending
 retrospective: completed
-retrospective_ref: R-00000243
+retrospective_ref: R-00000258
 promotion: approved
 review: not_required
 scope: .stage/operations/, stage/skills/stage-decision/, .stage/decisions/, .stage/state/
