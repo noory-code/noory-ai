@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- List every project-owned `.stage/operations/` file at session start beside the other project
+  instruction sources. The payload carries sorted paths and a direction to read applicable files,
+  never copied rule bodies, so newly added rules become discoverable without creating stale copies
+  inside an existing session.
+
 - Let unattended item commits continue when a declared path was never created. The driver now
   keeps paths that exist or select tracked files, records omitted paths in the shared work log,
   and still stages whole-directory deletions.

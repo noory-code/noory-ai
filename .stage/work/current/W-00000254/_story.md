@@ -10,9 +10,9 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000254
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_context.py, stage/hooks/tests/test_session_context_operations.py, stage/CHANGELOG.md
 promotes:
@@ -83,3 +83,6 @@ decision_refs:
 
 
 ## Promotion decision
+
+이 카드는 상위 작업이 정한 결정을 구현하지만 결정 기록이나 승격할 파일을 직접 소유하지 않으므로
+`not_applicable`로 정한다.
