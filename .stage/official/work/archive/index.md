@@ -198,3 +198,5 @@
 | W-00000252 | completed | [items/W-00000252/_story.md](items/W-00000252/_story.md) |
 | W-00000250 | completed | [items/W-00000250/_story.md](items/W-00000250/_story.md) |
 | W-00000253 | completed | [items/W-00000253/_story.md](items/W-00000253/_story.md) |
+| W-00000254 | completed | [items/W-00000254/_story.md](items/W-00000254/_story.md) |
+| W-00000255 | completed | [items/W-00000255/_story.md](items/W-00000255/_story.md) |

@@ -8,7 +8,8 @@ autonomous: true
 acceptance:
   - "test -f stage/hooks/tests/test_session_context_operations.py && python3 -m unittest discover -s stage/hooks/tests -p test_session_context_operations.py -q"
   - "python3 -m unittest discover -s stage/hooks/tests -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000254
