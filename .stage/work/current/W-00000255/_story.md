@@ -9,9 +9,9 @@ acceptance:
   - "grep -q operations stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000255
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/land_run.py, stage/scripts/tests/test_land_run.py, stage/CHANGELOG.md
 promotes:

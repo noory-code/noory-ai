@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Name the `.stage/operations/` rule files a `land_run.py` merge carried, so a session that read
+  them earlier does not keep working from the version it remembers. Only those files are named:
+  host instruction files like `CLAUDE.md` are outside what a landing may carry, and the wording
+  says so rather than implying wider coverage.
+
 - Let unattended item commits continue when a declared path was never created. The driver now
   keeps paths that exist or select tracked files, records omitted paths in the shared work log,
   and still stages whole-directory deletions.

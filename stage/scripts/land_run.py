@@ -413,6 +413,14 @@ def main(argv: list[str] | None = None) -> int:
         return error("landing succeeded but cleanup did not remove the worktree and branch")
 
     print(f"Landed {target_id} from {branch} and removed its worktree and branch")
+    changed_rules = [path for path in changed if path.startswith(".stage/operations/")]
+    if changed_rules:
+        # Names only what this merge carried. Host instruction files
+        # (CLAUDE.md, AGENTS.md) are outside the landing allowance, so the
+        # wording must not imply the notice covers them.
+        print("Project rules under .stage/operations/ changed; read them again:")
+        for path in changed_rules:
+            print(f"- {path}")
     return 0
 
 

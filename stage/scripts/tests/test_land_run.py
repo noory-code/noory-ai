@@ -199,6 +199,33 @@ class LandRunTest(unittest.TestCase):
         self.assertFalse(run.exists())
         self.assertNotIn(branch, git(main, "branch", "--format=%(refname:short)").splitlines())
 
+    def test_reports_changed_project_operations_files(self):
+        main, run = self.make_repository()
+        self.finish_run(run)
+        self.write_card(
+            run,
+            status="completed",
+            scope="src.txt, .stage/operations/",
+        )
+        instruction = run / ".stage/operations/claude-venue.md"
+        instruction.parent.mkdir(parents=True)
+        instruction.write_text("updated instruction\n", encoding="utf-8")
+
+        status, stdout, stderr = self.run_main(main, run)
+
+        self.assertEqual((status, stderr), (0, ""))
+        self.assertIn("Project rules under .stage/operations/ changed; read them again:", stdout)
+        self.assertIn("- .stage/operations/claude-venue.md", stdout)
+
+    def test_does_not_report_project_operations_when_none_changed(self):
+        main, run = self.make_repository()
+        self.finish_run(run)
+
+        status, stdout, stderr = self.run_main(main, run)
+
+        self.assertEqual((status, stderr), (0, ""))
+        self.assertNotIn("Project rules under .stage/operations/ changed; read them again:", stdout)
+
     def test_accepts_terminal_run_without_index_changes(self):
         main, run = self.make_repository()
         self.finish_run(run, indexes=False)
