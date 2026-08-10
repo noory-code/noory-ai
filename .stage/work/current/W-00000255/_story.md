@@ -7,12 +7,12 @@ milestone:
 autonomous: true
 acceptance:
   - "grep -q operations stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000255
 promotion: not_applicable
-review: not_required
+review: passed
 scope: stage/scripts/land_run.py, stage/scripts/tests/test_land_run.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -75,6 +75,32 @@ decision_refs:
 
 ## Verification
 
+
+### Executed at close — 2026-08-10
+
+```
+$ grep -q operations stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q
+[exit 0]
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+----------------------------------------------------------------------
+Ran 20 tests in 5.122s
+
+OK
+
+$ grep -q operations stage/scripts/tests/test_land_run.py && python3 -m unittest discover -s stage/scripts/tests -p test_land_run.py -q
+[exit 0]
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+----------------------------------------------------------------------
+Ran 20 tests in 5.128s
+
+OK
+```
+
+### Independent review at close — 2026-08-10
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000255.md
+```
 
 ## Retrospective
 
