@@ -314,6 +314,10 @@ def session_context(workspace_root: Path) -> str:
     if consumer_section:
         parts.append(consumer_section)
 
+    operations_section = project_operations_context_section(workspace_root)
+    if operations_section:
+        parts.append(operations_section)
+
     questions = open_question_lines(stage_root)
     if questions:
         parts.append("\n### Open questions\n" + "\n".join(questions))
@@ -348,6 +352,25 @@ CONSUMER_CONTEXT_DIRS: tuple[str, ...] = (
     ".agents/skills",
 )
 CONSUMER_CONTEXT_MAX_LINES = 10
+
+
+def project_operations_context_section(workspace_root: Path) -> str:
+    """List project-owned operation files without copying their contents."""
+
+    operations_root = workspace_root / ".stage" / "operations"
+    try:
+        files = sorted(entry for entry in operations_root.iterdir() if entry.is_file())
+    except OSError:
+        return ""
+    if not files:
+        return ""
+    lines = [f"- `{entry.relative_to(workspace_root).as_posix()}`" for entry in files]
+    return (
+        "\n### Project operations (project-defined)\n"
+        + "\n".join(lines)
+        + "\n- Read the applicable files in full when planning and executing; "
+        "this list carries names only."
+    )
 
 
 def agents_instruction_file(directory: Path) -> str | None:
