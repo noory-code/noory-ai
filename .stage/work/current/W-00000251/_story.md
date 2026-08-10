@@ -2,14 +2,19 @@
 id: W-00000251
 title: 실행하는 쪽이 자기 카드의 파일 목록을 못 넓히게 한다
 kind: design
-venue:
+venue: claude
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
-scope: stage/skills/stage-drive/, .stage/operations/
+scope: stage/skills/stage-drive/, .stage/operations/, .stage/decisions/, .stage/state/, stage/hooks/
+promotes:
+decision_refs: DE-00000070
 ---
 
 # W-00000251 실행하는 쪽이 자기 카드의 파일 목록을 못 넓히게 한다
@@ -43,3 +48,13 @@ scope: stage/skills/stage-drive/, .stage/operations/
 
 O-00000020 을 먼저 읽는다. 그 기록이 답까지 적어 뒀다 — 넓히는 것은 사람이 정하고 실행하는
 쪽에 주는 지시에 한 줄을 넣는다.
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
