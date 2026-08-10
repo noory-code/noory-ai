@@ -168,14 +168,27 @@ def work_card_relative_path(project_root: Path, item: WorkItem) -> str:
         ) from exc
 
 
+def executor_widened_work_card_scope(
+    item: WorkItem,
+    scope_after_executor: tuple[str, ...],
+) -> bool:
+    """Return whether an executor added any entry to its work card scope."""
+
+    return bool(set(scope_after_executor) - set(item.scope))
+
+
 def executor_changed_only_work_card(
     project_root: Path,
     item: WorkItem,
     changed_paths: list[str],
+    scope_after_executor: tuple[str, ...] = (),
 ) -> bool:
-    """Return whether an executor changed its work card and no other path."""
+    """Return whether an executor rejected a card by changing only that card."""
 
-    return set(changed_paths) == {work_card_relative_path(project_root, item)}
+    return (
+        not executor_widened_work_card_scope(item, scope_after_executor)
+        and set(changed_paths) == {work_card_relative_path(project_root, item)}
+    )
 
 
 def git_diff(project_root: Path) -> str:

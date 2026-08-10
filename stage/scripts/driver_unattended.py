@@ -57,6 +57,7 @@ from driver_lifecycle import (  # noqa: E402
 from driver_repository import (  # noqa: E402
     cumulative_executor_changed_paths,
     executor_changed_only_work_card,
+    executor_widened_work_card_scope,
     fingerprint,
     git_index_path,
     repository_fingerprint,
@@ -366,6 +367,16 @@ def run_unattended(
                 repository_paths_before,
                 repository_paths_after,
             )
+            raw_scope_after_executor = parse_frontmatter(item.path).get("scope", "")
+            scope_after_executor = (
+                split_scope(raw_scope_after_executor)
+                if isinstance(raw_scope_after_executor, str)
+                else ()
+            )
+            scope_widened = executor_widened_work_card_scope(
+                item,
+                scope_after_executor,
+            )
         except RuntimeError as exc:
             print_escalation(f"cannot inspect changes for progress: {exc}")
             return 1
@@ -419,10 +430,31 @@ def run_unattended(
                     project_root,
                     item,
                     changed_paths,
+                    scope_after_executor,
                 )
             except RuntimeError as exc:
                 executor_ok = False
                 executor_failure = str(exc)
+        if scope_widened:
+            before_scope = json.dumps(list(item.scope), ensure_ascii=False)
+            after_scope = json.dumps(
+                list(scope_after_executor), ensure_ascii=False
+            )
+            try:
+                append_driver_notice_to_work_log(
+                    log_path,
+                    reason=(
+                        "executor widened work item scope: "
+                        f"{before_scope} -> {after_scope}"
+                    ),
+                    recommended_next_action=(
+                        "have a human decide whether to keep the widened scope "
+                        "before landing"
+                    ),
+                )
+            except RuntimeError as exc:
+                print_escalation(str(exc))
+                return 1
         no_progress = (
             bool(item_state["last_fingerprint"]) and current_fingerprint == item_state["last_fingerprint"]
         )

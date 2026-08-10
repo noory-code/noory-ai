@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Record when an unattended executor widens its work card's `scope`, while keeping the scope read
+  before execution as that round's commit boundary. A scope-only widening is no longer mistaken for
+  the executor rejecting the card, and the executor contract now leaves widening to a human.
+
 - Preserve every milestone completion criterion when `--completion-criteria` is repeated, and
   store the supplied values as an ordered Markdown list instead of silently keeping only the last.
 

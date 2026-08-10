@@ -11,7 +11,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/driver_unattended.py, stage/scripts/driver_repository.py, stage/scripts/tests/test_drive.py, stage/skills/stage-drive/SKILL.md, stage/CHANGELOG.md
 promotes:
@@ -124,8 +124,18 @@ decision_refs:
 
 ## Verification
 
+- 저장된 인수 명령 통과: `grep -q widened stage/scripts/tests/test_drive.py` 성공 뒤
+  `test_drive.py` 시험 93개가 통과했다.
+- 전체 훅 시험 통과: `python3 -m unittest discover -s stage/hooks/tests -q` (`Ran 373
+  tests`, `OK`).
+- Stage 감사 통과: `errors=0`, 기존 보관 카드의 `WORK029` 경고 32개.
+- 전체 스크립트 시험은 `Ran 630 tests` 중 2개가 이번 변경 전부터 `HEAD`의
+  `.stage/settings.json` 실행 명령에 있던 백틱 때문에 실패했다. 저장된 인수 명령과 이번 변경을
+  직접 덮는 시험은 통과했다.
 
 ## Retrospective
 
 
 ## Promotion decision
+
+`not_applicable` — 이 카드는 결정 레코드를 만들거나 승격하지 않는다.
