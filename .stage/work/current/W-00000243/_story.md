@@ -12,7 +12,7 @@ retrospective: completed
 retrospective_ref: R-00000258
 promotion: approved
 review: not_required
-scope: .stage/operations/, stage/skills/stage-decision/, .stage/decisions/, .stage/state/
+scope: .stage/operations/, stage/skills/stage-decision/, .stage/decisions/, .stage/state/, stage/CHANGELOG.md
 promotes: .stage/official/decisions/records/DE-00000071.md
 decision_refs: DE-00000071
 ---
@@ -143,7 +143,14 @@ decision_refs: DE-00000071
 
 | 넘은 것 | 처분 | 이유 |
 |---|---|---|
-| `stage/CHANGELOG.md` | **받는다** | 플러그인 파일이 바뀌면 프로젝트 규칙(`CLAUDE.md`)이 변경 기록을 요구한다. 카드 `scope` 가 그것을 안 적은 것이 카드의 빠짐이고, 팀원은 보고했다 |
+| `stage/CHANGELOG.md` | **받는다. 감독이 `scope` 를 넓혔다** | 플러그인 파일이 바뀌면 프로젝트 규칙(`CLAUDE.md`)이 변경 기록을 요구한다. 카드 `scope` 가 그것을 안 적은 것이 카드의 빠짐이고, 팀원은 보고했다 |
+
+**들이는 명령이 이것을 막았다** — `path(s) outside the landing allowance: stage/CHANGELOG.md`.
+DE-00000066 의 허용 목록이 설계대로 동작한 것이다. 조용히 빼지 않고 거절했다.
+
+그래서 **감독이 `scope` 에 `stage/CHANGELOG.md` 를 더했다.** O-00000020 이 "넓힐지는 사람이
+정한다"고 한 그 자리이고, 여기서 사람은 감독이다. 넘은 사실이 이 표에 이미 적혀 있으므로
+넓혀도 기록이 안 사라진다 — **실행하는 쪽이 조용히 넓히는 것과 갈리는 지점이 그것이다.**
 | 워크트리 생성 | **받는다** | 하니스 준비다. 보고서에 갈라 적었다 |
 
 ### 팀원이 물은 것 — 답한다
