@@ -8,7 +8,8 @@ autonomous: true
 acceptance:
   - "grep -q repeatable stage/scripts/tests/test_roadmap_v4.py && python3 -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p 'test_roadmap*.py' -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000249

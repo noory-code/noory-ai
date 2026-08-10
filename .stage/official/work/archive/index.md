@@ -201,3 +201,4 @@
 | W-00000254 | completed | [items/W-00000254/_story.md](items/W-00000254/_story.md) |
 | W-00000255 | completed | [items/W-00000255/_story.md](items/W-00000255/_story.md) |
 | W-00000246 | completed | [items/W-00000246/_story.md](items/W-00000246/_story.md) |
+| W-00000249 | completed | [items/W-00000249/_story.md](items/W-00000249/_story.md) |
