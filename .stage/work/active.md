@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000246 | design | claude | 세션 시작이 프로젝트 규칙을 싣게 한다 | active | claude | [current/W-00000246/_story.md](current/W-00000246/_story.md) |
