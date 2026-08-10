@@ -25,23 +25,6 @@ decision_refs:
 
 세션 시작이 어느 kind 가 어느 venue 인지까지만 말하고 그 venue 를 어떻게 돌리는지는 안 말해서 감독이 claude 몫 카드 다섯 중 넷을 팀원 없이 직접 해 버렸으므로, 라우팅 문장이 실행 방법까지 말하게 한다
 
-## Actions
-
-
-## User value
-
-
-## Scope
-
-### Included
-
-
-### Excluded
-
-
-## Risks
-
-
 ## Success criteria
 
 - 세션 시작 문장이 claude 몫은 팀원을 띄워 주고 codex 몫은 드라이버에 넘긴다는 것을 말한다
@@ -109,14 +92,39 @@ decision_refs:
 - O-00000021 — 도구를 안 쓰는 행동은 훅이 못 본다. 이 카드가 막지 않고 말해 주기만 하는 근거.
 - DE-00000069 — 이름만 싣고 본문은 안 싣기로 한 결정. 이 카드가 그 선을 지킨다.
 
-
-## Related truth
-
-
 ## Progress
 
+끝났다. 무인 실행 한 바퀴로 만들어졌고 `land_run` 이 들였다.
 
 ## Verification
+
+### 들어간 문장
+
+```
+For execution, spawn a teammate agent for `claude`-venue work and hand `codex`-venue
+work to the driver; read `.stage/operations/claude-venue.md` for the procedure.
+```
+
+라우팅 목록 바로 뒤에 붙는다. 절차 문서를 이름으로 가리키고 본문은 안 싣는다 —
+DE-00000069 가 정한 선을 지켰다.
+
+### 감독이 다시 잰 것
+
+| 잰 것 | 결과 |
+|---|---|
+| 인수 검사 | 새 시험 1개, hooks 374개 통과 (들이기 전 373) |
+| **시험이 고침을 실제로 밟나** | **밟는다.** `stage_context.py` 를 되돌리니 깨진다 |
+| `stage/scripts/tests` | 630개 통과 |
+| `audit_stage.py` | errors=0 |
+
+### 이 카드가 약속하지 않는 것
+
+**세션이 그 문장을 받는다까지다. 지키는지는 못 막는다.** 훅은 도구 호출을 보는데 "팀원을
+안 띄우고 감독이 직접 했다"는 것은 도구 호출이 아니다(O-00000021).
+
+**이 세션 자체가 반례다.** 라우팅은 이미 실려 있었고 절차 파일도 있었는데, 감독이 claude 몫
+카드 다섯 중 넷을 직접 했다. 문장이 실행 방법까지 말하면 나아지는지는 다음 세션들에서 세야
+안다 — 이번 카드로 확인된 것이 아니다.
 
 
 ### Executed at close — 2026-08-10
