@@ -9,4 +9,3 @@
 
 | 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |
 |---|---|---|---|---|
-| DE-00000070 | decided | [W-00000251](../work/current/W-00000251/_story.md) | active | [pending/DE-00000070.md](pending/DE-00000070.md) |
