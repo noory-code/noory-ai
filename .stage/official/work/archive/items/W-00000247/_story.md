@@ -6,7 +6,8 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: rejected
+status: archived
+terminal_disposition: rejected
 verification: pending
 retrospective: completed
 retrospective_ref: R-00000247
