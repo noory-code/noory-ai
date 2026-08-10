@@ -8,12 +8,12 @@ autonomous: true
 acceptance:
   - "test -f stage/hooks/tests/test_session_context_venue.py && python3 -m unittest discover -s stage/hooks/tests -p test_session_context_venue.py -q"
   - "python3 -m unittest discover -s stage/hooks/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000257
 promotion: not_applicable
-review: not_required
+review: passed
 scope: stage/hooks/stage_context.py, stage/hooks/tests/test_session_context_venue.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -118,6 +118,30 @@ decision_refs:
 
 ## Verification
 
+
+### Executed at close — 2026-08-10
+
+```
+$ test -f stage/hooks/tests/test_session_context_venue.py && python3 -m unittest discover -s stage/hooks/tests -p test_session_context_venue.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 374 tests in 1.464s
+
+OK
+```
+
+### Independent review at close — 2026-08-10
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000257.md
+```
 
 ## Retrospective
 
