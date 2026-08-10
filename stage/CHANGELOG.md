@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preserve every milestone completion criterion when `--completion-criteria` is repeated, and
+  store the supplied values as an ordered Markdown list instead of silently keeping only the last.
+
 - List every project-owned `.stage/operations/` file at session start beside the other project
   instruction sources. The payload carries sorted paths and a direction to read applicable files,
   never copied rule bodies, so newly added rules become discoverable without creating stale copies

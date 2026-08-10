@@ -236,7 +236,10 @@ def create_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         text = _replace_section(text, "Period", args.period)
         text = _replace_section(text, "Scope", args.scope)
         text = _replace_section(text, "Theme", args.theme)
-        text = _replace_section(text, "Completion criteria", args.completion_criteria)
+        completion_criteria = "\n".join(
+            f"- {criterion}" for criterion in args.completion_criteria
+        )
+        text = _replace_section(text, "Completion criteria", completion_criteria)
         return text
 
     record_id = _create_atomic(
@@ -517,7 +520,12 @@ def _parser() -> argparse.ArgumentParser:
     milestone.add_argument("--purpose", default="")
     milestone.add_argument("--period", default="")
     milestone.add_argument("--scope", default="")
-    milestone.add_argument("--completion-criteria", default="")
+    milestone.add_argument(
+        "--completion-criteria",
+        action="append",
+        default=[],
+        help="Milestone completion criterion written as a list item (repeatable).",
+    )
     milestone.set_defaults(handler=create_milestone)
 
     pursuit = commands.add_parser(

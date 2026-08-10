@@ -155,6 +155,47 @@ class RoadmapFixture(unittest.TestCase):
 
 
 class RoadmapCliTest(RoadmapFixture):
+    def test_completion_criteria_is_repeatable_and_preserves_every_value(self):
+        tmp, root = self.make_fixture()
+        with tmp:
+            theme = run_cli(
+                ROADMAP,
+                root,
+                "create-theme",
+                "--title",
+                "Delivery reliability",
+                "--intent",
+                "Make delivery predictable",
+            )
+            milestone = run_cli(
+                ROADMAP,
+                root,
+                "create-milestone",
+                "--theme",
+                "TH-00000001",
+                "--title",
+                "Stable release",
+                "--completion-criteria",
+                "Every check passes",
+                "--completion-criteria",
+                "Every artifact is published",
+                "--completion-criteria",
+                "Users can install the release",
+            )
+            milestone_text = (
+                root / ".stage/roadmap/milestones/M-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, theme.returncode, theme.stderr)
+        self.assertEqual(0, milestone.returncode, milestone.stderr)
+        self.assertIn(
+            "## Completion criteria\n\n"
+            "- Every check passes\n"
+            "- Every artifact is published\n"
+            "- Users can install the release\n",
+            milestone_text,
+        )
+
     def test_creation_uses_per_type_counters_and_syncs_indexes(self):
         tmp, root = self.make_fixture()
         with tmp:
