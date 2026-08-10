@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000249 | fix | codex | 마일스톤 완료 기준을 여러 개 받게 한다 | active | codex | [current/W-00000249/_story.md](current/W-00000249/_story.md) |
