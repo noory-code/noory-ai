@@ -7,12 +7,12 @@ milestone:
 autonomous: true
 acceptance:
   - "grep -q widened stage/scripts/tests/test_drive.py && python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: not_required
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000256
+promotion: not_applicable
+review: passed
 scope: stage/scripts/driver_unattended.py, stage/scripts/driver_repository.py, stage/scripts/tests/test_drive.py, stage/skills/stage-drive/SKILL.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -124,8 +124,72 @@ decision_refs:
 
 ## Verification
 
+- 저장된 인수 명령 통과: `grep -q widened stage/scripts/tests/test_drive.py` 성공 뒤
+  `test_drive.py` 시험 93개가 통과했다.
+- 전체 훅 시험 통과: `python3 -m unittest discover -s stage/hooks/tests -q` (`Ran 373
+  tests`, `OK`).
+- Stage 감사 통과: `errors=0`, 기존 보관 카드의 `WORK029` 경고 32개.
+- 전체 스크립트 시험은 `Ran 630 tests` 중 2개가 이번 변경 전부터 `HEAD`의
+  `.stage/settings.json` 실행 명령에 있던 백틱 때문에 실패했다. 저장된 인수 명령과 이번 변경을
+  직접 덮는 시험은 통과했다.
+
+### Executed at close — 2026-08-10
+
+```
+$ grep -q widened stage/scripts/tests/test_drive.py && python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (52 earlier lines omitted)
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp289dwm8n/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp289dwm8n/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+except SystemExit as exc:
+    if exc.code not in (None, 0):
+        raise
+import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Acceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Independent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 93 tests in 26.595s
+
+OK
+```
+
+### Independent review at close — 2026-08-10
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000256.md
+```
 
 ## Retrospective
 
 
 ## Promotion decision
+
+`not_applicable` — 이 카드는 결정 레코드를 만들거나 승격하지 않는다.

@@ -226,6 +226,9 @@ Before acting, the executor decides whether the selected action itself serves it
 If the action is wrong, it stops without implementing it and reports that decision for the human to
 redesign or cancel.
 
+Never change the selected card's `scope`. A human decides whether to widen it. Report a needed
+scope crossing without rewriting the declaration, because rewriting it erases the crossing.
+
 When the action is sound, every encountered task follows exactly one row:
 
 | Task | Action | Report |

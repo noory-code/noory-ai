@@ -663,8 +663,111 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(0, result, output.getvalue())
         self.assertIn("executor rejected the work item", output.getvalue())
         self.assertIn("Reason: executor rejected the work item", log)
+        self.assertNotIn("executor widened work item scope", log)
         self.assertEqual(0, state["items"]["W-00000001"]["attempt_count"])
         self.assertEqual({card_relative}, committed_paths)
+
+    def test_unattended_widened_scope_is_recorded(self):
+        card_relative = ".stage/work/current/W-00000001/_story.md"
+        widen_scope = (
+            "import os; from pathlib import Path; "
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH']); "
+            "card.write_text(card.read_text(encoding='utf-8').replace("
+            "'scope: original.txt', 'scope: original.txt, added.txt'), "
+            "encoding='utf-8'); "
+            "Path('original.txt').write_text('done\\n', encoding='utf-8')"
+        )
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                widen_scope,
+                [card_relative, "original.txt"],
+            ),
+            limits={
+                "max_attempts_per_item": 1,
+                "max_iterations": 2,
+                "max_wall_clock_seconds": 3600,
+            },
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000001",
+                autonomous=True,
+                acceptance=(PASS_COMMAND,),
+                scope=("original.txt",),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            args = mock.Mock(
+                target="W-00000001",
+                timeout=30,
+                limit_action_seconds=30,
+                skip_preflight=True,
+            )
+
+            with redirect_stdout(io.StringIO()):
+                drive.run_unattended(
+                    args,
+                    root,
+                    root / ".stage",
+                    drive.time.time(),
+                )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            'executor widened work item scope: ["original.txt"] -> '
+            '["original.txt", "added.txt"]',
+            log,
+        )
+
+    def test_unattended_scope_only_widening_is_not_a_rejection(self):
+        card_relative = ".stage/work/current/W-00000001/_story.md"
+        widen_scope = (
+            "import os; from pathlib import Path; "
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH']); "
+            "card.write_text(card.read_text(encoding='utf-8').replace("
+            "'scope: ', 'scope: added.txt'), encoding='utf-8')"
+        )
+        tmp, root = self.make_project(
+            executor=reporting_python_command(widen_scope, [card_relative]),
+            limits={
+                "max_attempts_per_item": 1,
+                "max_iterations": 2,
+                "max_wall_clock_seconds": 3600,
+            },
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000001",
+                autonomous=True,
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+            drive = self.load_module()
+            args = mock.Mock(
+                target="W-00000001",
+                timeout=30,
+                limit_action_seconds=30,
+                skip_preflight=True,
+            )
+
+            with redirect_stdout(io.StringIO()) as output:
+                drive.run_unattended(
+                    args,
+                    root,
+                    root / ".stage",
+                    drive.time.time(),
+                )
+            log = (
+                root / ".stage/.runtime/driver/logs/W-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertNotIn("executor rejected the work item", output.getvalue())
+        self.assertNotIn("Reason: executor rejected the work item", log)
+        self.assertIn("executor widened work item scope", log)
 
     def test_unattended_item_commit_records_omitted_missing_scope_paths(self):
         card_relative = ".stage/work/current/W-00000001/_story.md"
