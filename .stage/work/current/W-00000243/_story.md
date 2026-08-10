@@ -8,13 +8,13 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000243
+promotion: approved
 review: not_required
 scope: .stage/operations/, stage/skills/stage-decision/, .stage/decisions/, .stage/state/
-promotes:
-decision_refs:
+promotes: .stage/official/decisions/records/DE-00000071.md
+decision_refs: DE-00000071
 ---
 
 # W-00000243 결정을 세우기 전에 최소 구현으로 확인하는 걸음을 넣는다
@@ -104,9 +104,65 @@ decision_refs:
 
 ## Related truth
 
+- R-00000141 — DE-00000029 가 손으로 적은 목록으로 승격되어 다른 프로젝트가 데이터를 잃은 판.
+  감독이 잰 사흘 밖에 있고, 하니스가 아니라 사람이 잡은 유일한 건이다.
+- R-00000239 — 결정대로 만드는 중에, 없앤 걸음에 붙어 있던 확인이 같이 사라진 것을 시험이
+  잡았다. "결정문만 읽었으면 안 보였다."
+- R-00000242 — `grep` 으로 센 열넷이 시험으로 옮기니 열이었다. 세는 것도 돌려야 한다.
+- `stage/skills/stage-retrospective/rule-promotion.md` `## Where the rule goes` — 규칙이 어디
+  사는지를 소유하는 자리. 이 카드의 첫 판단이 여기서 나왔다.
+- `stage/skills/stage-work/SKILL.md` `## Run the premise…` — 형제 규칙. 남이 이미 한 주장이
+  아직 참인지 보는 쪽이다.
+
 ## Progress
 
+- 회고 254장을 훑어 감독이 넘긴 세 건을 확인하고 셋을 더 찾았다(R-00000141·239·242).
+- 규칙이 사는 자리를 `stage/skills/stage-decision/SKILL.md` 로 정했다. 근거는 이미 서 있는
+  규칙(`rule-promotion.md` 의 `## Where the rule goes`)이다.
+- 규칙 초안을 쓰고 지난 결정 일곱 장을 통과시켜 초안의 첫 시험이 반례(DE-00000069)를 잘못
+  잡는 것을 확인하고 고쳤다. 이 카드가 주장하는 걸음을 이 카드에 쓴 것이다.
+- DE-00000071 을 세우고 `stage/skills/stage-decision/SKILL.md` 에 절 하나를 더했다.
+
 ## Verification
+
+### 감독이 다시 잰 것
+
+팀원이 센 것을 그대로 안 받고 확인했다.
+
+| 확인 | 결과 |
+|---|---|
+| `audit_stage.py` | errors=0, warnings=32 — main 기준선과 같다 |
+| **R-00000141 이 하니스 밖에서 잡힌 판인가** | **맞다.** 그 회고 10줄이 "다른 프로젝트가 설명 문서 갱신으로 데이터를 잃은 보고를 받아"로 시작한다. 61-62줄이 원인을 DE-00000029 의 예시 파일 목록으로 짚는다 |
+| 규칙이 사는 자리를 팀원이 정했나 | 아니다. `rule-promotion.md` 의 `## Where the rule goes` 가 이미 소유한 질문이고, 팀원이 그 문서를 열어 답했다 |
+| 초안이 실제로 죽었나 | 죽었다. 결정문 73-79줄이 첫 시험이 DE-00000069 를 잡아 버린 것과 그래서 고친 것을 적는다 |
+
+**규칙 승격 조건을 만족한다.** `rule-promotion.md` 의 두 시험 중 "하니스 밖의 무언가가
+잡았다" 쪽을 R-00000141 하나로 통과한다. 나머지 다섯은 전부 하니스가 안에서 물어냈다.
+
+### 팀원이 넘은 자리 — 처분
+
+| 넘은 것 | 처분 | 이유 |
+|---|---|---|
+| `stage/CHANGELOG.md` | **받는다** | 플러그인 파일이 바뀌면 프로젝트 규칙(`CLAUDE.md`)이 변경 기록을 요구한다. 카드 `scope` 가 그것을 안 적은 것이 카드의 빠짐이고, 팀원은 보고했다 |
+| 워크트리 생성 | **받는다** | 하니스 준비다. 보고서에 갈라 적었다 |
+
+### 팀원이 물은 것 — 답한다
+
+**`promotes` 가 비어 있는데 `promotion: approved` 라 감사가 안 가른다.** 맞는 지적이다.
+감사의 그 계약은 `completed` 항목만 보고 이 카드는 `active` 였다. 감독이 `promotes` 를
+채웠고, 닫을 때 통행증을 만들어 결정을 공식 자리로 올린다.
+
+**저장소 밖 결정에 기준을 대 보라.** 못 한다 — 이 저장소가 그 플러그인을 만드는 곳이고,
+감독이 닿을 수 있는 결정 기록도 전부 여기 것이다. 팀원이 짚었듯 이미 실린 형제 규칙 둘도
+근거 회고가 전부 여기 것이라 이 한계는 새로 생긴 것이 아니다. **다른 프로젝트에서 결정을
+세울 때 이 규칙이 걸리는지가 다음 실측이고, 결정문 `## Follow-up` 이 그것을 적는다.**
+
+### 남은 구멍 둘 — 안 받는다
+
+- **성공 기준 둘째가 절반이다.** 지난 결정 일곱 장은 통과시켰지만, 앞으로 올 결정 하나가
+  실제로 걸음을 밟는 것은 이 카드가 못 본다. 다음 결정에서 확인한다.
+- **장치가 없다.** 결정 기록의 절 이름을 읽는 자리가 훅에도 감사에도 없다. 안 지켜도 아무것도
+  안 막는다. 결정문이 그것을 적었고, 이 프로젝트의 다른 규칙들도 같은 자리에 있다.
 
 ## Retrospective
 

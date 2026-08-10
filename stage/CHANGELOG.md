@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Require a decision that fixes something executable to build its losing option once, on a real
+  input, before the record is written, and to record what came out under `## Chosen direction`.
+  The step fires only when the options differ in what they produce on some input and one run makes
+  that difference visible, so decisions settled by counting are left alone.
+
 - Tell new sessions how to execute work after venue routing: spawn a teammate agent for
   `claude`-venue work, hand `codex`-venue work to the driver, and open the named project procedure
   for the full instructions.
