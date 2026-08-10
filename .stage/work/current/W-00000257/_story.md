@@ -12,7 +12,7 @@ status: active
 verification: pending
 retrospective: pending
 retrospective_ref:
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_context.py, stage/hooks/tests/test_session_context_venue.py, stage/CHANGELOG.md
 promotes:
