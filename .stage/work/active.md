@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000251 | design | claude | 실행하는 쪽이 자기 카드의 파일 목록을 못 넓히게 한다 | active | claude | [current/W-00000251/_story.md](current/W-00000251/_story.md) |
-| W-00000257 | development | codex | 세션 시작이 어느 kind 가 어느 venue 인지까지만 말하고 그 venue 를 어떻게 돌리는지는 안 말해 | active | Claude | [current/W-00000257/_story.md](current/W-00000257/_story.md) |

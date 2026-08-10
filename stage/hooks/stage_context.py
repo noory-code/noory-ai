@@ -269,7 +269,9 @@ def session_context(workspace_root: Path) -> str:
             "is mixed by definition: Split mixed design+implementation work into separate items "
             "with `parent` lineage instead of assigning one ambiguous item. An implementation "
             "venue that hits an unresolved product/design decision registers a planning-venue "
-            "item carrying the evidence and the exact decision needed."
+            "item carrying the evidence and the exact decision needed. For execution, spawn a "
+            "teammate agent for `claude`-venue work and hand `codex`-venue work to the driver; "
+            "read `.stage/operations/claude-venue.md` for the procedure."
         )
 
     language = load_language(stage_root)

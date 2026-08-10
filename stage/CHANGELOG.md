@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Tell new sessions how to execute work after venue routing: spawn a teammate agent for
+  `claude`-venue work, hand `codex`-venue work to the driver, and open the named project procedure
+  for the full instructions.
+
 - Record when an unattended executor widens its work card's `scope`, while keeping the scope read
   before execution as that round's commit boundary. A scope-only widening is no longer mistaken for
   the executor rejecting the card, and the executor contract now leaves widening to a human.
