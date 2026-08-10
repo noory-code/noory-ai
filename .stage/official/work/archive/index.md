@@ -203,3 +203,4 @@
 | W-00000246 | completed | [items/W-00000246/_story.md](items/W-00000246/_story.md) |
 | W-00000249 | completed | [items/W-00000249/_story.md](items/W-00000249/_story.md) |
 | W-00000247 | rejected | [items/W-00000247/_story.md](items/W-00000247/_story.md) |
+| W-00000256 | completed | [items/W-00000256/_story.md](items/W-00000256/_story.md) |
