@@ -9,18 +9,18 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
   - "python3 stage/scripts/audit_stage.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000259
 promotion: not_applicable
-review: not_required
+review: passed
 scope: stage/scripts/driver_lifecycle.py, stage/skills/stage-retrospective/close_work.py, stage/skills/stage-retrospective/SKILL.md, stage/scripts/tests/test_close_work.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
 ---
 
-# W-00000259 회고 번호를 카드 등록 때 잡아서 워크트리가 갈려도 안 겹치게 한다
+# W-00000259 회고 번호를 세지 말고 카드 번호에서 만들고, 자리가 차 있으면 멈춘다
 
 ## Purpose
 
@@ -127,6 +127,217 @@ decision_refs:
 
 ## Verification
 
+
+### Executed at close — 2026-08-11
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 59 tests in 6.622s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (52 earlier lines omitted)
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpmlmdbqq7/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpmlmdbqq7/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+except SystemExit as exc:
+    if exc.code not in (None, 0):
+        raise
+import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Acceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Independent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 94 tests in 26.322s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 59 tests in 6.251s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (52 earlier lines omitted)
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpq4pbes1l/acceptance-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:
+    exec("from pathlib import Path; path = Path('"'"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpq4pbes1l/reviewer-count'"'"'); path.write_text(str(int(path.read_text(encoding='"'"'utf-8'"'"')) + 1) if path.exists() else '"'"'1'"'"', encoding='"'"'utf-8'"'"')")
+except SystemExit as exc:
+    if exc.code not in (None, 0):
+        raise
+import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Acceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'
+Independent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os
+from pathlib import Path
+log = Path(os.environ['"'"'STAGE_WORK_LOG_PATH'"'"'])
+report = ('"'"'\n### Reviewer report\nCRITERIA VERDICT:\n- criterion: PASS - test reviewer inspected the inputs\nAPPROVED\nOUT-OF-CRITERIA OBSERVATIONS:\n- None\n'"'"')
+log.write_text(log.read_text(encoding='"'"'utf-8'"'"') + report, encoding='"'"'utf-8'"'"')
+Path(os.environ['"'"'STAGE_REVIEW_VERDICT_FILE'"'"']).write_text(
+    json.dumps({'"'"'criteria'"'"': [{'"'"'criterion'"'"': '"'"'criterion'"'"', '"'"'verdict'"'"': '"'"'PASS'"'"', '"'"'reason'"'"': '"'"'test reviewer inspected the inputs'"'"'}], '"'"'approved'"'"': True}), encoding='"'"'utf-8'"'"')
+print('"'"'APPROVED'"'"')'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 94 tests in 26.332s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (296 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1786442850
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1786442850. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpixhb2a6a/unattended/W-00000001-1786442850
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 635 tests in 94.857s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 374 tests in 1.478s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Independent review at close — 2026-08-11
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000259.md
+```
 
 ## Retrospective
 
