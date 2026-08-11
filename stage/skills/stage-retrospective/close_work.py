@@ -659,10 +659,10 @@ def main() -> int:
                 "W-00000000", args.item
             )
 
-        from driver_lifecycle import retrospective_id_for_work_item
+        from driver_lifecycle import reserve_retrospective
 
         try:
-            retro_id = retrospective_id_for_work_item(
+            retro_id = reserve_retrospective(
                 stage_root,
                 args.item,
                 content_for,

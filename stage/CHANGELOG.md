@@ -2,11 +2,9 @@
 
 ## Unreleased
 
-- Allocate retrospective IDs with exclusive file creation, keeping a work item's matching ID when
-  available and otherwise reserving the next free ID. `close_work.py --allocate-retrospective`
-  gives manual retrospective writing the same collision-safe allocator used by the driver, and the
-  `stage-retrospective` skill now routes retrospective numbering through it instead of leaving the
-  choice to the writer.
+- Derive every retrospective ID directly from its work item ID, without scanning local records for
+  a free number. Driver and manual retrospective creation now stop with the blocking owner when the
+  deterministic ID is occupied instead of choosing a fallback that can collide across worktrees.
 
 - Require a decision that fixes something executable to build its losing option once, on a real
   input, before the record is written, and to record what came out under `## Chosen direction`.

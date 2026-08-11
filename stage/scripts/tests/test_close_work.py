@@ -549,7 +549,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertIn("status: active", body)
 
-    def test_allocate_retrospective_avoids_collision_and_reserves_template(self):
+    def test_allocate_retrospective_refuses_id_archived_for_another_work_item(self):
         tmp, root = self.make(
             retro="pending",
             ref="",
@@ -562,16 +562,12 @@ class CloseWorkTest(unittest.TestCase):
                 "# R-00000000 Title\n\n## Work\n\n",
                 encoding="utf-8",
             )
-            (retrospective_root / "R-00000001.md").write_text(
-                "---\nid: R-00000001\nwork_item: W-00000099\n---\n",
-                encoding="utf-8",
-            )
             archived = (
-                root / ".stage/official/work/archive/retrospectives/R-00000002.md"
+                root / ".stage/official/work/archive/retrospectives/R-00000001.md"
             )
             archived.parent.mkdir(parents=True)
             archived.write_text(
-                "---\nid: R-00000002\nwork_item: W-00000098\n---\n",
+                "---\nid: R-00000001\nwork_item: W-00000099\n---\n",
                 encoding="utf-8",
             )
             card_before = (
@@ -579,16 +575,15 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
             proc = run(root, "W-00000001", "--allocate-retrospective")
-            reserved = retrospective_root / "R-00000003.md"
-            reserved_text = reserved.read_text(encoding="utf-8")
             card_after = (
                 root / ".stage/work/current/W-00000001/_story.md"
             ).read_text(encoding="utf-8")
 
-        self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertEqual("R-00000003", proc.stdout.strip())
-        self.assertIn("id: R-00000003", reserved_text)
-        self.assertIn("work_item: W-00000001", reserved_text)
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("R-00000001", proc.stderr)
+        self.assertIn("W-00000001", proc.stderr)
+        self.assertIn("W-00000099", proc.stderr)
+        self.assertFalse((retrospective_root / "R-00000002.md").exists())
         self.assertEqual(card_before, card_after)
 
     def test_allocate_retrospective_reuses_preferred_id_owned_by_item(self):
@@ -613,6 +608,64 @@ class CloseWorkTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertEqual("R-00000001", proc.stdout.strip())
         self.assertEqual(before, after)
+
+    def test_allocate_retrospective_reuses_current_id_when_same_id_is_archived(self):
+        tmp, root = self.make(retro="pending")
+        with tmp:
+            retrospective_root = root / ".stage/work/retrospectives"
+            template = retrospective_root / "_template.md"
+            template.write_text(
+                "---\nid: R-00000000\nwork_item: W-00000000\n---\n",
+                encoding="utf-8",
+            )
+            current = retrospective_root / "R-00000001.md"
+            current.write_text(
+                "---\nid: R-00000001\nwork_item: W-00000001\n---\n\ncurrent\n",
+                encoding="utf-8",
+            )
+            archived = (
+                root / ".stage/official/work/archive/retrospectives/R-00000001.md"
+            )
+            archived.parent.mkdir(parents=True)
+            archived.write_text(
+                "---\nid: R-00000001\nwork_item: W-00000001\n---\n\narchived\n",
+                encoding="utf-8",
+            )
+            before = current.read_text(encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+            after = current.read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("R-00000001", proc.stdout.strip())
+        self.assertEqual(before, after)
+
+    def test_allocate_retrospective_reports_same_item_archived_id_as_blocking(self):
+        tmp, root = self.make(retro="pending", with_ref_file=False)
+        with tmp:
+            retrospective_root = root / ".stage/work/retrospectives"
+            template = retrospective_root / "_template.md"
+            template.write_text(
+                "---\nid: R-00000000\nwork_item: W-00000000\n---\n",
+                encoding="utf-8",
+            )
+            archived = (
+                root / ".stage/official/work/archive/retrospectives/R-00000001.md"
+            )
+            archived.parent.mkdir(parents=True)
+            archived.write_text(
+                "---\nid: R-00000001\nwork_item: W-00000001\n---\n",
+                encoding="utf-8",
+            )
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("R-00000001", proc.stderr)
+        self.assertIn("already archived for W-00000001", proc.stderr)
+        self.assertIn("cannot reserve it as current", proc.stderr)
+        self.assertNotIn("not W-00000001", proc.stderr)
+        self.assertFalse((retrospective_root / "R-00000001.md").exists())
 
     def test_refuses_non_final_promotion(self):
         tmp, root = self.make(promotion="pending")

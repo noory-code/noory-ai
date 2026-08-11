@@ -64,8 +64,10 @@ and no rule file cited any of them.
 - The retrospective artifact lives at `work/retrospectives/R-NNNNNNNN.md`.
 - Never choose that number by hand. `close_work.py --project-root <root> <ITEM> \
   --allocate-retrospective` reserves the file from the project template and prints its id. It
-  keeps the item's matching number when that number is free and takes the next free one otherwise,
-  so a number already spent by an older retrospective can never block the close.
+  derives `R-NNNNNNNN` from the work item's `W-NNNNNNNN`. If that retrospective already belongs
+  to the current item, the command reuses it. If the same item's retrospective exists only in the
+  archive, the command reports that lifecycle conflict and stops. If another item owns the number,
+  the command reports both owners and stops; it never searches for a fallback number.
 - The work item's `retrospective_ref` points to that retrospective file.
 - A decision this work settled — one it moved to `decided` — goes in the item's `decision_refs`.
   That field records what the item settled, not what it obeyed, so the item that raised a question

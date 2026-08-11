@@ -493,7 +493,15 @@ class DriveTest(unittest.TestCase):
             retrospective = stage_root / "work" / "retrospectives" / f"{retro_id}.md"
             self.assertTrue(retrospective.is_file())
 
-    def test_driver_retrospective_allocates_free_id_when_preferred_id_is_owned(self):
+    def test_retrospective_id_is_derived_without_a_stage_root(self):
+        drive = self.load_module()
+
+        self.assertEqual(
+            "R-00000041",
+            drive.retrospective_id_for_work_item("W-00000041"),
+        )
+
+    def test_driver_retrospective_refuses_id_owned_by_another_work_item(self):
         tmp, root = self.make_project()
         self.addCleanup(tmp.cleanup)
         stage_root = root / ".stage"
@@ -513,19 +521,11 @@ class DriveTest(unittest.TestCase):
 
         retro_id, error = drive.write_driver_retrospective(stage_root, item)
 
-        self.assertEqual("R-00000042", retro_id)
-        self.assertEqual("", error)
-        retrospective = retrospective_root / "R-00000042.md"
-        self.assertTrue(retrospective.exists())
-        self.assertIn(
-            "work_item: W-00000041",
-            retrospective.read_text(encoding="utf-8"),
-        )
-
-        second_id, second_error = drive.write_driver_retrospective(stage_root, item)
-
-        self.assertEqual("R-00000042", second_id)
-        self.assertEqual("", second_error)
+        self.assertEqual("", retro_id)
+        self.assertIn("R-00000041", error)
+        self.assertIn("W-00000099", error)
+        self.assertIn("W-00000041", error)
+        self.assertFalse((retrospective_root / "R-00000042.md").exists())
         self.assertFalse((retrospective_root / "R-00000043.md").exists())
 
     def test_item_commit_always_includes_the_work_card(self):
