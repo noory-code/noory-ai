@@ -208,3 +208,4 @@
 | W-00000243 | completed | [items/W-00000243/_story.md](items/W-00000243/_story.md) |
 | W-00000251 | completed | [items/W-00000251/_story.md](items/W-00000251/_story.md) |
 | W-00000258 | completed | [items/W-00000258/_story.md](items/W-00000258/_story.md) |
+| W-00000259 | completed | [items/W-00000259/_story.md](items/W-00000259/_story.md) |

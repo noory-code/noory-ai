@@ -35,3 +35,4 @@
 | O-00000040 | observation | DE-00000066 이 조건 3을 다시 써서 두 인덱스를 허용 목록에 넣었다 | [O-00000040](O-00000040.md) |
 | O-00000035 | observation | land_run.py 가 셋째 길을 구현했고 2026-08-09 W-00000252 를 실제로 들이며 게이트에 안 막혔다 | [O-00000035](O-00000035.md) |
 | O-00000034 | observation | 방아쇠 둘이 다 풀렸다 — 카드만 바뀐 경우는 W-00000236, 없는 경로는 DE-00000068 과 W-00000253 | [O-00000034](O-00000034.md) |
+| O-00000046 | observation | W-00000259 removed the counting, so retrospective numbering no longer depends on what a single copy can see | [O-00000046](O-00000046.md) |
