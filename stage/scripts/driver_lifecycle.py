@@ -14,6 +14,7 @@ import re
 import shlex
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 STAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +29,7 @@ for import_dir in (
 from close_work import work_log_reference  # noqa: E402
 from driver_environment import project_environment  # noqa: E402
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
-from stage_record_paths import record_path  # noqa: E402
+from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_work import WorkItem, parse_frontmatter  # noqa: E402
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
@@ -36,6 +37,7 @@ ESCALATE_WORK = STAGE_ROOT / "scripts" / "escalate_work.py"
 AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
 
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
+RETRO_ID_RE = re.compile(r"^R-([0-9]+)$")
 
 RETRO_SECTIONS = (
     "Work",
@@ -58,20 +60,6 @@ def write_driver_retrospective(
     thin — a human reviews it when merging the run branch (DE-24, mode A).
     """
 
-    try:
-        retro_id = retrospective_id_for_work_item(item.item_id)
-    except ValueError as exc:
-        return "", str(exc)
-    path = record_path(stage_root / "work" / "retrospectives", retro_id)
-    if path.exists():
-        existing_owner = parse_frontmatter(path).get("work_item", "")
-        if existing_owner != item.item_id:
-            owner = existing_owner or "an unknown work item"
-            return (
-                "",
-                f"cannot write retrospective {retro_id}: already belongs to {owner}, "
-                f"not {item.item_id}",
-            )
     note = "driver-generated (사람 머지 검토 대상)"
     # Neutral wording: this is written BEFORE close_work verifies. It must not
     # claim success — the item's Verification (stamped by close_work) is the
@@ -95,15 +83,24 @@ def write_driver_retrospective(
             f"{note}: 항목 Verification의 결과를 따른다(close_work가 acceptance·독립 판정 통과 시에만 completed로 스탬프)."
         ),
     }
-    body = f"---\nid: {retro_id}\nwork_item: {item.item_id}\n---\n\n# {retro_id} {item.item_id} 무인 드라이버 회고\n"
-    for heading in RETRO_SECTIONS:
-        body += f"\n## {heading}\n\n{sections[heading]}\n"
+
+    def content_for(retro_id: str) -> str:
+        body = (
+            f"---\nid: {retro_id}\nwork_item: {item.item_id}\n---\n\n"
+            f"# {retro_id} {item.item_id} 무인 드라이버 회고\n"
+        )
+        for heading in RETRO_SECTIONS:
+            body += f"\n## {heading}\n\n{sections[heading]}\n"
+        return body
+
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("x", encoding="utf-8") as handle:
-            handle.write(body)
-    except OSError as exc:
-        return "", f"cannot write retrospective {retro_id}: {exc}"
+        retro_id = retrospective_id_for_work_item(
+            stage_root,
+            item.item_id,
+            content_for,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        return "", f"cannot write retrospective for {item.item_id}: {exc}"
     return retro_id, ""
 
 
@@ -233,9 +230,71 @@ def set_frontmatter_field(text: str, name: str, value: str) -> str:
     )
 
 
-def retrospective_id_for_work_item(item_id: str) -> str:
-    """Derive the one retrospective ID reserved for a work item."""
+def retrospective_id_for_work_item(
+    stage_root: Path,
+    item_id: str,
+    content_for: Callable[[str], str],
+) -> str:
+    """Atomically reserve a retrospective, preferring the work item's number."""
 
     if not WORK_ID_RE.fullmatch(item_id):
         raise ValueError(f"invalid work item ID for retrospective: {item_id}")
-    return f"R-{item_id[2:]}"
+
+    paths = v4_lifecycle_paths()
+    current_root = stage_root / paths.current_retrospectives
+    archive_root = stage_root / paths.archive_retrospectives
+    current_root.mkdir(parents=True, exist_ok=True)
+
+    numbers: set[int] = set()
+    owned_ids: list[str] = []
+    for root in (current_root, archive_root):
+        for path in record_paths(root, pattern="R-*.md"):
+            fields = parse_frontmatter(path)
+            identities = (path.stem, str(fields.get("id", "")))
+            for identity in identities:
+                match = RETRO_ID_RE.fullmatch(identity)
+                if match:
+                    numbers.add(int(match.group(1)))
+            record_id = str(fields.get("id", ""))
+            if (
+                root == current_root
+                and fields.get("work_item", "") == item_id
+                and RETRO_ID_RE.fullmatch(record_id)
+            ):
+                owned_ids.append(record_id)
+
+    owned_ids = sorted(set(owned_ids))
+    if len(owned_ids) > 1:
+        raise RuntimeError(
+            f"work item {item_id} already owns multiple retrospectives: "
+            f"{', '.join(owned_ids)}"
+        )
+    if owned_ids:
+        return owned_ids[0]
+
+    def reserve(retro_id: str) -> bool:
+        path = record_path(current_root, retro_id)
+        try:
+            with path.open("x", encoding="utf-8") as handle:
+                handle.write(content_for(retro_id))
+        except FileExistsError:
+            return False
+        return True
+
+    preferred_id = f"R-{item_id[2:]}"
+    preferred_path = record_path(current_root, preferred_id)
+    preferred_match = RETRO_ID_RE.fullmatch(preferred_id)
+    preferred_number = int(preferred_match.group(1)) if preferred_match else None
+    if preferred_path.exists():
+        if parse_frontmatter(preferred_path).get("work_item", "") == item_id:
+            return preferred_id
+    elif preferred_number not in numbers and reserve(preferred_id):
+        return preferred_id
+
+    candidate = (max(numbers) + 1) if numbers else 1
+    for _ in range(1000):
+        retro_id = f"R-{candidate:08d}"
+        if reserve(retro_id):
+            return retro_id
+        candidate += 1
+    raise RuntimeError("could not allocate a free retrospective id")

@@ -62,6 +62,10 @@ and no rule file cited any of them.
 - Behavior changes go to project policy in `.stage/operations/` (or upstream to the plugin-owned
   `operations/` when the rule is common to every project).
 - The retrospective artifact lives at `work/retrospectives/R-NNNNNNNN.md`.
+- Never choose that number by hand. `close_work.py --project-root <root> <ITEM> \
+  --allocate-retrospective` reserves the file from the project template and prints its id. It
+  keeps the item's matching number when that number is free and takes the next free one otherwise,
+  so a number already spent by an older retrospective can never block the close.
 - The work item's `retrospective_ref` points to that retrospective file.
 - A decision this work settled — one it moved to `decided` — goes in the item's `decision_refs`.
   That field records what the item settled, not what it obeyed, so the item that raised a question

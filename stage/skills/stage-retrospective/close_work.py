@@ -15,6 +15,8 @@ retrospective (with an existing retrospective_ref) and a FINAL promotion
 decision — otherwise the item would audit-fail (WORK008) and block later commits.
 
 Usage:
+    close_work.py --project-root . W-00000008 --allocate-retrospective
+
     close_work.py --project-root . W-00000008 \
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
@@ -584,6 +586,11 @@ def main() -> int:
     parser.add_argument("item", help="Work item id, e.g. W-00000008.")
     parser.add_argument("--check", action="append", default=[], help="A verification command (repeatable). Runs in the platform shell.")
     parser.add_argument("--promotion", default=None, help=f"Set the promotion decision; must be one of {sorted(PROMOTION_FINAL)}.")
+    parser.add_argument(
+        "--allocate-retrospective",
+        action="store_true",
+        help="Reserve a retrospective file from the project template, print its id, and exit.",
+    )
     parser.add_argument("--timeout", type=int, default=900, help="Per-check timeout in seconds.")
     parser.add_argument("--review-stage", default="implementation", help="settings.json review stage whose command runs at close.")
     args = parser.parse_args()
@@ -629,6 +636,45 @@ def main() -> int:
         items_root=stage_root / current_root,
     )
     status = field(text, "status")
+
+    if args.allocate_retrospective:
+        if status not in OPEN_TO_CLOSE:
+            print(
+                f"{args.item}: status `{status}` is not active/review; "
+                "refusing to allocate a retrospective",
+                file=sys.stderr,
+            )
+            return 1
+        template_path = stage_root / current_retro_root / "_template.md"
+        if not template_path.is_file():
+            print(
+                f"{args.item}: retrospective template does not exist at {template_path}",
+                file=sys.stderr,
+            )
+            return 1
+        template = template_path.read_text(encoding="utf-8")
+
+        def content_for(retro_id: str) -> str:
+            return template.replace("R-00000000", retro_id).replace(
+                "W-00000000", args.item
+            )
+
+        from driver_lifecycle import retrospective_id_for_work_item
+
+        try:
+            retro_id = retrospective_id_for_work_item(
+                stage_root,
+                args.item,
+                content_for,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            print(
+                f"{args.item}: cannot allocate retrospective: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        print(retro_id)
+        return 0
 
     index_error = decision_index_preflight_error(stage_root)
     if index_error:
