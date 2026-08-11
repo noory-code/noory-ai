@@ -8,7 +8,8 @@ autonomous: true
 acceptance:
   - "grep -q collision stage/scripts/tests/test_close_work.py && python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000260
