@@ -85,6 +85,16 @@ decision_refs:
   알리며 멈춘다
 - 지금 이 저장소의 카드는 전부 자기 번호로 회고를 받는다
 
+## 버린 설계
+
+이 카드는 처음에 **번호를 카드 등록 때 미리 잡는다**로 씌어 있었다. 독립 리뷰어가 사본 둘에서
+각각 등록해 보고 둘 다 같은 번호를 받는 것을 보였다. 등록도 자기 사본만 세기 때문이다. 그
+설계는 버렸다.
+
+그때 바꿨던 `stage/skills/stage-work/register_work.py` 와
+`stage/scripts/tests/test_register_work.py` 는 **되돌렸다.** 이 카드의 변경 경로에 넣지 않는다.
+공유 로그 앞부분에 그 둘이 나오는 것은 버린 설계의 기록이다.
+
 ## Next action
 
 **`stage/scripts/driver_lifecycle.py` `retrospective_id_for_work_item` 을 먼저 읽는다.**
