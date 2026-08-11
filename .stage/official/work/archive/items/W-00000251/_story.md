@@ -10,7 +10,7 @@ status: archived
 terminal_disposition: accepted
 verification: passed
 retrospective: completed
-retrospective_ref: R-00000259
+retrospective_ref: R-00000251
 promotion: promoted
 review: not_required
 scope: stage/skills/stage-drive/, .stage/operations/, .stage/decisions/, .stage/state/, stage/hooks/

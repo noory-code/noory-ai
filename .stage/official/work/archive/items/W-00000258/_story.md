@@ -12,7 +12,7 @@ status: archived
 terminal_disposition: accepted
 verification: passed
 retrospective: completed
-retrospective_ref: R-00000260
+retrospective_ref: R-00000248
 promotion: not_applicable
 review: passed
 scope: stage/scripts/driver_lifecycle.py, stage/skills/stage-retrospective/close_work.py, stage/skills/stage-retrospective/SKILL.md, stage/scripts/tests/test_close_work.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
