@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000260 | documentation | claude | 드라이버를 돌리기 전에 남아 있던 파일과 도는 동안 사람이 쓴 파일이 실행자 몫으로 섞여 판이 통째로 버려지 | active | Claude | [current/W-00000260/_story.md](current/W-00000260/_story.md) |
