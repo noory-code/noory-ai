@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Extend the driver's repository-quiet rule to the state the checkout is in before a step starts,
+  and name what a violation costs. The rule previously covered only edits made while a step ran and
+  described the hazard as shared process-wide state; it now requires a clean working tree at launch
+  and says the whole attempt is discarded when the executor's reported change paths disagree with
+  what the driver observes.
+
 - Derive every retrospective ID directly from its work item ID, without scanning local records for
   a free number. Driver and manual retrospective creation now stop with the blocking owner when the
   deterministic ID is occupied instead of choosing a fallback that can collide across worktrees.

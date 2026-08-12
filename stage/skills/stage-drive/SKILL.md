@@ -328,10 +328,15 @@ It does **not** commit, close the card, escalate, promote official truth, advanc
 move on to the next item. Those stay with the human supervising the run, so the recommended next
 action is something a person still performs.
 
-Do not edit files, stage or commit changes, switch branches, or run other repository-changing Git
-commands in the same checkout while a driver step is running. The executor receives a disposable
-Git index, so its `git add` cannot change the human's real index, but the working tree and `HEAD`
-remain shared process-wide state. Wait for the step to stop before changing the repository.
+Start every driver step from a clean working tree — commit or stash uncommitted changes before
+launching it. While a step is running, do not edit files, stage or commit changes, switch branches,
+or run other repository-changing Git commands in the same checkout. The executor receives a
+disposable Git index, so its `git add` cannot change the human's real index, but the working tree
+and `HEAD` remain shared process-wide state. Either violation discards the whole attempt: the
+driver compares the change paths the executor reports against what it observes in the checkout, and
+a file the executor never touched — left over from before the step, or written by a person during
+it — makes those two lists disagree. The run is thrown away even when the executor's own work was
+correct. Wait for the step to stop before changing the repository. (R-00000248, R-00000259)
 
 Three conditions end a step in `blocked` instead of a retry: an exhausted limit, a `NO-PROGRESS`
 fingerprint, and an independent reviewer JSON verdict with failed criteria. All three recommend
