@@ -44,6 +44,13 @@ that practitioners normally use untranslated. The register rule addresses the re
 register of any language that marks politeness grammatically, and brevity never overrides it. All
 three apply to every built-in or external style without choosing the response language.
 
+The language rule carries one per-language section, for Korean, which is itself written in Korean:
+explaining in English how to write Korean invites the very habit it warns against, building an
+English sentence and swapping Korean words into it. It states four rules — put the action in the
+predicate, do not coin a Sino-Korean name for an English term, attach the counter word when
+counting, split a sentence that piles up modifying clauses — each with a check and a
+before-and-after pair. A reader writing another language skips it.
+
 ## Trust boundary
 
 Project settings and their referenced style files become model-visible developer context on every

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Write the Korean-writing guidance in Korean, and state it as rules with a check instead of a
+  before-and-after list. Explaining in English how to write Korean asks the reader to build an
+  English sentence and swap Korean words into it, which is the habit the section exists to break.
+  Four rules replace the three examples: put the action in the predicate, do not coin a Sino-Korean
+  name for an English term, attach the counter word when counting, and split a sentence that piles
+  up modifying clauses. Each carries a check the reader can actually run — "find the predicate" in
+  place of "read it aloud" — and its own before-and-after pair. The last line says the rules
+  generalize, because a list of banned phrases only ever catches the phrase that produced it.
+
 - Read a user-wide default from `<home>/.plainly/settings.json` when a project pins nothing, so a
   chosen style no longer has to be repeated in every repository. A project's own settings still
   win. This scope names a built-in profile only: a style file here would read from outside every

@@ -241,10 +241,16 @@ class HookTest(unittest.TestCase):
                     self.assertIn(marker, fixed_context)
 
     def test_korean_guidance_travels_with_the_plugin_not_the_project(self) -> None:
+        # The markers are Korean because the guidance itself is. Stating Korean rules in English
+        # asks the reader to build an English sentence and swap Korean words into it — the very
+        # habit the section exists to break — so an English marker here would pass while the
+        # section had drifted back to the shape it warns against.
         markers = (
             "Writing Korean (skip if you are not)",
-            "Never render an English term as a Sino-Korean compound nobody says",
-            "English builds meaning on nouns; Korean builds it on verbs",
+            "동작은 서술어에 둔다",
+            "이름을 새로 만들지 않는다",
+            "수를 세면 세는 말을 붙인다",
+            "고칠 낱말 목록이 아니다",
         )
 
         with tempfile.TemporaryDirectory() as tmp:
