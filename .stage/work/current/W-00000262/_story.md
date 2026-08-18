@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest plainly.tests.test_hook -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000262
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: plainly/hooks/inject_style.py, plainly/tests/test_hook.py, plainly/CHANGELOG.md, plainly/.claude-plugin/plugin.json, plainly/.codex-plugin/plugin.json, .stage
 promotes:
@@ -100,6 +100,32 @@ Plainly 패치 버전을 출시하고 설치한 뒤 실제 훅 출력을 다시 
   가지를 다 눌러 봤고”라는 어색한 표현이 한 군데 남았다. 지침이 들어간 사실과 Claude가 매번
   지침을 따르는지는 구별해야 한다.
 - Stage 감사 결과 오류는 0개다. 기존 경고는 32개다.
+
+### Executed at close — 2026-08-19
+
+```
+$ python3 -m unittest plainly.tests.test_hook -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 14 tests in 4.188s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 52 tests in 6.531s
+
+OK
+
+$ python3 -m compileall -q plainly/hooks plainly/scripts plainly/src plainly/tests
+[exit 0]
+
+
+$ git diff --check
+[exit 0]
+
+```
 
 ## Retrospective
 
