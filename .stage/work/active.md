@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000262 | fix | codex | Plainly가 한국어 문장을 고치는 규칙을 비유나 영어식 문장 없이 직접 설명하게 한다 | active | Claude | [current/W-00000262/_story.md](current/W-00000262/_story.md) |

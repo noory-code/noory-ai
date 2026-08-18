@@ -246,11 +246,11 @@ class HookTest(unittest.TestCase):
         # habit the section exists to break — so an English marker here would pass while the
         # section had drifted back to the shape it warns against.
         markers = (
-            "Writing Korean (skip if you are not)",
-            "동작은 서술어에 둔다",
-            "이름을 새로 만들지 않는다",
+            "한국어로 답할 때만 아래 규칙을 따른다",
+            "동작은 서술어로 적는다",
+            "새 용어를 함부로 만들지 않는다",
             "수를 세면 세는 말을 붙인다",
-            "고칠 낱말 목록이 아니다",
+            "처음 보는 문장에도 같은 유형의 문제가 있으면 이 규칙을 적용한다",
         )
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -264,6 +264,57 @@ class HookTest(unittest.TestCase):
         fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
         for marker in markers:
             self.assertIn(marker, fixed_context)
+
+    def test_korean_guidance_uses_literal_wording_on_every_resolution_path(self) -> None:
+        required = (
+            "한국어 쓰는 법을 영어로 설명하면 AI가 영어 문장 구조를 먼저 만들고",
+            "동작을 나타내는 동사를 찾아 서술어로 바꾼다",
+            "그 분야 사람들이 실제로 쓰는 용어를 그대로 쓴다",
+            "세는 말을 붙이는 것은 취향이 아니라 한국어 문법이다",
+            "처음 보는 문장에도 같은 유형의 문제가 있으면 이 규칙을 적용한다",
+        )
+        forbidden = (
+            "읽는 쪽",
+            "명사 안에 갇혀 있다",
+            "꺼내서 서술어로 세워라",
+            "그 바닥",
+            "갈래를 막는 규칙",
+        )
+        cases = (
+            ("default", {}, None),
+            ("environment profile", {"NOORY_STYLE_PROFILE": "brief"}, None),
+            ("project settings", {}, {"profile": "guided"}),
+            ("environment file", {"NOORY_STYLE_FILE": "external.md"}, None),
+        )
+
+        for name, extra_env, settings in cases:
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                if settings is not None:
+                    settings_directory = root / ".plainly"
+                    settings_directory.mkdir()
+                    (settings_directory / "settings.json").write_text(
+                        json.dumps(settings),
+                        encoding="utf-8",
+                    )
+                if name == "environment file":
+                    (root / "external.md").write_text(
+                        "Use one short paragraph.",
+                        encoding="utf-8",
+                    )
+
+                output = self.run_hook(
+                    {"hook_event_name": "UserPromptSubmit", "cwd": str(root)},
+                    home=root / "home",
+                    extra_env=extra_env,
+                )
+
+                context = output["hookSpecificOutput"]["additionalContext"]
+                fixed_context = context.split("<<<PLAINLY_STYLE_END>>>", maxsplit=1)[1]
+                for marker in required:
+                    self.assertIn(marker, fixed_context)
+                for marker in forbidden:
+                    self.assertNotIn(marker, fixed_context)
 
     def test_project_style_file_replaces_baseline_and_keeps_the_register_rule(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

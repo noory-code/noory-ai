@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.4.2 — 2026-08-19
+
+- Rewrite the fixed Korean guidance with explicit subjects and literal verbs. The guidance no
+  longer describes actions as trapped inside nouns, tells the writer to pull them out, uses a
+  physical metaphor for a field of work, or leaves the actor implicit. Every style-resolution
+  path is tested against both the required wording and the phrases that must not return.
+
 - Write the Korean-writing guidance in Korean, and state it as rules with a check instead of a
   before-and-after list. Explaining in English how to write Korean asks the reader to build an
   English sentence and swap Korean words into it, which is the habit the section exists to break.
