@@ -9,8 +9,8 @@ acceptance:
   - "python3 -m unittest plainly.tests.test_hook -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000262
 promotion: pending
 review: not_required
 scope: plainly/hooks/inject_style.py, plainly/tests/test_hook.py, plainly/CHANGELOG.md, plainly/.claude-plugin/plugin.json, plainly/.codex-plugin/plugin.json, .stage
@@ -82,6 +82,8 @@ Plainly 패치 버전을 출시하고 설치한 뒤 실제 훅 출력을 다시 
   직접 설명하는 문장으로 바꿨다.
 - AI가 하는 일, 동작을 나타내는 동사, 실제로 용어를 쓰는 사람을 주어로 밝혔다.
 - 새 테스트와 기존 훅 테스트 열네 개가 통과했다.
+- 두 플러그인 버전을 `0.4.2`로 함께 올리고 원격 저장소에 출시했다.
+- Claude와 Codex에 `0.4.2`를 설치했다.
 
 ## Verification
 
@@ -92,9 +94,19 @@ Plainly 패치 버전을 출시하고 설치한 뒤 실제 훅 출력을 다시 
 - `python3 -m compileall -q plainly/hooks plainly/scripts plainly/src plainly/tests` — 통과했다.
 - 원본 훅으로 현재 프로젝트의 실제 주입 내용을 만들었다. 새 문장은 한 번만 들어갔고 없애기로 한
   표현 다섯 개는 들어가지 않았다.
+- Claude와 Codex의 설치본에서 버전이 `0.4.2`인지 확인했다. 두 설치본이 만든 실제 주입 내용은
+  필수 문장을 모두 담았고 없애기로 한 표현 다섯 개는 담지 않았다.
+- 새 Claude 프로세스에서 한국어 답변을 한 번 확인했다. 답변은 읽을 수 있었지만 “설정 경로 네
+  가지를 다 눌러 봤고”라는 어색한 표현이 한 군데 남았다. 지침이 들어간 사실과 Claude가 매번
+  지침을 따르는지는 구별해야 한다.
 - Stage 감사 결과 오류는 0개다. 기존 경고는 32개다.
 
 ## Retrospective
 
+공통 지침 자체는 자연스러운 문장으로 고쳤고 설치본에도 반영했다. 실제 Claude 답변 한 번에서는
+어색한 표현이 한 군데 남았다. Plainly가 품질을 높일 수는 있지만 한 번의 지침으로 모든 답변을
+보장한다고 말할 수는 없다.
 
 ## Promotion decision
+
+공식 문서로 옮길 내용이 없으므로 `not_applicable`로 닫는다.
