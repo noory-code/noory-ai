@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Rewrite the Korean rule that keeps an action in the predicate. The old check looked for the
+  suffixes `-것`/`-함`/`-음`/`-화`/`-성` and runs of three nouns, so a sentence whose action
+  sat in an ordinary noun — 이사, 방식 — passed untouched. That is exactly the shape a
+  literal translation from English produces, because English packs the action into a noun and
+  Korean carries it in the predicate. The rule now asks what the sentence says is being done,
+  then names the two places that answer hides: an action noun that takes 되다/이다 while the real
+  verb disappears, and a relative clause pushed under an empty head noun. Its examples are whole
+  sentences from real answers instead of phrases. The tests assert the new wording on every
+  style-resolution path and fail if either narrow trigger returns.
+
 ## 0.4.2 — 2026-08-19
 
 - Rewrite the fixed Korean guidance with explicit subjects and literal verbs. The guidance no

@@ -247,7 +247,7 @@ class HookTest(unittest.TestCase):
         # section had drifted back to the shape it warns against.
         markers = (
             "한국어로 답할 때만 아래 규칙을 따른다",
-            "동작은 서술어로 적는다",
+            "동작을 서술어에 둔다",
             "새 용어를 함부로 만들지 않는다",
             "수를 세면 세는 말을 붙인다",
             "처음 보는 문장에도 같은 유형의 문제가 있으면 이 규칙을 적용한다",
@@ -268,12 +268,18 @@ class HookTest(unittest.TestCase):
     def test_korean_guidance_uses_literal_wording_on_every_resolution_path(self) -> None:
         required = (
             "한국어 쓰는 법을 영어로 설명하면 AI가 영어 문장 구조를 먼저 만들고",
-            "동작을 나타내는 동사를 찾아 서술어로 바꾼다",
+            "그 답이 서술어에 없으면 끌어내서 서술어로 쓴다",
+            "\"X하다\"가 말이 되는 명사(이사·검토·적용·판정·확인)가 되다·이다를 달고 앉는다",
+            "동작을 관형절에 밀어 넣고 방식·것·부분처럼 속이 빈 명사를 머리에 세운다",
             "그 분야 사람들이 실제로 쓰는 용어를 그대로 쓴다",
             "세는 말을 붙이는 것은 취향이 아니라 한국어 문법이다",
             "처음 보는 문장에도 같은 유형의 문제가 있으면 이 규칙을 적용한다",
         )
         forbidden = (
+            # The narrow triggers rule 1 used to carry. They passed a sentence whose action
+            # sat in an ordinary noun, which is the shape a literal translation produces.
+            "`-이다`·`-있다`·`-하다`뿐이면",
+            "명사가 세 개 넘게 이어지면",
             "읽는 쪽",
             "명사 안에 갇혀 있다",
             "꺼내서 서술어로 세워라",
