@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-09-05
+
 - Ship the styles as Claude Code output styles and delete the hook. The styles now reach the model
   through Claude Code's own loader: `output-styles/*.md` land in the session's system prompt, and
   Claude Code reminds itself each turn that the style is active. A hook could only append text
