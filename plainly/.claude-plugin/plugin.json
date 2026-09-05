@@ -1,7 +1,7 @@
 {
   "name": "plainly",
   "version": "0.4.2",
-  "description": "Inject selectable plain-language response styles before each AI turn.",
+  "description": "Selectable plain-language output styles for Claude Code.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/plainly",
   "repository": "https://github.com/noory-code/noory-ai",
   "license": "MIT",
@@ -13,7 +13,6 @@
     "writing-style",
     "plain-language",
     "concise",
-    "hooks"
-  ],
-  "skills": "./skills"
+    "output-styles"
+  ]
 }

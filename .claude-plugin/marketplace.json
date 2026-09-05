@@ -33,7 +33,7 @@
     {
       "name": "plainly",
       "source": "./plainly",
-      "description": "Selectable plain-language response styles injected before each Claude Code or Codex turn"
+      "description": "Selectable plain-language output styles for Claude Code"
     }
   ]
 }

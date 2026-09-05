@@ -200,6 +200,41 @@ class ReleasePluginCliTest(unittest.TestCase):
         )
         self.assertEqual(before, after)
 
+    def test_a_single_host_plugin_releases_from_the_manifest_it_has(self):
+        # A plugin can target one host only. Requiring both manifests would leave it unreleasable.
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            plugin_root = repository_root / "stage"
+            (plugin_root / ".codex-plugin/plugin.json").unlink()
+            (plugin_root / ".codex-plugin").rmdir()
+
+            result = self.run_cli(repository_root, "patch")
+
+            self.assertEqual(0, result.returncode, result.stderr)
+            claude_manifest = json.loads(
+                (plugin_root / ".claude-plugin/plugin.json").read_text(encoding="utf-8")
+            )
+            changelog = (plugin_root / "CHANGELOG.md").read_text(encoding="utf-8")
+
+        self.assertEqual("0.54.5", claude_manifest["version"])
+        self.assertIn(f"## 0.54.5 — {date.today().isoformat()}", changelog)
+
+    def test_release_refuses_a_directory_with_no_manifest_at_all(self):
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            plugin_root = repository_root / "stage"
+            before = (plugin_root / "CHANGELOG.md").read_text(encoding="utf-8")
+            for host in (".claude-plugin", ".codex-plugin"):
+                (plugin_root / host / "plugin.json").unlink()
+                (plugin_root / host).rmdir()
+
+            result = self.run_cli(repository_root, "patch")
+            after = (plugin_root / "CHANGELOG.md").read_text(encoding="utf-8")
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("no plugin manifest found", result.stderr)
+        self.assertEqual(before, after)
+
     def test_bump_must_be_an_explicit_supported_argument(self):
         temporary_directory, repository_root = self.make_repository()
         with temporary_directory:

@@ -244,13 +244,24 @@ def release_plugin(
     if plugin_root.parent != repository_root or not plugin_root.is_dir():
         raise ReleaseError(f"plugin directory not found: {plugin_root}")
 
+    # A plugin may target one host only, in which case that host's manifest is the whole set. A
+    # plugin with no manifest at all is not releasable.
+    present_paths = tuple(
+        relative_path
+        for relative_path in MANIFEST_PATHS
+        if (plugin_root / relative_path).is_file()
+    )
+    if not present_paths:
+        rendered = ", ".join(path.as_posix() for path in MANIFEST_PATHS)
+        raise ReleaseError(f"no plugin manifest found under {plugin_root}: expected {rendered}")
+
     manifests = {
         relative_path: load_manifest(plugin_root / relative_path)
-        for relative_path in MANIFEST_PATHS
+        for relative_path in present_paths
     }
     manifest_contents = {
         relative_path: (plugin_root / relative_path).read_text(encoding="utf-8")
-        for relative_path in MANIFEST_PATHS
+        for relative_path in present_paths
     }
     versions = {
         relative_path: manifest_version(data, plugin_root / relative_path)
@@ -279,7 +290,7 @@ def release_plugin(
     )
 
     targets = {changelog_path: released_changelog}
-    for relative_path in MANIFEST_PATHS:
+    for relative_path in present_paths:
         targets[plugin_root / relative_path] = replace_manifest_version(
             manifest_contents[relative_path],
             current_version=current_version,

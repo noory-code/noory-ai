@@ -62,11 +62,11 @@ Curated reference skills for Flutter development. Each skill gives Claude Code o
 
 ### [Plainly](plainly/) — Clear Response Styles
 
-Injects a selected communication style immediately before Claude Code or Codex processes each user
-prompt. Includes four built-in profiles, external style files, and user/project configuration with
-no post-answer retry loop.
+Five Claude Code output styles that put a chosen writing style into the session's system prompt.
+Carries fixed honesty, language-quality, and register rules, and keeps Claude Code's default
+coding instructions in place. No hook and no code that runs at prompt time.
 
-**Install:** Claude Code: `/plugin install plainly@noory-ai` · Codex: `codex plugin add plainly@noory-ai`
+**Install:** Claude Code: `/plugin install plainly@noory-ai` (Claude Code only)
 
 ### [RAG](rag/) — Local GraphRAG Plugin
 

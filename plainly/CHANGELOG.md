@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- Ship the styles as Claude Code output styles and delete the hook. The styles now reach the model
+  through Claude Code's own loader: `output-styles/*.md` land in the session's system prompt, and
+  Claude Code reminds itself each turn that the style is active. A hook could only append text
+  after the user's message, where it carried less weight and repeated itself in every turn of the
+  transcript. Choosing a style moves to `/output-style` and the host's own `outputStyle` setting,
+  so `hooks/`, `src/plainly/`, `scripts/configure.py`, and the `plainly-configure` skill are gone
+  along with `.plainly/settings.json` and the `NOORY_STYLE_*` environment overrides.
+
+- Keep Claude Code's default coding instructions in place. Any output style that does not declare
+  `keep-coding-instructions: true` removes them from the system prompt, and Plainly governs how a
+  sentence reads rather than how code gets written. An unknown frontmatter key is discarded without
+  a warning, so a misspelling of that key would load fine and drop the instructions in silence; the
+  tests assert the exact spelling in all five files.
+
+- Compose the shipped styles from single sources instead of repeating the fixed rules five times.
+  `styles/` owns the baseline, the four deltas, and the fixed rules; `scripts/build_styles.py`
+  joins them into the committed `output-styles/*.md`, which Claude Code reads as static files.
+  `--check` fails when a source edit never reached the shipped files, and the test suite runs it.
+
+- Drop Codex support. Codex has no output-style equivalent, so `.codex-plugin/plugin.json` and the
+  Codex marketplace entry are gone rather than listing a plugin that would do nothing there. The
+  release command now releases whichever host manifests a plugin ships.
+
 - Rewrite the Korean rule that keeps an action in the predicate. The old check looked for the
   suffixes `-것`/`-함`/`-음`/`-화`/`-성` and runs of three nouns, so a sentence whose action
   sat in an ordinary noun — 이사, 방식 — passed untouched. That is exactly the shape a

@@ -11,14 +11,15 @@ noory-ai/
 ├── evonest/            — Autonomous code evolution engine
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
-├── plainly/            — Selectable response-style hooks (plain stdlib — no uv)
+├── plainly/            — Selectable Claude Code output styles (no runtime code — no uv)
 ├── flutter-cask/       — Flutter package guide skills
 └── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
 
-All six local plugins ship both `.claude-plugin/plugin.json` and
-`.codex-plugin/plugin.json`; the repository publishes matching Claude Code and Codex marketplace
-metadata.
+Five local plugins ship both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, and the
+repository lists them in both the Claude Code and Codex marketplace files. `plainly/` targets
+Claude Code only — it ships output styles, which Codex has no equivalent for — so it carries the
+Claude manifest alone and appears only in the Claude Code marketplace.
 
 Each package is developed, tested, and released independently. There is no shared root `pyproject.toml` or workspace config — work inside the relevant subdirectory.
 
@@ -121,8 +122,8 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
        `pubspec.yaml` versions belong to separate Dart package and example release streams; this
        command does not change them.
   4. The generic release command requires a non-empty `## Unreleased` section, verifies that the
-     latest changelog release matches both current manifests, titles the queued section, updates
-     both manifest versions without reformatting them, and opens a new empty `## Unreleased`
+     latest changelog release matches every manifest the plugin ships, titles the queued section,
+     updates those manifest versions without reformatting them, and opens a new empty `## Unreleased`
      section for the next card.
   5. Commit + push the release in one step.
 

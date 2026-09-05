@@ -1,48 +1,42 @@
 # Plainly
 
-Plainly injects a selected communication style immediately before Claude Code or Codex processes a
-user prompt. It never uses `Stop` or another post-answer continuation hook.
+Plainly ships five output styles for Claude Code. Selecting one puts the style into the session's
+system prompt, where Claude Code keeps it for every turn. The plugin carries no hook and no code
+that runs at prompt time.
 
-## Built-in profiles
+## Built-in styles
 
-Every built-in selection includes the shared baseline. The other profiles add one focused delta.
+Every style includes the shared baseline. The other four add one focused delta.
 
-| Profile | Delta from the baseline |
+| Style | Delta from the baseline |
 |---|---|
-| `baseline` | None; clear, concise, honest communication (default) |
-| `brief` | The shortest length the task allows |
-| `guided` | Step-by-step explanations for non-experts |
-| `professional` | A formal, neutral workplace register |
+| `Baseline` | None; clear, concise, honest communication |
+| `Brief` | The shortest length the task allows |
+| `Decision` | What a change means and what it costs, before any file or command name |
+| `Guided` | Step-by-step explanations for non-experts |
+| `Professional` | A formal, neutral workplace register |
 
-The legacy profile name `plain` remains a compatibility alias for `baseline`.
+## Selecting a style
 
-Ask the AI to personalize, show, select, or reset project styles via the `plainly-configure` skill.
-Configuration rules live in
-[`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md).
+Pick one with `/output-style`, or name it in `.claude/settings.json`:
 
-## Resolution order
+```json
+{ "outputStyle": "plainly:Brief" }
+```
 
-Plainly reads the first valid source on every `UserPromptSubmit` event:
+A project's own `.claude/settings.json` overrides the user-wide one. Claude Code owns this
+setting; Plainly neither reads nor writes it. A new choice applies to the next session.
 
-1. `NOORY_STYLE_FILE`
-2. `NOORY_STYLE_PROFILE`
-3. `<project>/.plainly/settings.json`
-4. `<home>/.plainly/settings.json` — profile name only
-5. Built-in `baseline`
+Claude Code disables output styles in safe mode, and Plainly does nothing there.
 
-An external style must be a non-empty UTF-8 file no larger than 8,192 bytes. Relative paths in
-`NOORY_STYLE_FILE` and project settings resolve from the project root. The project CLI stores style
-files as portable project-relative paths. Project settings reject absolute paths, `..` traversal,
-and symbolic links that resolve outside the project root. Environment overrides remain
-user-controlled and may reference external files. Style text is scoped to wording, tone, structure,
-and detail; it cannot authorize tools or override higher-priority instructions.
+## Fixed rules
 
-Every injection carries fixed honesty, language-quality, and register rules outside the selected
-style. The honesty rule prohibits presenting guesses as facts and requires unverified claims to be
-marked. The language rule favors natural, plain, precise wording while preserving technical terms
-that practitioners normally use untranslated. The register rule addresses the reader in the polite
-register of any language that marks politeness grammatically, and brevity never overrides it. All
-three apply to every built-in or external style without choosing the response language.
+Every style carries the same honesty, language-quality, vocabulary, brevity, and register rules
+after its own text. The honesty rule prohibits presenting guesses as facts and requires unverified
+claims to be marked. The language rule favors natural, plain, precise wording while preserving
+technical terms that practitioners normally use untranslated. The register rule addresses the
+reader in the polite register of any language that marks politeness grammatically, and brevity
+never overrides it. None of them choose the response language.
 
 The language rule carries one per-language section, for Korean, which is itself written in Korean:
 explaining in English how to write Korean invites the very habit it warns against, building an
@@ -51,57 +45,50 @@ predicate, do not coin a Sino-Korean name for an English term, attach the counte
 counting, split a sentence that piles up modifying clauses — each with a check and a
 before-and-after pair. A reader writing another language skips it.
 
-## Trust boundary
+## Coding instructions
 
-Project settings and their referenced style files become model-visible developer context on every
-prompt. Use Plainly only in repositories you trust and review committed changes to `.plainly/` like
-other instruction files. Plainly fences style text with explicit
-sentinels, neutralizes sentinel text inside the file, and tells the model to ignore task, tool,
-permission, and higher-priority instructions found there. Project settings also cannot read a style
-file that resolves outside the project root. These controls reduce accidental scope leakage but do
-not make an untrusted repository safe.
+Claude Code removes its default coding instructions from the system prompt for any output style
+that does not ask to keep them. Plainly governs how a sentence reads and says nothing about how
+code is written, so every shipped style declares `keep-coding-instructions: true`.
 
-A project's `.plainly/` directory can be committed so the same style follows the repository across
-computers, and it always wins over the user-wide default. The same file under the home directory
-sets that default for projects that pin nothing; it may name a built-in profile only, because a
-style file there would read from outside every project it applies to.
-
-Manual configuration is also available. Run `scripts/configure.py` with `python3` from the
-`plainly/` package directory; see
-[`skills/plainly-configure/SKILL.md`](skills/plainly-configure/SKILL.md) for the full command
-reference:
-
-```text
-python3 scripts/configure.py list
-```
-
-Changes take effect on the next user prompt because the hook resolves the style for every turn.
-`SessionStart` with source `compact` restores the same style after context compaction.
+An unknown key in a style file's frontmatter is discarded without a warning, so a misspelling of
+that key would load fine and drop the instructions in silence. The test suite asserts the exact
+spelling in all five files.
 
 ## Install
-
-Claude Code:
 
 ```text
 /plugin marketplace add noory-code/noory-ai
 /plugin install plainly
 ```
 
-Codex:
-
-```text
-codex plugin marketplace add noory-code/noory-ai
-codex plugin add plainly@noory-ai
-```
-
-Codex requires one-time review and trust for the bundled command hook through `/hooks`.
-Both hosts invoke `python3`; Windows environments without that command need a compatible Python 3
-launcher or command adapter.
+Claude Code only. Codex has no output-style equivalent.
 
 ## Development
 
-Run from the `plainly/` package directory:
+`styles/` owns the sources: `baseline.md`, the four deltas, `fixed-rules.md`, and the names and
+descriptions in `profiles.json`. Claude Code reads `output-styles/*.md` as static files and cannot
+join those pieces at load time, so the composed files are built and committed:
+
+```text
+python3 scripts/build_styles.py
+python3 scripts/build_styles.py --check
+```
+
+Edit a source, rebuild, and commit both. `--check` fails when a committed file no longer matches
+its sources, and the test suite runs it.
+
+Run the tests from the `plainly/` package directory:
 
 ```text
 python3 -m unittest discover -s tests -q
+```
+
+To see the styles load without releasing the plugin:
+
+```text
+claude -p --plugin-dir plainly \
+       --settings '{"outputStyle":"plainly:Brief"}' \
+       --debug-file log.txt
+grep "output styles from plugin plainly" log.txt
 ```
