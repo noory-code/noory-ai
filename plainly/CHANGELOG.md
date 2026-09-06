@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-09-06
+
+- Ship one style instead of five. `baseline`, `brief`, `decision`, `guided`, and `professional`
+  chose a length and a register; none of them touched what the plugin exists for, which is whether
+  a sentence reads well and honestly in the reader's own language. Those rules were identical in
+  all five files, so choosing between them changed the trimming and nothing else. The single style
+  is named `plainly:Plainly` and carries exactly what the fixed rules always carried.
+
+  Anyone pinning `plainly:Brief` or another retired name must move to `plainly:Plainly`; Claude
+  Code falls back to no style when the named one is gone.
+
+- Delete the sources and the builder along with them. One file is now both the source and the
+  shipped artifact, so `styles/`, `scripts/build_styles.py`, and the drift check that guarded the
+  gap between them have nothing left to do. Editing the style takes one edit and no rebuild.
+
+- Say in the style itself that these rules win where other wording guidance conflicts. The opening
+  line used to defer to "the style above", which no longer exists.
+
 ## 0.5.0 — 2026-09-05
 
 - Ship the styles as Claude Code output styles and delete the hook. The styles now reach the model
