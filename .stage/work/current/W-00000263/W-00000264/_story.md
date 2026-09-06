@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000264
+promotion: not_applicable
 review: not_required
 scope: plainly/hooks/inject_style.py, plainly/tests/, plainly/CHANGELOG.md
 promotes:
@@ -76,6 +76,24 @@ decision_refs:
 첫 번째 기준은 아직 열려 있다. 사람이 다시 쓴 문장을 읽고 걸러졌다고 확인해야 하는데, 확인용
 표를 보여 드린 뒤에 규칙을 한 번 더 고쳤다(곳·순서·부분을 목록에서 뺀 일). 고친 규칙으로 나온
 문장은 아직 못 보셨다. W-00000267 에서 새 세션의 답을 보실 때 함께 판정한다.
+
+### Executed at close — 2026-09-06
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 11 tests in 0.001s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 11 tests in 0.001s
+
+OK
+```
 
 ## Retrospective
 

@@ -9,4 +9,4 @@
 
 | 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |
 |---|---|---|---|---|
-| DE-00000073 | open | [W-00000265](../work/current/W-00000263/W-00000265/_story.md) | active | [pending/DE-00000073.md](pending/DE-00000073.md) |
+| DE-00000073 | decided | [W-00000265](../work/current/W-00000263/W-00000265/_story.md) | completed | [pending/DE-00000073.md](pending/DE-00000073.md) |

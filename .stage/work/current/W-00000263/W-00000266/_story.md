@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
+status: completed
 verification: passed
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000266
+promotion: not_applicable
 review: not_required
 scope: plainly/
 promotes:
@@ -71,6 +71,12 @@ decision_refs:
 플레인리 릴리스가 막혔다. 있는 매니페스트만 올리고 하나도 없으면 거부하도록 고치고 테스트 두
 개를 붙였다.
 
+그 뒤 사용자가 스타일을 하나로 줄이라고 했다. 다섯 개 중 넷과 `styles/` 원본 일곱 개,
+`scripts/build_styles.py`, 어긋남을 보던 테스트를 지웠다. 남은 것은 `output-styles/plainly.md`
+하나다. 716줄이 빠지고 120줄이 들어갔다. 이름이 바뀌었으므로 사용자 설정의 `outputStyle` 값도
+`plainly:Decision` 에서 `plainly:Plainly` 로 고쳤다. 안 고쳤으면 없는 이름을 가리켜 아무 스타일도
+안 걸렸을 것이다.
+
 ## Verification
 
 테스트 네 스위트가 통과한다.
@@ -88,6 +94,31 @@ decision_refs:
 `keep-coding-instructions` 가 실제로 코딩 지침을 남기는지는 여기서 못 봤다. `-p` 세션에는 그
 지침 덩어리가 아예 없어서 스타일을 켜든 안 켜든 갈리지 않는다. W-00000267 이 대화형 세션에서
 본다.
+
+### Executed at close — 2026-09-06
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 11 tests in 0.001s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 11 tests in 0.001s
+
+OK
+
+$ python3 -m unittest discover -s tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+```
 
 ## Retrospective
 
