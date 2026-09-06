@@ -43,6 +43,9 @@ secrets*
 # Session handoff (local only)
 HANDOFF.md
 
+# Operator's own reading notes — kept in the repo for convenience, never published
+.notes/
+
 # Stage local discussion notes (review scratch — not committed)
 stage/.discuss/
 
