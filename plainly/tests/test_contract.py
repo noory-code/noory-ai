@@ -126,25 +126,76 @@ class KoreanGuidanceTest(unittest.TestCase):
         # habit the section exists to break — so an English marker here would pass while the
         # section had drifted back to the shape it warns against.
         for marker in (
-            "한국어로 답할 때만 아래 규칙을 따른다",
-            "동작을 서술어에 둔다",
-            "새 용어를 함부로 만들지 않는다",
-            "수를 세면 세는 말을 붙인다",
-            "처음 보는 문장에도 같은 유형의 문제가 있으면 이 규칙을",
+            "한국어로 쓸 때만 아래를 따른다",
+            "원칙 1. 관계를 생략하지 않는다",
+            "원칙 2. 남들이 실제로 쓰는 말을 쓴다",
+            "원칙 3. 줄일 때도 조사와 어미는 남긴다",
+            "처음 보는 문장이라도 같은 잘못이 보이면 똑같이 고친다",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.body())
 
-    def test_rule_one_looks_past_the_suffixes_it_used_to_scan(self) -> None:
+    def test_the_section_names_the_one_cause_before_the_principles(self) -> None:
+        # Four separate rules invited the reader to satisfy each in isolation. Naming the cause
+        # once — Korean marks relations with particles and endings, English with word order —
+        # is what lets a principle cover an omission nobody wrote an example for.
         body = self.body()
 
         for required in (
-            "그 답이 서술어에 없으면",
-            '"X하다"가 말이 되는',
-            "속이 빈 명사를 머리에 세운다",
+            "낱말 사이의 관계를 조사와 어미로 나타내고, 영어는 어순으로 나타낸다",
+            "관계를 적을 자리가 빈 채로 남는다",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, body)
+
+    def test_the_omissions_rule_one_covers_stay_listed(self) -> None:
+        # Each of these was a standalone rule, or missing entirely, before the principles landed.
+        # Rule 1 only replaces them while it still names them.
+        body = self.body()
+
+        for required in (
+            "숫자 뒤에는 단위를 붙인다",
+            "명사구나 연결어미로 끝내지 않는다",
+            "엠대시(—)로 앞뒤 관계를 함축하지 말고",
+            "'~의'를 거듭 쓰면",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+
+    def test_sino_korean_words_are_kept_not_paraphrased(self) -> None:
+        # 0.6.0 told the writer to replace a Sino-Korean term with a native paraphrase and shipped
+        # `"평가기" → "재는 쪽"` as the worked example. Following it produced a phrase no Korean
+        # speaker uses, and in one project the coined replacement spread through nine files.
+        body = self.body()
+
+        self.assertIn("한자어를 순우리말로 억지로 바꾸지 않는다", body)
+        self.assertIn("고칠 것은 어휘가 아니라 빠진 조사와 어미다", body)
+        self.assertNotIn("재는 쪽", body)
+
+    def test_the_korean_section_obeys_its_own_principles(self) -> None:
+        body = self.body()
+
+        # Principle 2 forbids coining a phrase to explain something. The rules used to explain
+        # grammar through exactly such phrases.
+        for coined in (
+            "명사 자리에 앉고",
+            "문장을 끌고 간다",
+            "달고 앉는다",
+            "머리에 세운다",
+            "밀어 넣고",
+            "동작이 숨는",
+        ):
+            with self.subTest(coined=coined):
+                self.assertNotIn(coined, body)
+
+        # Principle 1 requires a counter word after a number. The rules used to write these while
+        # demanding the opposite one paragraph away.
+        for uncounted in ("둘이다", "둘 이상"):
+            with self.subTest(uncounted=uncounted):
+                self.assertNotIn(uncounted, body)
+
+        # Grammar jargon the reader is not given. 서술어 / 명사 are school grammar; 관형절 is not.
+        self.assertNotIn("관형절", body)
 
         # The narrow triggers rule 1 used to carry. They passed a sentence whose action sat in an
         # ordinary noun, which is the shape a literal translation produces.

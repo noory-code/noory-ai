@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-09-07
+
+- Reverse the vocabulary advice that told the writer to replace Sino-Korean words with native
+  paraphrases. `"평가기" → "재는 쪽"` shipped as a worked example, and following it produced a
+  phrase no Korean speaker uses. In one project that example was enforced by a hook for a month,
+  and the coined replacement spread into nine files of prose. Sino-Korean vocabulary is ordinary
+  Korean vocabulary; what makes a machine-translated sentence unreadable is the missing particles
+  and endings around it, not the word itself. The rule now says to keep the term practitioners
+  use and attach the particles that state its relation.
+
+- Replace the four Korean rules with three principles that name the single cause behind them.
+  Korean marks the relation between words with particles and endings; English marks it with word
+  order. Every rule the file carried — dropped particles, telegraphic noun strings, a sentence
+  ending in a bare noun, a missing counter word, a piled-up `~의`, an em dash standing in for a
+  connective — is that one omission in a different place. Stating the cause once, with the
+  omissions listed under it, is shorter than the four rules were and covers cases they missed.
+
+- Add the principle that shortening must not cut particles and endings. The style asks for
+  brevity, and in Korean the first thing a writer drops under that pressure is exactly what
+  carries the relation, so the two instructions worked against each other with nothing on the
+  page to resolve them.
+
+- Stop the Korean section from breaking its own rules. It explained grammar through invented
+  metaphors (동작이 명사 자리에 **앉고**, 서술어가 문장을 **끌고 간다**, 되다·이다를 **달고
+  앉는다**) while rule 2 forbade coining exactly such phrases, and it wrote `둘이다` / `둘 이상`
+  while rule 3 required a counter word. It also used `관형절` without saying what it means.
+
+- The relation-omission analysis and several examples are informed by
+  [fluent-korean](https://github.com/snflkd/fluent-korean) (MIT), which addresses the same
+  failure from the same direction.
+
 ## 0.6.0 — 2026-09-06
 
 - Ship one style instead of five. `baseline`, `brief`, `decision`, `guided`, and `professional`
