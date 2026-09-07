@@ -63,15 +63,19 @@ record in `state/questions/` when durable records still cite it without presenti
 
 ## Purpose context
 
-Every `PreToolUse` result appends live purpose context when active work exists. It never blocks.
-The hook selects the driver-provided item when `STAGE_WORK_ITEM_PATH` names an active card;
-otherwise it renders every active leaf and its ancestors.
+A `PreToolUse` result appends live purpose context when active work exists **and the call carries a
+signal** — it was denied, or a recognized write or commit call left the leaf scope. An allowed call
+that crosses nothing returns empty output. The context never blocks. The hook selects the
+driver-provided item when `STAGE_WORK_ITEM_PATH` names an active card; otherwise it renders every
+active leaf and its ancestors.
 
-Each branch contributes its leaf scope, an explicit report instruction, and any scope boundary
-crossed by a recognized write or commit call. Those signals come first. The live theme, milestone,
-epic, story, and action purpose first sentences follow in hierarchy order, one line per level, so
-the current action purpose is the final line returned for the tool call. Denied calls retain their
-original reason before this context.
+Each branch contributes its leaf scope, an explicit report instruction, and the crossed path. Those
+signals come first. The live theme, milestone, epic, story, and action purpose first sentences
+follow in hierarchy order, one line per level, so the current action purpose is the final line
+returned for the tool call. Denied calls retain their original reason before this context.
+
+Silence on a clean call is the point. A context printed on every allowed call stacks up on the
+screen, and the reader stops seeing the one call that actually crossed something.
 
 ## Promotion intent
 

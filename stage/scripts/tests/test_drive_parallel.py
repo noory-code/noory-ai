@@ -294,8 +294,13 @@ class DriveParallelTest(unittest.TestCase):
                     text=True,
                     env=environment,
                 )
-                hook_output = json.loads(hook.stdout)
-                boundary_output = json.loads(boundary_hook.stdout)
+                # Allow with nothing to report is empty stdout, per the hook contract.
+                hook_output = json.loads(hook.stdout) if hook.stdout.strip() else {}
+                boundary_output = (
+                    json.loads(boundary_hook.stdout)
+                    if boundary_hook.stdout.strip()
+                    else {}
+                )
                 hook_decision = hook_output.get("hookSpecificOutput", {}).get(
                     "permissionDecision", "allow"
                 )
@@ -569,8 +574,8 @@ class DriveParallelTest(unittest.TestCase):
                 observed["hook_allowed_out_of_scope"],
                 observed["hook_boundary_message"],
             )
-            self.assertIn("Stage work context:", observed["hook_message"])
-            self.assertNotIn("Scope boundary crossed:", observed["hook_message"])
+            # An in-scope write reports nothing; only the crossing speaks.
+            self.assertEqual("", observed["hook_message"])
             self.assertIn("Scope boundary crossed:", observed["hook_boundary_message"])
             self.assertTrue(Path(observed["work_item_path"]).is_relative_to(tree))
             log = tree / f".stage/.runtime/driver/logs/{target}.md"

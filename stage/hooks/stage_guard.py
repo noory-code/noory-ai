@@ -499,14 +499,20 @@ def purpose_context_targets(
     return targets, follows_symlinks
 
 
-def purpose_tool_context(workspace_root: Path, payload: dict[str, Any]) -> str:
-    """Render scope signals first and one purpose sentence per hierarchy level last."""
+def purpose_tool_context(
+    workspace_root: Path, payload: dict[str, Any]
+) -> tuple[str, bool]:
+    """Render scope signals first and one purpose sentence per hierarchy level last.
+
+    Returns the rendered context and whether this call crossed a scope boundary.
+    A caller that only reports signals uses the flag to stay silent on a clean call.
+    """
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
-        return ""
+        return "", False
     chains = active_work_chains(stage_root)
     if not chains:
-        return ""
+        return "", False
 
     targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
     leaves = tuple(chain[-1] for chain in chains)
@@ -567,13 +573,13 @@ def purpose_tool_context(workspace_root: Path, payload: dict[str, Any]) -> str:
                     f"{work_scale_label(stage_root, item)} {item.item_id}: {purpose}"
                 )
                 seen_records.add(item.item_id)
-    return "\n".join([*lines, *purpose_lines])
+    return "\n".join([*lines, *purpose_lines]), bool(crossed)
 
 
 def append_purpose_context(
     result: dict[str, Any], workspace_root: Path, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    context = purpose_tool_context(workspace_root, payload)
+    context, crossed = purpose_tool_context(workspace_root, payload)
     if not context:
         return result
     output = dict(result)
@@ -586,6 +592,10 @@ def append_purpose_context(
         )
         output["hookSpecificOutput"] = updated_hook
         return output
+    if not crossed:
+        # Nothing was blocked and nothing left the scope: say nothing. A context
+        # printed on every allowed call buries the one that carries a signal.
+        return result
     existing_message = str(output.get("systemMessage") or "").rstrip()
     output["systemMessage"] = f"{existing_message}\n\n{context}" if existing_message else context
     return output

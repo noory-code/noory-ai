@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Print the `PreToolUse` purpose context only when the call carries a signal: a denial, or a write
+  or commit that leaves the leaf scope. An allowed call that crosses nothing now returns empty
+  output. The context used to print on every tool call, so a session's screen filled with scope and
+  purpose lines and the one call that actually crossed a boundary was buried in them.
+
 - Extend the driver's repository-quiet rule to the state the checkout is in before a step starts,
   and name what a violation costs. The rule previously covered only edits made while a step ran and
   described the hazard as shared process-wide state; it now requires a clean working tree at launch

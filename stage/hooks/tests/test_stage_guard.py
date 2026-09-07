@@ -2322,11 +2322,13 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
+            # A crossing is what makes the context speak, so the ordering is
+            # asserted on a write that leaves the leaf scope.
             payload = {
-                "tool_name": "Read",
+                "tool_name": "Write",
                 "cwd": str(root),
                 "session_id": "sess-purpose",
-                "tool_input": {"file_path": "pkg/README.md"},
+                "tool_input": {"file_path": "pkg/README.md", "content": "# pkg\n"},
             }
 
             first = stage_guard.handle_event("pre-tool-use", payload)
@@ -2356,6 +2358,42 @@ class StageGuardTest(unittest.TestCase):
                 self.assertNotIn("This second sentence", context)
                 self.assertNotIn("User value", context)
         self.assertFalse((root / ".stage/.runtime/purpose-ack").exists())
+
+    def test_purpose_context_is_silent_when_nothing_is_crossed_or_denied(self):
+        """A clean allow says nothing: the context is a signal, not a heartbeat."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Read",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {"file_path": "stage/hooks/stage_guard.py"},
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+        self.assertEqual(message(result), "")
+
+    def test_purpose_context_is_silent_for_in_scope_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "session_id": "sess-purpose",
+                "tool_input": {
+                    "file_path": "stage/hooks/new_gate.py",
+                    "content": "x = 1\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "allow")
+        self.assertEqual(message(result), "")
 
     def test_purpose_context_reports_out_of_scope_write_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
