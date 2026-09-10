@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.62.0 — 2026-09-10
+
 - Print the `PreToolUse` purpose context only when the call carries a signal: a denial, or a write
   or commit that leaves the leaf scope. An allowed call that crosses nothing now returns empty
   output. The context used to print on every tool call, so a session's screen filled with scope and
