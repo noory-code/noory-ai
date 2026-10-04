@@ -11,18 +11,24 @@ written for a person: replies, documents, commit messages, comments, records.
 
 | Rule | What it asks for |
 |---|---|
-| Honesty | No guess stated as fact. Unverified claims marked as unverified. |
+| Honesty | Mark uncertainty where the claim appears; use conditional wording for hypotheses. |
+| Meaning | Preserve facts, quantities, conditions, and uncertainty when rewriting. |
 | Language | Compose in the reader's language instead of translating an English sentence across. |
-| Vocabulary | Say what a name does before using it. One new name per sentence. |
-| Brevity | Shorten by cutting repetition, never by cutting a step. |
+| Vocabulary | Explain unfamiliar terms using the reader's stated knowledge as context. |
+| Brevity | Preserve needed information while matching the requested length and format. |
 | Register | Address the reader in the polite register of a language that marks one. |
 
-The language rule carries one per-language section, for Korean, which is itself written in Korean:
-explaining in English how to write Korean invites the very habit it warns against, building an
-English sentence and swapping Korean words into it. It states four rules — put the action in the
-predicate, do not coin a Sino-Korean name for an English term, attach the counter word when
-counting, split a sentence that piles up modifying clauses — each with a check and a
-before-and-after pair. A reader writing another language skips it.
+The Korean section gives three steps in Korean: express actions and states directly, choose familiar
+words that preserve the meaning, and split long sentences without dropping conditions. It keeps
+established technical terms and permits short noun phrases for buttons, titles, and table labels.
+Sentences longer than 15 space-separated units prompt another look; this is an editing cue, not a
+grammar rule or a hard limit.
+
+A final silent check compares actors, objects, actions, conditions, certainty, and missing or added
+facts with the source. In particular, an unmeasured effect must not become an assumed improvement.
+These instructions guide generation; they are not a separate verifier or a guarantee of accuracy.
+Readers writing another language skip this section. Tests check the style's structure and stated
+rules. Actual Claude responses must be reviewed separately to assess writing quality.
 
 ## Selecting it
 

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.7.1 — 2026-10-04
+
+- Rewrite the Korean guidance around actions, familiar wording, and short sentences. Add a silent
+  meaning check for actors, conditions, uncertainty, and added or missing facts. Keep established
+  terms and short UI labels; treat 15 space-separated units as an editing cue, not a hard limit.
+
+- Preserve meaning when rewriting: keep quantities attached to the same objects and do not invent
+  causal relationships. Correct two Korean examples that changed the supplied meaning.
+- Match the reader's knowledge and requested format. Remove blanket instructions to introduce
+  every term and explain a problem in every reply; qualify hypotheses within the relevant claim.
+  Short Opus comparisons found less extra commentary, but do not establish better Korean overall.
+
 ## 0.7.0 — 2026-09-07
 
 - Reverse the vocabulary advice that told the writer to replace Sino-Korean words with native

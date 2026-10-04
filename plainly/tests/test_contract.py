@@ -101,7 +101,7 @@ class RulesTest(unittest.TestCase):
         for rule in (
             "Do not state guesses as facts",
             "compose in the reader's language",
-            "means nothing to the reader",
+            "Use the\nreader's stated knowledge",
             "shorten by cutting repetition",
             "marks politeness grammatically",
         ):
@@ -121,41 +121,39 @@ class KoreanGuidanceTest(unittest.TestCase):
         return split_frontmatter(STYLE.read_text(encoding="utf-8"))[1]
 
     def test_korean_guidance_is_written_in_korean(self) -> None:
-        # The markers are Korean because the guidance itself is. Stating Korean rules in English
-        # asks the reader to build an English sentence and swap Korean words into it — the very
-        # habit the section exists to break — so an English marker here would pass while the
-        # section had drifted back to the shape it warns against.
+        # These assertions guard the shipped guidance, not the quality of generated Korean.
         for marker in (
             "한국어로 쓸 때만 아래를 따른다",
-            "원칙 1. 관계를 생략하지 않는다",
-            "원칙 2. 남들이 실제로 쓰는 말을 쓴다",
-            "원칙 3. 줄일 때도 조사와 어미는 남긴다",
-            "처음 보는 문장이라도 같은 잘못이 보이면 똑같이 고친다",
+            "원칙 1. 행동과 상태를 파악한 뒤 문장을 다시 쓴다",
+            "원칙 2. 독자에게 익숙하면서 뜻이 정확한 말을 고른다",
+            "원칙 3. 짧게 나누고 반복을 덜어낸다",
+            "처음 보는 문장에도 같은 원칙을 적용한다",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.body())
 
-    def test_the_section_names_the_one_cause_before_the_principles(self) -> None:
-        # Four separate rules invited the reader to satisfy each in isolation. Naming the cause
-        # once — Korean marks relations with particles and endings, English with word order —
-        # is what lets a principle cover an omission nobody wrote an example for.
+    def test_rewriting_checks_meaning_without_printing_the_checklist(self) -> None:
+        # Fluent wording can still change an actor, a condition, or an unmeasured effect.
         body = self.body()
 
         for required in (
-            "낱말 사이의 관계를 조사와 어미로 나타내고, 영어는 어순으로 나타낸다",
-            "관계를 적을 자리가 빈 채로 남는다",
+            "주체와 대상:",
+            "행동과 조건:",
+            "확실성과 범위:",
+            "추가와 누락:",
+            "검사 과정은 출력하지 않는다",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, body)
 
-    def test_the_omissions_rule_one_covers_stay_listed(self) -> None:
-        # Each of these was a standalone rule, or missing entirely, before the principles landed.
-        # Rule 1 only replaces them while it still names them.
+    def test_shortening_keeps_relations_and_allows_ui_labels(self) -> None:
         body = self.body()
 
         for required in (
-            "숫자 뒤에는 단위를 붙인다",
-            "명사구나 연결어미로 끝내지 않는다",
+            "세는 대상과 단위를 분명히 한다",
+            "조건과 그 조건이 걸리는 행동은 함께 둔다",
+            "본문 문장은 서술어와 종결어미로 끝맺는다",
+            "버튼·제목·표의 이름은 명사로 짧게 쓸 수 있다",
             "엠대시(—)로 앞뒤 관계를 함축하지 말고",
             "'~의'를 거듭 쓰면",
         ):
@@ -168,8 +166,9 @@ class KoreanGuidanceTest(unittest.TestCase):
         # speaker uses, and in one project the coined replacement spread through nine files.
         body = self.body()
 
-        self.assertIn("한자어를 순우리말로 억지로 바꾸지 않는다", body)
-        self.assertIn("고칠 것은 어휘가 아니라 빠진 조사와 어미다", body)
+        self.assertIn("한자어를 순우리말로 억지로\n바꾸지 않는다", body)
+        self.assertIn("정확하고 익숙한 전문 용어는 유지한다", body)
+        self.assertIn("다른 행동으로 읽히면 바꾼다", body)
         self.assertNotIn("재는 쪽", body)
 
     def test_the_korean_section_obeys_its_own_principles(self) -> None:
@@ -188,7 +187,7 @@ class KoreanGuidanceTest(unittest.TestCase):
             with self.subTest(coined=coined):
                 self.assertNotIn(coined, body)
 
-        # Principle 1 requires a counter word after a number. The rules used to write these while
+        # The guidance requires a counter word when counting. The rules used to write these while
         # demanding the opposite one paragraph away.
         for uncounted in ("둘이다", "둘 이상"):
             with self.subTest(uncounted=uncounted):
