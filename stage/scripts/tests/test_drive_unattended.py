@@ -13,7 +13,6 @@ import importlib.util
 import io
 import json
 import os
-import shlex
 import subprocess
 import sys
 import tempfile
@@ -23,16 +22,12 @@ from pathlib import Path
 from unittest import mock
 
 from driver_test_environment import sanitize_current_driver_test_environment
+from python_shell_command import python_command
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
 
 sanitize_current_driver_test_environment()
-
-
-def python_command(code: str) -> str:
-    args = [sys.executable, "-c", code]
-    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
 def reporting_python_command(code: str, changed_paths: list[str]) -> str:
@@ -221,7 +216,7 @@ class UnattendedTest(unittest.TestCase):
     ):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        root = Path(tmp.name)
+        root = Path(tmp.name).resolve()
         git(root, "init", "-q")
         git(root, "config", "user.email", "t@example.com")
         git(root, "config", "user.name", "Tester")

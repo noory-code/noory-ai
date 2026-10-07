@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.63.2 — 2026-10-07
+
+### Fixed
+
+- Preserve CRLF record bytes when closing and reopening records, print audit paths with forward slashes, and emit escalation messages through UTF-8 output pipes.
+- Run the driver test fixtures through Windows shells without splitting multiline Python, and compare equivalent Windows paths after resolving them.
+
 ## 0.63.1 — 2026-10-07
 
 ### Fixed

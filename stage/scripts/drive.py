@@ -319,6 +319,8 @@ AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     args = parse_args()
     if args.reset_attempts:
         if args.reason is None or not args.reason.strip():
