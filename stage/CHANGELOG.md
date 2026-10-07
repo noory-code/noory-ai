@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.63.0 — 2026-10-07
+
 - Add explicit handoff packets with live criteria, purpose chains, source checks, and prior result evidence.
 
 ## 0.62.0 — 2026-09-10
