@@ -22,6 +22,18 @@ Runs 20 specialist personas against your codebase (security auditor, chaos engin
 
 **Install:** Claude Code: `/plugin install evonest@noory-ai` · Codex: `codex plugin add evonest@noory-ai`
 
+### [Avatar](avatar/) — Choice and Personal-Criterion History
+
+Keeps explicitly recorded choices, quoted reasons, source projections, and user-confirmed personal
+criteria in a local SQLite database. It preserves every criterion version and revocation without
+collecting conversations automatically or inferring hidden motives.
+
+- Works independently through a stdlib Python CLI and host skill
+- Exports confirmed current personal criteria through a stable JSON contract
+- Keeps Distill history as read-only evidence and marks its current status as unverified
+
+**Install:** Claude Code: `/plugin install avatar@noory-ai` · Codex: `codex plugin add avatar@noory-ai`
+
 ### [Novel AI](https://github.com/noory-code/novel-ai) — Novel's Open Plugin Stack
 
 Mashbill, Solera, Proof, and Distill live in the public `noory-code/novel-ai`

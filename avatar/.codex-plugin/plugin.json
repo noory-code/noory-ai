@@ -1,0 +1,38 @@
+{
+  "name": "avatar",
+  "version": "0.1.0",
+  "description": "Local review of recorded choices and user-confirmed personal criteria.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/avatar",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "criteria",
+    "choices",
+    "reflection",
+    "local-first",
+    "provenance"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Avatar",
+    "shortDescription": "Review choices and confirmed personal criteria",
+    "longDescription": "Avatar keeps explicitly recorded choices, their quoted reasons, source projections, and user-confirmed personal criteria in a local SQLite database. It preserves version history and never promotes project exceptions into personal criteria automatically.",
+    "developerName": "noory-code",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/noory-code/noory-ai/tree/main/avatar",
+    "defaultPrompt": [
+      "Show my recorded choices",
+      "Review how my criteria changed",
+      "Record this choice in Avatar"
+    ],
+    "brandColor": "#2563EB"
+  }
+}
