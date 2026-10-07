@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+## 0.63.3 — 2026-10-07
+
+- Compare the two remaining driver-test path assertions after resolving Windows path aliases and separators.
+
+## 0.63.2 — 2026-10-07
+
+### Fixed
+
+- Preserve CRLF record bytes when closing and reopening records, print audit paths with forward slashes, and emit escalation messages through UTF-8 output pipes.
+- Run the driver test fixtures through Windows shells without splitting multiline Python, and compare equivalent Windows paths after resolving them.
+
+## 0.63.1 — 2026-10-07
+
+### Fixed
+
+- Keep record scan order consistent on Windows, macOS, and Linux, and make the audit fixture select duplicate IDs deterministically.
+
+## 0.63.0 — 2026-10-07
+
+- Add explicit handoff packets with live criteria, purpose chains, source checks, and prior result evidence.
+
 ## 0.62.0 — 2026-09-10
 
 - Print the `PreToolUse` purpose context only when the call carries a signal: a denial, or a write

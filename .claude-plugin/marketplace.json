@@ -6,6 +6,11 @@
   "description": "Claude Code plugins and MCP servers maintained by noory-code.",
   "plugins": [
     {
+      "name": "avatar",
+      "source": "./avatar",
+      "description": "Local review of recorded choices and user-confirmed personal criteria"
+    },
+    {
       "name": "evonest",
       "source": "./evonest",
       "description": "Autonomous code evolution engine — observe, plan, execute, verify"

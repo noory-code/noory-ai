@@ -3,7 +3,8 @@ import re
 import sys
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from unittest.mock import Mock
 
 
 HOOKS = Path(__file__).resolve().parents[1]
@@ -13,6 +14,16 @@ if str(HOOKS) not in sys.path:
 
 
 class StageRecordPathsTests(unittest.TestCase):
+    def test_record_order_does_not_depend_on_windows_case_folding(self):
+        stage_record_paths = importlib.import_module("stage_record_paths")
+        paths = [PureWindowsPath("C:/records/nested/_story.md"),
+                 PureWindowsPath("C:/records/W-00000002.md"),
+                 PureWindowsPath("C:/records/W-00000001.md")]
+        root = Mock()
+        root.rglob.return_value = paths
+        self.assertEqual([paths[2], paths[1], paths[0]],
+                         list(stage_record_paths.record_paths(root)))
+
     def test_record_paths_scan_nested_markdown_records_in_sorted_order(self):
         stage_record_paths = importlib.import_module("stage_record_paths")
         with tempfile.TemporaryDirectory() as directory:

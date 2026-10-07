@@ -30,7 +30,7 @@ START_MARKER_RE = re.compile(
     r"<!-- stage-close-record:start v1 (?P<payload>[A-Za-z0-9_-]+) -->"
 )
 END_MARKER = "<!-- stage-close-record:end -->"
-STATUS_HEADING_RE = re.compile(r"^##[ \t]+Status[ \t]*$", re.MULTILINE)
+STATUS_HEADING_RE = re.compile(r"^##[ \t]+Status[ \t]*\r?$", re.MULTILINE)
 NEXT_SECTION_RE = re.compile(r"^##[ \t]+", re.MULTILINE)
 TABLE_ENTRY_RE = re.compile(r"^[ \t]*\|", re.MULTILINE)
 LIST_ENTRY_RE = re.compile(r"^(?P<indent>[ \t]*)[-+*][ \t]+", re.MULTILINE)
@@ -386,8 +386,8 @@ def close_record(
     archive_index = stage_root / family.archive_index
     if not live_index.is_file():
         raise CloseRecordError(f"live index not found: {live_index}")
-    source_text = source.read_text(encoding="utf-8")
-    live_index_text = live_index.read_text(encoding="utf-8")
+    source_text = source.read_bytes().decode("utf-8")
+    live_index_text = live_index.read_bytes().decode("utf-8")
     updated_live_index, entry = _remove_index_entry(live_index_text, record_id)
     archived_text = _add_close_marker(
         source_text,
@@ -397,7 +397,7 @@ def close_record(
         outcome,
     )
     archive_index_text = (
-        archive_index.read_text(encoding="utf-8")
+        archive_index.read_bytes().decode("utf-8")
         if archive_index.is_file()
         else _archive_index_template(stage_root, family.archive_index)
     )
@@ -435,10 +435,10 @@ def reopen_record(stage_root: Path, record_id: str) -> str:
     archive_index = stage_root / family.archive_index
     if not live_index.is_file() or not archive_index.is_file():
         raise CloseRecordError("both live and archive indexes must exist before reopening")
-    restored_text, entry = _remove_close_marker(source.read_text(encoding="utf-8"))
-    updated_live_index = _append_index_entry(live_index.read_text(encoding="utf-8"), entry)
+    restored_text, entry = _remove_close_marker(source.read_bytes().decode("utf-8"))
+    updated_live_index = _append_index_entry(live_index.read_bytes().decode("utf-8"), entry)
     updated_archive_index = _drop_archive_row(
-        archive_index.read_text(encoding="utf-8"), record_id
+        archive_index.read_bytes().decode("utf-8"), record_id
     )
     _apply_transaction(
         stage_root,

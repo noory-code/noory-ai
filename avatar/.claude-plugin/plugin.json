@@ -1,0 +1,20 @@
+{
+  "name": "avatar",
+  "version": "0.1.2",
+  "description": "Local review of recorded choices and user-confirmed personal criteria.",
+  "homepage": "https://github.com/noory-code/noory-ai/tree/main/avatar",
+  "repository": "https://github.com/noory-code/noory-ai",
+  "license": "MIT",
+  "author": {
+    "name": "noory-code",
+    "url": "https://github.com/noory-code"
+  },
+  "keywords": [
+    "criteria",
+    "choices",
+    "reflection",
+    "local-first",
+    "provenance"
+  ],
+  "skills": "./skills"
+}

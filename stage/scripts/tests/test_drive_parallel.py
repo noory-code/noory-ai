@@ -370,7 +370,7 @@ class DriveParallelTest(unittest.TestCase):
                 assert observed["claude_project_dir"] == str(root)
                 assert observed["legacy_project_root"] == str(root)
                 assert observed["hook_payload_root"] == str(root)
-                assert observed["git_root"] == str(root)
+                assert Path(observed["git_root"]).resolve() == root
                 assert observed["hook_allowed"]
                 assert observed["hook_allowed_out_of_scope"]
                 assert "Scope boundary crossed:" in observed["hook_boundary_message"]
@@ -568,7 +568,7 @@ class DriveParallelTest(unittest.TestCase):
             self.assertEqual(str(tree), observed["claude_project_dir"])
             self.assertEqual(str(tree), observed["legacy_project_root"])
             self.assertEqual(str(tree), observed["hook_payload_root"])
-            self.assertEqual(str(tree), observed["git_root"])
+            self.assertEqual(tree, Path(observed["git_root"]).resolve())
             self.assertTrue(observed["hook_allowed"], observed["hook_message"])
             self.assertTrue(
                 observed["hook_allowed_out_of_scope"],

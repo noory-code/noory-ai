@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Structure
 
-Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack is maintained in the separate public [`noory-code/novel-ai`](https://github.com/noory-code/novel-ai) repository.
+Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `avatar/`, `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack is maintained in the separate public [`noory-code/novel-ai`](https://github.com/noory-code/novel-ai) repository.
 
 ```
 noory-ai/
+├── avatar/             — Local choice and personal-criterion history
 ├── evonest/            — Autonomous code evolution engine
 ├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
 ├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
@@ -16,7 +17,7 @@ noory-ai/
 └── pencil_m3_flutter/  — Flutter M3 design system automation
 ```
 
-Five local plugins ship both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, and the
+Six local plugins ship both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, and the
 repository lists them in both the Claude Code and Codex marketplace files. `plainly/` targets
 Claude Code only — it ships output styles, which Codex has no equivalent for — so it carries the
 Claude manifest alone and appears only in the Claude Code marketplace.
@@ -33,6 +34,9 @@ Novel AI's canonical public design documents live at
 workspace mirrors of those public contracts.
 
 **Stage only:** test with `python3 -m unittest discover -s stage/hooks/tests -q` and `python3 -m unittest discover -s stage/scripts/tests -q` (no uv/mypy/ruff targets).
+
+**Avatar only:** test with `python3 -m unittest discover -s avatar/tests -q` from the repository
+root (no uv/mypy/ruff targets).
 
 **Plainly only:** test with `python3 -m unittest discover -s plainly/tests -q` from the repository
 root (no uv/mypy/ruff targets).
@@ -103,7 +107,7 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
 
 ### Plugin Changes
 
-- When any file inside a plugin directory (`evonest/`, `rag/`, `stage/`, `plainly/`,
+- When any file inside a plugin directory (`avatar/`, `evonest/`, `rag/`, `stage/`, `plainly/`,
   `flutter-cask/`, `pencil_m3_flutter/`) is modified:
   1. Add the card's release note under the top `## Unreleased` section in that plugin's
      `CHANGELOG.md`. When the plugin first adopts this workflow, create that section directly after
@@ -116,7 +120,7 @@ uv run mcp dev src/evonest/server.py  # MCP inspector
      - `rag/`: do not use the generic release command. Update `server/pyproject.toml`, run `uv lock`
        inside `rag/server/`, update both host manifests to the same version, and title the queued
        changelog section in the same release.
-     - `stage/`, `plainly/`, and `flutter-cask/`: run `python3
+     - `avatar/`, `stage/`, `plainly/`, and `flutter-cask/`: run `python3
        stage/scripts/release_plugin.py <plugin-directory> --bump <patch|minor|major>`.
      - `pencil_m3_flutter/`: use the same command for a host-plugin release. Its root and example
        `pubspec.yaml` versions belong to separate Dart package and example release streams; this

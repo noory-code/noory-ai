@@ -236,7 +236,7 @@ class Audit:
         candidate = Path(path)
         try:
             if candidate.is_absolute():
-                return str(candidate.relative_to(self.project_root))
+                return candidate.relative_to(self.project_root).as_posix()
         except ValueError:
             pass
         return str(path).replace("\\", "/")

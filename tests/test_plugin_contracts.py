@@ -8,6 +8,7 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_DIRECTORIES = {
+    "avatar": "avatar",
     "evonest": "evonest",
     "flutter-cask": "flutter-cask",
     "pencil-m3-flutter": "pencil_m3_flutter",

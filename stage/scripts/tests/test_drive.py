@@ -14,16 +14,12 @@ from pathlib import Path
 from unittest import mock
 
 from driver_test_environment import sanitize_current_driver_test_environment
+from python_shell_command import python_command
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
 
 sanitize_current_driver_test_environment()
-
-
-def python_command(code: str) -> str:
-    args = [sys.executable, "-c", code]
-    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
 def reporting_python_command(code: str, changed_paths: list[str]) -> str:
@@ -398,6 +394,7 @@ class DriveTest(unittest.TestCase):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
 
     def load_module(self):

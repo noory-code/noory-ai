@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import importlib.util
 import json
-import shlex
 import subprocess
 import sys
 import tempfile
@@ -11,6 +10,8 @@ import unittest
 from datetime import date
 from pathlib import Path
 from unittest import mock
+
+from python_shell_command import python_command
 
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "close_work.py"
 
@@ -52,11 +53,6 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
     )
-
-
-def python_command(code: str) -> str:
-    args = [sys.executable, "-c", code]
-    return subprocess.list2cmdline(args) if os.name == "nt" else shlex.join(args)
 
 
 def approving_reviewer_command(command: str) -> str:

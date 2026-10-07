@@ -194,6 +194,18 @@ Pending.
                 (root / ".stage/official/state/archive/index.md").read_text(encoding="utf-8"),
             )
 
+    def test_reopen_preserves_crlf_record_bytes(self) -> None:
+        tmp, root = self.make_stage()
+        with tmp:
+            source, _entry = self.write_observation(root)
+            original = source.read_text(encoding="utf-8").replace("\n", "\r\n").encode("utf-8")
+            source.write_bytes(original)
+            closed = run_cli(root, "close", "O-00000001", "--reason", "The fix shipped.")
+            self.assertEqual(0, closed.returncode, closed.stdout + closed.stderr)
+            reopened = run_cli(root, "reopen", "O-00000001")
+            self.assertEqual(0, reopened.returncode, reopened.stdout + reopened.stderr)
+            self.assertEqual(original, source.read_bytes())
+
     def test_closes_question_and_removes_its_table_row(self) -> None:
         tmp, root = self.make_stage()
         with tmp:

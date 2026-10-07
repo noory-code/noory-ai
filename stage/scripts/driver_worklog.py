@@ -173,6 +173,8 @@ def append_reap_warning_to_work_log(
 
 
 def print_escalation(reason: str) -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print(f"Outcome: blocked — {reason}")
     print(f"Recommended next action: {RECOMMEND_ESCALATE}")
 
@@ -180,6 +182,8 @@ def print_escalation(reason: str) -> None:
 def print_preflight_blocker(reason: str) -> None:
     """Report venue infrastructure failure without blaming the selected card."""
 
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print(f"Outcome: blocked — {reason}")
     print(
         "Recommended next action: repair the venue preflight, or verify the "

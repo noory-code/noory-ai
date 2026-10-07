@@ -10,6 +10,11 @@ Execution stays free; purpose stays strict. Stage never tells the executor how t
 
 ## Generated artifacts
 
+For an explicit transfer to another AI session, [build a handoff packet](docs/HANDOFF_PACKET.md).
+It carries the purpose chain, current criteria from Distill or Avatar, and checks of recorded
+file evidence. Both producers are optional. The receiving session rechecks each criterion before
+using it; the packet does not replace acceptance checks or independent review.
+
 Stage creates a `.stage/` directory inside the project and connects three axes.
 
 - Lifecycle axis (semantic): `planned`, `current`, `official` — every artifact is always in
