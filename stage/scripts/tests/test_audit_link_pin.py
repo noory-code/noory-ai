@@ -117,7 +117,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         target = next(
             (
                 candidate
-                for candidate in (root / ".stage/work").rglob("*.md")
+                for candidate in sorted((root / ".stage/work").rglob("*.md"))
                 if f"id: {item_id}\n" in candidate.read_text(encoding="utf-8")
             ),
             root / ".stage/work/current" / item_id / "_story.md",
@@ -207,10 +207,7 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK019",
                 "WORK017",
                 "INDEX001",
-                "INDEX001",
                 "INDEX002",
-                "INDEX003",
-                "INDEX003",
                 "BACKLOG001",
                 "BACKLOG003",
                 "BACKLOG002",

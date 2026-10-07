@@ -7,6 +7,7 @@ import sqlite3
 import subprocess
 import sys
 import unittest
+from contextlib import closing
 from unittest.mock import patch
 
 import test_avatar_cli as cli
@@ -79,7 +80,7 @@ class AvatarReviewTest(unittest.TestCase):
         store = AvatarStore(self.home)
         first = store.propose("first", {"statement": "Prefer errors."})
         store.confirm(first["id"], 1, "confirm", {"origin": cli.origin()})
-        with sqlite3.connect(store.path) as connection:
+        with closing(sqlite3.connect(store.path)) as connection, connection:
             connection.execute("PRAGMA journal_mode=WAL")
             connection.execute("UPDATE meta SET value = value WHERE key = 'generation'")
         original_connect = avatar_view.connect

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.63.1 — 2026-10-07
+
+### Fixed
+
+- Keep record scan order consistent on Windows, macOS, and Linux, and make the audit fixture select duplicate IDs deterministically.
+
 ## 0.63.0 — 2026-10-07
 
 - Add explicit handoff packets with live criteria, purpose chains, source checks, and prior result evidence.

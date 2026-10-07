@@ -27,7 +27,7 @@ def record_paths(root: Path, *, pattern: str = "*.md") -> tuple[Path, ...]:
         if path.parent != root or not path.name.startswith("_")
     )
     if pattern == "*.md":
-        return tuple(sorted(candidates))
+        return tuple(sorted(candidates, key=lambda path: path.parts))
 
     matches = []
     for path in candidates:
@@ -41,7 +41,7 @@ def record_paths(root: Path, *, pattern: str = "*.md") -> tuple[Path, ...]:
             and fnmatch.fnmatchcase(f"{identity.group('record_id')}.md", pattern)
         ):
             matches.append(path)
-    return tuple(sorted(matches))
+    return tuple(sorted(matches, key=lambda path: path.parts))
 
 
 def record_path(root: Path, record_id: str) -> Path:
