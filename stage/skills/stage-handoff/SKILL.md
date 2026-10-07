@@ -90,6 +90,32 @@ remaining problem, the success criteria, and the explicit NEXT action.
 2. Set `venue` to the surface that should take it next.
 3. Confirm `active.md` reflects the item's real status and venue.
 
+## Carry current criteria and observed results
+
+When handing a registered card to another session, build a packet after updating its Progress,
+Success criteria, and Next action. Use the project key already agreed for Distill. Do not infer
+a key from the checkout path. If no key has been agreed, hand off the card body with its ancestor
+purposes and state that criteria were not queried.
+
+```text
+python3 <stage-plugin-root>/scripts/handoff_packet.py --project-root <root> <W-id> \
+  --project-key <key> --producers <local-producers.json>
+```
+
+Paste the entire stdout into the receiving session's prompt. A link alone is insufficient.
+If no producers are configured, omit `--producers`; the packet marks criteria as not queried.
+On a non-zero exit, report the error and repair its input before sending a packet.
+
+The receiving session follows Purpose chain first. Before a choice depends on a criterion, run
+the packet's check argv without a shell and require `eligible_current`. Recheck `partial`
+criteria against the actual file, judge each note for `needs_judgment`, and record those judgments
+before applying a criterion. Keep `unresolved` and `not_applicable` criteria out of the decision.
+Record `Applied criteria:` and file/check evidence in Progress as described in
+[the packet contract](../../docs/HANDOFF_PACKET.md).
+
+The packet does not rerun recorded checks or replace independent review. The unattended driver
+does not attach this packet automatically. This flow requires an explicit handoff.
+
 ## Route decisions back, not sideways
 
 An implementation venue that hits an unresolved product or design decision does not decide it and
