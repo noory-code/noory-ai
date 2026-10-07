@@ -568,7 +568,7 @@ class DriveParallelTest(unittest.TestCase):
             self.assertEqual(str(tree), observed["claude_project_dir"])
             self.assertEqual(str(tree), observed["legacy_project_root"])
             self.assertEqual(str(tree), observed["hook_payload_root"])
-            self.assertEqual(str(tree), observed["git_root"])
+            self.assertEqual(tree, Path(observed["git_root"]).resolve())
             self.assertTrue(observed["hook_allowed"], observed["hook_message"])
             self.assertTrue(
                 observed["hook_allowed_out_of_scope"],

@@ -731,7 +731,7 @@ class UnattendedTest(unittest.TestCase):
                     "recover me",
                     (worktree_path / "recovery.txt").read_text(encoding="utf-8"),
                 )
-                self.assertIn(str(worktree_path), output.getvalue())
+                self.assertIn(str(worktree_path.resolve()), output.getvalue())
                 self.assertIn("git worktree remove", output.getvalue())
             finally:
                 if worktree_path.exists():

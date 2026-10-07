@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.63.3 — 2026-10-07
+
+- Compare the two remaining driver-test path assertions after resolving Windows path aliases and separators.
+
 ## 0.63.2 — 2026-10-07
 
 ### Fixed
