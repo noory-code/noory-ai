@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.63.4 — 2026-10-11
+
 - Show one scope-boundary line to the user while sending the full work context to the agent through
   `PreToolUse.additionalContext`.
 
