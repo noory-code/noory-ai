@@ -5,7 +5,8 @@ This document owns the Stage hook rules.
 ## Rules
 
 - `SessionStart` injects the Stage context and completion gates.
-- `PreToolUse` blocks likely rule violations and appends purpose to every tool decision.
+- `PreToolUse` blocks likely rule violations and routes purpose context when a call carries a
+  signal.
 - `PostToolUse` completes two-phase intent reservations after the tool actually ran (never blocks).
 - `Stop` leaves a summary the next session can pick up.
 - Hooks assist the Stage core principles; they do not replace artifact promotion itself.
@@ -63,16 +64,23 @@ record in `state/questions/` when durable records still cite it without presenti
 
 ## Purpose context
 
-A `PreToolUse` result appends live purpose context when active work exists **and the call carries a
+A `PreToolUse` result sends live purpose context when active work exists **and the call carries a
 signal** — it was denied, or a recognized write or commit call left the leaf scope. An allowed call
 that crosses nothing returns empty output. The context never blocks. The hook selects the
 driver-provided item when `STAGE_WORK_ITEM_PATH` names an active card; otherwise it renders every
 active leaf and its ancestors.
 
+For an allowed scope crossing, `systemMessage` contains only `Scope boundary crossed: <paths>.` and
+is shown to the user. If another check already supplied a `systemMessage`, the boundary line follows
+it. The full context is returned as `hookSpecificOutput.additionalContext`, with
+`hookEventName: PreToolUse`, so the agent receives the scopes, report instruction, crossed paths,
+and purpose chain. A denied call keeps the full context in `permissionDecisionReason` after the
+original denial reason.
+
 Each branch contributes its leaf scope, an explicit report instruction, and the crossed path. Those
-signals come first. The live theme, milestone, epic, story, and action purpose first sentences
-follow in hierarchy order, one line per level, so the current action purpose is the final line
-returned for the tool call. Denied calls retain their original reason before this context.
+signals come first in the agent context. The live theme, milestone, epic, story, and action purpose
+first sentences follow in hierarchy order, one line per level, so the current action purpose is the
+final agent-context line returned for the tool call.
 
 Silence on a clean call is the point. A context printed on every allowed call stacks up on the
 screen, and the reader stops seeing the one call that actually crossed something.

@@ -339,8 +339,13 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
         self.assertEqual("allow", permission_decision(first_result))
         self.assertEqual("allow", permission_decision(second_result))
         for result in (first_result, second_result):
-            self.assertIn("Stage work context:", result["systemMessage"])
-            self.assertIn("Scope boundary crossed:", result["systemMessage"])
+            self.assertEqual(
+                result["systemMessage"],
+                "Scope boundary crossed: .stage/work/current/W-00000095/_story.md.",
+            )
+            context = result["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("Stage work context:", context)
+            self.assertIn("Scope boundary crossed:", context)
 
     def test_v3_guard_denies_mutable_legacy_roots_with_migration_banner(self):
         with tempfile.TemporaryDirectory() as tmp:

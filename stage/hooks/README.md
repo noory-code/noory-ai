@@ -101,7 +101,7 @@ Both hosts consume the same `hooks/hooks.json` (Claude hook schema) and send Cla
 | Question tool | `AskUserQuestion` | `request_user_input` |
 | PostToolUse | delivered after the tool ran (completes two-phase intent claims) | same — measured on 0.144.0 (`tool_response`, `tool_use_id` included) |
 | Workspace root | `CLAUDE_PROJECT_DIR` env | no env var — hook cwd and payload `cwd` are the workspace |
-| Allow output | exit 0 with empty stdout or a bare `systemMessage` = no opinion — the call falls through to the host's normal permission flow (an explicit `allow` would bypass permission prompts entirely) | same (an explicit `permissionDecision: "allow"` is additionally rejected as unsupported output) |
+| Allow output | exit 0 with empty stdout = no opinion; an allowed scope crossing sends a one-line `systemMessage` to the user and `hookSpecificOutput.additionalContext` to Claude, without a permission decision (an explicit `allow` would bypass permission prompts entirely) | same; `systemMessage` is a UI warning and `additionalContext` is added to the model context (an explicit `permissionDecision: "allow"` without `updatedInput` is rejected as unsupported output) |
 | Deny output | `hookSpecificOutput.permissionDecision: "deny"` + reason | same |
 | Stop output | `systemMessage` only | same (`decision` is accepted only as the literal `"block"`) |
 

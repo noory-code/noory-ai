@@ -501,18 +501,18 @@ def purpose_context_targets(
 
 def purpose_tool_context(
     workspace_root: Path, payload: dict[str, Any]
-) -> tuple[str, bool]:
+) -> tuple[str, str]:
     """Render scope signals first and one purpose sentence per hierarchy level last.
 
-    Returns the rendered context and whether this call crossed a scope boundary.
-    A caller that only reports signals uses the flag to stay silent on a clean call.
+    Returns the rendered context and the one-line boundary message for the user.
+    A caller that only reports signals uses the empty message to stay silent on a clean call.
     """
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
-        return "", False
+        return "", ""
     chains = active_work_chains(stage_root)
     if not chains:
-        return "", False
+        return "", ""
 
     targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
     leaves = tuple(chain[-1] for chain in chains)
@@ -535,8 +535,10 @@ def purpose_tool_context(
         ),
         "Report every scope boundary crossing.",
     ]
+    boundary_message = ""
     if crossed:
-        lines.append(f"Scope boundary crossed: {', '.join(crossed)}.")
+        boundary_message = f"Scope boundary crossed: {', '.join(crossed)}."
+        lines.append(boundary_message)
 
     purpose_lines: list[str] = []
     seen_records: set[str] = set()
@@ -573,13 +575,13 @@ def purpose_tool_context(
                     f"{work_scale_label(stage_root, item)} {item.item_id}: {purpose}"
                 )
                 seen_records.add(item.item_id)
-    return "\n".join([*lines, *purpose_lines]), bool(crossed)
+    return "\n".join([*lines, *purpose_lines]), boundary_message
 
 
 def append_purpose_context(
     result: dict[str, Any], workspace_root: Path, payload: dict[str, Any]
 ) -> dict[str, Any]:
-    context, crossed = purpose_tool_context(workspace_root, payload)
+    context, boundary_message = purpose_tool_context(workspace_root, payload)
     if not context:
         return result
     output = dict(result)
@@ -592,12 +594,23 @@ def append_purpose_context(
         )
         output["hookSpecificOutput"] = updated_hook
         return output
-    if not crossed:
+    if not boundary_message:
         # Nothing was blocked and nothing left the scope: say nothing. A context
         # printed on every allowed call buries the one that carries a signal.
         return result
+    updated_hook = dict(hook_output) if isinstance(hook_output, dict) else {}
+    existing_context = str(updated_hook.get("additionalContext") or "").rstrip()
+    updated_hook["hookEventName"] = "PreToolUse"
+    updated_hook["additionalContext"] = (
+        f"{existing_context}\n\n{context}" if existing_context else context
+    )
+    output["hookSpecificOutput"] = updated_hook
     existing_message = str(output.get("systemMessage") or "").rstrip()
-    output["systemMessage"] = f"{existing_message}\n\n{context}" if existing_message else context
+    output["systemMessage"] = (
+        f"{existing_message}\n{boundary_message}"
+        if existing_message
+        else boundary_message
+    )
     return output
 
 

@@ -34,10 +34,10 @@ SPEC.loader.exec_module(stage_guard)
 def decision(result):
     # Allow is empty output (cross-host contract: Codex rejects an explicit
     # permissionDecision:allow without updatedInput as unsupported). A
-    # non-blocking purpose reminder uses only systemMessage.
+    # non-blocking purpose reminder uses systemMessage and additionalContext.
     if not result or "hookSpecificOutput" not in result:
         return "allow"
-    return result["hookSpecificOutput"]["permissionDecision"]
+    return result["hookSpecificOutput"].get("permissionDecision", "allow")
 
 
 def reason(result):
@@ -46,6 +46,10 @@ def reason(result):
 
 def message(result):
     return result.get("systemMessage", "")
+
+
+def additional_context(result):
+    return result.get("hookSpecificOutput", {}).get("additionalContext", "")
 
 
 class GitAddPathsFromCommandTest(unittest.TestCase):
@@ -348,7 +352,12 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope boundary crossed: outside.txt.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: outside.txt.")
+        self.assertEqual(len(message(result).splitlines()), 1)
+        self.assertIn("Stage work context:", additional_context(result))
+        self.assertIn(
+            "Scope boundary crossed: outside.txt.", additional_context(result)
+        )
 
     def test_multi_target_allows_when_each_path_registered(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1099,7 +1108,8 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: src/app.py.")
+        self.assertIn("Stage work context:", additional_context(result))
 
     def test_dot_scope_reports_source_path_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1114,7 +1124,8 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: src/app.py.")
+        self.assertIn("Stage work context:", additional_context(result))
 
     def test_allows_intermediate_commit_with_open_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1160,7 +1171,8 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope boundary crossed: docs/guide.md.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: docs/guide.md.")
+        self.assertIn("Stage work context:", additional_context(result))
 
     def test_blocks_git_add_and_commit_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2010,7 +2022,7 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Stage work context", message(result))
+        self.assertIn("Stage work context", additional_context(result))
 
     def test_hierarchy_gate_uses_planned_folder_parent_without_parent_field(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2192,7 +2204,7 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Stage work context", message(result))
+        self.assertIn("Stage work context", additional_context(result))
 
     def test_hierarchy_gate_allows_partial_edit_of_completed_child(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2336,8 +2348,12 @@ class StageGuardTest(unittest.TestCase):
 
         for result in (first, second):
             with self.subTest(result=result):
-                context = message(result)
+                context = additional_context(result)
                 self.assertEqual(decision(result), "allow")
+                self.assertEqual(
+                    message(result), "Scope boundary crossed: pkg/README.md."
+                )
+                self.assertEqual(len(message(result).splitlines()), 1)
                 self.assertIn("Scope for W-0003: stage/hooks/", context)
                 self.assertIn("Report every scope boundary crossing.", context)
                 self.assertIn("Theme TH-0001: Keep products alive for one builder.", context)
@@ -2375,6 +2391,7 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
         self.assertEqual(message(result), "")
+        self.assertEqual(additional_context(result), "")
 
     def test_purpose_context_is_silent_for_in_scope_write(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2394,6 +2411,7 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "allow")
         self.assertEqual(message(result), "")
+        self.assertEqual(additional_context(result), "")
 
     def test_purpose_context_reports_out_of_scope_write_without_blocking(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2412,12 +2430,39 @@ class StageGuardTest(unittest.TestCase):
             result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope boundary crossed: src/app.py.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: src/app.py.")
+        self.assertEqual(len(message(result).splitlines()), 1)
+        self.assertIn(
+            "Scope boundary crossed: src/app.py.", additional_context(result)
+        )
         self.assertTrue(
-            message(result).endswith(
+            additional_context(result).endswith(
                 "Action W-0003: Show the current action before every tool call."
             )
         )
+
+    def test_purpose_context_appends_boundary_to_existing_user_message(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "tool_input": {
+                    "file_path": "src/app.py",
+                    "content": "print('x')\n",
+                },
+            }
+
+            result = stage_guard.append_purpose_context(
+                {"systemMessage": "Existing warning."}, root, payload
+            )
+
+        self.assertEqual(
+            message(result),
+            "Existing warning.\nScope boundary crossed: src/app.py.",
+        )
+        self.assertIn("Stage work context:", additional_context(result))
 
     def test_purpose_context_uses_driver_selected_leaf_scope(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2454,11 +2499,14 @@ class StageGuardTest(unittest.TestCase):
                 result = stage_guard.handle_event("pre-tool-use", payload)
 
         self.assertEqual(decision(result), "allow")
-        self.assertIn("Scope for W-0003: stage/hooks/", message(result))
-        self.assertNotIn("Scope for W-0004", message(result))
-        self.assertIn("Scope boundary crossed: other/file.py.", message(result))
+        self.assertEqual(message(result), "Scope boundary crossed: other/file.py.")
+        self.assertIn("Scope for W-0003: stage/hooks/", additional_context(result))
+        self.assertNotIn("Scope for W-0004", additional_context(result))
+        self.assertIn(
+            "Scope boundary crossed: other/file.py.", additional_context(result)
+        )
         self.assertTrue(
-            message(result).endswith(
+            additional_context(result).endswith(
                 "Action W-0003: Show the current action before every tool call."
             )
         )
@@ -2478,6 +2526,8 @@ class StageGuardTest(unittest.TestCase):
 
         self.assertEqual(decision(result), "deny")
         self.assertIn("deleting `.stage` entirely is blocked", reason(result))
+        self.assertEqual(message(result), "")
+        self.assertEqual(additional_context(result), "")
         self.assertTrue(
             reason(result).endswith(
                 "Action W-0003: Show the current action before every tool call."

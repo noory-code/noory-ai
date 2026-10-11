@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Show one scope-boundary line to the user while sending the full work context to the agent through
+  `PreToolUse.additionalContext`.
+
 ## 0.63.3 — 2026-10-07
 
 - Compare the two remaining driver-test path assertions after resolving Windows path aliases and separators.
