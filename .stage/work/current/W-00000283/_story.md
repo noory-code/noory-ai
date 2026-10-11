@@ -9,11 +9,11 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_schema_v4_consumers.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000283
+promotion: not_applicable
 review: not_required
 scope: stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/scripts/tests/test_schema_v4_consumers.py, stage/scripts/tests/test_drive_parallel.py, stage/operations/hooks.md, stage/hooks/README.md, stage/CHANGELOG.md
 promotes:
@@ -86,11 +86,141 @@ SoC: 사람에게 보이는 알림과 에이전트에게 주는 지시를 서로
 
 ## Progress
 
+2026-10-11: 드라이버 한 판에서 Codex가 Actions 1~4를 실행했다. 실행 보고와 리뷰 보고는 공유 작업 로그
+`.stage/.runtime/driver/logs/W-00000283.md`에 있다. Claude가 리뷰가 짚은 `stage/operations/hooks.md`의
+과정 서술 한 구절을 지웠다.
 
 ## Verification
 
+2026-10-11 Claude가 직접 확인한 것:
+
+- 범위 밖 파일 `.claude/settings.local.json`을 고치는 Edit 입력을 훅에 넣었다. `systemMessage`는
+  `Scope boundary crossed: .claude/settings.local.json.` 한 줄이고, `additionalContext`는 32줄이다.
+  고치기 전에는 같은 입력에서 `systemMessage`가 30줄이었다.
+- 이 세션은 저장소의 `stage/`를 플러그인으로 읽는다. 고친 뒤 범위를 넘은 Edit·Write·Bash 호출의 맥락이
+  대화창 메시지가 아니라 Claude에게 들어왔다. Claude Code에서 실제 동작을 확인했다.
+- 고치기 전 `stage_guard.py`로 되돌리면 hooks 시험이 11개 실패하고, 되살리면 모두 통과한다.
+- 막힌 호출의 deny 분기 코드는 바뀌지 않았다. 시험이 막힌 이유와 그 뒤의 맥락을 확인한다.
+
+드라이버의 인수 시험 3개와 Claude 독립 리뷰가 통과했다. 리뷰는 성공 기준 3개를 모두 PASS로 판정했다.
+
+리뷰 지적 처리:
+
+- `operations/hooks.md`의 "its output contract is unchanged"가 과정 서술이라는 지적 — accept. 그 구절을 지웠다.
+- Codex에서 `permissionDecision` 없는 `hookSpecificOutput`을 받는지 실제로 확인하지 않았다는 지적 — defer.
+  문서로는 지원한다. 릴리스 뒤 Codex 세션에서 확인하며 R-00000283의 Next changes에 적었다.
+- `/dev/null`과 transcript `.jsonl`이 넘은 경로로 잘못 잡힌다는 지적 — defer. 이 카드의 출력 경로가
+  아니라 경로를 뽑는 쪽 문제다. O-00000050으로 남겼다.
+
+### Executed at close — 2026-10-11
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 378 tests in 1.750s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_schema_v4_consumers.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 9 tests in 0.220s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q
+[exit 0]
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpli1pjj1x/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpli1pjj1x/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+Removed worktree and branch for W-00000001
+Removed worktree and branch for W-00000001
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpnqga_4gf/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpnqga_4gf/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+W-00000003: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpnqga_4gf/worktrees/W-00000003
+Merge branch: stage/worktree/W-00000003
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpwm71mu02/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpwm71mu02/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+W-00000001: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmplc7qc7_i/worktrees/W-00000001
+Merge branch: stage/worktree/W-00000001
+W-00000002: driver exited with status 0
+Worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmplc7qc7_i/worktrees/W-00000002
+Merge branch: stage/worktree/W-00000002
+----------------------------------------------------------------------
+Ran 33 tests in 4.170s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 378 tests in 1.780s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (258 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1791687748
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791687748. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpge49nqi8/unattended/W-00000001-1791687748
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 659 tests in 105.701s
+
+OK
+```
 
 ## Retrospective
 
+[R-00000283](../../retrospectives/R-00000283.md)
 
 ## Promotion decision
+
+정책이나 결정 기록으로 옮길 것은 없다. 훅 계약은 `stage/operations/hooks.md`에 반영했다.
