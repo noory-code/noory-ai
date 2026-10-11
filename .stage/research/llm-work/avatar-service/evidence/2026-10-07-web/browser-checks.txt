@@ -1,0 +1,4 @@
+Script ran on page and returned:
+```json
+{"actualCliImport":true,"sourceLabel":"직접 불러온 기록이에요. AI 분석을 요청할 때만 고른 내용을 Claude로 보내요.","previousAnalysisCleared":true,"badImportPreservesRecord":true,"badImportMessage":"JSON 파일을 읽지 못했어요. Avatar에서 다시 내보내주세요.","escaped":true,"searchEmpty":true,"emptyCounts":"0개의 선택\n0개의 프로젝트\n0개의 확인한 기준","noEarnedBadges":true,"aiDisabled":true,"noHorizontalScroll":true,"pendingButtonDisabled":true,"lateResponseDiscarded":true}
+```

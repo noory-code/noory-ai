@@ -1,0 +1,19 @@
+{
+  "frozen_files_checked": 9,
+  "raw_files_checked": 80,
+  "python_files_parsed": 6,
+  "documents_checked": 6,
+  "local_link_paths_checked": 151,
+  "link_anchors_checked": false,
+  "tests": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "test_korean_particle_does_not_hide_code_name (test_posthoc.NameTests.test_korean_particle_does_not_hide_code_name) ... ok\ntest_part_of_another_identifier_is_not_a_match (test_posthoc.NameTests.test_part_of_another_identifier_is_not_a_match) ... ok\ntest_explicit_full_request_keeps_source (test_selection.SelectionTests.test_explicit_full_request_keeps_source) ... ok\ntest_index_contains_references_but_not_function_body (test_selection.SelectionTests.test_index_contains_references_but_not_function_body) ... ok\ntest_multiple_or_empty_names_do_not_cut_source (test_selection.SelectionTests.test_multiple_or_empty_names_do_not_cut_source) ... ok\ntest_unknown_name_does_not_cut_source (test_selection.SelectionTests.test_unknown_name_does_not_cut_source) ... ok\ntest_unrecognized_action_does_not_cut_source (test_selection.SelectionTests.test_unrecognized_action_does_not_cut_source) ... ok\ntest_valid_selection_preserves_behavior_and_removes_irrelevant_function (test_selection.SelectionTests.test_valid_selection_preserves_behavior_and_removes_irrelevant_function) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.001s\n\nOK\n"
+  },
+  "git_diff_check": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "errors": []
+}

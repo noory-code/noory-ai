@@ -1,0 +1,17 @@
+[
+  {
+    "id": "D1",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "D2",
+    "act": "attributed_content",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "D3",
+    "act": "request_apply_constraint",
+    "constraint_ref": "unresolved"
+  }
+]

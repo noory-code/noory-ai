@@ -1,0 +1,10 @@
+{
+  "case": "A",
+  "raw_response": "[{\"id\": \"U1\", \"role\": \"user\", \"text\": \"이번 화면에 로그인은 넣지 마세요.\"}, {\"id\": \"U2\", \"role\": \"user\", \"text\": \"앞에서 로그인은 빼 달라고 했어요. 버튼을 빼 주세요.\"}]",
+  "model": "gemma4:latest",
+  "total_duration_ns": 4102845083,
+  "prompt_eval_count": 397,
+  "eval_count": 62,
+  "done": true,
+  "validation_error": "Unexpected response fields"
+}

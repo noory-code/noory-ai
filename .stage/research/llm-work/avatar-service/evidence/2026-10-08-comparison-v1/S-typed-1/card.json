@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-S",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_action",
+  "relation": "same",
+  "evidence_ids": [
+    "S1",
+    "S3"
+  ],
+  "question": "초안이 실제로 저장되었는지 확인할 수 있는 저장 기록이나 화면이 있을까요?"
+}

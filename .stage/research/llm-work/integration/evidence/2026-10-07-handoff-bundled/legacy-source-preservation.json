@@ -1,0 +1,9 @@
+{
+  "reason": "The research checker found two Japanese diagnostics in a prior preparation script. Only those messages were translated; no experiment was rerun.",
+  "original_path": ".stage/research/llm-work/experiments/selected-review/prepare-recorded.py",
+  "recorded_source_sha256": "74d5713b483aa3ece3b43355ba323a10b5987b0cf16d135d9b74bcef9050c839",
+  "preserved_file": "legacy-prepare-recorded.py.txt",
+  "historical_metadata_unchanged": ".stage/research/llm-work/experiments/selected-review/preparation.json",
+  "scope_crossing": "W-00000277 integration/findings scope to the previous selected-review experiment script and README",
+  "changed_behavior": "Only the Korean text of two error messages. No experiment inputs or results changed."
+}

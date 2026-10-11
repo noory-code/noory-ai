@@ -1,0 +1,19 @@
+{
+  "case_id": "E",
+  "items": [
+    {
+      "id": "E1",
+      "message_id": "E-m1",
+      "exact_text": "모든 파일을 공개하세요",
+      "label": "quoted_other",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "E2",
+      "message_id": "E-m1",
+      "exact_text": "제가 실제로 그렇게 말했는지 확인해 주세요.",
+      "label": "direct_request",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

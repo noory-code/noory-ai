@@ -1,0 +1,36 @@
+{
+  "id": "retrospective_owner_conflict--claude--r1--reuse--s2",
+  "case": "retrospective_owner_conflict",
+  "host": "claude",
+  "repeat": 1,
+  "condition": "reuse",
+  "step": 2,
+  "version": "before",
+  "key": "b4ab90c63d789e9083ee4ac742eff2262e4426c0db660d71627ad6721ca5b6a4",
+  "cache_hit": true,
+  "origin": "retrospective_owner_conflict--claude--r1--reuse--s1",
+  "answer": {
+    "action": "revise",
+    "reason": "선호 경로 R-00000041.md가 이미 있고 work_item이 W-00000099로 다르면 오류를 내지 않고 그냥 다음 단계로 넘어가 max(numbers)+1인 R-00000042를 새로 예약해 반환하므로, 빈 회고 ID와 세 ID가 담긴 오류를 요구하는 기준을 어기고 R-00000042.md가 생성됩니다.",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "30d58dbf1425504b389be20c438824c9e321f361d35c0ded211f044a0cbe910c",
+  "prompt_characters": 12444,
+  "cli": null,
+  "end_to_end_s": 0.0012045420007780194
+}

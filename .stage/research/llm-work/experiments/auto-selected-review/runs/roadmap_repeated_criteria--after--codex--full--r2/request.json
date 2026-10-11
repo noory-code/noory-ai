@@ -1,0 +1,24 @@
+{
+  "case": "roadmap_repeated_criteria--after",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 2,
+  "id": "roadmap_repeated_criteria--after--codex--full--r2",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "정상적인 Stage v4 프로젝트라는 전제에서 두 생성 함수는 성공 시 0을 반환하며, --completion-criteria의 action=\"append\"가 세 값을 입력 순서대로 모으고 create_milestone이 각 값에 '- '를 붙여 Completion criteria 섹션에 기록합니다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 8.121495833998779
+}

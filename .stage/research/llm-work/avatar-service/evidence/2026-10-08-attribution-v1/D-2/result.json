@@ -1,0 +1,12 @@
+{
+  "case_id": "D",
+  "items": [
+    {
+      "id": "D1",
+      "message_id": "D-m1",
+      "exact_text": "Never save these notes.",
+      "label": "unknown",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

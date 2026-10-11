@@ -1,0 +1,32 @@
+{
+  "id": "roadmap_repeated_criteria--codex--r1--reuse--s4",
+  "case": "roadmap_repeated_criteria",
+  "host": "codex",
+  "repeat": 1,
+  "condition": "reuse",
+  "step": 4,
+  "version": "after",
+  "key": "bf2146f91ea6f1a2c4e454ba06e20607153e5df90906832779a9aeacb61128fd",
+  "cache_hit": true,
+  "origin": "roadmap_repeated_criteria--codex--r1--reuse--s3",
+  "answer": {
+    "action": "approve",
+    "reason": "--completion-criteria가 action=\"append\"로 반복 입력을 순서대로 보존하고 create_milestone이 각 값을 같은 순서의 '- ' 항목으로 결합해 ## Completion criteria 섹션에 기록하며 정상 조건에서는 두 생성 명령 모두 0을 반환합니다.",
+    "targets": []
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "e36382ed5ca390e0bdd0aad8708d1729fc8c733c779bef06c37f0bb2661001f3",
+  "prompt_characters": 23832,
+  "cli": null,
+  "end_to_end_s": 0.0012486249906942248
+}

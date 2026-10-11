@@ -1,0 +1,13 @@
+{
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:fixture/contract/personal-confirm",
+    "quote": "Synthetic test statement: personal-confirm",
+    "actor": "user",
+    "recorded_by": {
+      "host": "fixture",
+      "session_id": "contract",
+      "via": "cli"
+    }
+  }
+}

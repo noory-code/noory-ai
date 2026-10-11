@@ -1,0 +1,54 @@
+{
+  "rules": [
+    {
+      "rule": "인터넷 연결 없이 보고서를 내보내야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N1",
+      "quote": "프로젝트 A는 인터넷 연결 없이 보고서를 내보내야 합니다."
+    },
+    {
+      "rule": "결과가 정확해야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N1",
+      "quote": "결과가 정확해야 합니다."
+    },
+    {
+      "rule": "새 패키지를 추가하지 말아야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N2",
+      "quote": "A에서는 새 패키지를 추가하지 마세요."
+    },
+    {
+      "rule": "표준 라이브러리로 먼저 시도해야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N2",
+      "quote": "표준 라이브러리로 먼저 해보세요."
+    },
+    {
+      "rule": "CSV 내보내기에 한해서 패키지 P를 추가할 수 있으며 다른 기능에는 허용되지 않는다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N3",
+      "quote": "A의 CSV 내보내기에 한해서 패키지 P를 추가해도 됩니다. 다른 기능까지 허용한 것은 아닙니다."
+    },
+    {
+      "rule": "정확성보다 속도를 중시한다.",
+      "project": "미지정",
+      "status": "unconfirmed",
+      "source": "N4",
+      "quote": "AI는 사용자가 정확성보다 속도를 중시할 것이라고 추측했습니다. 사용자는 이 추측을 확인하지 않았습니다."
+    },
+    {
+      "rule": "PDF 패키지 Q를 사용할 수 있으며 이 허용은 B에만 적용된다.",
+      "project": "B",
+      "status": "confirmed",
+      "source": "N5",
+      "quote": "프로젝트 B 담당자는 PDF 패키지 Q의 사용을 허용했습니다. 이 결정은 B에만 적용합니다."
+    }
+  ],
+  "errors": []
+}

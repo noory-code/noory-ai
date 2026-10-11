@@ -1,0 +1,27 @@
+{
+  "status": "accepted_structure",
+  "synthetic_only": true,
+  "input_sha256": "55406b4ad612b77cc7e4a7287a68726d92b2f9862fee2291a6e6a4db696344c9",
+  "started_at": "2026-10-07T19:58:19.719226+00:00",
+  "fixed_gold_comparison": "recorded",
+  "exit": 0,
+  "model_usage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 114,
+      "cacheReadInputTokens": 946,
+      "cacheCreationInputTokens": 2344,
+      "webSearchRequests": 0,
+      "costUSD": 0.0107092,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "reported_list_cost_usd": 0.0107092,
+  "seconds": 4.73,
+  "finished_at": "2026-10-07T19:58:24.446710+00:00"
+}

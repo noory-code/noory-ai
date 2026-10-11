@@ -1,0 +1,30 @@
+[
+  {
+    "case": "state_correct",
+    "desired": "alpha\nbeta\n",
+    "observed": "alpha\nbeta\n",
+    "actual_state": "complete",
+    "simulation": "임시 파일에 의도적으로 잘못 쓰는 경로를 만들었습니다."
+  },
+  {
+    "case": "state_wrong_path",
+    "desired": "alpha\nbeta\n",
+    "observed": "old",
+    "actual_state": "incomplete",
+    "simulation": "임시 파일에 의도적으로 잘못 쓰는 경로를 만들었습니다."
+  },
+  {
+    "case": "state_partial",
+    "desired": "alpha\nbeta\n",
+    "observed": "alpha\n",
+    "actual_state": "incomplete",
+    "simulation": "임시 파일에 의도적으로 잘못 쓰는 경로를 만들었습니다."
+  },
+  {
+    "case": "state_no_write",
+    "desired": "alpha\nbeta\n",
+    "observed": "old",
+    "actual_state": "incomplete",
+    "simulation": "임시 파일에 의도적으로 잘못 쓰는 경로를 만들었습니다."
+  }
+]

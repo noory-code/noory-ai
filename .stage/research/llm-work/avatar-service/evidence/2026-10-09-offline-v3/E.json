@@ -1,0 +1,15 @@
+{
+  "case": "E",
+  "raw_response": "{\"observations\": []}",
+  "model": "gemma4:latest",
+  "total_duration_ns": 9237961458,
+  "prompt_eval_count": 334,
+  "eval_count": 308,
+  "done": true,
+  "observations": [],
+  "assessment": {
+    "missing_kinds": [],
+    "forbidden_kinds": [],
+    "missing_evidence_ids": {}
+  }
+}

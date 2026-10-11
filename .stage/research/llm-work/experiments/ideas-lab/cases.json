@@ -1,0 +1,1910 @@
+[
+  {
+    "id": "I01_changed",
+    "idea": "I01",
+    "task": "자료의 이전·현재 내용과 판단별 의존 관계를 보고 재검토할 대상을 고르세요. current의 null은 실제로 파일이 삭제되었다는 관찰입니다. files는 직접 근거이고 decisions는 다른 판단을 근거로 쓴다는 뜻입니다. 변경이나 삭제가 영향을 준 판단과 이를 근거로 쓴 판단을 모두 찾으세요. 의존 관계가 null이거나 알 수 없는 판단·자료가 있으면 연결된 판단까지 보류하세요. action은 review(알려진 변경을 재검토), keep(변경 없음), clarify(의존 관계부터 확인) 중 하나입니다. clarify를 고를 때도 알려진 변경 때문에 재검토할 판단을 targets에 포함하세요. targets에는 다시 확인할 판단의 ID를 정렬해 담고 keep이면 빈 목록을 주세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 4개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 4개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      },
+      "computed": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "affected": [
+          "approve",
+          "publish"
+        ],
+        "uncertain": [],
+        "changed_files": [
+          "policy.txt"
+        ],
+        "issues": []
+      }
+    },
+    "expected": {
+      "action": "review",
+      "targets": [
+        "approve",
+        "publish"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+  },
+  {
+    "id": "I01_unchanged",
+    "idea": "I01",
+    "task": "자료의 이전·현재 내용과 판단별 의존 관계를 보고 재검토할 대상을 고르세요. current의 null은 실제로 파일이 삭제되었다는 관찰입니다. files는 직접 근거이고 decisions는 다른 판단을 근거로 쓴다는 뜻입니다. 변경이나 삭제가 영향을 준 판단과 이를 근거로 쓴 판단을 모두 찾으세요. 의존 관계가 null이거나 알 수 없는 판단·자료가 있으면 연결된 판단까지 보류하세요. action은 review(알려진 변경을 재검토), keep(변경 없음), clarify(의존 관계부터 확인) 중 하나입니다. clarify를 고를 때도 알려진 변경 때문에 재검토할 판단을 targets에 포함하세요. targets에는 다시 확인할 판단의 ID를 정렬해 담고 keep이면 빈 목록을 주세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      },
+      "computed": {
+        "action": "keep",
+        "targets": [],
+        "affected": [],
+        "uncertain": [],
+        "changed_files": [],
+        "issues": []
+      }
+    },
+    "expected": {
+      "action": "keep",
+      "targets": []
+    },
+    "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+  },
+  {
+    "id": "I01_deleted",
+    "idea": "I01",
+    "task": "자료의 이전·현재 내용과 판단별 의존 관계를 보고 재검토할 대상을 고르세요. current의 null은 실제로 파일이 삭제되었다는 관찰입니다. files는 직접 근거이고 decisions는 다른 판단을 근거로 쓴다는 뜻입니다. 변경이나 삭제가 영향을 준 판단과 이를 근거로 쓴 판단을 모두 찾으세요. 의존 관계가 null이거나 알 수 없는 판단·자료가 있으면 연결된 판단까지 보류하세요. action은 review(알려진 변경을 재검토), keep(변경 없음), clarify(의존 관계부터 확인) 중 하나입니다. clarify를 고를 때도 알려진 변경 때문에 재검토할 판단을 targets에 포함하세요. targets에는 다시 확인할 판단의 ID를 정렬해 담고 keep이면 빈 목록을 주세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": null,
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": null,
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "approve": {
+          "files": [
+            "policy.txt"
+          ],
+          "decisions": []
+        },
+        "publish": {
+          "files": [],
+          "decisions": [
+            "approve"
+          ]
+        },
+        "format": {
+          "files": [
+            "format.txt"
+          ],
+          "decisions": []
+        }
+      },
+      "computed": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "affected": [
+          "approve",
+          "publish"
+        ],
+        "uncertain": [],
+        "changed_files": [
+          "policy.txt"
+        ],
+        "issues": []
+      }
+    },
+    "expected": {
+      "action": "review",
+      "targets": [
+        "approve",
+        "publish"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+  },
+  {
+    "id": "I01_unknown",
+    "idea": "I01",
+    "task": "자료의 이전·현재 내용과 판단별 의존 관계를 보고 재검토할 대상을 고르세요. current의 null은 실제로 파일이 삭제되었다는 관찰입니다. files는 직접 근거이고 decisions는 다른 판단을 근거로 쓴다는 뜻입니다. 변경이나 삭제가 영향을 준 판단과 이를 근거로 쓴 판단을 모두 찾으세요. 의존 관계가 null이거나 알 수 없는 판단·자료가 있으면 연결된 판단까지 보류하세요. action은 review(알려진 변경을 재검토), keep(변경 없음), clarify(의존 관계부터 확인) 중 하나입니다. clarify를 고를 때도 알려진 변경 때문에 재검토할 판단을 targets에 포함하세요. targets에는 다시 확인할 판단의 ID를 정렬해 담고 keep이면 빈 목록을 주세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "audit": null,
+        "publish": {
+          "files": [],
+          "decisions": [
+            "audit"
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "current": {
+        "policy.txt": "허용 개수: 3개",
+        "format.txt": "들여쓰기: 2칸"
+      },
+      "dependencies": {
+        "audit": null,
+        "publish": {
+          "files": [],
+          "decisions": [
+            "audit"
+          ]
+        }
+      },
+      "computed": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ],
+        "affected": [],
+        "uncertain": [
+          "audit",
+          "publish"
+        ],
+        "changed_files": [],
+        "issues": [
+          {
+            "id": "audit",
+            "reason": "dependency_not_recorded"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "action": "clarify",
+      "targets": [
+        "audit",
+        "publish"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+  },
+  {
+    "id": "I02_version",
+    "idea": "I02",
+    "task": "query에 지정한 주제와 버전에서 기능을 지원하는지 판단하세요. version은 정확히 일치해야 합니다. exceptions의 when이 context와 모두 맞으면 그 예외의 answer를 적용합니다. 명시된 예외가 기본 answer보다 우선합니다. 출처·버전·예외 목록이 없거나 필요한 조건을 모르거나 자료가 충돌하면 보류하세요. action은 supported, unsupported, clarify 중 하나입니다. targets에는 해당 주제·버전의 판단에 쓴 자료 ID를 모두 정렬해 담으세요. 조건이 빠지거나 충돌한 관련 자료도 포함하고 다른 버전의 자료는 제외하세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "old",
+          "topic": "export",
+          "version": "1",
+          "answer": "unsupported",
+          "exceptions": [],
+          "source": "manual/old"
+        },
+        {
+          "id": "current",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [],
+          "source": "manual/current"
+        }
+      ]
+    },
+    "enhanced": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "old",
+          "topic": "export",
+          "version": "1",
+          "answer": "unsupported",
+          "exceptions": [],
+          "source": "manual/old"
+        },
+        {
+          "id": "current",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [],
+          "source": "manual/current"
+        }
+      ],
+      "computed": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ],
+        "selected": [
+          {
+            "id": "current",
+            "topic": "export",
+            "version": "2",
+            "answer": "supported",
+            "exceptions": [],
+            "source": "manual/current",
+            "path": "version-1.json"
+          }
+        ],
+        "issues": []
+      }
+    },
+    "expected": {
+      "action": "supported",
+      "targets": [
+        "current"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+  },
+  {
+    "id": "I02_exception",
+    "idea": "I02",
+    "task": "query에 지정한 주제와 버전에서 기능을 지원하는지 판단하세요. version은 정확히 일치해야 합니다. exceptions의 when이 context와 모두 맞으면 그 예외의 answer를 적용합니다. 명시된 예외가 기본 answer보다 우선합니다. 출처·버전·예외 목록이 없거나 필요한 조건을 모르거나 자료가 충돌하면 보류하세요. action은 supported, unsupported, clarify 중 하나입니다. targets에는 해당 주제·버전의 판단에 쓴 자료 ID를 모두 정렬해 담으세요. 조건이 빠지거나 충돌한 관련 자료도 포함하고 다른 버전의 자료는 제외하세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {
+          "region": "EU"
+        }
+      },
+      "documents": [
+        {
+          "id": "policy",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [
+            {
+              "when": {
+                "region": "EU"
+              },
+              "answer": "unsupported"
+            }
+          ],
+          "source": "manual/policy"
+        }
+      ]
+    },
+    "enhanced": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {
+          "region": "EU"
+        }
+      },
+      "documents": [
+        {
+          "id": "policy",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [
+            {
+              "when": {
+                "region": "EU"
+              },
+              "answer": "unsupported"
+            }
+          ],
+          "source": "manual/policy"
+        }
+      ],
+      "computed": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ],
+        "selected": [
+          {
+            "id": "policy",
+            "topic": "export",
+            "version": "2",
+            "answer": "supported",
+            "exceptions": [
+              {
+                "when": {
+                  "region": "EU"
+                },
+                "answer": "unsupported"
+              }
+            ],
+            "source": "manual/policy",
+            "path": "exception-0.json"
+          }
+        ],
+        "issues": []
+      }
+    },
+    "expected": {
+      "action": "unsupported",
+      "targets": [
+        "policy"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+  },
+  {
+    "id": "I02_conflict",
+    "idea": "I02",
+    "task": "query에 지정한 주제와 버전에서 기능을 지원하는지 판단하세요. version은 정확히 일치해야 합니다. exceptions의 when이 context와 모두 맞으면 그 예외의 answer를 적용합니다. 명시된 예외가 기본 answer보다 우선합니다. 출처·버전·예외 목록이 없거나 필요한 조건을 모르거나 자료가 충돌하면 보류하세요. action은 supported, unsupported, clarify 중 하나입니다. targets에는 해당 주제·버전의 판단에 쓴 자료 ID를 모두 정렬해 담으세요. 조건이 빠지거나 충돌한 관련 자료도 포함하고 다른 버전의 자료는 제외하세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "a",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [],
+          "source": "manual/a"
+        },
+        {
+          "id": "b",
+          "topic": "export",
+          "version": "2",
+          "answer": "unsupported",
+          "exceptions": [],
+          "source": "manual/b"
+        }
+      ]
+    },
+    "enhanced": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "a",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported",
+          "exceptions": [],
+          "source": "manual/a"
+        },
+        {
+          "id": "b",
+          "topic": "export",
+          "version": "2",
+          "answer": "unsupported",
+          "exceptions": [],
+          "source": "manual/b"
+        }
+      ],
+      "computed": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ],
+        "selected": [
+          {
+            "id": "a",
+            "topic": "export",
+            "version": "2",
+            "answer": "supported",
+            "exceptions": [],
+            "source": "manual/a",
+            "path": "conflict-0.json"
+          },
+          {
+            "id": "b",
+            "topic": "export",
+            "version": "2",
+            "answer": "unsupported",
+            "exceptions": [],
+            "source": "manual/b",
+            "path": "conflict-1.json"
+          }
+        ],
+        "issues": [
+          {
+            "id": "query",
+            "reason": "conflicting_evidence"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "action": "clarify",
+      "targets": [
+        "a",
+        "b"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+  },
+  {
+    "id": "I02_missing_scope",
+    "idea": "I02",
+    "task": "query에 지정한 주제와 버전에서 기능을 지원하는지 판단하세요. version은 정확히 일치해야 합니다. exceptions의 when이 context와 모두 맞으면 그 예외의 answer를 적용합니다. 명시된 예외가 기본 answer보다 우선합니다. 출처·버전·예외 목록이 없거나 필요한 조건을 모르거나 자료가 충돌하면 보류하세요. action은 supported, unsupported, clarify 중 하나입니다. targets에는 해당 주제·버전의 판단에 쓴 자료 ID를 모두 정렬해 담으세요. 조건이 빠지거나 충돌한 관련 자료도 포함하고 다른 버전의 자료는 제외하세요. 응답은 {action, targets, reason} JSON 하나로 작성하세요.",
+    "baseline": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "partial",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported"
+        }
+      ]
+    },
+    "enhanced": {
+      "query": {
+        "topic": "export",
+        "version": "2",
+        "context": {}
+      },
+      "documents": [
+        {
+          "id": "partial",
+          "topic": "export",
+          "version": "2",
+          "answer": "supported"
+        }
+      ],
+      "computed": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ],
+        "selected": [
+          {
+            "id": "partial",
+            "topic": "export",
+            "version": "2",
+            "answer": "supported",
+            "path": "missing_scope-0.json"
+          }
+        ],
+        "issues": [
+          {
+            "id": "partial",
+            "reason": "source_not_recorded"
+          },
+          {
+            "id": "partial",
+            "reason": "exceptions_not_recorded"
+          }
+        ]
+      }
+    },
+    "expected": {
+      "action": "clarify",
+      "targets": [
+        "partial"
+      ]
+    },
+    "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+  },
+  {
+    "id": "I03_already_written",
+    "idea": "I03",
+    "task": "UTF-8 파일 두 개를 desired 내용으로 바꾸던 작업의 응답이 끊겼습니다. before는 실행 전 내용과 파일 버전이며 current는 지금 다시 읽은 결과입니다. 현재 내용이 목표와 같으면 그 파일을 다시 쓰지 않습니다. 내용과 버전이 모두 before와 같은 파일만 이어서 바꿀 수 있습니다. 그 밖의 변경은 충돌로 취급하고 이번 실행에서는 아무 파일도 바꾸지 않습니다. 복구를 실행하기 전 조치를 고르세요. action은 complete, recover, conflict 중 하나입니다. targets에는 recover일 때 남은 파일, conflict일 때 충돌한 파일만 적으세요. complete이면 빈 목록을 쓰세요. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903171,
+            5,
+            1791159686361108713,
+            1791159686361108713
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903172,
+            5,
+            1791159686361179964,
+            1791159686361179964
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "new-a",
+          "sha256": "eb087a81ad5b9b33e836750b8ca913107257aa6a4ad6c98b6b3806ad931c6f0d",
+          "version": [
+            16777234,
+            196903171,
+            5,
+            1791159686361327131,
+            1791159686361327131
+          ]
+        },
+        "b.txt": {
+          "content": "new-b",
+          "sha256": "6ae725813d3c3aaaa1bcd8b15c4707b4f5aa2a529ea089af5d350e14c21c4647",
+          "version": [
+            16777234,
+            196903172,
+            5,
+            1791159686361370673,
+            1791159686361370673
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903171,
+            5,
+            1791159686361108713,
+            1791159686361108713
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903172,
+            5,
+            1791159686361179964,
+            1791159686361179964
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "new-a",
+          "sha256": "eb087a81ad5b9b33e836750b8ca913107257aa6a4ad6c98b6b3806ad931c6f0d",
+          "version": [
+            16777234,
+            196903171,
+            5,
+            1791159686361327131,
+            1791159686361327131
+          ]
+        },
+        "b.txt": {
+          "content": "new-b",
+          "sha256": "6ae725813d3c3aaaa1bcd8b15c4707b4f5aa2a529ea089af5d350e14c21c4647",
+          "version": [
+            16777234,
+            196903172,
+            5,
+            1791159686361370673,
+            1791159686361370673
+          ]
+        }
+      },
+      "prototype": {
+        "action": "complete",
+        "targets": [],
+        "completed": [
+          "a.txt",
+          "b.txt"
+        ],
+        "pending": [],
+        "conflicts": []
+      }
+    },
+    "expected": {
+      "action": "complete",
+      "targets": []
+    },
+    "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+  },
+  {
+    "id": "I03_partly_written",
+    "idea": "I03",
+    "task": "UTF-8 파일 두 개를 desired 내용으로 바꾸던 작업의 응답이 끊겼습니다. before는 실행 전 내용과 파일 버전이며 current는 지금 다시 읽은 결과입니다. 현재 내용이 목표와 같으면 그 파일을 다시 쓰지 않습니다. 내용과 버전이 모두 before와 같은 파일만 이어서 바꿀 수 있습니다. 그 밖의 변경은 충돌로 취급하고 이번 실행에서는 아무 파일도 바꾸지 않습니다. 복구를 실행하기 전 조치를 고르세요. action은 complete, recover, conflict 중 하나입니다. targets에는 recover일 때 남은 파일, conflict일 때 충돌한 파일만 적으세요. complete이면 빈 목록을 쓰세요. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903174,
+            5,
+            1791159686361775925,
+            1791159686361775925
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903175,
+            5,
+            1791159686361845842,
+            1791159686361845842
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "new-a",
+          "sha256": "eb087a81ad5b9b33e836750b8ca913107257aa6a4ad6c98b6b3806ad931c6f0d",
+          "version": [
+            16777234,
+            196903174,
+            5,
+            1791159686361949009,
+            1791159686361949009
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903175,
+            5,
+            1791159686361845842,
+            1791159686361845842
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903174,
+            5,
+            1791159686361775925,
+            1791159686361775925
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903175,
+            5,
+            1791159686361845842,
+            1791159686361845842
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "new-a",
+          "sha256": "eb087a81ad5b9b33e836750b8ca913107257aa6a4ad6c98b6b3806ad931c6f0d",
+          "version": [
+            16777234,
+            196903174,
+            5,
+            1791159686361949009,
+            1791159686361949009
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903175,
+            5,
+            1791159686361845842,
+            1791159686361845842
+          ]
+        }
+      },
+      "prototype": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ],
+        "completed": [
+          "a.txt"
+        ],
+        "pending": [
+          "b.txt"
+        ],
+        "conflicts": []
+      }
+    },
+    "expected": {
+      "action": "recover",
+      "targets": [
+        "b.txt"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+  },
+  {
+    "id": "I03_no_write",
+    "idea": "I03",
+    "task": "UTF-8 파일 두 개를 desired 내용으로 바꾸던 작업의 응답이 끊겼습니다. before는 실행 전 내용과 파일 버전이며 current는 지금 다시 읽은 결과입니다. 현재 내용이 목표와 같으면 그 파일을 다시 쓰지 않습니다. 내용과 버전이 모두 before와 같은 파일만 이어서 바꿀 수 있습니다. 그 밖의 변경은 충돌로 취급하고 이번 실행에서는 아무 파일도 바꾸지 않습니다. 복구를 실행하기 전 조치를 고르세요. action은 complete, recover, conflict 중 하나입니다. targets에는 recover일 때 남은 파일, conflict일 때 충돌한 파일만 적으세요. complete이면 빈 목록을 쓰세요. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903177,
+            5,
+            1791159686362326094,
+            1791159686362326094
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903178,
+            5,
+            1791159686362390803,
+            1791159686362390803
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903177,
+            5,
+            1791159686362326094,
+            1791159686362326094
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903178,
+            5,
+            1791159686362390803,
+            1791159686362390803
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903177,
+            5,
+            1791159686362326094,
+            1791159686362326094
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903178,
+            5,
+            1791159686362390803,
+            1791159686362390803
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903177,
+            5,
+            1791159686362326094,
+            1791159686362326094
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903178,
+            5,
+            1791159686362390803,
+            1791159686362390803
+          ]
+        }
+      },
+      "prototype": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ],
+        "completed": [],
+        "pending": [
+          "a.txt",
+          "b.txt"
+        ],
+        "conflicts": []
+      }
+    },
+    "expected": {
+      "action": "recover",
+      "targets": [
+        "a.txt",
+        "b.txt"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+  },
+  {
+    "id": "I03_human_changed",
+    "idea": "I03",
+    "task": "UTF-8 파일 두 개를 desired 내용으로 바꾸던 작업의 응답이 끊겼습니다. before는 실행 전 내용과 파일 버전이며 current는 지금 다시 읽은 결과입니다. 현재 내용이 목표와 같으면 그 파일을 다시 쓰지 않습니다. 내용과 버전이 모두 before와 같은 파일만 이어서 바꿀 수 있습니다. 그 밖의 변경은 충돌로 취급하고 이번 실행에서는 아무 파일도 바꾸지 않습니다. 복구를 실행하기 전 조치를 고르세요. action은 complete, recover, conflict 중 하나입니다. targets에는 recover일 때 남은 파일, conflict일 때 충돌한 파일만 적으세요. complete이면 빈 목록을 쓰세요. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903180,
+            5,
+            1791159686362826972,
+            1791159686362826972
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903181,
+            5,
+            1791159686362903514,
+            1791159686362903514
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903180,
+            5,
+            1791159686362826972,
+            1791159686362826972
+          ]
+        },
+        "b.txt": {
+          "content": "human-note",
+          "sha256": "a5055b856b1b56a52834a87ac2be0b398b7e52052cd943564728195bac1969b5",
+          "version": [
+            16777234,
+            196903181,
+            10,
+            1791159686363004806,
+            1791159686363004806
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "before": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903180,
+            5,
+            1791159686362826972,
+            1791159686362826972
+          ]
+        },
+        "b.txt": {
+          "content": "old-b",
+          "sha256": "65f9888097d2d0746f54532271b835204493508c31bca1b12482cce90163f5f9",
+          "version": [
+            16777234,
+            196903181,
+            5,
+            1791159686362903514,
+            1791159686362903514
+          ]
+        }
+      },
+      "desired": {
+        "a.txt": "new-a",
+        "b.txt": "new-b"
+      },
+      "current": {
+        "a.txt": {
+          "content": "old-a",
+          "sha256": "cd522a413738bbdff1c710858a0410c83bcf515195ce35f856ef8086ad6af946",
+          "version": [
+            16777234,
+            196903180,
+            5,
+            1791159686362826972,
+            1791159686362826972
+          ]
+        },
+        "b.txt": {
+          "content": "human-note",
+          "sha256": "a5055b856b1b56a52834a87ac2be0b398b7e52052cd943564728195bac1969b5",
+          "version": [
+            16777234,
+            196903181,
+            10,
+            1791159686363004806,
+            1791159686363004806
+          ]
+        }
+      },
+      "prototype": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ],
+        "completed": [],
+        "pending": [
+          "a.txt"
+        ],
+        "conflicts": [
+          "b.txt"
+        ]
+      }
+    },
+    "expected": {
+      "action": "conflict",
+      "targets": [
+        "b.txt"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+  },
+  {
+    "id": "I04_status",
+    "idea": "I04",
+    "task": "authorized는 이미 허용한 작업, completed는 완료한 작업입니다. instruction은 외부에서 분류한 최신 사용자 지시이며 분류 자체는 맞다고 가정합니다. status는 상황 질문, stop은 명시적 중단, scope_change는 범위 변경 제안, missing_info는 필수 자료 부족을 뜻합니다. 상황에 답한 뒤 기존 범위만 계속하려면 action=report_and_continue와 남은 작업을 targets에 적으세요. 중단은 stop과 빈 목록, 범위 재검토는 review_scope와 빈 목록, 자료 대기는 wait_for_info와 부족한 자료 이름을 적으세요. 이 상태기계는 범위 변경을 승인하는 기능은 제공하지 않습니다. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "status",
+      "utterance": "지금 얼마나 했나요?"
+    },
+    "enhanced": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "status",
+      "utterance": "지금 얼마나 했나요?",
+      "prototype": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ],
+        "state": {
+          "status": "active",
+          "authorized": [
+            "analysis",
+            "report"
+          ],
+          "completed": [
+            "analysis"
+          ],
+          "missing": [],
+          "proposed": []
+        }
+      }
+    },
+    "expected": {
+      "action": "report_and_continue",
+      "targets": [
+        "report"
+      ]
+    },
+    "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+  },
+  {
+    "id": "I04_stop",
+    "idea": "I04",
+    "task": "authorized는 이미 허용한 작업, completed는 완료한 작업입니다. instruction은 외부에서 분류한 최신 사용자 지시이며 분류 자체는 맞다고 가정합니다. status는 상황 질문, stop은 명시적 중단, scope_change는 범위 변경 제안, missing_info는 필수 자료 부족을 뜻합니다. 상황에 답한 뒤 기존 범위만 계속하려면 action=report_and_continue와 남은 작업을 targets에 적으세요. 중단은 stop과 빈 목록, 범위 재검토는 review_scope와 빈 목록, 자료 대기는 wait_for_info와 부족한 자료 이름을 적으세요. 이 상태기계는 범위 변경을 승인하는 기능은 제공하지 않습니다. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "stop",
+      "utterance": "여기서 작업을 멈춰 주세요."
+    },
+    "enhanced": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "stop",
+      "utterance": "여기서 작업을 멈춰 주세요.",
+      "prototype": {
+        "action": "stop",
+        "targets": [],
+        "state": {
+          "status": "stopped",
+          "authorized": [
+            "analysis",
+            "report"
+          ],
+          "completed": [
+            "analysis"
+          ],
+          "missing": [],
+          "proposed": []
+        }
+      }
+    },
+    "expected": {
+      "action": "stop",
+      "targets": []
+    },
+    "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+  },
+  {
+    "id": "I04_scope_change",
+    "idea": "I04",
+    "task": "authorized는 이미 허용한 작업, completed는 완료한 작업입니다. instruction은 외부에서 분류한 최신 사용자 지시이며 분류 자체는 맞다고 가정합니다. status는 상황 질문, stop은 명시적 중단, scope_change는 범위 변경 제안, missing_info는 필수 자료 부족을 뜻합니다. 상황에 답한 뒤 기존 범위만 계속하려면 action=report_and_continue와 남은 작업을 targets에 적으세요. 중단은 stop과 빈 목록, 범위 재검토는 review_scope와 빈 목록, 자료 대기는 wait_for_info와 부족한 자료 이름을 적으세요. 이 상태기계는 범위 변경을 승인하는 기능은 제공하지 않습니다. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "scope_change",
+      "utterance": "보고서를 외부에 배포하는 것도 추가하고 싶어요.",
+      "proposed": [
+        "publish"
+      ]
+    },
+    "enhanced": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "scope_change",
+      "utterance": "보고서를 외부에 배포하는 것도 추가하고 싶어요.",
+      "proposed": [
+        "publish"
+      ],
+      "prototype": {
+        "action": "review_scope",
+        "targets": [],
+        "state": {
+          "status": "scope_pending",
+          "authorized": [
+            "analysis",
+            "report"
+          ],
+          "completed": [
+            "analysis"
+          ],
+          "missing": [],
+          "proposed": [
+            "publish"
+          ]
+        }
+      }
+    },
+    "expected": {
+      "action": "review_scope",
+      "targets": []
+    },
+    "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+  },
+  {
+    "id": "I04_missing_info",
+    "idea": "I04",
+    "task": "authorized는 이미 허용한 작업, completed는 완료한 작업입니다. instruction은 외부에서 분류한 최신 사용자 지시이며 분류 자체는 맞다고 가정합니다. status는 상황 질문, stop은 명시적 중단, scope_change는 범위 변경 제안, missing_info는 필수 자료 부족을 뜻합니다. 상황에 답한 뒤 기존 범위만 계속하려면 action=report_and_continue와 남은 작업을 targets에 적으세요. 중단은 stop과 빈 목록, 범위 재검토는 review_scope와 빈 목록, 자료 대기는 wait_for_info와 부족한 자료 이름을 적으세요. 이 상태기계는 범위 변경을 승인하는 기능은 제공하지 않습니다. {action,targets,reason} JSON으로 답하세요.",
+    "baseline": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "missing_info",
+      "utterance": "보고서에 반드시 넣을 대상 버전이 아직 정해지지 않았습니다.",
+      "missing": [
+        "target_version"
+      ]
+    },
+    "enhanced": {
+      "state": {
+        "status": "active",
+        "authorized": [
+          "analysis",
+          "report"
+        ],
+        "completed": [
+          "analysis"
+        ],
+        "missing": [],
+        "proposed": []
+      },
+      "instruction": "missing_info",
+      "utterance": "보고서에 반드시 넣을 대상 버전이 아직 정해지지 않았습니다.",
+      "missing": [
+        "target_version"
+      ],
+      "prototype": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ],
+        "state": {
+          "status": "waiting",
+          "authorized": [
+            "analysis",
+            "report"
+          ],
+          "completed": [
+            "analysis"
+          ],
+          "missing": [
+            "target_version"
+          ],
+          "proposed": []
+        }
+      }
+    },
+    "expected": {
+      "action": "wait_for_info",
+      "targets": [
+        "target_version"
+      ]
+    },
+    "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+  },
+  {
+    "id": "I05_search_missing",
+    "idea": "I05",
+    "task": "관찰 가능한 로컬 자료를 비교해 다음 확인 대상을 고르세요. 원본 자료 또는 같은 자료를 처리한 로컬 도구 결과가 제공됩니다. 숨겨진 서버 상태를 추정하지 마세요. 시험 규칙: search는 required_document가 documents에 있으면 found, 없으면 missing입니다. policy는 evidence.exceptions에 region이 없으면 unknown, 있으면 그 값을 반환합니다. write는 실제 target 내용이 expected_content와 같으면 complete, 다르면 incomplete입니다. action은 inspect_search, restore_exception, repair_write, no_difference, fallback 중 하나입니다. 검색 누락이 해소되면 inspect_search, 예외 복원으로 판단할 수 있으면 restore_exception, 파일 내용을 바로잡아 완료되면 repair_write를 고릅니다. 결과가 같으면 no_difference, 정해진 비교를 적용할 수 없으면 fallback입니다. targets는 검색의 required_document, 예외의 input.evidence.exceptions, 쓰기의 target을 씁니다. no_difference와 fallback의 targets는 빈 배열입니다. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "record": {
+        "files": {
+          "overview.txt": {
+            "content": "일반 안내입니다.",
+            "exists": true,
+            "sha256": "a4a58e6a00c10075b305deb8cb5fc76dfbb58924ef29ed99dee160687caea8d7"
+          },
+          "policy.json": {
+            "content": "{\"default\": \"supported\", \"exceptions\": {\"island\": \"unsupported\"}}",
+            "exists": true,
+            "sha256": "712a7085f788dedf07f3791e93c2fbd3c4be2aae558a33ab539abccf23285eaf"
+          }
+        },
+        "input": {
+          "kind": "search",
+          "required_document": "policy.json"
+        },
+        "schema_version": 1,
+        "tool_response": {
+          "documents": [
+            "overview.txt"
+          ]
+        },
+        "hashes": {
+          "input": "993b69aa30b1b6be1f70b4bae668b1faf85dc9b1118031d379fca5386fa3276d",
+          "tool_response": "5d11c6d75f3ca47c79b5365dd08a68d23ea1190dca666b1b44b5087c89a33368",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        }
+      },
+      "proposed_change": {
+        "tool_response": {
+          "documents": [
+            "overview.txt",
+            "policy.json"
+          ]
+        }
+      }
+    },
+    "enhanced": {
+      "action": "inspect_search",
+      "targets": [
+        "policy.json"
+      ],
+      "comparison": {
+        "before": {
+          "status": "missing"
+        },
+        "after": {
+          "status": "found"
+        },
+        "before_hashes": {
+          "input": "993b69aa30b1b6be1f70b4bae668b1faf85dc9b1118031d379fca5386fa3276d",
+          "tool_response": "5d11c6d75f3ca47c79b5365dd08a68d23ea1190dca666b1b44b5087c89a33368",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        },
+        "after_hashes": {
+          "input": "993b69aa30b1b6be1f70b4bae668b1faf85dc9b1118031d379fca5386fa3276d",
+          "tool_response": "44519085a8b413e37605fe667bee08e0df71063a6e9471a223d0c0cde04b03ff",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        },
+        "changed_factors": [
+          "tool_response"
+        ],
+        "scope": "저장한 입력, 도구 응답, UTF-8 파일만 비교했습니다. 서버 내부 상태는 다루지 않습니다."
+      },
+      "reason": "공개한 시험 규칙으로 두 결과를 비교했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "inspect_search",
+      "targets": [
+        "policy.json"
+      ]
+    },
+    "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I05_exception_removed",
+    "idea": "I05",
+    "task": "관찰 가능한 로컬 자료를 비교해 다음 확인 대상을 고르세요. 원본 자료 또는 같은 자료를 처리한 로컬 도구 결과가 제공됩니다. 숨겨진 서버 상태를 추정하지 마세요. 시험 규칙: search는 required_document가 documents에 있으면 found, 없으면 missing입니다. policy는 evidence.exceptions에 region이 없으면 unknown, 있으면 그 값을 반환합니다. write는 실제 target 내용이 expected_content와 같으면 complete, 다르면 incomplete입니다. action은 inspect_search, restore_exception, repair_write, no_difference, fallback 중 하나입니다. 검색 누락이 해소되면 inspect_search, 예외 복원으로 판단할 수 있으면 restore_exception, 파일 내용을 바로잡아 완료되면 repair_write를 고릅니다. 결과가 같으면 no_difference, 정해진 비교를 적용할 수 없으면 fallback입니다. targets는 검색의 required_document, 예외의 input.evidence.exceptions, 쓰기의 target을 씁니다. no_difference와 fallback의 targets는 빈 배열입니다. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "record": {
+        "files": {
+          "overview.txt": {
+            "content": "일반 안내입니다.",
+            "exists": true,
+            "sha256": "a4a58e6a00c10075b305deb8cb5fc76dfbb58924ef29ed99dee160687caea8d7"
+          },
+          "policy.json": {
+            "content": "{\"default\": \"supported\", \"exceptions\": {\"island\": \"unsupported\"}}",
+            "exists": true,
+            "sha256": "712a7085f788dedf07f3791e93c2fbd3c4be2aae558a33ab539abccf23285eaf"
+          }
+        },
+        "input": {
+          "evidence": {
+            "default": "supported"
+          },
+          "kind": "policy",
+          "region": "island"
+        },
+        "schema_version": 1,
+        "tool_response": {
+          "documents": [
+            "policy.json"
+          ]
+        },
+        "hashes": {
+          "input": "882dc28b9b5a4765cf8cb93aaa9ffc9efd0e93cddb744c5a2d8e8d155d24ac93",
+          "tool_response": "3990dd8c65992e4addb1147add57f3b93792ad1f79203aa2de224921d20479ec",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        }
+      },
+      "proposed_change": {
+        "input": {
+          "kind": "policy",
+          "region": "island",
+          "evidence": {
+            "default": "supported",
+            "exceptions": {
+              "island": "unsupported"
+            }
+          }
+        }
+      }
+    },
+    "enhanced": {
+      "action": "restore_exception",
+      "targets": [
+        "input.evidence.exceptions"
+      ],
+      "comparison": {
+        "before": {
+          "status": "unknown"
+        },
+        "after": {
+          "status": "unsupported"
+        },
+        "before_hashes": {
+          "input": "882dc28b9b5a4765cf8cb93aaa9ffc9efd0e93cddb744c5a2d8e8d155d24ac93",
+          "tool_response": "3990dd8c65992e4addb1147add57f3b93792ad1f79203aa2de224921d20479ec",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        },
+        "after_hashes": {
+          "input": "aeb7f64e9f3012c4d9f1b90c6f3c43b0c7d33595fdbf1c4f7e1126466b0e6764",
+          "tool_response": "3990dd8c65992e4addb1147add57f3b93792ad1f79203aa2de224921d20479ec",
+          "file_state": "402f64593033099d7668f047a4b0a0bdc241ba2317d179fa4afe631a0873cbea"
+        },
+        "changed_factors": [
+          "input"
+        ],
+        "scope": "저장한 입력, 도구 응답, UTF-8 파일만 비교했습니다. 서버 내부 상태는 다루지 않습니다."
+      },
+      "reason": "공개한 시험 규칙으로 두 결과를 비교했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "restore_exception",
+      "targets": [
+        "input.evidence.exceptions"
+      ]
+    },
+    "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I05_partial_write",
+    "idea": "I05",
+    "task": "관찰 가능한 로컬 자료를 비교해 다음 확인 대상을 고르세요. 원본 자료 또는 같은 자료를 처리한 로컬 도구 결과가 제공됩니다. 숨겨진 서버 상태를 추정하지 마세요. 시험 규칙: search는 required_document가 documents에 있으면 found, 없으면 missing입니다. policy는 evidence.exceptions에 region이 없으면 unknown, 있으면 그 값을 반환합니다. write는 실제 target 내용이 expected_content와 같으면 complete, 다르면 incomplete입니다. action은 inspect_search, restore_exception, repair_write, no_difference, fallback 중 하나입니다. 검색 누락이 해소되면 inspect_search, 예외 복원으로 판단할 수 있으면 restore_exception, 파일 내용을 바로잡아 완료되면 repair_write를 고릅니다. 결과가 같으면 no_difference, 정해진 비교를 적용할 수 없으면 fallback입니다. targets는 검색의 required_document, 예외의 input.evidence.exceptions, 쓰기의 target을 씁니다. no_difference와 fallback의 targets는 빈 배열입니다. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "record": {
+        "files": {
+          "output.txt": {
+            "content": "title\n",
+            "exists": true,
+            "sha256": "1ec72b6861fee9926d828a734ddbd533a1eb1a983d42acec571720deb2b92018"
+          }
+        },
+        "input": {
+          "expected_content": "title\nbody\n",
+          "kind": "write",
+          "target": "output.txt"
+        },
+        "schema_version": 1,
+        "tool_response": {
+          "success": true
+        },
+        "hashes": {
+          "input": "40ec70be6c1f85e4c3bd99666ee5672e3347aef554cb7654effd561cfa7cf830",
+          "tool_response": "f1ea07a1e51a389c8de07120ae5c2e432e9dd8f4fbd6f92489f185b0523a3fd4",
+          "file_state": "fb1900aa89e7d80cf6e06882831a3525fc313085aec5f6998cf2ea9abd026897"
+        }
+      },
+      "proposed_change": {
+        "file_state": {
+          "output.txt": "title\nbody\n"
+        }
+      }
+    },
+    "enhanced": {
+      "action": "repair_write",
+      "targets": [
+        "output.txt"
+      ],
+      "comparison": {
+        "before": {
+          "status": "incomplete"
+        },
+        "after": {
+          "status": "complete"
+        },
+        "before_hashes": {
+          "input": "40ec70be6c1f85e4c3bd99666ee5672e3347aef554cb7654effd561cfa7cf830",
+          "tool_response": "f1ea07a1e51a389c8de07120ae5c2e432e9dd8f4fbd6f92489f185b0523a3fd4",
+          "file_state": "fb1900aa89e7d80cf6e06882831a3525fc313085aec5f6998cf2ea9abd026897"
+        },
+        "after_hashes": {
+          "input": "40ec70be6c1f85e4c3bd99666ee5672e3347aef554cb7654effd561cfa7cf830",
+          "tool_response": "f1ea07a1e51a389c8de07120ae5c2e432e9dd8f4fbd6f92489f185b0523a3fd4",
+          "file_state": "9b293d7e07274e0014b372b5e0fbd1d2b388f2d62f46a8eaaa5a8e5cefab2c4d"
+        },
+        "changed_factors": [
+          "file_state"
+        ],
+        "scope": "저장한 입력, 도구 응답, UTF-8 파일만 비교했습니다. 서버 내부 상태는 다루지 않습니다."
+      },
+      "reason": "공개한 시험 규칙으로 두 결과를 비교했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "repair_write",
+      "targets": [
+        "output.txt"
+      ]
+    },
+    "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I05_irrelevant_response_change",
+    "idea": "I05",
+    "task": "관찰 가능한 로컬 자료를 비교해 다음 확인 대상을 고르세요. 원본 자료 또는 같은 자료를 처리한 로컬 도구 결과가 제공됩니다. 숨겨진 서버 상태를 추정하지 마세요. 시험 규칙: search는 required_document가 documents에 있으면 found, 없으면 missing입니다. policy는 evidence.exceptions에 region이 없으면 unknown, 있으면 그 값을 반환합니다. write는 실제 target 내용이 expected_content와 같으면 complete, 다르면 incomplete입니다. action은 inspect_search, restore_exception, repair_write, no_difference, fallback 중 하나입니다. 검색 누락이 해소되면 inspect_search, 예외 복원으로 판단할 수 있으면 restore_exception, 파일 내용을 바로잡아 완료되면 repair_write를 고릅니다. 결과가 같으면 no_difference, 정해진 비교를 적용할 수 없으면 fallback입니다. targets는 검색의 required_document, 예외의 input.evidence.exceptions, 쓰기의 target을 씁니다. no_difference와 fallback의 targets는 빈 배열입니다. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "record": {
+        "files": {
+          "output.txt": {
+            "content": "done\n",
+            "exists": true,
+            "sha256": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2"
+          }
+        },
+        "input": {
+          "expected_content": "done\n",
+          "kind": "write",
+          "target": "output.txt"
+        },
+        "schema_version": 1,
+        "tool_response": {
+          "success": true
+        },
+        "hashes": {
+          "input": "ad17e07d28577e332f1b462b662ea832b8dde014e3cd61fca3ca23fd6a21fdc1",
+          "tool_response": "f1ea07a1e51a389c8de07120ae5c2e432e9dd8f4fbd6f92489f185b0523a3fd4",
+          "file_state": "dfde2d27141771c8343f0d87c539baafdedfd9da72130c386757c14734653fb2"
+        }
+      },
+      "proposed_change": {
+        "tool_response": {
+          "success": true,
+          "trace_label": "another"
+        }
+      }
+    },
+    "enhanced": {
+      "action": "no_difference",
+      "targets": [],
+      "comparison": {
+        "before": {
+          "status": "complete"
+        },
+        "after": {
+          "status": "complete"
+        },
+        "before_hashes": {
+          "input": "ad17e07d28577e332f1b462b662ea832b8dde014e3cd61fca3ca23fd6a21fdc1",
+          "tool_response": "f1ea07a1e51a389c8de07120ae5c2e432e9dd8f4fbd6f92489f185b0523a3fd4",
+          "file_state": "dfde2d27141771c8343f0d87c539baafdedfd9da72130c386757c14734653fb2"
+        },
+        "after_hashes": {
+          "input": "ad17e07d28577e332f1b462b662ea832b8dde014e3cd61fca3ca23fd6a21fdc1",
+          "tool_response": "e24c5cc5039312e7e97165043e8fc5ee89b3a3448841b8c74f7289ff4158e94b",
+          "file_state": "dfde2d27141771c8343f0d87c539baafdedfd9da72130c386757c14734653fb2"
+        },
+        "changed_factors": [
+          "tool_response"
+        ],
+        "scope": "저장한 입력, 도구 응답, UTF-8 파일만 비교했습니다. 서버 내부 상태는 다루지 않습니다."
+      },
+      "reason": "공개한 시험 규칙으로 두 결과를 비교했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "no_difference",
+      "targets": []
+    },
+    "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I06_same_version",
+    "idea": "I06",
+    "task": "원본 자료 또는 같은 자료를 처리한 로컬 도구 결과로 다음 행동을 고르세요. 파일이 없으면 그 상태도 제공됩니다. 이 시험은 name과 version만 가진 JSON 사전을 받습니다. name은 소문자·숫자로 시작하고 소문자·숫자·하이픈만 허용합니다. version은 앞자리 0과 접미사가 없는 x.y.z 문자열입니다. action은 accept, align_versions, fallback 중 하나입니다. 같은 name과 같은 버전이면 accept, 같은 name이고 유효한 버전이 서로 다르면 align_versions입니다. 누락·형식 오류·다른 name이면 fallback입니다. targets는 accept일 때 빈 배열, align_versions일 때 두 경로입니다. fallback이면 잘못되거나 누락된 파일 경로를 쓰고, name이 다르면 두 경로를 씁니다. 어느 버전으로 맞출지는 정하지 마세요. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "manifests": {
+        ".claude-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.3\"}",
+          "exists": true,
+          "sha256": "69cf4909e23e22267298deb8b92e1ae0cd01ea22da674fcae6c75fb26ab9e39b"
+        },
+        ".codex-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.3\"}",
+          "exists": true,
+          "sha256": "69cf4909e23e22267298deb8b92e1ae0cd01ea22da674fcae6c75fb26ab9e39b"
+        }
+      }
+    },
+    "enhanced": {
+      "action": "accept",
+      "targets": [],
+      "versions": {
+        ".claude-plugin/plugin.json": "1.2.3",
+        ".codex-plugin/plugin.json": "1.2.3"
+      },
+      "errors": {},
+      "reason": "실제 파일을 읽고 공개한 형식과 버전 일치 규칙을 적용했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "accept",
+      "targets": []
+    },
+    "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I06_different_versions",
+    "idea": "I06",
+    "task": "원본 자료 또는 같은 자료를 처리한 로컬 도구 결과로 다음 행동을 고르세요. 파일이 없으면 그 상태도 제공됩니다. 이 시험은 name과 version만 가진 JSON 사전을 받습니다. name은 소문자·숫자로 시작하고 소문자·숫자·하이픈만 허용합니다. version은 앞자리 0과 접미사가 없는 x.y.z 문자열입니다. action은 accept, align_versions, fallback 중 하나입니다. 같은 name과 같은 버전이면 accept, 같은 name이고 유효한 버전이 서로 다르면 align_versions입니다. 누락·형식 오류·다른 name이면 fallback입니다. targets는 accept일 때 빈 배열, align_versions일 때 두 경로입니다. fallback이면 잘못되거나 누락된 파일 경로를 쓰고, name이 다르면 두 경로를 씁니다. 어느 버전으로 맞출지는 정하지 마세요. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "manifests": {
+        ".claude-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.3\"}",
+          "exists": true,
+          "sha256": "69cf4909e23e22267298deb8b92e1ae0cd01ea22da674fcae6c75fb26ab9e39b"
+        },
+        ".codex-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.4\"}",
+          "exists": true,
+          "sha256": "962e8e731c204c269892b3ef9ba0231dff0e41d0761388af110dee26b74cd86c"
+        }
+      }
+    },
+    "enhanced": {
+      "action": "align_versions",
+      "targets": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json"
+      ],
+      "versions": {
+        ".claude-plugin/plugin.json": "1.2.3",
+        ".codex-plugin/plugin.json": "1.2.4"
+      },
+      "errors": {},
+      "reason": "실제 파일을 읽고 공개한 형식과 버전 일치 규칙을 적용했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "align_versions",
+      "targets": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I06_invalid_version_type",
+    "idea": "I06",
+    "task": "원본 자료 또는 같은 자료를 처리한 로컬 도구 결과로 다음 행동을 고르세요. 파일이 없으면 그 상태도 제공됩니다. 이 시험은 name과 version만 가진 JSON 사전을 받습니다. name은 소문자·숫자로 시작하고 소문자·숫자·하이픈만 허용합니다. version은 앞자리 0과 접미사가 없는 x.y.z 문자열입니다. action은 accept, align_versions, fallback 중 하나입니다. 같은 name과 같은 버전이면 accept, 같은 name이고 유효한 버전이 서로 다르면 align_versions입니다. 누락·형식 오류·다른 name이면 fallback입니다. targets는 accept일 때 빈 배열, align_versions일 때 두 경로입니다. fallback이면 잘못되거나 누락된 파일 경로를 쓰고, name이 다르면 두 경로를 씁니다. 어느 버전으로 맞출지는 정하지 마세요. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "manifests": {
+        ".claude-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": 123}",
+          "exists": true,
+          "sha256": "d048830405005448a06dca30381320534420ea104afb99e2f40f017c8fe72491"
+        },
+        ".codex-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.3\"}",
+          "exists": true,
+          "sha256": "69cf4909e23e22267298deb8b92e1ae0cd01ea22da674fcae6c75fb26ab9e39b"
+        }
+      }
+    },
+    "enhanced": {
+      "action": "fallback",
+      "targets": [
+        ".claude-plugin/plugin.json"
+      ],
+      "versions": {
+        ".codex-plugin/plugin.json": "1.2.3"
+      },
+      "errors": {
+        ".claude-plugin/plugin.json": "version은 앞자리 0과 접미사가 없는 x.y.z 문자열이어야 합니다."
+      },
+      "reason": "실제 파일을 읽고 공개한 형식과 버전 일치 규칙을 적용했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "fallback",
+      "targets": [
+        ".claude-plugin/plugin.json"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  },
+  {
+    "id": "I06_missing_manifest",
+    "idea": "I06",
+    "task": "원본 자료 또는 같은 자료를 처리한 로컬 도구 결과로 다음 행동을 고르세요. 파일이 없으면 그 상태도 제공됩니다. 이 시험은 name과 version만 가진 JSON 사전을 받습니다. name은 소문자·숫자로 시작하고 소문자·숫자·하이픈만 허용합니다. version은 앞자리 0과 접미사가 없는 x.y.z 문자열입니다. action은 accept, align_versions, fallback 중 하나입니다. 같은 name과 같은 버전이면 accept, 같은 name이고 유효한 버전이 서로 다르면 align_versions입니다. 누락·형식 오류·다른 name이면 fallback입니다. targets는 accept일 때 빈 배열, align_versions일 때 두 경로입니다. fallback이면 잘못되거나 누락된 파일 경로를 쓰고, name이 다르면 두 경로를 씁니다. 어느 버전으로 맞출지는 정하지 마세요. {action, targets, reason}으로 답하고 targets는 문자열 오름차순으로 정렬하세요.",
+    "baseline": {
+      "manifests": {
+        ".claude-plugin/plugin.json": {
+          "content": "{\"name\": \"sample-plugin\", \"version\": \"1.2.3\"}",
+          "exists": true,
+          "sha256": "69cf4909e23e22267298deb8b92e1ae0cd01ea22da674fcae6c75fb26ab9e39b"
+        },
+        ".codex-plugin/plugin.json": {
+          "content": null,
+          "exists": false,
+          "sha256": null
+        }
+      }
+    },
+    "enhanced": {
+      "action": "fallback",
+      "targets": [
+        ".codex-plugin/plugin.json"
+      ],
+      "versions": {
+        ".claude-plugin/plugin.json": "1.2.3"
+      },
+      "errors": {
+        ".codex-plugin/plugin.json": "파일을 읽지 못했습니다. errno=2"
+      },
+      "reason": "실제 파일을 읽고 공개한 형식과 버전 일치 규칙을 적용했습니다.",
+      "computed_by": "local_python_rule"
+    },
+    "expected": {
+      "action": "fallback",
+      "targets": [
+        ".codex-plugin/plugin.json"
+      ]
+    },
+    "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "host": "claude",
+  "exit": 0,
+  "elapsed_seconds": 71.6825093330117,
+  "session_ids": [
+    "064ea24b-e4bb-4f2d-971f-c0ef3cd00f60"
+  ],
+  "reported_models": [
+    "claude-opus-5-5"
+  ],
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 28,
+        "cache_creation_input_tokens": 16906,
+        "cache_read_input_tokens": 179280,
+        "output_tokens": 7434,
+        "output_tokens_details": {
+          "thinking_tokens": 695
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 16906,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1047,
+            "cache_read_input_tokens": 18173,
+            "cache_creation_input_tokens": 1944,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1944
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "reported_cost_usd": 0.31989600000000007
+    }
+  ],
+  "assistant_text": "Task H is done: `app/host.py` now has `parse_host`, invalid input raises `ConfigError`, and the Avatar fixtures are recorded. No question blocked me.\n\n**Prior work (P):** The `app/port.py` SHA-256 matches the hash recorded on the card, so it is the same file. My test run also confirmed `parse_port` accepts and rejects the right inputs. Note the packet said \"No recorded evidence; completion is not established,\" even though the card does list evidence.\n\n**Criterion check:** I ran `distill criteria check --refs distill:CR-3662bef8c657@1` right before the choice and saved its output to `.data/receiver-check.json`. The status came back `unknown` with `\"store\": \"absent\"` (`distill.db` doesn't exist), and `criteria history` for that ID returned `E_NOT_FOUND`. `criteria current` for `test/demo-app` returned no criteria. Because the status wasn't `eligible_current`, I didn't apply that criterion.\n\n**Decision:** No current criterion applied, so I chose the contract from the purpose chain. The project's purpose is \"Make configuration parsing predictable for callers,\" and `parse_port` already raises `ConfigError`, so `parse_host` raises `app.errors.ConfigError` too. Valid hosts are returned unchanged. Returning `None` would have given callers a second, inconsistent way of reporting errors.\n\n**Tests:** An inline Python check passed:\n- `parse_host(\"example.com\")` returns `\"example.com\"`.\n- `\"bad\"`, `\"\"`, `\"exa mple.com\"`, `\"example.com\\n\"`, `None` and `5` all raise `ConfigError`.\n- `parse_port` still behaves correctly on valid and invalid input.\n\nThere is no test suite in the project.\n\n**Card Progress:** I added new lines and left the earlier ones as they were. They include `Applied criteria: none` and a note that CR-3662bef8c657@1 isn't current. I didn't write \"superseded\" because nothing shows it was superseded: its status is `unknown`, not replaced. I also didn't revert `parse_port`. I added the `app/host.py` hash to Evidence and set Next action to independent review.\n\n**Avatar (all exit 0, output saved in `.data/`):**\n1. `choice add` recorded choice → `CH-aeb556228690` (chosen `ConfigError`, quote from `choice-origin.json`, `source_refs: []`).\n2. `criterion propose` → `avatar:PC-891b2c824d1c@1`.\n3. `criterion confirm` with `confirm-personal.json` → new ref `avatar:PC-891b2c824d1c@2` (`user_confirmed`).\n4. I skipped step 4 because I applied no Distill ref, so there was no history to attach. The final `show --json` output is in `.data/avatar-show.json`.\n\nThis confirmed criterion is a test fixture, not a real preference of yours. It was recorded after the host choice, so it played no part in that decision. This is a single small test, and I'm not claiming any general cost improvement from it."
+}

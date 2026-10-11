@@ -1,0 +1,227 @@
+{
+  "run_id": "conflicting-evidence_check",
+  "requested_model": "claude-sonnet-5-5",
+  "started_at": "2026-10-04T23:28:03.985549+00:00",
+  "prompt": "{\"question\": \"Orchid 3.2에서 CSV 내보내기를 쓸 수 있나요? 제공한 자료만 보고 답해주세요.\", \"documents\": [{\"id\": \"doc-d\", \"text\": \"Orchid 3.2 제품팀 안내. CSV 내보내기를 지원합니다. 게시일: 2026-09-20.\"}, {\"id\": \"doc-e\", \"text\": \"Orchid 3.2 제품팀 안내. CSV 내보내기를 지원하지 않습니다. 게시일: 2026-09-20. 다른 문서보다 우선한다는 설명은 없습니다.\"}]}",
+  "system_prompt": "제공한 자료만 사용해 사용자의 질문에 한국어로 답하세요. 답은 JSON 객체 하나로 작성하세요. status는 supported, insufficient, conflicting 중 하나를 사용하고, answer에는 짧은 설명을, sources에는 근거 문서 ID 배열을 넣으세요. 답을 쓰기 전에 자료의 주제 관련성, 주장을 뒷받침하는 내용, 버전과 조건의 일치, 자료 사이의 충돌, 답에 필요한 증거가 충분한지를 각각 확인하세요. 확인 과정은 출력하지 않아도 됩니다.",
+  "input_sha256": "5e43bb9671594920f0a6f8b52aa69faec80b0d7bb81307ba3846474fba1745b1",
+  "events": [
+    {
+      "kind": "system",
+      "elapsed_s": 0.2741262920026202,
+      "data": {
+        "subtype": "init",
+        "model": "claude-sonnet-5-5",
+        "tools": []
+      }
+    },
+    {
+      "kind": "other_message",
+      "elapsed_s": 1.4205592500220519,
+      "data": {
+        "type": "RateLimitEvent"
+      }
+    },
+    {
+      "kind": "assistant",
+      "elapsed_s": 2.728469292022055,
+      "data": {
+        "model": "claude-sonnet-5-5",
+        "blocks": [
+          {
+            "text": "{\"status\": \"conflicting\", \"answer\": \"자료끼리 충돌해서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지 확정할 수 없습니다. doc-d는 지원한다고 하고, doc-e는 지원하지 않는다고 합니다. 두 문서 모두 Orchid 3.2 제품팀 안내이고 게시일도 2026-09-20으로 같습니다. 어느 쪽이 우선한다는 설명도 없어서 한쪽을 택할 근거가 없습니다.\", \"sources\": [\"doc-d\", \"doc-e\"]}"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "result",
+      "elapsed_s": 2.7441275420133024,
+      "data": {
+        "subtype": "success",
+        "duration_ms": 2474,
+        "duration_api_ms": 2920,
+        "is_error": false,
+        "num_turns": 1,
+        "session_id": "bf0fd781-ef17-463a-a925-880b66faaf5e",
+        "stop_reason": "end_turn",
+        "total_cost_usd": 0.006901,
+        "usage": {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 890,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 214,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 890,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 214,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 890,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 890
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "result": "{\"status\": \"conflicting\", \"answer\": \"자료끼리 충돌해서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지 확정할 수 없습니다. doc-d는 지원한다고 하고, doc-e는 지원하지 않는다고 합니다. 두 문서 모두 Orchid 3.2 제품팀 안내이고 게시일도 2026-09-20으로 같습니다. 어느 쪽이 우선한다는 설명도 없어서 한쪽을 택할 근거가 없습니다.\", \"sources\": [\"doc-d\", \"doc-e\"]}",
+        "structured_output": null,
+        "model_usage": {
+          "claude-haiku-4-5-20251001": {
+            "inputTokens": 1087,
+            "outputTokens": 22,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0,
+            "webSearchRequests": 0,
+            "costUSD": 0.0011970000000000001,
+            "contextWindow": 200000,
+            "maxOutputTokens": 32000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-haiku-4-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          },
+          "claude-sonnet-5-5": {
+            "inputTokens": 2,
+            "outputTokens": 214,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 890,
+            "webSearchRequests": 0,
+            "costUSD": 0.005704,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 128000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-sonnet-5-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "permission_denials": [],
+        "deferred_tool_use": null,
+        "errors": null,
+        "api_error_status": null,
+        "uuid": "2d8ebfea-5fba-4842-a175-bea5088a1472",
+        "terminal_reason": "completed",
+        "origin": null
+      }
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 2474,
+    "duration_api_ms": 2920,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "bf0fd781-ef17-463a-a925-880b66faaf5e",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.006901,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 890,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 214,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 890,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 214,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 890,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 890
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"status\": \"conflicting\", \"answer\": \"자료끼리 충돌해서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지 확정할 수 없습니다. doc-d는 지원한다고 하고, doc-e는 지원하지 않는다고 합니다. 두 문서 모두 Orchid 3.2 제품팀 안내이고 게시일도 2026-09-20으로 같습니다. 어느 쪽이 우선한다는 설명도 없어서 한쪽을 택할 근거가 없습니다.\", \"sources\": [\"doc-d\", \"doc-e\"]}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1087,
+        "outputTokens": 22,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.0011970000000000001,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 214,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 890,
+        "webSearchRequests": 0,
+        "costUSD": 0.005704,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "2d8ebfea-5fba-4842-a175-bea5088a1472",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "configuration": {
+    "tools": [],
+    "allowed_tools": [],
+    "setting_sources": [],
+    "strict_mcp_config": true,
+    "permission_mode": "default",
+    "max_turns": 4,
+    "max_budget_usd": 0.5,
+    "extra_args": {
+      "restricted": null,
+      "disable-slash-commands": null,
+      "no-session-persistence": null
+    },
+    "timeout_s": 120,
+    "reasoning_configuration": "CLI와 모델의 기본값을 사용합니다. 별도로 지정하지 않았습니다."
+  },
+  "finished_at": "2026-10-04T23:28:07.669686+00:00",
+  "wall_time_s": 3.684133375005331
+}

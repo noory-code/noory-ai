@@ -1,0 +1,104 @@
+[
+  {
+    "case": "roadmap_repeated_criteria",
+    "setup": {
+      "seconds": 0.0681527919950895,
+      "archive_sha256": "e74884790b1e8bdc2b1bfc14c29a5e94523fd4ee6a9342675c35b9bb66a16316",
+      "source_sha256": "aaff2ff31062edf0c87f5ce623c2ea0fe1444a124b26b33aa2ddfec08555a27f",
+      "commit": "a1cd08dac15ddac5ac873d5d73e2db2c9aa48a68"
+    },
+    "before": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value",
+        "-q"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "======================================================================\nFAIL: test_completion_criteria_is_repeatable_and_preserves_every_value (test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private<experiment>/stage/scripts/tests/test_roadmap_v4.py\", line 191, in test_completion_criteria_is_repeatable_and_preserves_every_value\n    self.assertIn(\n    ~~~~~~~~~~~~~^\n        \"## Completion criteria\\n\\n\"\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n        milestone_text,\n        ^^^^^^^^^^^^^^^\n    )\n    ^\nAssertionError: '## Completion criteria\\n\\n- Every check passes\\n- Every artifact is published\\n- Users can install the release\\n' not found in '---\\nid: M-00000001\\ntheme: TH-00000001\\ndecision_refs:\\n---\\n\\n# M-00000001 Stable release\\n\\n## Purpose\\n\\n\\n## Period\\n\\n\\n## Scope\\n\\n\\n## Theme\\n\\nTH-00000001\\n\\n## Linked backlog\\n\\n\\n## Completion criteria\\n\\nUsers can install the release\\n\\n'\n\n----------------------------------------------------------------------\nRan 1 test in 0.154s\n\nFAILED (failures=1)\n",
+      "seconds": 0.2529570829938166
+    },
+    "after": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value",
+        "-q"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.158s\n\nOK\n",
+      "seconds": 0.25969712500227615
+    },
+    "full_after": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_roadmap_v4",
+        "-q"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 14 tests in 3.621s\n\nOK\n",
+      "seconds": 3.728191790985875
+    }
+  },
+  {
+    "case": "retrospective_owner_conflict",
+    "setup": {
+      "seconds": 0.07264170897542499,
+      "archive_sha256": "1e61bb43ac1f80a0b09fe395a7d3bb8dadced92736889a1132b436cec3880c03",
+      "source_sha256": "bdb9d5236f785fcb6e4e1c4424731aab1ab5b201e09c109102967a3451b379c9",
+      "commit": "244a219957377557af4c85c5c81426aee6f12b8a"
+    },
+    "before": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item",
+        "-q"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "======================================================================\nFAIL: test_driver_retrospective_refuses_id_owned_by_another_work_item (test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private<experiment>/stage/scripts/tests/test_drive.py\", line 524, in test_driver_retrospective_refuses_id_owned_by_another_work_item\n    self.assertEqual(\"\", retro_id)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: '' != 'R-00000042'\n+ R-00000042\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.077s\n\nFAILED (failures=1)\n",
+      "seconds": 0.15767358400626108
+    },
+    "after": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item",
+        "-q"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.072s\n\nOK\n",
+      "seconds": 0.1482913749932777
+    },
+    "full_after": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "-m",
+        "unittest",
+        "test_drive",
+        "-q"
+      ],
+      "returncode": 0,
+      "stdout": "Mode: execute\nTarget parent: W-00000001\nSelected item: W-00000002\nExecutor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; Path('\"'\"'executor-work.txt'\"'\"').write_text('\"'\"'done\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"'); import json, os; from pathlib import Path; log = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"']); log.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + '\"'\"'\\n### Executor report\\nWhat changed: test executor changed its declared paths\\nWhy: exercise the driver contract\\nChanged paths (JSON):\\n'\"'\"' + json.dumps(['\"'\"'executor-work.txt'\"'\"']) + '\"'\"'\\nReview request: review every success criterion\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\nAcceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'\nIndependent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os\nfrom pathlib import Path\nlog = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"'])\nreport = ('\"'\"'\\n### Reviewer report\\nCRITERIA VERDICT:\\n- criterion: PASS - test reviewer inspected the inputs\\nAPPROVED\\nOUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n'\"'\"')\nlog.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + report, encoding='\"'\"'utf-8'\"'\"')\nPath(os.environ['\"'\"'STAGE_REVIEW_VERDICT_FILE'\"'\"']).write_text(\n    json.dumps({'\"'\"'criteria'\"'\"': [{'\"'\"'criterion'\"'\"': '\"'\"'criterion'\"'\"', '\"'\"'verdict'\"'\"': '\"'\"'PASS'\"'\"', '\"'\"'reason'\"'\"': '\"'\"'test reviewer inspected the inputs'\"'\"'}], '\"'\"'approved'\"'\"': True}), encoding='\"'\"'utf-8'\"'\"')\nprint('\"'\"'APPROVED'\"'\"')'\nAttempt: 1/unlimited\nIteration: 1/unlimited\nExecution time: 0s/unlimited\nWARNING: preflights.codex is not configured; continuing without a venue health check\nExecutor result:\n$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; Path('\"'\"'executor-work.txt'\"'\"').write_text('\"'\"'done\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"'); import json, os; from pathlib import Path; log = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"']); log.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + '\"'\"'\\n### Executor report\\nWhat changed: test executor changed its declared paths\\nWhy: exercise the driver contract\\nChanged paths (JSON):\\n'\"'\"' + json.dumps(['\"'\"'executor-work.txt'\"'\"']) + '\"'\"'\\nReview request: review every success criterion\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\n[exit 0]\n\nPreflight result:\n$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'\n[exit 0]\n\nMode: execute\nTarget parent: W-00000001\nSelected item: W-00000002\nExecutor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/executor-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"'); Path('\"'\"'executor-work.txt'\"'\"').write_text('\"'\"'done\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"'); import json, os; from pathlib import Path; log = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"']); log.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + '\"'\"'\\n### Executor report\\nWhat changed: test executor changed its declared paths\\nWhy: exercise the driver contract\\nChanged paths (JSON):\\n'\"'\"' + json.dumps(['\"'\"'executor-work.txt'\"'\"']) + '\"'\"'\\nReview request: review every success criterion\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\nAcceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/acceptance-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\nIndependent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:\n    exec(\"from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/reviewer-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"')\")\nexcept SystemExit as exc:\n    if exc.code not in (None, 0):\n        raise\nimport json, os\nfrom pathlib import Path\nlog = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"'])\nreport = ('\"'\"'\\n### Reviewer report\\nCRITERIA VERDICT:\\n- criterion: PASS - test reviewer inspected the inputs\\nAPPROVED\\nOUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n'\"'\"')\nlog.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + report, encoding='\"'\"'utf-8'\"'\"')\nPath(os.environ['\"'\"'STAGE_REVIEW_VERDICT_FILE'\"'\"']).write_text(\n    json.dumps({'\"'\"'criteria'\"'\"': [{'\"'\"'criterion'\"'\"': '\"'\"'criterion'\"'\"', '\"'\"'verdict'\"'\"': '\"'\"'PASS'\"'\"', '\"'\"'reason'\"'\"': '\"'\"'test reviewer inspected the inputs'\"'\"'}], '\"'\"'approved'\"'\"': True}), encoding='\"'\"'utf-8'\"'\"')\nprint('\"'\"'APPROVED'\"'\"')'\nAttempt: 1/unlimited\nIteration: 1/unlimited\nExecution time: 0s/unlimited\nWARNING: preflights.codex is not configured; continuing without a venue health check\nExecutor result:\n$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/executor-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"'); Path('\"'\"'executor-work.txt'\"'\"').write_text('\"'\"'done\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"'); import json, os; from pathlib import Path; log = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"']); log.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + '\"'\"'\\n### Executor report\\nWhat changed: test executor changed its declared paths\\nWhy: exercise the driver contract\\nChanged paths (JSON):\\n'\"'\"' + json.dumps(['\"'\"'executor-work.txt'\"'\"']) + '\"'\"'\\nReview request: review every success criterion\\n'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\n[exit 0]\n\nAcceptance result:\n$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/acceptance-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"')'\n[exit 0]\n\nIndependent reviewer result:\n$ /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'try:\n    exec(\"from pathlib import Path; path = Path('\"'\"'/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpdlauondo/reviewer-count'\"'\"'); path.write_text(str(int(path.read_text(encoding='\"'\"'utf-8'\"'\"')) + 1) if path.exists() else '\"'\"'1'\"'\"', encoding='\"'\"'utf-8'\"'\"')\")\nexcept SystemExit as exc:\n    if exc.code not in (None, 0):\n        raise\nimport json, os\nfrom pathlib import Path\nlog = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"'])\nreport = ('\"'\"'\\n### Reviewer report\\nCRITERIA VERDICT:\\n- criterion: PASS - test reviewer inspected the inputs\\nAPPROVED\\nOUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n'\"'\"')\nlog.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + report, encoding='\"'\"'utf-8'\"'\"')\nPath(os.environ['\"'\"'STAGE_REVIEW_VERDICT_FILE'\"'\"']).write_text(\n    json.dumps({'\"'\"'criteria'\"'\"': [{'\"'\"'criterion'\"'\"': '\"'\"'criterion'\"'\"', '\"'\"'verdict'\"'\"': '\"'\"'PASS'\"'\"', '\"'\"'reason'\"'\"': '\"'\"'test reviewer inspected the inputs'\"'\"'}], '\"'\"'approved'\"'\"': True}), encoding='\"'\"'utf-8'\"'\"')\nprint('\"'\"'APPROVED'\"'\"')'\n[exit 0]\nAPPROVED\nMode: execute\nTarget parent: W-00000001\nSelected item: W-00000002\nExecutor: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'\nAcceptance: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'raise SystemExit(0)'\nIndependent reviewer: /opt/homebrew/opt/python@3.14/bin/python3.14 -c 'import json, os\nfrom pathlib import Path\nlog = Path(os.environ['\"'\"'STAGE_WORK_LOG_PATH'\"'\"'])\nreport = ('\"'\"'\\n### Reviewer report\\nCRITERIA VERDICT:\\n- criterion: PASS - test reviewer inspected the inputs\\nAPPROVED\\nOUT-OF-CRITERIA OBSERVATIONS:\\n- None\\n'\"'\"')\nlog.write_text(log.read_text(encoding='\"'\"'utf-8'\"'\"') + report, encoding='\"'\"'utf-8'\"'\"')\nPath(os.environ['\"'\"'STAGE_REVIEW_VERDICT_FILE'\"'\"']).write_text(\n    json.dumps({'\"'\"'criteria'\"'\"': [{'\"'\"'criterion'\"'\"': '\"'\"'criterion'\"'\"', '\"'\"'verdict'\"'\"': '\"'\"'PASS'\"'\"', '\"'\"'reason'\"'\"': '\"'\"'test reviewer inspected the inputs'\"'\"'}], '\"'\"'approved'\"'\"': True}), encoding='\"'\"'utf-8'\"'\"')\nprint('\"'\"'APPROVED'\"'\"')'\nAttempt: 1/unlimited\nIteration: 1/unlimited\nExecution time: 0s/unlimited\nWARNING: preflights.codex is not configured; continuing without a venue health check\n",
+      "stderr": "----------------------------------------------------------------------\nRan 94 tests in 31.731s\n\nOK\n",
+      "seconds": 31.807600957981776
+    }
+  }
+]

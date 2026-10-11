@@ -1,0 +1,29 @@
+{
+  "case_id": "H",
+  "items": [
+    {
+      "id": "H1",
+      "message_id": "H-m1",
+      "exact_text": "보고서를 한 장으로",
+      "act": "attributed_content",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "H2",
+      "message_id": "H-m1",
+      "exact_text": "두 장으로",
+      "act": "attributed_content",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "H3",
+      "message_id": "H-m1",
+      "exact_text": "이번에는 그렇게 맞춰 주세요.",
+      "act": "request_apply_constraint",
+      "constraint_ref": "unresolved",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "claude",
+    "-p",
+    "--model",
+    "opus[1m]",
+    "--plugin-dir",
+    "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar",
+    "--tools",
+    "Skill,Read",
+    "--allowedTools",
+    "Skill,Read",
+    "--setting-sources",
+    "",
+    "--settings",
+    "{\"disableAllHooks\":true}",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--",
+    "This is an isolated plugin-loading test, not a real personal record.\nInvoke the Skill tool with skill avatar:avatar now. Read its instructions. Do not write files,\nrecord choices, propose criteria or invoke other skills. You have only Skill and Read tools.\nAfter the tool returns, state which command shows records, which command exports current criteria,\nand whether confirmation preserves the proposal version. Do not claim you executed those commands.\n"
+  ],
+  "prompt": "This is an isolated plugin-loading test, not a real personal record.\nInvoke the Skill tool with skill avatar:avatar now. Read its instructions. Do not write files,\nrecord choices, propose criteria or invoke other skills. You have only Skill and Read tools.\nAfter the tool returns, state which command shows records, which command exports current criteria,\nand whether confirmation preserves the proposal version. Do not claim you executed those commands.\n",
+  "expected_skill": "avatar:avatar",
+  "hooks": "disabled for this invocation",
+  "limit_seconds": 180
+}

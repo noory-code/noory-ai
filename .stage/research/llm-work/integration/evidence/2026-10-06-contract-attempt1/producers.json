@@ -1,0 +1,17 @@
+{
+  "distill": {
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill"
+    ],
+    "db": "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+  },
+  "avatar": {
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py"
+    ],
+    "home": "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data"
+  }
+}

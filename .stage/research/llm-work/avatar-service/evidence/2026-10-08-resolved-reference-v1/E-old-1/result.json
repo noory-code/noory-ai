@@ -1,0 +1,21 @@
+{
+  "case_id": "E-old",
+  "items": [
+    {
+      "id": "E1",
+      "message_id": "E-m1",
+      "exact_text": "부록은 시간 순서로 정리해 주세요.",
+      "act": "user_task_constraint",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "E2",
+      "message_id": "E-m2",
+      "exact_text": "본문도 같은 순서로 정리해 주세요.",
+      "act": "request_apply_constraint",
+      "constraint_ref": "E1",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

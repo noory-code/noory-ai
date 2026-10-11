@@ -1,0 +1,25 @@
+{
+  "host": "claude",
+  "argv": [
+    "claude",
+    "-p",
+    "--model",
+    "opus[1m]",
+    "--tools",
+    "Read,Write,Edit,Bash",
+    "--allowedTools",
+    "Read,Write,Edit,Bash",
+    "--setting-sources",
+    "",
+    "--settings",
+    "{\"disableAllHooks\":true}",
+    "--strict-mcp-config",
+    "--mcp-config",
+    "{\"mcpServers\":{}}",
+    "--output-format",
+    "stream-json",
+    "--verbose"
+  ],
+  "cwd": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/codex-to-claude-C0",
+  "timeout_seconds": 180
+}

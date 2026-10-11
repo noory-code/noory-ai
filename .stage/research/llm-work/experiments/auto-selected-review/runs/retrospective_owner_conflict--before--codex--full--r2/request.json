@@ -1,0 +1,28 @@
+{
+  "case": "retrospective_owner_conflict--before",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--before--codex--full--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ],
+    "reason": "R-00000041의 work_item이 W-00000099이면 소유자 충돌 오류를 발생시키지 않고 다음 번호의 회고를 생성해 빈 문자열이 아닌 ID를 반환하므로 기준을 위반합니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 7.8593247499957215
+}

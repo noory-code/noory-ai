@@ -1,0 +1,9 @@
+{
+  "schema": "criteria-cli-contract/1",
+  "passed": true,
+  "call_count": 27,
+  "real_hosts": [],
+  "limitations": [
+    "No real AI handoff or cost comparison in this run."
+  ]
+}

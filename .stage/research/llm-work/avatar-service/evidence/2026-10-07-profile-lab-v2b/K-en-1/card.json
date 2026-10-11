@@ -1,0 +1,41 @@
+{
+  "owner_id": "fictional-K",
+  "language": "en",
+  "headline": {
+    "text": "Asked for playful ideas, then for a fixed scope while building",
+    "evidence_ids": [
+      "K1",
+      "K2"
+    ]
+  },
+  "observations": [
+    {
+      "text": "When brainstorming, the user invited five ideas and a playful tone. The summary does not give their exact words or any reply.",
+      "evidence_ids": [
+        "K1"
+      ]
+    },
+    {
+      "text": "When implementing, the user had selected one idea. The user then asked the assistant to keep to this scope until it works.",
+      "evidence_ids": [
+        "K2"
+      ]
+    },
+    {
+      "text": "In a failed retry, the assistant had left out one of two conditions. The user asked it to follow the two conditions already given.",
+      "evidence_ids": [
+        "K4"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "In these records, the user asked for open options while brainstorming. They asked for tight limits when building and when fixing an omission. The request may fit the task, not a fixed style.",
+    "evidence_ids": [
+      "K1",
+      "K2",
+      "K4"
+    ]
+  },
+  "alternative": "The tight limits may come from the project's needs, not from how the user likes to work. Any task at the build stage might have led to the same kind of request.",
+  "limitation": "The content of the two conditions is missing. The records also give no order between K2 and K4, so we cannot say whether they belong to one project."
+}

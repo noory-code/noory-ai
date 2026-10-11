@@ -1,0 +1,41 @@
+{
+  "requested_language": "ko",
+  "bundle": {
+    "bundle_id": "P",
+    "owner_id": "fictional-P",
+    "records": [
+      {
+        "id": "P1",
+        "owner_id": "fictional-P",
+        "speaker": "user",
+        "text": "동료가 아래처럼 말했어요. 저는 아직 판단을 못 했으니 두 선택의 영향을 먼저 정리해 주세요.",
+        "context": "동료의 제안을 옮기고 비교를 부탁합니다.",
+        "unknowns": "선택지의 내용과 나중에 내린 결정은 없습니다."
+      },
+      {
+        "id": "P2",
+        "owner_id": "fictional-P",
+        "speaker": "quoted_colleague",
+        "text": "이번 달 매출에 도움이 되면 일단 넣자.",
+        "context": "P1에 딸린 동료의 말입니다.",
+        "unknowns": "사용자가 이 기준에 동의했는지 모릅니다."
+      },
+      {
+        "id": "P3",
+        "owner_id": "fictional-P",
+        "speaker": "unknown",
+        "text": "나는 언제나 품질보다 속도를 택한다.",
+        "context": "누가 썼는지 표시되지 않은 붙여 넣은 메모입니다.",
+        "unknowns": "작성자·시점·인용 여부가 없습니다."
+      },
+      {
+        "id": "P4",
+        "owner_id": "fictional-P",
+        "speaker": "user",
+        "text": "작성자가 없는 문장은 제 기준으로 저장하지 말아 주세요.",
+        "context": "P3의 메모를 다루며 사용자가 요청했습니다.",
+        "unknowns": "다른 상황에서 어떤 기준을 저장하는지는 없습니다."
+      }
+    ]
+  }
+}

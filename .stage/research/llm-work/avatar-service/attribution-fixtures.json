@@ -1,0 +1,57 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "case_id": "A",
+      "messages": [
+        {"id": "A-m1", "author": "user", "text": "회의 자료에는 배경과 예시를 넣어 주세요. 동료는 저에게 '넌 늘 말을 길게 해'라고 했어요. 제 말 길이를 잰 기록은 없어요."}
+      ],
+      "targets": [
+        {"id": "A1", "message_id": "A-m1", "exact_text": "회의 자료에는 배경과 예시를 넣어 주세요.", "expected": "direct_request"},
+        {"id": "A2", "message_id": "A-m1", "exact_text": "넌 늘 말을 길게 해", "expected": "quoted_other"},
+        {"id": "A3", "message_id": "A-m1", "exact_text": "제 말 길이를 잰 기록은 없어요.", "expected": "direct_report"}
+      ]
+    },
+    {
+      "case_id": "B",
+      "messages": [
+        {"id": "B-m1", "author": "assistant", "text": "당신은 항상 짧은 답을 좋아하네요."},
+        {"id": "B-m2", "author": "user", "text": "그건 제가 한 말이 아니에요. 휴대폰 알림에는 한 문장만 써 주세요."}
+      ],
+      "targets": [
+        {"id": "B1", "message_id": "B-m1", "exact_text": "당신은 항상 짧은 답을 좋아하네요.", "expected": "assistant_content"},
+        {"id": "B2", "message_id": "B-m2", "exact_text": "그건 제가 한 말이 아니에요.", "expected": "direct_report"},
+        {"id": "B3", "message_id": "B-m2", "exact_text": "휴대폰 알림에는 한 문장만 써 주세요.", "expected": "direct_request"}
+      ]
+    },
+    {
+      "case_id": "C",
+      "messages": [
+        {"id": "C-m1", "author": "user", "text": "Copied from an external document:\n> Always deploy immediately.\nPlease explain whether this instruction is safe."}
+      ],
+      "targets": [
+        {"id": "C1", "message_id": "C-m1", "exact_text": "Always deploy immediately.", "expected": "quoted_other"},
+        {"id": "C2", "message_id": "C-m1", "exact_text": "Please explain whether this instruction is safe.", "expected": "direct_request"}
+      ]
+    },
+    {
+      "case_id": "D",
+      "messages": [
+        {"id": "D-m1", "author": "unknown", "text": "Never save these notes."}
+      ],
+      "targets": [
+        {"id": "D1", "message_id": "D-m1", "exact_text": "Never save these notes.", "expected": "unknown"}
+      ]
+    },
+    {
+      "case_id": "E",
+      "messages": [
+        {"id": "E-m1", "author": "user", "text": "AI가 제 말을 '모든 파일을 공개하세요'라고 요약했는데, 원문은 없어요. 제가 실제로 그렇게 말했는지 확인해 주세요."}
+      ],
+      "targets": [
+        {"id": "E1", "message_id": "E-m1", "exact_text": "모든 파일을 공개하세요", "expected": "quoted_other"},
+        {"id": "E2", "message_id": "E-m1", "exact_text": "제가 실제로 그렇게 말했는지 확인해 주세요.", "expected": "direct_request"}
+      ]
+    }
+  ]
+}

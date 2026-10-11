@@ -1,0 +1,24 @@
+{
+  "target_label": "AI에게 요청한 행동",
+  "model_selection": "모델은 두 기록을 같게 읽었어요",
+  "records": [
+    {
+      "id": "S1",
+      "owner_id": "fictional-S",
+      "speaker": "user",
+      "text": "초안은 제게 보여만 주세요. 저장하지 말아 주세요.",
+      "context": "이번 초안을 어떻게 다룰지 AI에게 부탁합니다.",
+      "unknowns": "다른 초안에서의 기준은 없습니다."
+    },
+    {
+      "id": "S3",
+      "owner_id": "fictional-S",
+      "speaker": "user",
+      "text": "저장하라고 한 적은 없어요. 원래 부탁대로 보여만 주세요.",
+      "context": "S2를 읽고 같은 대화에서 원래 부탁을 되짚습니다.",
+      "unknowns": "실제 저장 여부와 이후 결과는 없습니다. 저장 금지를 철회하지 않았습니다."
+    }
+  ],
+  "question": "초안이 실제로 저장되었는지 확인할 수 있는 저장 기록이나 화면이 있을까요?",
+  "confirmed_personal_rule": false
+}

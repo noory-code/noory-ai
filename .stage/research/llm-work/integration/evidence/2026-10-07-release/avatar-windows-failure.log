@@ -1,0 +1,180 @@
+﻿2026-10-07T11:34:03.1032942Z Current runner version: '2.337.0'
+2026-10-07T11:34:03.1055691Z ##[group]Runner Image Provisioner
+2026-10-07T11:34:03.1056412Z Hosted Compute Agent
+2026-10-07T11:34:03.1056874Z Version: 20260901.588
+2026-10-07T11:34:03.1057405Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T11:34:03.1057973Z Build Date: 2026-09-01T19:56:44Z
+2026-10-07T11:34:03.1058533Z Worker ID: {a624fc03-d6f5-458d-b91b-65ecafdfe241}
+2026-10-07T11:34:03.1059119Z Azure Region: westus3
+2026-10-07T11:34:03.1059579Z ##[endgroup]
+2026-10-07T11:34:03.1060757Z ##[group]Operating System
+2026-10-07T11:34:03.1061297Z Microsoft Windows Server 2025
+2026-10-07T11:34:03.1061794Z 10.0.26100
+2026-10-07T11:34:03.1062239Z Datacenter
+2026-10-07T11:34:03.1062619Z ##[endgroup]
+2026-10-07T11:34:03.1063049Z ##[group]Runner Image
+2026-10-07T11:34:03.1063881Z Image: windows-2025-vs2026
+2026-10-07T11:34:03.1064390Z Version: 20260925.250.1
+2026-10-07T11:34:03.1065765Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260925.250/images/windows/Windows2025-VS2026-Readme.md
+2026-10-07T11:34:03.1067090Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260925.250
+2026-10-07T11:34:03.1067845Z ##[endgroup]
+2026-10-07T11:34:03.1068859Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T11:34:03.1070399Z Contents: read
+2026-10-07T11:34:03.1070877Z Metadata: read
+2026-10-07T11:34:03.1071362Z Packages: read
+2026-10-07T11:34:03.1071772Z ##[endgroup]
+2026-10-07T11:34:03.1073612Z Secret source: Actions
+2026-10-07T11:34:03.1074400Z Cache mode: write
+2026-10-07T11:34:03.1074966Z Prepare workflow directory
+2026-10-07T11:34:03.1382015Z Prepare all required actions
+2026-10-07T11:34:03.1421808Z Getting action download info
+2026-10-07T11:34:03.4883820Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-07T11:34:03.6248866Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-07T11:34:03.8596869Z Complete job name: test (windows-latest, 3.12)
+2026-10-07T11:34:03.9804000Z ##[group]Run actions/checkout@v4
+2026-10-07T11:34:03.9804929Z with:
+2026-10-07T11:34:03.9805274Z   repository: noory-code/noory-ai
+2026-10-07T11:34:03.9809088Z   token: ***
+2026-10-07T11:34:03.9809417Z   ssh-strict: true
+2026-10-07T11:34:03.9809759Z   ssh-user: git
+2026-10-07T11:34:03.9810095Z   persist-credentials: true
+2026-10-07T11:34:03.9810469Z   clean: true
+2026-10-07T11:34:03.9810802Z   sparse-checkout-cone-mode: true
+2026-10-07T11:34:03.9811213Z   fetch-depth: 1
+2026-10-07T11:34:03.9811548Z   fetch-tags: false
+2026-10-07T11:34:03.9811889Z   show-progress: true
+2026-10-07T11:34:03.9812227Z   lfs: false
+2026-10-07T11:34:03.9812546Z   submodules: false
+2026-10-07T11:34:03.9812901Z   set-safe-directory: true
+2026-10-07T11:34:03.9813291Z   allow-unsafe-pr-checkout: false
+2026-10-07T11:34:03.9813901Z ##[endgroup]
+2026-10-07T11:34:04.1202103Z Syncing repository: noory-code/noory-ai
+2026-10-07T11:34:04.1203603Z ##[group]Getting Git version info
+2026-10-07T11:34:04.1204155Z Working directory is 'D:\a\noory-ai\noory-ai'
+2026-10-07T11:34:04.1932199Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-07T11:34:04.9074032Z git version 2.55.0.windows.5
+2026-10-07T11:34:04.9117420Z ##[endgroup]
+2026-10-07T11:34:04.9133867Z Temporarily overriding HOME='D:\a\_temp\c2295d86-72f4-4ca8-bada-0305024f60fa' before making global git config changes
+2026-10-07T11:34:04.9135462Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T11:34:04.9143044Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\noory-ai\noory-ai
+2026-10-07T11:34:05.0152570Z Deleting the contents of 'D:\a\noory-ai\noory-ai'
+2026-10-07T11:34:05.0159163Z ##[group]Initializing the repository
+2026-10-07T11:34:05.0167118Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\noory-ai\noory-ai
+2026-10-07T11:34:05.2726200Z Initialized empty Git repository in D:/a/noory-ai/noory-ai/.git/
+2026-10-07T11:34:05.2769665Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/noory-code/noory-ai
+2026-10-07T11:34:05.4650928Z ##[endgroup]
+2026-10-07T11:34:05.4652168Z ##[group]Disabling automatic garbage collection
+2026-10-07T11:34:05.4657971Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-10-07T11:34:05.4926083Z ##[endgroup]
+2026-10-07T11:34:05.4927884Z ##[group]Setting up auth
+2026-10-07T11:34:05.4937745Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T11:34:05.5236391Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-07T11:34:07.7323517Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T11:34:07.7589596Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-07T11:34:08.2240618Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T11:34:08.2525057Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-07T11:34:08.7263108Z [command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-07T11:34:08.7526408Z ##[endgroup]
+2026-10-07T11:34:08.7526990Z ##[group]Fetching the repository
+2026-10-07T11:34:08.7537905Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +80ef8a6d00981ed78e082b7e1cac9b3cb72bab92:refs/remotes/pull/5/merge
+2026-10-07T11:34:10.4265247Z From https://github.com/noory-code/noory-ai
+2026-10-07T11:34:10.4265984Z  * [new ref]         80ef8a6d00981ed78e082b7e1cac9b3cb72bab92 -> pull/5/merge
+2026-10-07T11:34:10.4303015Z ##[endgroup]
+2026-10-07T11:34:10.4303516Z ##[group]Determining the checkout info
+2026-10-07T11:34:10.4305782Z ##[endgroup]
+2026-10-07T11:34:10.4317299Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-10-07T11:34:10.4696863Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-10-07T11:34:10.4982328Z ##[group]Checking out the ref
+2026-10-07T11:34:10.4990633Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/5/merge
+2026-10-07T11:34:11.0491162Z Note: switching to 'refs/remotes/pull/5/merge'.
+2026-10-07T11:34:11.0491501Z 
+2026-10-07T11:34:11.0491730Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-07T11:34:11.0492313Z changes and commit them, and you can discard any commits you make in this
+2026-10-07T11:34:11.0493124Z state without impacting any branches by switching back to a branch.
+2026-10-07T11:34:11.0493510Z 
+2026-10-07T11:34:11.0493740Z If you want to create a new branch to retain commits you create, you may
+2026-10-07T11:34:11.0494175Z do so (now or later) by using -c with the switch command. Example:
+2026-10-07T11:34:11.0494387Z 
+2026-10-07T11:34:11.0494492Z   git switch -c <new-branch-name>
+2026-10-07T11:34:11.0494633Z 
+2026-10-07T11:34:11.0494706Z Or undo this operation with:
+2026-10-07T11:34:11.0494858Z 
+2026-10-07T11:34:11.0494943Z   git switch -
+2026-10-07T11:34:11.0495031Z 
+2026-10-07T11:34:11.0495183Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-07T11:34:11.0495420Z 
+2026-10-07T11:34:11.0495853Z HEAD is now at 80ef8a6 Merge 9b1dfb8586e53ae5ce82afb271b6d4f277d37a70 into d7b6de23441a19b0854dd25d6900743dc9620780
+2026-10-07T11:34:11.0599051Z ##[endgroup]
+2026-10-07T11:34:11.0999096Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-10-07T11:34:11.1224297Z 80ef8a6d00981ed78e082b7e1cac9b3cb72bab92
+2026-10-07T11:34:11.1647400Z ##[group]Run actions/setup-python@v5
+2026-10-07T11:34:11.1647683Z with:
+2026-10-07T11:34:11.1647855Z   python-version: 3.12
+2026-10-07T11:34:11.1648038Z   check-latest: false
+2026-10-07T11:34:11.1650008Z   token: ***
+2026-10-07T11:34:11.1650171Z   update-environment: true
+2026-10-07T11:34:11.1650352Z   allow-prereleases: false
+2026-10-07T11:34:11.1650518Z   freethreaded: false
+2026-10-07T11:34:11.1650677Z ##[endgroup]
+2026-10-07T11:34:11.3013442Z ##[group]Installed versions
+2026-10-07T11:34:11.3222250Z (node:3288) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T11:34:11.3223285Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T11:34:11.3226855Z Successfully set up CPython (3.12.10)
+2026-10-07T11:34:11.3227387Z ##[endgroup]
+2026-10-07T11:34:11.3470044Z ##[group]Run python -m unittest discover -s avatar/tests -q
+2026-10-07T11:34:11.3470492Z [36;1mpython -m unittest discover -s avatar/tests -q[0m
+2026-10-07T11:34:11.5498070Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-07T11:34:11.5498355Z env:
+2026-10-07T11:34:11.5498589Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:34:11.5498981Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-10-07T11:34:11.5499337Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:34:11.5499643Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:34:11.5499944Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:34:11.5500183Z ##[endgroup]
+2026-10-07T11:34:25.7180043Z ======================================================================
+2026-10-07T11:34:25.7181300Z ERROR: test_reads_keep_one_generation_during_a_concurrent_revision (test_avatar_review.AvatarReviewTest.test_reads_keep_one_generation_during_a_concurrent_revision)
+2026-10-07T11:34:25.7182135Z ----------------------------------------------------------------------
+2026-10-07T11:34:25.7182511Z Traceback (most recent call last):
+2026-10-07T11:34:25.7187442Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\shutil.py", line 633, in _rmtree_unsafe
+2026-10-07T11:34:25.7187874Z     os.unlink(fullname)
+2026-10-07T11:34:25.7188434Z PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmphe4y2g9m\\avatar home\\avatar.db'
+2026-10-07T11:34:25.7188925Z 
+2026-10-07T11:34:25.7189074Z During handling of the above exception, another exception occurred:
+2026-10-07T11:34:25.7189282Z 
+2026-10-07T11:34:25.7189357Z Traceback (most recent call last):
+2026-10-07T11:34:25.7189703Z   File "D:\a\noory-ai\noory-ai\avatar\tests\test_avatar_cli.py", line 40, in tearDown
+2026-10-07T11:34:25.7190047Z     self.temporary_directory.cleanup()
+2026-10-07T11:34:25.7190415Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\tempfile.py", line 954, in cleanup
+2026-10-07T11:34:25.7190815Z     self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+2026-10-07T11:34:25.7191203Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\tempfile.py", line 934, in _rmtree
+2026-10-07T11:34:25.7191524Z     _shutil.rmtree(name, onexc=onexc)
+2026-10-07T11:34:25.7191850Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\shutil.py", line 781, in rmtree
+2026-10-07T11:34:25.7192170Z     return _rmtree_unsafe(path, onexc)
+2026-10-07T11:34:25.7192364Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-07T11:34:25.7192681Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\shutil.py", line 635, in _rmtree_unsafe
+2026-10-07T11:34:25.7193026Z     onexc(os.unlink, fullname, err)
+2026-10-07T11:34:25.7193354Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\tempfile.py", line 909, in onexc
+2026-10-07T11:34:25.7193944Z     _os.unlink(path)
+2026-10-07T11:34:25.7194466Z PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmphe4y2g9m\\avatar home\\avatar.db'
+2026-10-07T11:34:25.7194949Z 
+2026-10-07T11:34:25.7195077Z ----------------------------------------------------------------------
+2026-10-07T11:34:25.7195340Z Ran 24 tests in 11.306s
+2026-10-07T11:34:25.7195440Z 
+2026-10-07T11:34:25.7195528Z FAILED (errors=1)
+2026-10-07T11:34:25.8332321Z ##[error]Process completed with exit code 1.
+2026-10-07T11:34:25.8554603Z Post job cleanup.
+2026-10-07T11:34:25.9956539Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-07T11:34:26.0180369Z git version 2.55.0.windows.5
+2026-10-07T11:34:26.0232748Z Temporarily overriding HOME='D:\a\_temp\68c29250-8cca-4000-b717-47e1fbb3f896' before making global git config changes
+2026-10-07T11:34:26.0233393Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T11:34:26.0241343Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\noory-ai\noory-ai
+2026-10-07T11:34:26.0497434Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T11:34:26.0762353Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-07T11:34:26.5365866Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T11:34:26.5593281Z http.https://github.com/.extraheader
+2026-10-07T11:34:26.5630728Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-10-07T11:34:26.5881068Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-07T11:34:27.0043685Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T11:34:27.0274726Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-07T11:34:27.4792150Z Cleaning up orphan processes
+2026-10-07T11:34:27.4825654Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

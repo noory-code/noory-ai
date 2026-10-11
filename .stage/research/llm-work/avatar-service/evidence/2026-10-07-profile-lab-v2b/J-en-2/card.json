@@ -1,0 +1,43 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Asked for trade-offs when planning, but only pass/fail on a test",
+    "evidence_ids": [
+      "J1",
+      "J2"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In project planning, the user asked to see alternatives and what would be given up before deciding. In a routine test result, the user asked only whether it passed.",
+      "evidence_ids": [
+        "J1",
+        "J2"
+      ]
+    },
+    {
+      "text": "In a high-risk migration, the user asked for the failure cases and a way back before approving.",
+      "evidence_ids": [
+        "J3"
+      ]
+    },
+    {
+      "text": "In the next session after J4, the user said they do not always want short answers. They said they want enough to judge what to do.",
+      "evidence_ids": [
+        "J5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Tentatively, in these records the user asked for more or less information depending on what they had to decide. Planning and migration approval came with requests for options and risks. The routine test came with a short request.",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "alternative": "The difference may come from the type of task or from what the user already knew. A routine test may simply have needed a yes or no, whatever the weight of the decision.",
+  "limitation": "The reasons for J1 and J2 are not supplied. So we cannot tell whether the decision itself, or something else, shaped how much information the user asked for."
+}

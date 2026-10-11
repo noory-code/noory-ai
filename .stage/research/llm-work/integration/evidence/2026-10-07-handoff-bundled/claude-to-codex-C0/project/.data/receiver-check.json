@@ -1,0 +1,1 @@
+{"checked_at": "2026-10-07T10:37:47.168947Z", "criteria": [], "generation": 0, "producer": "distill", "producer_version": "1.10.0", "retired": [], "schema": "criteria-snapshot/1", "scope": {"key": "test/demo-app", "kind": "project"}, "store": "absent"}

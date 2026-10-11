@@ -1,0 +1,18 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7","observed_at":"2026-10-07T03:40:01.380845Z"}
+Implemented parse_host in app/host.py; invalid input raises app.errors.ConfigError (decided from W-00000001 purpose "predictable for callers" and consistency with parse_port, not from a criterion).
+Criteria check: distill current for test/demo-app returned no criteria (store absent); avatar export returned no criteria (store absent); distill check of distill:CR-fbed97eb8cc7@1 returned status unknown (.data/receiver-check.json), so it was not applied and is not treated as superseded.
+Applied criteria: none
+Evidence: {"kind":"file","path":"app/host.py","sha256":"37ac941b13ca384da1d4fc3c211b931accf6df0d3892222fe606dcb5366f3e09","observed_at":"2026-10-07T03:44:00Z"}
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+parse_port and parse_host are both implemented. Remaining: add a committed test suite for both parsers (none exists yet; only ad-hoc checks were run) and get an independent review against the success criteria.

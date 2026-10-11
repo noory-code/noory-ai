@@ -1,0 +1,25 @@
+This is a synthetic validation project. The quoted user statements are fixtures,
+not evidence about the real user's personal preferences. Work only inside /var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude.
+Do not commit, use other agents, access personal stores, install packages, or edit plugin source.
+Use the provided public CLI argv arrays; do not import plugin internals or open their databases.
+Your host label is claude; your synthetic session label is sender-claude, not a native session ID.
+All JSON payloads are UTF-8. Run argv arrays without a shell using Python subprocess, or quote each
+argument correctly in a shell. Preserve CLI JSON output in the receipt files requested below.
+If information blocks completion, say what is missing. Do not invent user preferences.
+Distill base argv: ["/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python", "-m", "distill", "criteria", "--db", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude/.data/distill.db"]
+The --db option belongs AFTER the subcommand, e.g. criteria current --db PATH --project test/demo-app.
+Avatar base argv: ["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py", "--home", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude/.data/avatar"]
+Stage packet argv: ["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/handoff_packet.py", "--project-root", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude", "W-00000002", "--project-key", "test/demo-app", "--producers", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude/.data/producers.json"]
+
+Task P: first record the supplied synthetic user criterion with this exact public command:
+["/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python", "-m", "distill", "criteria", "record", "--db", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude/.data/distill.db", "--payload-file", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-claude/.data/criterion-v1.json", "--idempotency-key", "sender-claude:record"]
+Save its actual JSON response to .data/record-result.json. Build and read the Stage packet.
+Run criteria current and check the returned ref before applying it; save check output to .data/check-result.json.
+Implement app/port.py with parse_port(value). Accept only digit strings representing 1..65535;
+return the integer. Invalid values include 'bad', '', '0', '65536' and non-string inputs.
+Use app.errors.ConfigError and follow the stored criterion for invalid values. Do not create host.py yet.
+Record Applied criteria: <returned ref> in the card's Progress.
+Use Stage's documented Evidence format: one JSON object on a single line inside ## Progress:
+Evidence: {"kind":"file","path":"app/port.py","sha256":"<actual 64 hex digest>","observed_at":"<actual UTC time>"}
+Do not put that record in a separate Evidence section or replace it with prose.
+Set Next action to implement parse_host. Test the port behavior. Report changed files and remaining work.

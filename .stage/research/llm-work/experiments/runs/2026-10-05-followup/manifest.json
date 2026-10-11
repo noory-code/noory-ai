@@ -1,0 +1,892 @@
+{
+  "model": "claude-sonnet-5-5",
+  "sdk": "0.2.163",
+  "cli": "2.1.289 (Claude Code)",
+  "thinking_requested": {
+    "type": "disabled"
+  },
+  "max_turns": 1,
+  "max_budget_usd_per_run": 0.15,
+  "total_reported_budget_usd": 5,
+  "parallel_calls": 2,
+  "timeout_s": 90,
+  "source_hashes": {
+    "followup-cases.json": "0228f21f57b6a6b024654259ae0ad8841cbf97a4a28ec4b4ccb8e09d57c6b77a",
+    "followup-rubric.json": "2c9723b7f07d33520394c3f0cf8aacb5c9c00a5560ac349c60f60861d5462701",
+    "followup-state-fixtures.json": "a496332e2fd1560cd60a26148366f08035e403153b6d0a164b835d8db1023582",
+    "followup-routing.json": "783eb3947ce199fdcaace84beac2cd671cf4f56236e6c91d52d0bd4aff04d01d"
+  },
+  "runner_sha256": "3f8da70c547824c7dd1f3f20b15c0efc9a21bfa72f3fd863f6825a07c37edd18",
+  "schedule": [
+    {
+      "case": "context_east",
+      "condition": "selected",
+      "repeat": 1
+    },
+    {
+      "case": "example_post",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "context_south",
+      "condition": "selected",
+      "repeat": 3
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "context_east",
+      "condition": "selected",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "full",
+      "repeat": 1
+    },
+    {
+      "case": "context_west",
+      "condition": "lossy",
+      "repeat": 1
+    },
+    {
+      "case": "context_west",
+      "condition": "full",
+      "repeat": 3
+    },
+    {
+      "case": "context_east",
+      "condition": "lossy",
+      "repeat": 1
+    },
+    {
+      "case": "clear_missing",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "context_north",
+      "condition": "lossy",
+      "repeat": 2
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "state_correct",
+      "condition": "readback",
+      "repeat": 3
+    },
+    {
+      "case": "context_east",
+      "condition": "lossy",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "selected",
+      "repeat": 1
+    },
+    {
+      "case": "example_cafe",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "example_archive",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "context_south",
+      "condition": "selected",
+      "repeat": 2
+    },
+    {
+      "case": "route_2",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "route_5",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "route_0",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "state_no_write",
+      "condition": "readback",
+      "repeat": 3
+    },
+    {
+      "case": "example_archive",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "clear_missing",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "context_east",
+      "condition": "full",
+      "repeat": 3
+    },
+    {
+      "case": "example_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "state_no_write",
+      "condition": "readback",
+      "repeat": 1
+    },
+    {
+      "case": "route_2",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "clear_draft",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "route_1",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "context_west",
+      "condition": "selected",
+      "repeat": 3
+    },
+    {
+      "case": "state_no_write",
+      "condition": "status_only",
+      "repeat": 3
+    },
+    {
+      "case": "revised_report",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "revised_report",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "example_archive",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "route_1",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "context_south",
+      "condition": "full",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "clear_report",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "example_cafe",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "revised_report",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "route_3",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "state_correct",
+      "condition": "readback",
+      "repeat": 1
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "readback",
+      "repeat": 3
+    },
+    {
+      "case": "state_partial",
+      "condition": "status_only",
+      "repeat": 2
+    },
+    {
+      "case": "clear_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "state_correct",
+      "condition": "status_only",
+      "repeat": 3
+    },
+    {
+      "case": "revised_draft",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "example_cafe",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "route_3",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "revised_report",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "example_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "clear_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "context_east",
+      "condition": "lossy",
+      "repeat": 3
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "status_only",
+      "repeat": 3
+    },
+    {
+      "case": "revised_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "route_0",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "state_correct",
+      "condition": "readback",
+      "repeat": 2
+    },
+    {
+      "case": "context_south",
+      "condition": "selected",
+      "repeat": 1
+    },
+    {
+      "case": "example_post",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "example_archive",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "example_archive",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "clear_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "example_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "state_no_write",
+      "condition": "readback",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "example_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "revised_report",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "full",
+      "repeat": 2
+    },
+    {
+      "case": "route_4",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "context_north",
+      "condition": "selected",
+      "repeat": 3
+    },
+    {
+      "case": "state_correct",
+      "condition": "status_only",
+      "repeat": 2
+    },
+    {
+      "case": "revised_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "revised_draft",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "clear_report",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "state_partial",
+      "condition": "status_only",
+      "repeat": 3
+    },
+    {
+      "case": "revised_report",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "clear_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "revised_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "revised_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "revised_draft",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "revised_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "route_3",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "clear_report",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "context_north",
+      "condition": "full",
+      "repeat": 1
+    },
+    {
+      "case": "example_cafe",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "revised_continue",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "context_north",
+      "condition": "selected",
+      "repeat": 2
+    },
+    {
+      "case": "context_north",
+      "condition": "lossy",
+      "repeat": 3
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "revised_draft",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "context_north",
+      "condition": "full",
+      "repeat": 3
+    },
+    {
+      "case": "revised_continue",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "context_south",
+      "condition": "lossy",
+      "repeat": 1
+    },
+    {
+      "case": "clear_report",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "status_only",
+      "repeat": 2
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "status_only",
+      "repeat": 1
+    },
+    {
+      "case": "route_4",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "route_5",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "example_archive",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "state_partial",
+      "condition": "status_only",
+      "repeat": 1
+    },
+    {
+      "case": "clear_draft",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "context_east",
+      "condition": "full",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "context_south",
+      "condition": "lossy",
+      "repeat": 2
+    },
+    {
+      "case": "state_no_write",
+      "condition": "status_only",
+      "repeat": 1
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "readback",
+      "repeat": 2
+    },
+    {
+      "case": "revised_continue",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "example_post",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "route_0",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "clear_missing",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "clear_missing",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "context_north",
+      "condition": "lossy",
+      "repeat": 1
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "clear_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "state_wrong_path",
+      "condition": "readback",
+      "repeat": 1
+    },
+    {
+      "case": "revised_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "state_no_write",
+      "condition": "status_only",
+      "repeat": 2
+    },
+    {
+      "case": "clear_draft",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "revised_continue",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "example_cafe",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "context_south",
+      "condition": "full",
+      "repeat": 1
+    },
+    {
+      "case": "context_south",
+      "condition": "lossy",
+      "repeat": 3
+    },
+    {
+      "case": "clear_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "clear_missing",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "lossy",
+      "repeat": 2
+    },
+    {
+      "case": "example_post",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "lossy",
+      "repeat": 3
+    },
+    {
+      "case": "route_1",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "state_partial",
+      "condition": "readback",
+      "repeat": 3
+    },
+    {
+      "case": "example_cafe",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "context_north",
+      "condition": "selected",
+      "repeat": 1
+    },
+    {
+      "case": "clear_report",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "context_west",
+      "condition": "selected",
+      "repeat": 2
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "clear_draft",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "state_partial",
+      "condition": "readback",
+      "repeat": 2
+    },
+    {
+      "case": "context_south",
+      "condition": "full",
+      "repeat": 3
+    },
+    {
+      "case": "revised_draft",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "context_east",
+      "condition": "selected",
+      "repeat": 3
+    },
+    {
+      "case": "example_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "clear_draft",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "context_east",
+      "condition": "full",
+      "repeat": 1
+    },
+    {
+      "case": "clear_missing",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "revised_continue",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "route_4",
+      "condition": "model",
+      "repeat": 2
+    },
+    {
+      "case": "state_correct",
+      "condition": "status_only",
+      "repeat": 1
+    },
+    {
+      "case": "route_2",
+      "condition": "model",
+      "repeat": 3
+    },
+    {
+      "case": "route_5",
+      "condition": "model",
+      "repeat": 1
+    },
+    {
+      "case": "example_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "example_post",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "state_partial",
+      "condition": "readback",
+      "repeat": 1
+    },
+    {
+      "case": "memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "context_north",
+      "condition": "full",
+      "repeat": 2
+    },
+    {
+      "case": "revised_continue",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "clear_draft",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "clear_report",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "revised_draft",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "example_post",
+      "condition": "purpose_check",
+      "repeat": 1
+    }
+  ]
+}

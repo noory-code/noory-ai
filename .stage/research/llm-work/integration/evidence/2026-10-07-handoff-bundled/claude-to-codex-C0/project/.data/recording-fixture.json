@@ -1,0 +1,16 @@
+{
+  "synthetic_only": true,
+  "label": "claude-to-codex-C0",
+  "project_key": "test/demo-app",
+  "statement": "Choose an explicit error contract that callers can predict.",
+  "avatar_argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py"
+  ],
+  "distill_argv": [
+    "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+    "-m",
+    "distill",
+    "criteria"
+  ]
+}

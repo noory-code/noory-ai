@@ -1,0 +1,27 @@
+You are the Claude planning venue for W-00000280. Read the card at
+/Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000280/_story.md and its ancestor
+/Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/_epic.md.
+Read the released Avatar README and skill at
+/Users/woogis/.codex/worktrees/criteria-release/noory-ai/avatar/README.md and
+/Users/woogis/.codex/worktrees/criteria-release/noory-ai/avatar/skills/avatar/SKILL.md.
+Read-only task: do not edit files, create worktrees, invoke workflows, or delegate.
+The human corrected a management-heavy service plan: they want a cute, playful self-discovery
+service, like a personality quiz, paid reports and badges. They ALSO want management functions.
+Everyday choices, work, and relationships all interest them; do not force one topic or a coder-only
+audience. The core purpose is gradually getting to know oneself, not merely consistent AI decisions.
+Propose ONE coherent small product experience in Korean. Include a concrete first five-minute
+journey, intrinsic fun beyond badges, free/paid distinction, meaningful badges, reasons to return,
+the optional plugin connection, and the smallest experiment. Prices are untested hypotheses.
+The initial release has local choice/criterion history, explicit confirmation, revisions, and
+revocations. It has no quiz UI, cloud service, or validated personality assessment.
+Separate observed records, AI interpretations, and user-confirmed criteria. Never infer psychological
+diagnoses or claim scientific validity. Hypothetical quiz answers do not prove real behavior.
+Avoid badges for agreeing with the AI or choosing one personality. Do not assume broad transcript
+collection is authorized. Keep user-specific sharing opt-in and previewable.
+Factual references already checked by the supervisor: 16Personalities offers paid growth/career/
+relationship guides at https://www.16personalities.com/premium/pro-suite ; Finch keeps core
+reflection free and sells extra content/customization at
+https://help.finchcare.com/hc/en-us/articles/37780200600589-Benefits-of-Finch-Plus . These show product
+patterns, not proof of Avatar demand. Do not invent competitor revenue, retention, or conversion.
+Return a concise proposal plus three product risks and an exact statement of what remains undecided.
+Use short, natural, polite Korean sentences. Make recommendations clearly provisional.

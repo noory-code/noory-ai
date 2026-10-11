@@ -1,0 +1,21 @@
+{
+  "case_id": "Y",
+  "items": [
+    {
+      "id": "Y1",
+      "message_id": "Y-m1",
+      "exact_text": "저는 보통 결론을 먼저 읽어요.",
+      "act": "user_report",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "Y2",
+      "message_id": "Y-m2",
+      "exact_text": "이번 보고서도 그 순서로 보여 주세요.",
+      "act": "request_apply_constraint",
+      "constraint_ref": "Y1",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

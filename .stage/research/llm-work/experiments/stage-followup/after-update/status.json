@@ -1,0 +1,25 @@
+{
+  "completed_requests": [
+    "criteria--exception_scope--extracted_rules",
+    "criteria--exception_scope--raw_notes",
+    "criteria--current_change--raw_notes",
+    "criteria--current_change--extracted_rules",
+    "criteria--project_scope--extracted_rules",
+    "criteria--project_scope--raw_notes",
+    "criteria--unconfirmed_guess--raw_notes",
+    "criteria--unconfirmed_guess--extracted_rules",
+    "freshness--original--r2",
+    "freshness--original--r1",
+    "freshness--original--r3",
+    "freshness--time_explicit--r1",
+    "freshness--time_explicit--r2",
+    "freshness--time_explicit--r3",
+    "native--stage_card",
+    "native--stage_card_observation"
+  ],
+  "capacity_errors": 0,
+  "error": null,
+  "request": "freshness--time_explicit--r3",
+  "phase": "native_handoff",
+  "stopped_at": "2026-10-05T08:01:21.972990+00:00"
+}

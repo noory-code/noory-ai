@@ -1,0 +1,319 @@
+{
+  "run_id": "ask_callback",
+  "requested_model": "sonnet",
+  "started_at": "2026-10-04T23:27:15.064749+00:00",
+  "prompt": "Read 도구로 /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt 파일을 한 번 읽고, RESEARCH_MARKER 값을 그대로 답해주세요. 다른 파일은 읽지 마세요.",
+  "system_prompt": "지정한 시험 파일을 읽는 실험입니다. 요청대로 수행하세요.",
+  "input_sha256": "990ffbb4d34b25987fa31c60ad24ec13f6d362a2ecc8d2c3c174086e620aaf22",
+  "events": [
+    {
+      "kind": "system",
+      "elapsed_s": 0.5722086250025313,
+      "data": {
+        "subtype": "init",
+        "model": "claude-sonnet-5-5",
+        "tools": [
+          "Read"
+        ]
+      }
+    },
+    {
+      "kind": "other_message",
+      "elapsed_s": 1.1890898749988992,
+      "data": {
+        "type": "RateLimitEvent"
+      }
+    },
+    {
+      "kind": "assistant",
+      "elapsed_s": 2.314125958015211,
+      "data": {
+        "model": "claude-sonnet-5-5",
+        "blocks": [
+          {
+            "id": "toolu_01MDDWh6FGmXiUK6XDzfCspG",
+            "name": "Read",
+            "input": {
+              "file_path": "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "kind": "hook",
+      "elapsed_s": 2.3229345830040984,
+      "data": {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Read",
+        "tool_input": {
+          "file_path": "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt"
+        },
+        "tool_use_id": "toolu_01MDDWh6FGmXiUK6XDzfCspG"
+      }
+    },
+    {
+      "kind": "permission_callback",
+      "elapsed_s": 2.3406618750013877,
+      "data": {
+        "tool_name": "Read",
+        "input": {
+          "file_path": "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt"
+        },
+        "tool_use_id": "toolu_01MDDWh6FGmXiUK6XDzfCspG"
+      }
+    },
+    {
+      "kind": "other_message",
+      "elapsed_s": 2.3475122500094585,
+      "data": {
+        "type": "RateLimitEvent"
+      }
+    },
+    {
+      "kind": "hook",
+      "elapsed_s": 2.3531667909992393,
+      "data": {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Read",
+        "tool_input": {
+          "file_path": "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt"
+        },
+        "tool_response": {
+          "type": "text",
+          "file": {
+            "filePath": "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/llm-work-pilot-70gfj_h7/fixture.txt",
+            "content": "RESEARCH_MARKER=orchid-731\n",
+            "numLines": 2,
+            "startLine": 1,
+            "totalLines": 2
+          }
+        },
+        "tool_use_id": "toolu_01MDDWh6FGmXiUK6XDzfCspG"
+      }
+    },
+    {
+      "kind": "user_or_tool_result",
+      "elapsed_s": 2.3568572910153307,
+      "data": {
+        "content": [
+          {
+            "tool_use_id": "toolu_01MDDWh6FGmXiUK6XDzfCspG",
+            "content": "1\tRESEARCH_MARKER=orchid-731\n2\t",
+            "is_error": null
+          }
+        ]
+      }
+    },
+    {
+      "kind": "assistant",
+      "elapsed_s": 3.35220466600731,
+      "data": {
+        "model": "claude-sonnet-5-5",
+        "blocks": [
+          {
+            "text": "RESEARCH_MARKER=orchid-731"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "other_message",
+      "elapsed_s": 3.361742041015532,
+      "data": {
+        "type": "RateLimitEvent"
+      }
+    },
+    {
+      "kind": "result",
+      "elapsed_s": 3.3695895410201047,
+      "data": {
+        "subtype": "success",
+        "duration_ms": 3093,
+        "duration_api_ms": 3415,
+        "is_error": false,
+        "num_turns": 2,
+        "session_id": "281778a3-35a0-4465-b1d0-0832f4da330d",
+        "stop_reason": "end_turn",
+        "total_cost_usd": 0.0037364,
+        "usage": {
+          "input_tokens": 4,
+          "cache_creation_input_tokens": 186,
+          "cache_read_input_tokens": 3182,
+          "output_tokens": 126,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 186,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 19,
+              "cache_read_input_tokens": 1591,
+              "cache_creation_input_tokens": 186,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 186
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "result": "RESEARCH_MARKER=orchid-731",
+        "structured_output": null,
+        "model_usage": {
+          "claude-haiku-4-5-20251001": {
+            "inputTokens": 998,
+            "outputTokens": 18,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0,
+            "webSearchRequests": 0,
+            "costUSD": 0.001088,
+            "contextWindow": 200000,
+            "maxOutputTokens": 32000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-haiku-4-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          },
+          "claude-sonnet-5-5": {
+            "inputTokens": 4,
+            "outputTokens": 126,
+            "cacheReadInputTokens": 3182,
+            "cacheCreationInputTokens": 186,
+            "webSearchRequests": 0,
+            "costUSD": 0.0026484,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 128000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-sonnet-5-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "permission_denials": [],
+        "deferred_tool_use": null,
+        "errors": null,
+        "api_error_status": null,
+        "uuid": "ce40f632-ef29-4634-9225-220017b59288",
+        "terminal_reason": "completed",
+        "origin": null
+      }
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 3093,
+    "duration_api_ms": 3415,
+    "is_error": false,
+    "num_turns": 2,
+    "session_id": "281778a3-35a0-4465-b1d0-0832f4da330d",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.0037364,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 186,
+      "cache_read_input_tokens": 3182,
+      "output_tokens": 126,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 186,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 19,
+          "cache_read_input_tokens": 1591,
+          "cache_creation_input_tokens": 186,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 186
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "RESEARCH_MARKER=orchid-731",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 998,
+        "outputTokens": 18,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.001088,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 126,
+        "cacheReadInputTokens": 3182,
+        "cacheCreationInputTokens": 186,
+        "webSearchRequests": 0,
+        "costUSD": 0.0026484,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "ce40f632-ef29-4634-9225-220017b59288",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "configuration": {
+    "tools": [
+      "Read"
+    ],
+    "allowed_tools": [],
+    "setting_sources": [],
+    "strict_mcp_config": true,
+    "permission_mode": "default",
+    "max_turns": 4,
+    "max_budget_usd": 0.5,
+    "extra_args": {
+      "restricted": null,
+      "disable-slash-commands": null,
+      "no-session-persistence": null
+    },
+    "timeout_s": 120,
+    "reasoning_configuration": "CLI와 모델의 기본값을 사용합니다. 별도로 지정하지 않았습니다."
+  },
+  "finished_at": "2026-10-04T23:27:19.254259+00:00",
+  "wall_time_s": 4.189494749996811
+}

@@ -1,0 +1,51 @@
+{
+  "host": "claude",
+  "exit": 0,
+  "elapsed_seconds": 74.06668383296346,
+  "session_ids": [
+    "73407316-4aeb-4fe5-8cbd-a3a2c8cf375a"
+  ],
+  "reported_models": [
+    "claude-opus-5-5"
+  ],
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 30,
+        "cache_creation_input_tokens": 18127,
+        "cache_read_input_tokens": 197030,
+        "output_tokens": 7847,
+        "output_tokens_details": {
+          "thinking_tokens": 696
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 18127,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 990,
+            "cache_read_input_tokens": 19121,
+            "cache_creation_input_tokens": 2217,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 2217
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "reported_cost_usd": 0.34148200000000006
+    }
+  ],
+  "assistant_text": "I added `parse_host` in `app/host.py`. It returns valid input unchanged and raises `app.errors.ConfigError` for anything invalid. I then recorded all the Avatar fixtures.\n\n**Tests:** The project has no test suite, so I ran ad-hoc assertions and they all passed:\n- `parse_host(\"example.com\")` returns `\"example.com\"`.\n- `\"bad\"`, `\"\"`, `\"a .com\"`, `\"a.com\\n\"`, `\"\\t.\"`, `None` and `3` all raise `ConfigError`.\n- `parse_port(\"8080\")` still returns `8080`, and `app/port.py`'s hash still matches the prior evidence (`742fb7d2…`).\n\n**Criteria check:**\n- Distill `criteria current` for `test/demo-app` returned no criteria (store absent).\n- Avatar `export` also returned no criteria (store absent).\n- I checked the prior ref `distill:CR-fbed97eb8cc7@1` just before choosing; its status was `unknown`. That output is saved in `.data/receiver-check.json`.\n- So no criterion was eligible, and I applied none. \"Unknown\" is not \"superseded\", so I added no `Stale judgment` line.\n\n**Decision:** No current criterion existed, so I chose the contract myself: invalid input raises `ConfigError`. The epic's purpose is \"Make configuration parsing predictable for callers\", and the existing `parse_port` already raises `ConfigError`. Reporting errors the same way keeps both parsers predictable.\n\n**Card (`_story.md`):** I only appended to Progress, leaving the earlier records as they were. The new lines cover the implementation, the check results, `Applied criteria: none` and file evidence for `app/host.py`. Next action now says both parsers are done. What's left is a committed test suite and an independent review.\n\n**Avatar fixtures:**\n1. `choice add` recorded `CH-30a82faf8d68` with chosen `ConfigError`, the exact quote and origin from `.data/choice-origin.json`, and `source_refs: []`.\n2. `criterion propose` created `avatar:PC-bcc50280a134@1`.\n3. `criterion confirm` with `.data/confirm-personal.json` produced the new ref `avatar:PC-bcc50280a134@2`, which `avatar check` reports as `eligible_current`. It was confirmed after the host choice was made, so it wasn't used for that choice.\n4. I skipped the Distill history attach because I applied no Distill ref.\n\nThe final `show --json` output is saved in `.data/avatar-show.json`. Every CLI response is in `.data/avatar-*.json`, and the payloads I sent are in `.data/choice-payload.json` and `.data/criterion-propose-payload.json`.\n\nNothing blocked the work, and I didn't need to ask any questions. I'm making no claim about cost improvements."
+}

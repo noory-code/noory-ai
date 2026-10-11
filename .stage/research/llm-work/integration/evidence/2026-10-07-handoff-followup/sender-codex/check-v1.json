@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+    "-m",
+    "distill",
+    "criteria",
+    "check",
+    "--db",
+    "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/sender-codex/.data/distill.db",
+    "--project",
+    "test/demo-app",
+    "--refs",
+    "distill:CR-fbed97eb8cc7@1"
+  ],
+  "exit": 0,
+  "stdout": "{\"checked_at\": \"2026-10-07T03:40:18.539855Z\", \"generation\": 1, \"results\": [{\"ref\": \"distill:CR-fbed97eb8cc7@1\", \"status\": \"eligible_current\"}]}\n",
+  "stderr": ""
+}

@@ -1,0 +1,17 @@
+{
+  "purpose": "지원 목록에 있는 모델을 직접 지정해 현재 호출할 수 있는지 확인합니다.",
+  "research_comparison": false,
+  "record_source": "이 대화의 exec_command와 write_stdin이 반환한 공개 출력",
+  "observed_start_log_at": "2026-10-05T07:07:34Z",
+  "requested_model": "gpt-5.6-sol",
+  "working_directory": "/tmp",
+  "command": "codex exec --ignore-user-config --skip-git-repo-check --ephemeral --sandbox read-only --json -m gpt-5.6-sol -c 'model_reasoning_effort=\"low\"' -c 'model_reasoning_summary=\"none\"' -c 'show_raw_agent_reasoning=false' -c 'web_search=\"disabled\"' -c 'project_doc_max_bytes=0' '도구를 사용하지 마세요. 연결 확인입니다. OK 한 단어로만 응답하세요.'",
+  "exit_code": 1,
+  "events": [
+    {"type": "error", "message": "Selected model is at capacity. Please try a different model."},
+    {"type": "turn.failed", "error": {"message": "Selected model is at capacity. Please try a different model."}}
+  ],
+  "answer": null,
+  "usage": null,
+  "limit": "이 계정의 이 시점 CLI 요청 한 번을 확인했습니다. 서비스 전체의 상태를 입증하지 않습니다."
+}

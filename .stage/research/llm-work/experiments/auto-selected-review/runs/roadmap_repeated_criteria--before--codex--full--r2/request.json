@@ -1,0 +1,28 @@
+{
+  "case": "roadmap_repeated_criteria--before",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 2,
+  "id": "roadmap_repeated_criteria--before--codex--full--r2",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ],
+    "reason": "--completion-criteria는 기본 store 동작으로 마지막 값만 보존하며, create_milestone은 이를 '- ' 접두사 없이 섹션에 기록하므로 세 값을 입력 순서대로 항목으로 남기지 못합니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 7.706838874990353
+}

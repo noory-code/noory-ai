@@ -1,0 +1,28 @@
+Independent read-only QA review. Do not edit, run commands or delegate.
+Return JSON with approved, criteria (criterion/verdict/reason), findings (severity/location/reason), limits.
+Judge W-00000277's three success criteria from /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000277/_story.md.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/findings/2026-10-07-three-plugin-handoff.md and
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/implementation-status.md. The product source tests were completed on Oct 6; this turn changes only research scripts and records.
+Read the first rejection at /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff/qa-review.json and its disposition in the card.
+The first run had six correct code outputs but three wrong records. They remain failures in its current host-runs.json.
+The followup uses unchanged products, explicitly documented Evidence JSON, unknown-status handling, and Next action updates.
+Its plan was frozen before any of its two sender and six receiver runs. No successful retries were silently substituted.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/real-host-followup-plan.md, check_host_result.py, verify_integration.py, test_host_result_checker.py,
+and the followup host-runs.json, summary.json, verification.txt and fixture-paths.json under /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-followup.
+Read each preserved receiver card. Fixture Markdown lives at the same relative path with .txt appended:
+<case>/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt. The manifest preserves original paths and byte hashes.
+This prevents synthetic test IDs being treated as live Stage records; model-produced contents were not edited.
+The followup claude-to-codex-C0 hit the frozen 180-second cap after writing and checking its files,
+without a turn.completed event or final usage. It is exit 124, not a successful CLI run. The report
+must say the full real-host gate remains failed and W-00000277 is not closed. No extra retry is planned.
+Judge whether the observations and repair are reported accurately, but do not approve full completion
+while that acceptance gate is still failing. saved-case-observations.json checks every case's saved
+files and Avatar references separately; those checks do not substitute for normal host completion.
+Inspect the original tool trace and receipts for the previous failure types, especially claude-to-codex-C0 unknown status
+and codex-to-claude-C1/C2 Next action. Check Avatar projections include the actual applied ref.
+The checker now subtracts sender applied-ref counts and rejects unsupported superseded claims. Its Next action check
+specifically catches the observed 'Implement parse_host' mistake, not every conceivable stale phrase. Judge the actual cards too.
+Verifier checks lookup presence and receipt, not temporal order; the report must not claim otherwise.
+The C0 baseline retains prior code and criterion text, so it is query-disconnected, not free of prior influence.
+No general savings, success-rate, natural skill selection or unattended-driver claim is made.
+Do not reproduce tests. Report only concrete remaining defects or overclaims within this bounded QA scope.

@@ -63,9 +63,9 @@
 | 발견 처리 규칙 | `operations/discovery.md` |
 | claude venue 실행 방식 | `operations/claude-venue.md` |
 | 세션에 붙은 훅과 빈 자리 | `operations/session-hooks.md` |
+| 진행 중인 연구자료와 분석 | [research/README.md](research/README.md) |
 | 공통 운영 규칙 | 설치된 Stage 플러그인의 플러그인 소유 `operations/` |
 
 ## 핵심 규칙
 
 계획된 산출물은 진실이 아니다. 현재 산출물은 진실이 아니다. 공식 산출물만이 진실이다.
-

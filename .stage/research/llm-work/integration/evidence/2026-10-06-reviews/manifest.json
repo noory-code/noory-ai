@@ -1,0 +1,34 @@
+{
+  "distill-claude-review.json": {
+    "source": "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/.stage/.runtime/distill-claude-review.json",
+    "sha256": "e0dfef96bacd69648bcb34948711073c39a770f6fc49c438bcfe4bcbb67eea48"
+  },
+  "distill-claude-review-round2.json": {
+    "source": "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/.stage/.runtime/distill-claude-review-round2.json",
+    "sha256": "eae3be867d65f5aaf98369248e361f46a5a9197ea353a8a81771cc57933cc71b"
+  },
+  "avatar-claude-review.json": {
+    "source": "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/.stage/.runtime/avatar-claude-review.json",
+    "sha256": "1f9a8191e7ab6d5bfa786b73adae065e8bf1ae1edd6decc9226a4a461f631909"
+  },
+  "avatar-claude-review-round2.json": {
+    "source": "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/.stage/.runtime/avatar-claude-review-round2.json",
+    "sha256": "7dcd7e8b77e3b6ba47de391eacb3b08807146662bc89f03232bea5c4d9594398"
+  },
+  "stage-claude-review.json": {
+    "source": "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/.stage/.runtime/stage-claude-review.json",
+    "sha256": "21b466945c3e86b0ed915dc5cffb01b33d7953551692eff507f193d2aadb2014"
+  },
+  "stage-claude-review-round2.json": {
+    "source": "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/.stage/.runtime/stage-claude-review-round2.json",
+    "sha256": "5ce002fdbf1a8e0a06c7bd470dbc65f3de081a0087b4345e10b178e3f2be9a1e"
+  },
+  "final-repair-review.json": {
+    "source": "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/final-repair-review.json",
+    "sha256": "f58089ffefa49d4989a47bd2e8f33e80d74496df78867946eafeaa6379001ac7"
+  },
+  "stage-edge-review.json": {
+    "source": "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/stage-edge-review.json",
+    "sha256": "e5e89005a161cfe061816d0f216c2036b4130f8038fb0460389e4fdb4e5fb0f1"
+  }
+}

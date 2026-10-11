@@ -1,0 +1,250 @@
+{
+  "started_at": "2026-10-05T12:28:09.869618+00:00",
+  "planned_calls": 36,
+  "historical_defects": 2,
+  "schedules": {
+    "claude": [
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--missing",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--missing",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "claude",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "full",
+        "repeat": 2
+      }
+    ],
+    "codex": [
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--missing",
+        "condition": "full",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--missing",
+        "condition": "selected",
+        "repeat": 1
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--before",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "roadmap_repeated_criteria--after",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "selected",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--before",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "full",
+        "repeat": 2
+      },
+      {
+        "host": "codex",
+        "case": "retrospective_owner_conflict--after",
+        "condition": "selected",
+        "repeat": 2
+      }
+    ]
+  },
+  "sources": {
+    "selected-review/test_selector.py": "fb3b13bb184dfc10068e61786cbd8795bddff7a6fac2fdfbdeed13575271c130",
+    "selected-review/run.py": "f06aa92e3375f64b4325d222eab9a0ab3f2fb52034fe2a86a8117e12fd07841d",
+    "selected-review/selector.py": "021101a8e87ae6f69add236e34b4dadcec645892217a66e4f06424fdfe1a5498",
+    "selected-review/prepare-recorded.py": "74d5713b483aa3ece3b43355ba323a10b5987b0cf16d135d9b74bcef9050c839",
+    "selected-review/prepare.py": "8de3c7f8c03906fc7990acaaefe89f46e3145baecc3023c6e8f077c17a3fa350",
+    "selected-review/fixtures.json": "fe86532278671237ce69cc4c0a8cdeb31395fa8d69be68f0fa68f43b1502e407",
+    "selected-review/regression-results.json": "e3f7cbcb2d741da6412653d866338e51e2de3d64e91c15f3dde3c906ac8b22d2",
+    "selected-review/README.md": "6793a1431c520e73575624398b25e2b570262fe73a35a5f3ff8255b8b33ce59a",
+    "ideas-lab/run_models.py": "28fe73bfc1bf65501bedcf65befbfcd8517da43f4082bd4e117d7e71dc7eb095"
+  },
+  "cli_versions": {
+    "claude": "2.1.289 (Claude Code)",
+    "codex": "codex-cli 0.160.0"
+  },
+  "claude_requested_model": "claude-sonnet-5-5",
+  "codex_requested_model": "CLI default",
+  "codex_effort": "low",
+  "actual_model_identity_pinned": false,
+  "claude_max_reported_cost_usd": 3.6,
+  "policy": "제공한 Python 코드가 명시한 기준 하나를 만족하는지 검토하세요. 전체 파일 또는 같은 모듈에서 선택한 함수가 제공됩니다. 외부 모듈과 환경은 기준에 적힌 전제를 따릅니다. 기준을 만족하면 action=approve, targets=[]로 답하세요. 위반하면 action=revise, targets=[기준 id]로 답하세요. 판단할 코드가 없거나 연결된 동작의 근거가 부족하면 action=uncertain, targets=[기준 id]로 답하세요. 다른 기능이나 일반적인 코드 품질은 평가하지 마세요. reason에는 코드에서 확인한 근거를 적으세요.",
+  "parallelism": 2,
+  "note": "두 과제는 앞선 연구에서 사용했습니다. 결과를 본 뒤 시작점이나 선택 규칙을 바꾸지 않습니다."
+}

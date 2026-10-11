@@ -1,0 +1,30 @@
+{
+  "case_id": "U",
+  "messages": [
+    {
+      "id": "U-m1",
+      "author": "user",
+      "text": "이번 안내문은 세 문단으로 써 주세요. 끝의 요약도 그 형식으로 써 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "U1",
+      "message_id": "U-m1",
+      "exact_text": "이번 안내문은 세 문단으로 써 주세요.",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "U2",
+      "message_id": "U-m1",
+      "exact_text": "끝의 요약도 그 형식으로 써 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "U1"
+      }
+    }
+  ]
+}

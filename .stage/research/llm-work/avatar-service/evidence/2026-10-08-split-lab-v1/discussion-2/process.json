@@ -1,0 +1,26 @@
+{
+  "status": "review_returned",
+  "input_sha256": "e9c04b1d37556e79ff68edc0249a1d5df88cf3782b3359e5e4bb3a7c82baebb7",
+  "started_at": "2026-10-07T15:22:54.499481+00:00",
+  "exit": 0,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 8922,
+      "cacheReadInputTokens": 967,
+      "cacheCreationInputTokens": 15508,
+      "webSearchRequests": 0,
+      "costUSD": 0.3027054,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 6600,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "reported_list_cost_usd": 0.3027054,
+  "missing_run_ids": [],
+  "seconds": 88.27,
+  "finished_at": "2026-10-07T15:24:22.774340+00:00"
+}

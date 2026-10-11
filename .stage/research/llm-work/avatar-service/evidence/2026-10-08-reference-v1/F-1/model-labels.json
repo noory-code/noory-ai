@@ -1,0 +1,12 @@
+[
+  {
+    "id": "F1",
+    "act": "attributed_content",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "F2",
+    "act": "request_apply_constraint",
+    "constraint_ref": "F1"
+  }
+]

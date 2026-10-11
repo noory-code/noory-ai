@@ -1,0 +1,26 @@
+[
+  {
+    "id": "V1",
+    "expected": {
+      "act": "user_task_constraint",
+      "constraint_ref": "none"
+    },
+    "actual": {
+      "act": "user_task_constraint",
+      "constraint_ref": "none"
+    },
+    "match": true
+  },
+  {
+    "id": "V2",
+    "expected": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "V1"
+    },
+    "actual": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "V1"
+    },
+    "match": true
+  }
+]

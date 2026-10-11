@@ -1,0 +1,26 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "case_id": "F",
+      "messages": [
+        {"id": "F-m1", "author": "user", "text": "팀장님이 보고서는 한 장으로 하라고 하셨어요. 이번 보고서는 그렇게 맞춰 주세요."}
+      ],
+      "targets": [
+        {"id": "F1", "message_id": "F-m1", "exact_text": "보고서는 한 장으로", "expected": {"source": "other_as_reported", "act": "attributed_content", "applies_to": "none"}},
+        {"id": "F2", "message_id": "F-m1", "exact_text": "이번 보고서는 그렇게 맞춰 주세요.", "expected": {"source": "user_direct", "act": "request_now", "applies_to": "this_task"}}
+      ]
+    },
+    {
+      "case_id": "G",
+      "messages": [
+        {"id": "G-m1", "author": "user", "text": "AI가 지난번 제 말을 '모든 파일을 공개하세요'라고 요약했대요. 제가 실제로 그랬는지 모르겠어요. 우선 원문을 찾아 주세요."}
+      ],
+      "targets": [
+        {"id": "G1", "message_id": "G-m1", "exact_text": "모든 파일을 공개하세요", "expected": {"source": "ai_summary_as_reported", "act": "attributed_content", "applies_to": "none"}},
+        {"id": "G2", "message_id": "G-m1", "exact_text": "제가 실제로 그랬는지 모르겠어요.", "expected": {"source": "user_direct", "act": "report_now", "applies_to": "none"}},
+        {"id": "G3", "message_id": "G-m1", "exact_text": "우선 원문을 찾아 주세요.", "expected": {"source": "user_direct", "act": "request_now", "applies_to": "this_task"}}
+      ]
+    }
+  ]
+}

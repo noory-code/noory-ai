@@ -1,0 +1,60 @@
+..........F.......
+======================================================================
+FAIL: test_new_descendants_and_directory_marked_files_are_unresolved (test_handoff_packet.HandoffPacketTest) (field='applies_when', path='app/newdir')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/tests/test_handoff_packet.py", line 282, in test_new_descendants_and_directory_marked_files_are_unresolved
+    self.assertEqual(classify(base, [scope], "development", self.root)["status"], "unresolved")
+AssertionError: 'not_applicable' != 'unresolved'
+- not_applicable
++ unresolved
+
+
+======================================================================
+FAIL: test_new_descendants_and_directory_marked_files_are_unresolved (test_handoff_packet.HandoffPacketTest) (field='applies_when', path='app/config.py/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/tests/test_handoff_packet.py", line 282, in test_new_descendants_and_directory_marked_files_are_unresolved
+    self.assertEqual(classify(base, [scope], "development", self.root)["status"], "unresolved")
+AssertionError: 'not_applicable' != 'unresolved'
+- not_applicable
++ unresolved
+
+
+======================================================================
+FAIL: test_new_descendants_and_directory_marked_files_are_unresolved (test_handoff_packet.HandoffPacketTest) (field='exceptions', path='app/newdir')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/tests/test_handoff_packet.py", line 282, in test_new_descendants_and_directory_marked_files_are_unresolved
+    self.assertEqual(classify(base, [scope], "development", self.root)["status"], "unresolved")
+AssertionError: 'applies' != 'unresolved'
+- applies
++ unresolved
+
+
+======================================================================
+FAIL: test_new_descendants_and_directory_marked_files_are_unresolved (test_handoff_packet.HandoffPacketTest) (field='exceptions', path='app/config.py/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/tests/test_handoff_packet.py", line 282, in test_new_descendants_and_directory_marked_files_are_unresolved
+    self.assertEqual(classify(base, [scope], "development", self.root)["status"], "unresolved")
+AssertionError: 'applies' != 'unresolved'
+- applies
++ unresolved
+
+
+======================================================================
+FAIL: test_new_descendants_and_directory_marked_files_are_unresolved (test_handoff_packet.HandoffPacketTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/tests/test_handoff_packet.py", line 286, in test_new_descendants_and_directory_marked_files_are_unresolved
+    self.assertEqual(classify(base, ["*"], "development", self.root)["status"], "unresolved")
+AssertionError: 'partial' != 'unresolved'
+- partial
++ unresolved
+
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.238s
+
+FAILED (failures=5)

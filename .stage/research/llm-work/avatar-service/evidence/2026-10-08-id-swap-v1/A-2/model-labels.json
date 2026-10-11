@@ -1,0 +1,17 @@
+[
+  {
+    "id": "Z1",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "Z2",
+    "act": "user_task_constraint",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "Z3",
+    "act": "user_task_constraint",
+    "constraint_ref": "none"
+  }
+]

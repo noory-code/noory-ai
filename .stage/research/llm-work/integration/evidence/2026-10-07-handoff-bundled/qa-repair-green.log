@@ -1,0 +1,22 @@
+test_changed_choice_cannot_reuse_the_same_key (test_fixture_avatar_batch.FixtureBatchTest.test_changed_choice_cannot_reuse_the_same_key) ... ok
+test_exact_replay_preserves_choice_and_confirmed_ref (test_fixture_avatar_batch.FixtureBatchTest.test_exact_replay_preserves_choice_and_confirmed_ref) ... ok
+test_later_cli_failure_keeps_receipts_and_stops_before_show (test_fixture_avatar_batch.FixtureBatchTest.test_later_cli_failure_keeps_receipts_and_stops_before_show) ... ok
+test_missing_or_mismatched_confirmation_fails_before_writing (test_fixture_avatar_batch.FixtureBatchTest.test_missing_or_mismatched_confirmation_fails_before_writing) ... ok
+test_ref_must_have_an_eligible_receipt (test_fixture_avatar_batch.FixtureBatchTest.test_ref_must_have_an_eligible_receipt) ... ok
+test_absent_store_does_not_prove_superseded (test_host_result_checker.HostResultCheckerTest.test_absent_store_does_not_prove_superseded) ... ok
+test_claimed_completion_does_not_hide_wrong_behavior (test_host_result_checker.HostResultCheckerTest.test_claimed_completion_does_not_hide_wrong_behavior) ... ok
+test_control_condition_observes_instead_of_assuming_a_contract (test_host_result_checker.HostResultCheckerTest.test_control_condition_observes_instead_of_assuming_a_contract) ... ok
+test_correct_files_and_records_pass (test_host_result_checker.HostResultCheckerTest.test_correct_files_and_records_pass) ... ok
+test_missing_reference_or_stale_report_fails (test_host_result_checker.HostResultCheckerTest.test_missing_reference_or_stale_report_fails) ... ok
+test_repeating_prior_work_fails_the_unchanged_check (test_host_result_checker.HostResultCheckerTest.test_repeating_prior_work_fails_the_unchanged_check) ... ok
+test_sender_applied_record_cannot_stand_in_for_receiver_record (test_host_result_checker.HostResultCheckerTest.test_sender_applied_record_cannot_stand_in_for_receiver_record) ... ok
+test_stage_supported_bullets_and_dates_keep_applied_refs (test_host_result_checker.HostResultCheckerTest.test_stage_supported_bullets_and_dates_keep_applied_refs) ... ok
+test_unfinished_next_action_is_not_a_complete_handoff (test_host_result_checker.HostResultCheckerTest.test_unfinished_next_action_is_not_a_complete_handoff) ... ok
+test_applied_ref_and_project_must_match (test_projection_checker.ProjectionCheckerTest.test_applied_ref_and_project_must_match) ... ok
+test_changed_executed_wrapper_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_changed_executed_wrapper_fails) ... ok
+test_missing_reused_sender_manifest_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_missing_reused_sender_manifest_fails) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 1.506s
+
+OK

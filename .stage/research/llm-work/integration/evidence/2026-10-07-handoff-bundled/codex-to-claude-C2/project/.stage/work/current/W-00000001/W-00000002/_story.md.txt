@@ -1,0 +1,20 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7","observed_at":"2026-10-07T03:40:01.380845Z"}
+Applied criteria: distill:CR-fbed97eb8cc7@2
+Stale judgment: distill:CR-fbed97eb8cc7@1 superseded
+Check: distill:CR-fbed97eb8cc7@2 -> eligible_current (generation 2, checked_at 2026-10-07T10:39:57.943909Z; .data/receiver-check.json)
+Done: app/host.py parse_host returns the host unchanged when valid, None when invalid (per @2).
+Evidence: {"kind":"file","path":"app/host.py","sha256":"464dcb4ed9c0c77af717d5a2f6b4ff0588c450fd2901428c957ab0e2e7a80165"}
+Note: app/port.py parse_port still raises ConfigError under superseded @1; left unchanged (not auto-undone).
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+Both parse_port and parse_host are implemented. Remaining: decide with the user whether parse_port should be migrated from raising ConfigError (superseded @1) to returning None (current @2), then add acceptance tests and get an independent review.

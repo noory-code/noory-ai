@@ -1,0 +1,14 @@
+Verify only the four remaining findings from the second independent review.
+Read actual files at /Users/woogis/.codex/worktrees/avatar-service/noory-ai/avatar: web/ai.mjs, web/analysis.mjs, web/app.mjs,
+tests/ai.test.mjs, tests/web.test.mjs, README.md. Read-only; do not edit, run commands,
+delegate, or invoke workflows. The remaining findings were:
+1. quote() did not split lone CR characters, permitting Markdown heading escape.
+2. records() did not use versionLabel for version rows, unlike reports/history.
+3. No regression proved different projects with equal conditions produce
+   projects_differ=true and conditions_differ=false.
+4. README incorrectly described the browser input limit as 60,000 rather than 55,000 JS string units.
+The supervisor observed RED then GREEN for CR quotes, false then true in browser for records version
+labels, and an already-passing added regression for the existing project/condition separation.
+Verify the repairs in source and tests. Return PASS if all four are repaired; otherwise REVISE with
+the remaining concrete defect and file/line. This is a bounded follow-up, not a new feature review.
+State you did not execute tests. Keep the Korean response short and natural.

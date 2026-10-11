@@ -1,0 +1,24 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--after--codex--full--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "W-00000041에서 결정된 R-00000041의 기존 소유자 W-00000099를 확인하면 세 ID를 포함한 RuntimeError를 발생시키고 write_driver_retrospective가 빈 회고 ID와 오류를 반환하며, R-00000042.md나 R-00000043.md를 생성하는 경로는 없다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 8.066132000007201
+}

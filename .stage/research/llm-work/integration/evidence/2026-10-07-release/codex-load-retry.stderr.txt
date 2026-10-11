@@ -1,0 +1,16 @@
+Reading additional input from stdin...
+2026-10-07T11:46:35.159947Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="avatar@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar
+2026-10-07T11:46:35.160000Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="distill@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/distill
+2026-10-07T11:46:35.160008Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="stage@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/stage
+2026-10-07T11:46:35.244115Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.319929Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.381915Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.442203Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.501259Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.561441Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.622366Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.681848Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.740806Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:46:35.815555Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="avatar@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar
+2026-10-07T11:46:35.815606Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="distill@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/distill
+2026-10-07T11:46:35.815612Z  WARN codex_core_plugins::loader: failed to load plugin: plugin is not installed plugin="stage@criteria-release-test" path=/Users/woogis/.codex/plugins/cache/criteria-release-test/stage

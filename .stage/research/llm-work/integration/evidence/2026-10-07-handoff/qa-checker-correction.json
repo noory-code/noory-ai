@@ -1,0 +1,13 @@
+{
+  "reason": "Check newly added applied records, unsupported superseded claims, and stale Next action.",
+  "baseline_source": "Each preserved sender card; original model output and input stay unchanged.",
+  "model_reruns": 0,
+  "product_changes": 0,
+  "new_checks": true,
+  "checker_sha256": "b8d846fdad0a329bf0ddd7bdb03ee97224bfa5bc4501e062795d35692e677959",
+  "review": "qa-review.json",
+  "tests": [
+    "qa-checker-red.log",
+    "qa-checker-green.log"
+  ]
+}

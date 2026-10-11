@@ -1,0 +1,6 @@
+---
+id: W-00000001
+kind: planning
+---
+## Purpose
+Make configuration parsing predictable for callers.

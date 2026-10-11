@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "id": "X-m1",
+      "author": "user",
+      "text": "저는 짧은 글을 자주 읽어요."
+    },
+    {
+      "id": "X-m2",
+      "author": "user",
+      "text": "이번 보고서는 자세하게 써 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "X1",
+      "message_id": "X-m1",
+      "exact_text": "저는 짧은 글을 자주 읽어요."
+    },
+    {
+      "id": "X2",
+      "message_id": "X-m2",
+      "exact_text": "이번 보고서는 자세하게 써 주세요."
+    }
+  ]
+}

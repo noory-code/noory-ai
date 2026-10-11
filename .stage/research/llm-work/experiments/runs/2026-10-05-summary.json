@@ -1,0 +1,554 @@
+{
+  "generated_at": "2026-10-04T23:30:32.745468+00:00",
+  "hashes_recorded_after_execution": true,
+  "summary_python": "3.14.6",
+  "artifact_sha256": {
+    "scripts/run_pilot.py": "bab2a86a74e2e7e62e5a55cc6549a98e38878027b529a9ef1d0723058ab1c0f3",
+    "evidence-cases.json": "e733f39a51d3ef7226f8e3d6357366385acacf11ab469761abed90658717216c",
+    "evidence-rubric.json": "6c15a02bba5b0ec45b8631c154430b91af8503c5cc97c2f506e175e9d7f328f4"
+  },
+  "review_scope": "status만 자동 대조했습니다. 본문의 의미 검토는 분석 보고서에 남깁니다.",
+  "cost_basis": "SDK가 보고한 값입니다. 실제 청구액을 조회하지 않았습니다.",
+  "total_reported_cost_usd": 0.0600386,
+  "rows": [
+    {
+      "suite": "hooks",
+      "run_id": "allowed_read",
+      "record": "runs/2026-10-05-hooks/allowed_read.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.0098742,
+      "wall_time_s": 5.080200458003674,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 998,
+          "outputTokens": 20,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001098,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 4,
+          "outputTokens": 135,
+          "cacheReadInputTokens": 1591,
+          "cacheCreationInputTokens": 1775,
+          "webSearchRequests": 0,
+          "costUSD": 0.0087762,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 2,
+        "PreToolUse": 1,
+        "PostToolUse": 1,
+        "user_or_tool_result": 1,
+        "result": 1
+      }
+    },
+    {
+      "suite": "hooks",
+      "run_id": "ask_callback",
+      "record": "runs/2026-10-05-hooks/ask_callback.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.0037364,
+      "wall_time_s": 4.189494749996811,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 998,
+          "outputTokens": 18,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001088,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 4,
+          "outputTokens": 126,
+          "cacheReadInputTokens": 3182,
+          "cacheCreationInputTokens": 186,
+          "webSearchRequests": 0,
+          "costUSD": 0.0026484,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 3,
+        "assistant": 2,
+        "PreToolUse": 1,
+        "permission_callback": 1,
+        "PostToolUse": 1,
+        "user_or_tool_result": 1,
+        "result": 1
+      }
+    },
+    {
+      "suite": "evidence",
+      "run_id": "conflicting-baseline",
+      "record": "runs/2026-10-05-evidence/conflicting-baseline.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.006163,
+      "wall_time_s": 3.560219999984838,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1087,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0011970000000000001,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 185,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 778,
+          "webSearchRequests": 0,
+          "costUSD": 0.004966,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "conflicting",
+      "condition": "baseline",
+      "answer": {
+        "status": "conflicting",
+        "answer": "두 문서 모두 Orchid 3.2 제품팀 안내이고 게시일도 2026-09-20으로 같지만, doc-d는 CSV 내보내기를 지원한다고, doc-e는 지원하지 않는다고 서로 반대로 안내합니다. 한쪽을 우선한다는 설명도 없어 제공된 자료만으로는 사용 가능 여부를 확정할 수 없습니다.",
+        "sources": [
+          "doc-d",
+          "doc-e"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "conflicting-evidence_check",
+      "record": "runs/2026-10-05-evidence/conflicting-evidence_check.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.006901,
+      "wall_time_s": 3.684133375005331,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1087,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0011970000000000001,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 214,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 890,
+          "webSearchRequests": 0,
+          "costUSD": 0.005704,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "conflicting",
+      "condition": "evidence_check",
+      "answer": {
+        "status": "conflicting",
+        "answer": "자료끼리 충돌해서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지 확정할 수 없습니다. doc-d는 지원한다고 하고, doc-e는 지원하지 않는다고 합니다. 두 문서 모두 Orchid 3.2 제품팀 안내이고 게시일도 2026-09-20으로 같습니다. 어느 쪽이 우선한다는 설명도 없어서 한쪽을 택할 근거가 없습니다.",
+        "sources": [
+          "doc-d",
+          "doc-e"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "related_only-baseline",
+      "record": "runs/2026-10-05-evidence/related_only-baseline.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.005464,
+      "wall_time_s": 3.589127457991708,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1020,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0011300000000000001,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 151,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 705,
+          "webSearchRequests": 0,
+          "costUSD": 0.004334,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "related_only",
+      "condition": "baseline",
+      "answer": {
+        "status": "insufficient",
+        "answer": "제공된 자료(doc-b)에는 Orchid 3.2에서 CSV 파일을 가져올 수 있고 가져온 데이터를 표와 차트로 볼 수 있다는 내용만 있습니다. CSV 내보내기 기능에 대한 언급은 없어서, 사용 가능 여부를 확인할 수 없습니다.",
+        "sources": [
+          "doc-b"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "related_only-evidence_check",
+      "record": "runs/2026-10-05-evidence/related_only-evidence_check.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.005772,
+      "wall_time_s": 3.1376284580037463,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1020,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0011300000000000001,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 137,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 817,
+          "webSearchRequests": 0,
+          "costUSD": 0.004642,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "related_only",
+      "condition": "evidence_check",
+      "answer": {
+        "status": "insufficient",
+        "answer": "제공된 자료(doc-b)는 Orchid 3.2에서 CSV 파일을 가져오는 기능만 설명하며, CSV 내보내기에 대한 언급은 없습니다. 따라서 이 자료만으로는 내보내기 지원 여부를 확인할 수 없습니다.",
+        "sources": [
+          "doc-b"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "supported-baseline",
+      "record": "runs/2026-10-05-evidence/supported-baseline.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.005012,
+      "wall_time_s": 2.6980645830044523,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1014,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001124,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 108,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 701,
+          "webSearchRequests": 0,
+          "costUSD": 0.003888,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "supported",
+      "condition": "baseline",
+      "answer": {
+        "status": "supported",
+        "answer": "네, Orchid 3.2에서 CSV 내보내기를 사용할 수 있습니다. 사용자 안내서에 따르면 결과 화면에서 '내보내기 > CSV'를 선택하면 됩니다.",
+        "sources": [
+          "doc-a"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "supported-evidence_check",
+      "record": "runs/2026-10-05-evidence/supported-evidence_check.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.00541,
+      "wall_time_s": 3.8978757500008214,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1014,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001124,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 103,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 813,
+          "webSearchRequests": 0,
+          "costUSD": 0.004286,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "supported",
+      "condition": "evidence_check",
+      "answer": {
+        "status": "supported",
+        "answer": "네, Orchid 3.2에서 CSV 내보내기를 사용할 수 있습니다. 사용자 안내서에 따르면 결과 화면에서 내보내기 > CSV를 선택하면 됩니다.",
+        "sources": [
+          "doc-a"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "wrong_version-baseline",
+      "record": "runs/2026-10-05-evidence/wrong_version-baseline.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.005608999999999999,
+      "wall_time_s": 3.19612591699115,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1031,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001141,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 160,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 716,
+          "webSearchRequests": 0,
+          "costUSD": 0.004468,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "wrong_version",
+      "condition": "baseline",
+      "answer": {
+        "status": "insufficient",
+        "answer": "제공된 자료(doc-c)는 Orchid 2.0에서 CSV 내보내기를 지원한다고만 설명하며, 다른 버전의 기능은 다루지 않는다고 밝히고 있습니다. 따라서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지는 자료만으로 확인할 수 없습니다.",
+        "sources": [
+          "doc-c"
+        ]
+      },
+      "status_matches_rubric": true
+    },
+    {
+      "suite": "evidence",
+      "run_id": "wrong_version-evidence_check",
+      "record": "runs/2026-10-05-evidence/wrong_version-evidence_check.json",
+      "error": null,
+      "is_error": false,
+      "reported_cost_usd": 0.006097,
+      "wall_time_s": 3.145210374990711,
+      "reported_model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 1031,
+          "outputTokens": 22,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.001141,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 164,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 828,
+          "webSearchRequests": 0,
+          "costUSD": 0.004956,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 0,
+          "canonicalModel": "claude-sonnet-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "event_counts": {
+        "system": 1,
+        "other_message": 1,
+        "assistant": 1,
+        "result": 1
+      },
+      "case": "wrong_version",
+      "condition": "evidence_check",
+      "answer": {
+        "status": "insufficient",
+        "answer": "제공된 자료(doc-c)는 Orchid 2.0 안내서이며 2.0에서 CSV 내보내기를 지원한다고만 설명합니다. 이 문서는 다른 버전의 기능은 다루지 않는다고 명시하고 있어, Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지는 확인할 수 없습니다.",
+        "sources": [
+          "doc-c"
+        ]
+      },
+      "status_matches_rubric": true
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+[
+  {
+    "label": "record-v1",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "record",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:1",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/criterion-v1.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.08231958298711106,
+    "stdout": "{\"generation\": 1, \"ref\": \"distill:CR-c38fda22d33e@1\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "replay-v1",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "record",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:1",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/criterion-v1.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.08053637499688193,
+    "stdout": "{\"generation\": 1, \"ref\": \"distill:CR-c38fda22d33e@1\", \"replayed\": true}\n",
+    "stderr": ""
+  },
+  {
+    "label": "packet-v1",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/handoff_packet.py",
+      "--project-root",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/synthetic project",
+      "W-00000002",
+      "--project-key",
+      "test/demo-app",
+      "--producers",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/producers.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.289863082987722,
+    "stdout": "# Handoff: W-00000002\n\n## Purpose chain\n\n### W-00000001\n\nMake parsing predictable.\n\n### W-00000002\n\nContinue with host parsing.\n\n## Criteria as of check\n\nThese criteria were current at the reported check. Recheck before using them.\n\ndistill — generation: 1; checked_at: 2026-10-05T17:36:06.528210Z\n\n### applies\n\n- distill:CR-c38fda22d33e@1: Invalid input raises ConfigError.\n- targets: [\"app/\"]\n- excluded: []\n- source_status: not_checkable\n- applies_when: [{\"any\": [\"app/\"], \"kind\": \"path\"}]\n- exceptions: []\n- notes: []\n- overrides: []\n- confirmation: \"user_stated\"\n- ai_confidence: null\n- origin: {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}\n\navatar — generation: 0; checked_at: 2026-10-05T17:36:06.590281Z\n\nstore: absent\n\nNo current criteria.\n\n## Prior result evidence\n\n{\"kind\": \"file\", \"path\": \"app/port.py\", \"sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"observed_at\": \"2026-10-06T00:00:00Z\", \"status\": \"matches\", \"current_sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"uncommitted\": false}\n\n## Stale judgments\n\n- distill:CR-c38fda22d33e@1: eligible_current. Revisit non-current judgments; do not automatically undo work.\n\n## Decision order\n\nFollow the user's current explicit instruction. Start with the purpose chain.\nWhen purpose answers the question, proceed. Otherwise use criteria classified as applies.\nFor partial criteria, classify the actual file again and record\n`Condition judgment: <ref> path=<file> -> applies` before applying it to that file.\nIf that file still needs note judgments, record its narrowed path as needs_judgment and satisfy\nevery note before applying it. A partial scope never removes the note requirements.\nFor needs_judgment, first satisfy all code-checkable conditions, then record each note as\n`Condition judgment: <ref> note=\"<original note>\" -> met|not_met because <reason>`.\nEvery note must be met. Never apply unresolved or not_applicable criteria.\nResolve conflicting criteria through the current user instruction, then project purpose,\nthen explicit overrides supported by a user quote. If none resolves the conflict, defer that\nchoice. Ask the user only when missing information prevents progress, and state what is missing.\nImmediately before each choice that depends on a criterion, run its check command below.\nRecord `Applied criteria: <ref>, <ref>` in the card's Progress, or `Applied criteria: none`.\nPrior evidence does not replace acceptance checks or independent review.\n\n## Check before each criterion-dependent choice\n\nRun each JSON argv array without a shell. Apply a criterion only when its status is eligible_current.\nAny other status, non-zero exit, or timeout: do not apply it. Refresh the packet or defer that choice.\n\ndistill: [\"/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python\", \"-m\", \"distill\", \"criteria\", \"check\", \"--project\", \"test/demo-app\", \"--refs\", \"distill:CR-c38fda22d33e@1\", \"--db\", \"/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db\"]\n\n## Remaining work\n\n### Success criteria\n\n- Parse valid hosts.\n\n### Next action\n\nImplement parse_host.\n",
+    "stderr": ""
+  },
+  {
+    "label": "history-v1",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "history",
+      "CR-c38fda22d33e",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.08064929200918414,
+    "stdout": "{\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}], \"generation\": 1, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"current\", \"supersedes\": null}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "revise-v2",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "revise",
+      "CR-c38fda22d33e",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:2",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/revision-v2.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.08015079100732692,
+    "stdout": "{\"generation\": 2, \"inherited\": [\"applies_when\", \"exceptions\", \"notes\", \"overrides\", \"confirmation\", \"ai_confidence\"], \"ref\": \"distill:CR-c38fda22d33e@2\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "packet-v2",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/handoff_packet.py",
+      "--project-root",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/synthetic project",
+      "W-00000002",
+      "--project-key",
+      "test/demo-app",
+      "--producers",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/producers.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.2556522499944549,
+    "stdout": "# Handoff: W-00000002\n\n## Purpose chain\n\n### W-00000001\n\nMake parsing predictable.\n\n### W-00000002\n\nContinue with host parsing.\n\n## Criteria as of check\n\nThese criteria were current at the reported check. Recheck before using them.\n\ndistill — generation: 2; checked_at: 2026-10-05T17:36:06.960575Z\n\n### applies\n\n- distill:CR-c38fda22d33e@2: Invalid input returns None.\n- targets: [\"app/\"]\n- excluded: []\n- source_status: not_checkable\n- applies_when: [{\"any\": [\"app/\"], \"kind\": \"path\"}]\n- exceptions: []\n- notes: []\n- overrides: []\n- confirmation: \"user_stated\"\n- ai_confidence: null\n- origin: {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}\n\navatar — generation: 0; checked_at: 2026-10-05T17:36:07.008297Z\n\nstore: absent\n\nNo current criteria.\n\n## Prior result evidence\n\n{\"kind\": \"file\", \"path\": \"app/port.py\", \"sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"observed_at\": \"2026-10-06T00:00:00Z\", \"status\": \"matches\", \"current_sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"uncommitted\": false}\n\n## Stale judgments\n\n- distill:CR-c38fda22d33e@1: superseded. Revisit non-current judgments; do not automatically undo work.\n\n## Decision order\n\nFollow the user's current explicit instruction. Start with the purpose chain.\nWhen purpose answers the question, proceed. Otherwise use criteria classified as applies.\nFor partial criteria, classify the actual file again and record\n`Condition judgment: <ref> path=<file> -> applies` before applying it to that file.\nIf that file still needs note judgments, record its narrowed path as needs_judgment and satisfy\nevery note before applying it. A partial scope never removes the note requirements.\nFor needs_judgment, first satisfy all code-checkable conditions, then record each note as\n`Condition judgment: <ref> note=\"<original note>\" -> met|not_met because <reason>`.\nEvery note must be met. Never apply unresolved or not_applicable criteria.\nResolve conflicting criteria through the current user instruction, then project purpose,\nthen explicit overrides supported by a user quote. If none resolves the conflict, defer that\nchoice. Ask the user only when missing information prevents progress, and state what is missing.\nImmediately before each choice that depends on a criterion, run its check command below.\nRecord `Applied criteria: <ref>, <ref>` in the card's Progress, or `Applied criteria: none`.\nPrior evidence does not replace acceptance checks or independent review.\n\n## Check before each criterion-dependent choice\n\nRun each JSON argv array without a shell. Apply a criterion only when its status is eligible_current.\nAny other status, non-zero exit, or timeout: do not apply it. Refresh the packet or defer that choice.\n\ndistill: [\"/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python\", \"-m\", \"distill\", \"criteria\", \"check\", \"--project\", \"test/demo-app\", \"--refs\", \"distill:CR-c38fda22d33e@2\", \"--db\", \"/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db\"]\n\n## Remaining work\n\n### Success criteria\n\n- Parse valid hosts.\n\n### Next action\n\nImplement parse_host.\n",
+    "stderr": ""
+  },
+  {
+    "label": "packet-check",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "check",
+      "--project",
+      "test/demo-app",
+      "--refs",
+      "distill:CR-c38fda22d33e@2",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07737512502353638,
+    "stdout": "{\"checked_at\": \"2026-10-05T17:36:07.175336Z\", \"generation\": 2, \"results\": [{\"ref\": \"distill:CR-c38fda22d33e@2\", \"status\": \"eligible_current\"}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "record-unconfirmed",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "record",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:3",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/unconfirmed.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.0780792500008829,
+    "stdout": "{\"generation\": 3, \"ref\": \"distill:CR-99135db5cb70@1\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "record-other-project",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "record",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:4",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/foreign.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07879812500323169,
+    "stdout": "{\"generation\": 4, \"ref\": \"distill:CR-aa739daf81f7@1\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "check-exclusions",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "check",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--project",
+      "test/demo-app",
+      "--refs",
+      "distill:CR-99135db5cb70@1,distill:CR-aa739daf81f7@1"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07874416702543385,
+    "stdout": "{\"checked_at\": \"2026-10-05T17:36:07.412329Z\", \"generation\": 4, \"results\": [{\"ref\": \"distill:CR-99135db5cb70@1\", \"status\": \"unconfirmed\"}, {\"ref\": \"distill:CR-aa739daf81f7@1\", \"status\": \"scope_mismatch\"}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "avatar-propose",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "criterion",
+      "propose",
+      "--idempotency-key",
+      "fixture:5",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/personal.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.047402124997461215,
+    "stdout": "{\"generation\": 1, \"id\": \"PC-8dadcf574065\", \"ref\": \"avatar:PC-8dadcf574065@1\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "avatar-proposed-export",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "export"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.0835061669931747,
+    "stdout": "{\"checked_at\": \"2026-10-05T17:36:07.509016Z\", \"criteria\": [], \"generation\": 1, \"producer\": \"avatar\", \"producer_version\": \"0.1.0\", \"retired\": [], \"schema\": \"criteria-snapshot/1\", \"scope\": {\"key\": \"personal\", \"kind\": \"personal\"}}\n",
+    "stderr": ""
+  },
+  {
+    "label": "avatar-confirm",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "criterion",
+      "confirm",
+      "PC-8dadcf574065",
+      "--version",
+      "1",
+      "--idempotency-key",
+      "fixture:6",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/confirmation.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.043378250004025176,
+    "stdout": "{\"generation\": 2, \"id\": \"PC-8dadcf574065\", \"ref\": \"avatar:PC-8dadcf574065@2\", \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "avatar-confirmed-export",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "export"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.056903624994447455,
+    "stdout": "{\"checked_at\": \"2026-10-05T17:36:07.636202Z\", \"criteria\": [{\"ai_confidence\": null, \"applies_when\": [], \"confirmation\": \"user_confirmed\", \"exceptions\": [], \"from_choices\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.592863Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: personal-confirm\", \"quote_sha256\": \"f09c25096169059bcf1282b7c331e6fb5de95489ac823b0ce16a7692ab0ac24d\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/personal-confirm\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Confirmed by the user.\", \"recorded_at\": \"2026-10-05T17:36:07.592718Z\", \"ref\": \"avatar:PC-8dadcf574065@2\", \"statement\": \"Prefer explicit error contracts.\", \"supersedes\": \"avatar:PC-8dadcf574065@1\", \"version\": 2}], \"generation\": 2, \"producer\": \"avatar\", \"producer_version\": \"0.1.0\", \"retired\": [{\"by\": \"avatar:PC-8dadcf574065@2\", \"ref\": \"avatar:PC-8dadcf574065@1\", \"status\": \"superseded\"}], \"schema\": \"criteria-snapshot/1\", \"scope\": {\"key\": \"personal\", \"kind\": \"personal\"}}\n",
+    "stderr": ""
+  },
+  {
+    "label": "history-own",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "history",
+      "CR-c38fda22d33e",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07824141599121504,
+    "stdout": "{\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}, {\"event\": \"revised\", \"generation\": 2, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}], \"generation\": 4, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"superseded\", \"supersedes\": null}, {\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\", \"statement\": \"Invalid input returns None.\", \"status\": \"current\", \"supersedes\": \"distill:CR-c38fda22d33e@1\"}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "attach-own",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "source",
+      "attach",
+      "--idempotency-key",
+      "attach:own",
+      "--file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/history-own.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.043057165981736034,
+    "stdout": "{\"avatar_generation\": 3, \"duplicate\": false, \"fetched_at\": \"2026-10-05T17:36:07.772210Z\", \"generation\": 4, \"newer_projection_exists\": false, \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "history-foreign",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "history",
+      "CR-aa739daf81f7",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07778758398490027,
+    "stdout": "{\"events\": [{\"event\": \"recorded\", \"generation\": 4, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.331159Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:07.331884Z\", \"ref\": \"distill:CR-aa739daf81f7@1\"}], \"generation\": 4, \"id\": \"CR-aa739daf81f7\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/other\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.331159Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:07.331884Z\", \"ref\": \"distill:CR-aa739daf81f7@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"current\", \"supersedes\": null}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "attach-foreign",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "source",
+      "attach",
+      "--idempotency-key",
+      "attach:foreign",
+      "--file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/history-foreign.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.04284941699006595,
+    "stdout": "{\"avatar_generation\": 4, \"duplicate\": false, \"fetched_at\": \"2026-10-05T17:36:07.893732Z\", \"generation\": 4, \"newer_projection_exists\": false, \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "revoke-v2",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "revoke",
+      "CR-c38fda22d33e",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db",
+      "--idempotency-key",
+      "fixture:7",
+      "--payload-file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/revocation.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07837062497856095,
+    "stdout": "{\"generation\": 5, \"ref\": \"distill:CR-c38fda22d33e@2\", \"replayed\": false, \"status\": \"revoked\"}\n",
+    "stderr": ""
+  },
+  {
+    "label": "history-revoked",
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill",
+      "criteria",
+      "history",
+      "CR-c38fda22d33e",
+      "--db",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/distill.db"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.07750120901619084,
+    "stdout": "{\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}, {\"event\": \"revised\", \"generation\": 2, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}, {\"event\": \"revoked\", \"generation\": 5, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.966704Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: revoke\", \"quote_sha256\": \"452a2dc1711f90856e8f4c5eda7ee557d0a17b1eda9275aa5e3c24c174d0ece9\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/revoke\", \"source_sha256\": null}, \"reason\": \"Synthetic retirement.\", \"recorded_at\": \"2026-10-05T17:36:07.967400Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}], \"generation\": 5, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"superseded\", \"supersedes\": null}, {\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\", \"statement\": \"Invalid input returns None.\", \"status\": \"revoked\", \"supersedes\": \"distill:CR-c38fda22d33e@1\"}]}\n",
+    "stderr": ""
+  },
+  {
+    "label": "attach-revoked",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "source",
+      "attach",
+      "--idempotency-key",
+      "attach:revoked",
+      "--file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/history-revoked.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.043557041994063184,
+    "stdout": "{\"avatar_generation\": 5, \"duplicate\": false, \"fetched_at\": \"2026-10-05T17:36:08.094620Z\", \"generation\": 5, \"newer_projection_exists\": false, \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "attach-older",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "source",
+      "attach",
+      "--idempotency-key",
+      "attach:older",
+      "--file",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/history-older.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.042784207995282486,
+    "stdout": "{\"avatar_generation\": 6, \"duplicate\": false, \"fetched_at\": \"2026-10-05T17:36:08.137994Z\", \"generation\": 1, \"newer_projection_exists\": true, \"replayed\": false}\n",
+    "stderr": ""
+  },
+  {
+    "label": "avatar-show",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+      "--home",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data",
+      "show",
+      "--json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.05646112500107847,
+    "stdout": "{\"choices\": [], \"criteria\": [{\"current_version\": 2, \"events\": [{\"generation\": 1, \"id\": \"PC-8dadcf574065\", \"kind\": \"proposed\", \"origin\": null, \"reason\": \"Proposed from recorded choices.\", \"recorded_at\": \"2026-10-05T17:36:07.465088Z\", \"sequence\": 1, \"version\": 1}, {\"generation\": 2, \"id\": \"PC-8dadcf574065\", \"kind\": \"confirmed\", \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.592863Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: personal-confirm\", \"quote_sha256\": \"f09c25096169059bcf1282b7c331e6fb5de95489ac823b0ce16a7692ab0ac24d\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/personal-confirm\", \"source_sha256\": null}, \"reason\": \"Confirmed by the user.\", \"recorded_at\": \"2026-10-05T17:36:07.593074Z\", \"sequence\": 2, \"version\": 2}], \"id\": \"PC-8dadcf574065\", \"revoked\": false, \"versions\": [{\"ai_confidence\": null, \"applies_when\": [], \"confirmation\": \"none\", \"exceptions\": [], \"from_choices\": [], \"notes\": [], \"origin\": null, \"overrides\": [], \"reason\": \"Proposed from recorded choices.\", \"recorded_at\": \"2026-10-05T17:36:07.464776Z\", \"ref\": \"avatar:PC-8dadcf574065@1\", \"statement\": \"Prefer explicit error contracts.\", \"supersedes\": null, \"version\": 1}, {\"ai_confidence\": null, \"applies_when\": [], \"confirmation\": \"user_confirmed\", \"exceptions\": [], \"from_choices\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.592863Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: personal-confirm\", \"quote_sha256\": \"f09c25096169059bcf1282b7c331e6fb5de95489ac823b0ce16a7692ab0ac24d\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/personal-confirm\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Confirmed by the user.\", \"recorded_at\": \"2026-10-05T17:36:07.592718Z\", \"ref\": \"avatar:PC-8dadcf574065@2\", \"statement\": \"Prefer explicit error contracts.\", \"supersedes\": \"avatar:PC-8dadcf574065@1\", \"version\": 2}]}], \"projections\": [{\"current_status_verified\": false, \"fetched_at\": \"2026-10-05T17:36:08.094620Z\", \"generation\": 5, \"history\": {\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}, {\"event\": \"revised\", \"generation\": 2, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}, {\"event\": \"revoked\", \"generation\": 5, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.966704Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: revoke\", \"quote_sha256\": \"452a2dc1711f90856e8f4c5eda7ee557d0a17b1eda9275aa5e3c24c174d0ece9\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/revoke\", \"source_sha256\": null}, \"reason\": \"Synthetic retirement.\", \"recorded_at\": \"2026-10-05T17:36:07.967400Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}], \"generation\": 5, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"superseded\", \"supersedes\": null}, {\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\", \"statement\": \"Invalid input returns None.\", \"status\": \"revoked\", \"supersedes\": \"distill:CR-c38fda22d33e@1\"}]}, \"newer_projection_exists\": false, \"producer\": \"distill\"}, {\"current_status_verified\": false, \"fetched_at\": \"2026-10-05T17:36:07.893732Z\", \"generation\": 4, \"history\": {\"events\": [{\"event\": \"recorded\", \"generation\": 4, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.331159Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:07.331884Z\", \"ref\": \"distill:CR-aa739daf81f7@1\"}], \"generation\": 4, \"id\": \"CR-aa739daf81f7\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/other\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.331159Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:07.331884Z\", \"ref\": \"distill:CR-aa739daf81f7@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"current\", \"supersedes\": null}]}, \"newer_projection_exists\": false, \"producer\": \"distill\"}, {\"current_status_verified\": false, \"fetched_at\": \"2026-10-05T17:36:07.772210Z\", \"generation\": 4, \"history\": {\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}, {\"event\": \"revised\", \"generation\": 2, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\"}], \"generation\": 4, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"superseded\", \"supersedes\": null}, {\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.840285Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v2\", \"quote_sha256\": \"0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v2\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Synthetic change: callers handle absence.\", \"recorded_at\": \"2026-10-05T17:36:06.841078Z\", \"ref\": \"distill:CR-c38fda22d33e@2\", \"statement\": \"Invalid input returns None.\", \"status\": \"current\", \"supersedes\": \"distill:CR-c38fda22d33e@1\"}]}, \"newer_projection_exists\": true, \"producer\": \"distill\"}, {\"current_status_verified\": false, \"fetched_at\": \"2026-10-05T17:36:08.137994Z\", \"generation\": 1, \"history\": {\"events\": [{\"event\": \"recorded\", \"generation\": 1, \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\"}], \"generation\": 1, \"id\": \"CR-c38fda22d33e\", \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"project\": \"test/demo-app\", \"schema\": \"criteria-history/1\", \"versions\": [{\"ai_confidence\": null, \"applies_when\": [{\"any\": [\"app/\"], \"kind\": \"path\"}], \"confirmation\": \"user_stated\", \"exceptions\": [], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:06.305268Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: v1\", \"quote_sha256\": \"0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/v1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": null, \"recorded_at\": \"2026-10-05T17:36:06.308161Z\", \"ref\": \"distill:CR-c38fda22d33e@1\", \"statement\": \"Invalid input raises ConfigError.\", \"status\": \"current\", \"supersedes\": null}]}, \"newer_projection_exists\": true, \"producer\": \"distill\"}], \"review_candidates\": []}\n",
+    "stderr": ""
+  },
+  {
+    "label": "packet-with-avatar",
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/handoff_packet.py",
+      "--project-root",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/synthetic project",
+      "W-00000002",
+      "--project-key",
+      "test/demo-app",
+      "--producers",
+      "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/producers.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.2692862500261981,
+    "stdout": "# Handoff: W-00000002\n\n## Purpose chain\n\n### W-00000001\n\nMake parsing predictable.\n\n### W-00000002\n\nContinue with host parsing.\n\n## Criteria as of check\n\nThese criteria were current at the reported check. Recheck before using them.\n\ndistill — generation: 5; checked_at: 2026-10-05T17:36:08.308717Z\n\nNo current criteria.\n\navatar — generation: 6; checked_at: 2026-10-05T17:36:08.356003Z\n\n### applies\n\n- avatar:PC-8dadcf574065@2: Prefer explicit error contracts.\n- targets: [\"app/\"]\n- excluded: []\n- source_status: not_checkable\n- applies_when: []\n- exceptions: []\n- notes: []\n- overrides: []\n- confirmation: \"user_confirmed\"\n- ai_confidence: null\n- origin: {\"actor\": \"user\", \"captured_at\": \"2026-10-05T17:36:07.592863Z\", \"kind\": \"user_statement\", \"quote\": \"Synthetic test statement: personal-confirm\", \"quote_sha256\": \"f09c25096169059bcf1282b7c331e6fb5de95489ac823b0ce16a7692ab0ac24d\", \"recorded_by\": {\"host\": \"fixture\", \"session_id\": \"contract\", \"via\": \"cli\"}, \"source_ref\": \"session:fixture/contract/personal-confirm\", \"source_sha256\": null}\n\n## Prior result evidence\n\n{\"kind\": \"file\", \"path\": \"app/port.py\", \"sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"observed_at\": \"2026-10-06T00:00:00Z\", \"status\": \"matches\", \"current_sha256\": \"c7a756485cf2e66ecdd263454fcdca18086c6fd148a218f3cee524743321db0e\", \"uncommitted\": false}\n\n## Stale judgments\n\n- distill:CR-c38fda22d33e@1: superseded. Revisit non-current judgments; do not automatically undo work.\n\n## Decision order\n\nFollow the user's current explicit instruction. Start with the purpose chain.\nWhen purpose answers the question, proceed. Otherwise use criteria classified as applies.\nFor partial criteria, classify the actual file again and record\n`Condition judgment: <ref> path=<file> -> applies` before applying it to that file.\nIf that file still needs note judgments, record its narrowed path as needs_judgment and satisfy\nevery note before applying it. A partial scope never removes the note requirements.\nFor needs_judgment, first satisfy all code-checkable conditions, then record each note as\n`Condition judgment: <ref> note=\"<original note>\" -> met|not_met because <reason>`.\nEvery note must be met. Never apply unresolved or not_applicable criteria.\nResolve conflicting criteria through the current user instruction, then project purpose,\nthen explicit overrides supported by a user quote. If none resolves the conflict, defer that\nchoice. Ask the user only when missing information prevents progress, and state what is missing.\nImmediately before each choice that depends on a criterion, run its check command below.\nRecord `Applied criteria: <ref>, <ref>` in the card's Progress, or `Applied criteria: none`.\nPrior evidence does not replace acceptance checks or independent review.\n\n## Check before each criterion-dependent choice\n\nRun each JSON argv array without a shell. Apply a criterion only when its status is eligible_current.\nAny other status, non-zero exit, or timeout: do not apply it. Refresh the packet or defer that choice.\n\navatar: [\"/opt/homebrew/opt/python@3.14/bin/python3.14\", \"/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py\", \"--home\", \"/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/criteria-contract-1/avatar data\", \"check\", \"--refs\", \"avatar:PC-8dadcf574065@2\"]\n\n## Remaining work\n\n### Success criteria\n\n- Parse valid hosts.\n\n### Next action\n\nImplement parse_host.\n",
+    "stderr": ""
+  }
+]

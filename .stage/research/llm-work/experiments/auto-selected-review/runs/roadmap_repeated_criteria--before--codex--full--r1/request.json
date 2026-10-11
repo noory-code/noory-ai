@@ -1,0 +1,28 @@
+{
+  "case": "roadmap_repeated_criteria--before",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 1,
+  "id": "roadmap_repeated_criteria--before--codex--full--r1",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ],
+    "reason": "--completion-criteria는 argparse 기본 저장 동작으로 마지막 값만 남기고 create_milestone이 이를 '- ' 접두사 없이 그대로 섹션에 삽입하므로 세 값이 입력 순서대로 목록 항목으로 보존되지 않습니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 8.196749249997083
+}

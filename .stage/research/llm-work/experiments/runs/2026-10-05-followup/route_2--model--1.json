@@ -1,0 +1,104 @@
+{
+  "run_id": "route_2--model--1",
+  "case": "route_2",
+  "family": "H06",
+  "condition": "model",
+  "repeat": 1,
+  "started_at": "2026-10-04T23:40:14.056351+00:00",
+  "prompt": "{\"request\": \"schema가 정확히 1이고 type이 read면 execute, write면 approved가 true일 때 execute이고 아니면 ask입니다. 그 밖의 입력은 fallback입니다.\\n입력: {\\\"type\\\": \\\"write\\\", \\\"schema\\\": 1, \\\"approved\\\": false}\", \"choices\": [\"execute\", \"ask\", \"fallback\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다.",
+  "input_sha256": "9665a96f89a00dd3c1ed2bf122e9e4eef1063be09b63e1c73af87385029ddb81",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"ask\", \"reason\": \"schema가 1이고 type이 write이지만 approved가 false이므로 규칙에 따라 execute가 아니라 ask입니다.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 2576,
+    "duration_api_ms": 2886,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "4443c457-12c9-40a5-84ea-fa96095c1e4e",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.005098999999999999,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 851,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 64,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 851,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 64,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 851,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 851
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"ask\", \"reason\": \"schema가 1이고 type이 write이지만 approved가 false이므로 규칙에 따라 execute가 아니라 ask입니다.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 996,
+        "outputTokens": 11,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.0010509999999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 64,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 851,
+        "webSearchRequests": 0,
+        "costUSD": 0.0040479999999999995,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "5a5c9617-c985-4536-84dd-2dbc1d801f5e",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 3.6795700829825364
+}

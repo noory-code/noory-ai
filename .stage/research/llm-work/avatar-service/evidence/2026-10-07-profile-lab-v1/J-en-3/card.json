@@ -1,0 +1,44 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Your requested detail changes with the task's stakes",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In project planning, the user asked to see alternatives and what would be given up before a decision. For a routine test result, they asked only whether it passed.",
+      "evidence_ids": [
+        "J1",
+        "J2"
+      ]
+    },
+    {
+      "text": "For a high-risk migration, the user asked for failure cases and a way back before approving.",
+      "evidence_ids": [
+        "J3"
+      ]
+    },
+    {
+      "text": "In the next session, the user said they don't always want short answers and want enough to judge what to do.",
+      "evidence_ids": [
+        "J5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these records, the user may want brief answers when a check is simple and fuller answers when a decision has consequences. This fits their own description of wanting enough to judge.",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "alternative": "The differences may come from the specific tasks, or from what information was missing at the time, rather than from a stable preference tied to stakes.",
+  "limitation": "These records can't show how the user acts in other contexts, or whether the J4 omission and the J3 request are the same incident. They also can't show why the user wanted the detail."
+}

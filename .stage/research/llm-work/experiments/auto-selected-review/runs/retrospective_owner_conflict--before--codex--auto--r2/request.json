@@ -1,0 +1,40 @@
+{
+  "case": "retrospective_owner_conflict--before",
+  "host": "codex",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--before--codex--auto--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/scripts/driver_lifecycle.py": {
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ],
+      "entry": "write_driver_retrospective",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ],
+    "reason": "R-00000041의 work_item이 W-00000099이면 충돌 오류를 발생시키지 않고 다음 빈 번호의 회고를 생성하여 ID와 빈 오류를 반환하므로 요구한 충돌 처리를 만족하지 않습니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 18.346288875007303
+}

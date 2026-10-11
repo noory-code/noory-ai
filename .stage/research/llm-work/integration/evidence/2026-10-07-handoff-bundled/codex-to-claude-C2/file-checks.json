@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "condition": "C2",
+  "port_unchanged": true,
+  "port_sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7",
+  "valid_host": true,
+  "invalid_contract": true,
+  "observed": {
+    "valid": {
+      "returned": "example.com"
+    },
+    "invalid": {
+      "returned": null
+    }
+  },
+  "applied_ref_recorded": true,
+  "stale_judgment_recorded": true,
+  "next_action_updated": true,
+  "limits": [
+    "C0 has no required invalid-input contract; its outcome is observational.",
+    "This checks files and records, not whether an AI CLI produced them."
+  ],
+  "avatar_flow": true
+}

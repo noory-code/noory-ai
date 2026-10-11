@@ -1,0 +1,35 @@
+{
+  "case": "B",
+  "observations": [
+    {
+      "kind": "evidence_request",
+      "evidence_ids": [
+        "U1"
+      ]
+    },
+    {
+      "kind": "evidence_request",
+      "evidence_ids": [
+        "U2"
+      ]
+    }
+  ],
+  "assessment": {
+    "missing_kinds": [
+      "unverified_outcome"
+    ],
+    "forbidden_kinds": [],
+    "missing_evidence_ids": {
+      "unverified_outcome": [
+        "A1",
+        "U1",
+        "U2"
+      ]
+    }
+  },
+  "model": "gemma4:latest",
+  "total_duration_ns": 9628642375,
+  "prompt_eval_count": 328,
+  "eval_count": 581,
+  "done": true
+}

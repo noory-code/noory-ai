@@ -1,0 +1,17 @@
+{
+  "hosts": [
+    {
+      "host": "claude",
+      "calls": 18,
+      "stopped_on_error": null,
+      "reported_cost_usd": 0.6043879999999999
+    },
+    {
+      "host": "codex",
+      "calls": 18,
+      "stopped_on_error": null,
+      "reported_cost_usd": null
+    }
+  ],
+  "ended_at": "2026-10-05T12:30:49.922075+00:00"
+}

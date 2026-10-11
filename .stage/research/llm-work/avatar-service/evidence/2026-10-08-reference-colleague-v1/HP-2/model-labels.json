@@ -1,0 +1,17 @@
+[
+  {
+    "id": "H1",
+    "act": "attributed_content",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "H2",
+    "act": "attributed_content",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "H3",
+    "act": "request_apply_constraint",
+    "constraint_ref": "H1"
+  }
+]

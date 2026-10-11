@@ -1,0 +1,24 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "claude",
+  "condition": "full",
+  "repeat": 1,
+  "id": "retrospective_owner_conflict--after--claude--full--r1",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "retrospective_id_for_work_item이 W-00000041에서 R-00000041을 도출하고, reserve_retrospective가 current_path(R-00000041.md)의 work_item(W-00000099)이 item_id와 다르면 R-00000041, W-00000099, W-00000041을 모두 담은 RuntimeError를 발생시키며, write_driver_retrospective가 이를 잡아 retro_id를 빈 문자열로 반환하고 오류 메시지에 포함하며, 새 파일 R-00000042/R-00000043은 만들지 않는다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 3.983292332995916
+}

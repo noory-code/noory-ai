@@ -1,0 +1,14 @@
+test_absent_store_does_not_prove_superseded (test_host_result_checker.HostResultCheckerTest.test_absent_store_does_not_prove_superseded) ... ok
+test_claimed_completion_does_not_hide_wrong_behavior (test_host_result_checker.HostResultCheckerTest.test_claimed_completion_does_not_hide_wrong_behavior) ... ok
+test_control_condition_observes_instead_of_assuming_a_contract (test_host_result_checker.HostResultCheckerTest.test_control_condition_observes_instead_of_assuming_a_contract) ... ok
+test_correct_files_and_records_pass (test_host_result_checker.HostResultCheckerTest.test_correct_files_and_records_pass) ... ok
+test_missing_reference_or_stale_report_fails (test_host_result_checker.HostResultCheckerTest.test_missing_reference_or_stale_report_fails) ... ok
+test_repeating_prior_work_fails_the_unchanged_check (test_host_result_checker.HostResultCheckerTest.test_repeating_prior_work_fails_the_unchanged_check) ... ok
+test_sender_applied_record_cannot_stand_in_for_receiver_record (test_host_result_checker.HostResultCheckerTest.test_sender_applied_record_cannot_stand_in_for_receiver_record) ... ok
+test_stage_supported_bullets_and_dates_keep_applied_refs (test_host_result_checker.HostResultCheckerTest.test_stage_supported_bullets_and_dates_keep_applied_refs) ... ok
+test_unfinished_next_action_is_not_a_complete_handoff (test_host_result_checker.HostResultCheckerTest.test_unfinished_next_action_is_not_a_complete_handoff) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.267s
+
+OK

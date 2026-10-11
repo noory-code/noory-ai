@@ -1,0 +1,49 @@
+{
+  "hosts": [
+    {
+      "host": "claude",
+      "requests": [
+        "roadmap_repeated_criteria--before--claude--auto--r1",
+        "roadmap_repeated_criteria--before--claude--full--r1",
+        "roadmap_repeated_criteria--after--claude--full--r1",
+        "roadmap_repeated_criteria--after--claude--auto--r1",
+        "retrospective_owner_conflict--before--claude--auto--r1",
+        "retrospective_owner_conflict--before--claude--full--r1",
+        "retrospective_owner_conflict--after--claude--full--r1",
+        "retrospective_owner_conflict--after--claude--auto--r1",
+        "roadmap_repeated_criteria--before--claude--full--r2",
+        "roadmap_repeated_criteria--before--claude--auto--r2",
+        "roadmap_repeated_criteria--after--claude--auto--r2",
+        "roadmap_repeated_criteria--after--claude--full--r2",
+        "retrospective_owner_conflict--before--claude--full--r2",
+        "retrospective_owner_conflict--before--claude--auto--r2",
+        "retrospective_owner_conflict--after--claude--auto--r2",
+        "retrospective_owner_conflict--after--claude--full--r2"
+      ],
+      "stopped_on_error": null
+    },
+    {
+      "host": "codex",
+      "requests": [
+        "roadmap_repeated_criteria--before--codex--full--r1",
+        "roadmap_repeated_criteria--before--codex--auto--r1",
+        "roadmap_repeated_criteria--after--codex--auto--r1",
+        "roadmap_repeated_criteria--after--codex--full--r1",
+        "retrospective_owner_conflict--before--codex--full--r1",
+        "retrospective_owner_conflict--before--codex--auto--r1",
+        "retrospective_owner_conflict--after--codex--auto--r1",
+        "retrospective_owner_conflict--after--codex--full--r1",
+        "roadmap_repeated_criteria--before--codex--auto--r2",
+        "roadmap_repeated_criteria--before--codex--full--r2",
+        "roadmap_repeated_criteria--after--codex--full--r2",
+        "roadmap_repeated_criteria--after--codex--auto--r2",
+        "retrospective_owner_conflict--before--codex--auto--r2",
+        "retrospective_owner_conflict--before--codex--full--r2",
+        "retrospective_owner_conflict--after--codex--full--r2",
+        "retrospective_owner_conflict--after--codex--auto--r2"
+      ],
+      "stopped_on_error": null
+    }
+  ],
+  "ended_at": "2026-10-05T15:53:31.483649+00:00"
+}

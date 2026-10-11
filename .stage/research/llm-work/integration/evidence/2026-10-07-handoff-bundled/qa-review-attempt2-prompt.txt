@@ -1,0 +1,43 @@
+Independent read-only QA. Do not edit, run commands, or delegate.
+Review the THREE success criteria in /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000277/_story.md.
+The previous reviewer timed out without output. This review has a 420-second budget;
+the actual experiment's 180-second limit is unchanged. Return within this review budget.
+Return one JSON object: approved, criteria (criterion/verdict/reason), findings
+(severity/location/reason), and limits. Use Korean explanations. Do not claim tests were run by you.
+
+Read these current files first:
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/findings/2026-10-07-bundled-recording.md
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/fixture_avatar_batch.py
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_fixture_avatar_batch.py
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/run_bundled_handoff.py
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/verify_integration.py
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/verification.txt
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/host-runs.json
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/comparison.json
+
+Check for concrete defects and overclaims. This is a research-only wrapper for synthetic,
+explicitly confirmed statements, NOT a shipped automatic personal-criteria feature.
+The AI still chooses, queries criteria, writes/tests code, and updates Stage. The wrapper
+only executes the fixed public CLI recording sequence. It preserves partial failure.
+The product source hashes remain those tested/reviewed on October 6; verify_integration
+checks them. Five new wrapper tests and ten checker tests passed; tests-green.log records it.
+The first two trials and their failures remain preserved. Two successful sender sessions
+from trial 2 were reused, with per-file digests in sender-*/reuse.json. Exactly six new
+receiver sessions ran once. No completion/record assertion was relaxed. The verifier adds
+sender reuse hash checks and defaults to this trial. C0 has no applied reference;
+source-history assertions are meaningful only for the four C1/C2 cases.
+
+Inspect all six final cards using their archived paths:
+/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/<case>/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt
+Use Glob to discover case names. These text copies preserve the original bytes.
+Read summary.json or saved-case-observations.json only when needed to check a claim.
+Check the receiver trace of one C2 case and its .data/batch-calls.jsonl if budget permits.
+The verifier checks lookup presence, NOT order; do not assert that ordering was verified
+without reading the raw trace. State precisely which traces you inspected and which you did not.
+Only seek additional files to resolve a concrete concern. Avoid reviewing unchanged
+product implementation or re-auditing all historical experiments.
+
+The report limits measurements to one trial per condition, uncontrolled cache/order/prompt,
+AI tool IDs rather than model API requests, and CLI-reported dollar figures rather than bills.
+Product integration acceptance is separate from commit/release/Stage closure.
+Report missing evidence honestly; do not treat the supplied summary as independent proof.

@@ -1,0 +1,122 @@
+This is a synthetic validation project. The quoted user statements are fixtures,
+not evidence about the real user's personal preferences. Work only inside /var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1.
+Do not commit, use other agents, access personal stores, install packages, or edit plugin source.
+Use the provided public CLI argv arrays; do not import plugin internals or open their databases.
+Your host label is claude; your synthetic session label is codex-to-claude-C1, not a native session ID.
+All JSON payloads are UTF-8. Run argv arrays without a shell using Python subprocess, or quote each
+argument correctly in a shell. Preserve CLI JSON output in the receipt files requested below.
+If information blocks completion, say what is missing. Do not invent user preferences.
+Distill base argv: ["/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python", "-m", "distill", "criteria", "--db", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1/.data/distill.db"]
+The --db option belongs AFTER the subcommand, e.g. criteria current --db PATH --project test/demo-app.
+Avatar base argv: ["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py", "--home", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1/.data/avatar"]
+Stage packet argv: ["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/woogis/.codex/worktrees/criteria-stage/noory-ai/stage/scripts/handoff_packet.py", "--project-root", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1", "W-00000002", "--project-key", "test/demo-app", "--producers", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1/.data/producers.json"]
+
+Task H: continue the prior completed port task by implementing app/host.py with parse_host(value).
+For this small test, a valid host is a nonempty string containing a dot with no whitespace; return
+it unchanged. 'example.com' is valid and 'bad' is invalid. Use app.errors.ConfigError if an exception
+contract applies. Decide how invalid input is reported from the current project criterion in the
+packet below. If no current criterion is provided, choose a contract and explain your choice.
+Work on H; the prior P implementation is already complete. Read its evidence. Run any required
+current-criterion check immediately before the choice and save its actual output to .data/receiver-check.json.
+In the card's Progress, add Applied criteria: <ref> or Applied criteria: none. If a prior judgment
+is superseded, add Stale judgment: <old ref> superseded. Do not rewrite earlier Progress records.
+Copy a criterion's status only from an actual producer response. Missing or unqueried criteria
+have unknown status; absence never proves superseded or revoked. After finishing, update Next action
+so it describes remaining work and does not tell another session to implement an already finished function.
+
+After H, record the same synthetic Avatar fixtures with this prepared public-CLI wrapper:
+["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/fixture_avatar_batch.py", "--project-root", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1", "--chosen", "<actual choice>", "--refs", "<applied refs or none>"]
+Replace <actual choice> with ConfigError, None, or other, matching YOUR implementation.
+Replace <applied refs or none> with the comma-separated refs YOU applied, or none.
+This wrapper only copies explicit fixture data and runs choice add, criterion propose, criterion
+confirm using the exact supplied confirmation, history/source attach when refs exist, and show.
+It preserves every public CLI response in .data/batch-calls.jsonl and writes .data/avatar-show.json.
+It does not choose the error contract, implement or test code, query criteria before your decision,
+or update the Stage card. Those remain your responsibility above. Do not edit the wrapper or its fixture.
+You do not need to reconstruct those Avatar payloads individually. Report the returned choice ID
+and confirmed ref. If the wrapper exits nonzero, inspect its recorded error; do not bypass it.
+
+Report tests, the decision and any question that blocked you. Do not claim a general cost improvement.
+
+The actual Stage handoff packet follows:
+# Handoff: W-00000002
+
+## Purpose chain
+
+### W-00000001
+
+Make configuration parsing predictable for callers.
+
+### W-00000002
+
+Implement configuration parsing in two steps.
+
+## Criteria as of check
+
+These criteria were current at the reported check. Recheck before using them.
+
+distill — generation: 1; checked_at: 2026-10-07T10:39:29.662267Z
+
+### applies
+
+- distill:CR-fbed97eb8cc7@1: Invalid configuration input raises ConfigError.
+- targets: ["app/"]
+- excluded: []
+- source_status: not_checkable
+- applies_when: [{"any": ["app/"], "kind": "path"}]
+- exceptions: []
+- notes: []
+- overrides: []
+- confirmation: "user_stated"
+- ai_confidence: null
+- origin: {"actor": "user", "captured_at": "2026-10-07T03:38:53.054971Z", "kind": "user_statement", "quote": "[Synthetic test statement] Invalid configuration input raises ConfigError.", "quote_sha256": "b2c5f9ae213ada4afde8c75876dd2ec8806bd10617965ee782f15b1b12bf4557", "recorded_by": {"host": "codex", "session_id": "sender-codex", "via": "cli"}, "source_ref": "session:codex/sender-codex/fixture-1", "source_sha256": null}
+
+avatar — generation: 0; checked_at: 2026-10-07T10:39:29.739738Z
+
+store: absent
+
+No current criteria.
+
+## Prior result evidence
+
+{"kind": "file", "path": "app/port.py", "sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7", "observed_at": "2026-10-07T03:40:01.380845Z", "status": "matches", "current_sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7", "uncommitted": "unknown"}
+
+## Stale judgments
+
+- distill:CR-fbed97eb8cc7@1: eligible_current. Revisit non-current judgments; do not automatically undo work.
+
+## Decision order
+
+Follow the user's current explicit instruction. Start with the purpose chain.
+When purpose answers the question, proceed. Otherwise use criteria classified as applies.
+For partial criteria, classify the actual file again and record
+`Condition judgment: <ref> path=<file> -> applies` before applying it to that file.
+If that file still needs note judgments, record its narrowed path as needs_judgment and satisfy
+every note before applying it. A partial scope never removes the note requirements.
+For needs_judgment, first satisfy all code-checkable conditions, then record each note as
+`Condition judgment: <ref> note="<original note>" -> met|not_met because <reason>`.
+Every note must be met. Never apply unresolved or not_applicable criteria.
+Resolve conflicting criteria through the current user instruction, then project purpose,
+then explicit overrides supported by a user quote. If none resolves the conflict, defer that
+choice. Ask the user only when missing information prevents progress, and state what is missing.
+Immediately before each choice that depends on a criterion, run its check command below.
+Record `Applied criteria: <ref>, <ref>` in the card's Progress, or `Applied criteria: none`.
+Prior evidence does not replace acceptance checks or independent review.
+
+## Check before each criterion-dependent choice
+
+Run each JSON argv array without a shell. Apply a criterion only when its status is eligible_current.
+Any other status, non-zero exit, or timeout: do not apply it. Refresh the packet or defer that choice.
+
+distill: ["/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python", "-m", "distill", "criteria", "check", "--project", "test/demo-app", "--refs", "distill:CR-fbed97eb8cc7@1", "--db", "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C1/.data/distill.db"]
+
+## Remaining work
+
+### Success criteria
+
+- Valid ports and hosts are parsed.
+
+### Next action
+
+Implement parse_host.
+

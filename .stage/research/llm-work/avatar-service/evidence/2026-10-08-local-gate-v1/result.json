@@ -1,0 +1,17 @@
+{
+  "format": "avatar-conversation-lab/1",
+  "synthetic_only": true,
+  "session_id": "fictional-session-1",
+  "total_messages": 7,
+  "human_input_ids": [
+    "U1",
+    "U3"
+  ],
+  "excluded": {
+    "A1": "non_user_role",
+    "T1": "not_human_input",
+    "M1": "meta_message",
+    "X1": "unknown_origin",
+    "U2": "mixed_content"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "case": "roadmap_repeated_criteria--after",
+  "host": "claude",
+  "condition": "full",
+  "repeat": 1,
+  "id": "roadmap_repeated_criteria--after--claude--full--r1",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "`--completion-criteria`는 `action=\"append\"`로 정의되어 세 값이 입력 순서대로 리스트에 담기고, `create_milestone`이 이를 각각 `- `로 시작하는 줄로 이어 붙여 `_replace_section`으로 `## Completion criteria` 아래에 넣으므로 순서와 형식이 유지되며, 정상 v4 템플릿을 전제하면 `create-theme`와 `create-milestone` 모두 0을 반환합니다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 7.068218083993997
+}

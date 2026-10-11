@@ -1,0 +1,40 @@
+{
+  "case": "retrospective_owner_conflict--before",
+  "host": "claude",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--before--claude--auto--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/scripts/driver_lifecycle.py": {
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ],
+      "entry": "write_driver_retrospective",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ],
+    "reason": "선호 경로 R-00000041.md가 존재하지만 work_item이 W-00000099라서 반환 없이 아래로 넘어가고, 오류를 내는 대신 max(numbers)+1 후보로 R-00000042를 새로 만들어 그 ID를 반환하므로 빈 ID와 세 ID가 담긴 오류 요구를 어깁니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 9.15352433299995
+}

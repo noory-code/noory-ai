@@ -1,0 +1,228 @@
+{
+  "before": ".stage/research/llm-work/integration/evidence/2026-10-07-handoff-followup",
+  "after": ".stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled",
+  "cases": [
+    {
+      "case": "claude-to-codex-C0",
+      "before": {
+        "exit": 124,
+        "seconds": 180.01393704197835,
+        "input_tokens": null,
+        "cached_input_tokens": null,
+        "output_tokens": null,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 26,
+          "by_type": {
+            "command_execution": 24,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 118.28068516601343,
+        "input_tokens": 298803,
+        "cached_input_tokens": 280192,
+        "output_tokens": 4822,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 22,
+          "by_type": {
+            "command_execution": 20,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": 4
+      }
+    },
+    {
+      "case": "claude-to-codex-C1",
+      "before": {
+        "exit": 0,
+        "seconds": 129.02063316700514,
+        "input_tokens": 345112,
+        "cached_input_tokens": 327296,
+        "output_tokens": 5607,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 24,
+          "by_type": {
+            "command_execution": 22,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 66.92096929199761,
+        "input_tokens": 202235,
+        "cached_input_tokens": 174848,
+        "output_tokens": 2642,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 19,
+          "by_type": {
+            "command_execution": 17,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": 6
+      }
+    },
+    {
+      "case": "claude-to-codex-C2",
+      "before": {
+        "exit": 0,
+        "seconds": 70.26728750002803,
+        "input_tokens": 299127,
+        "cached_input_tokens": 275072,
+        "output_tokens": 5457,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 18,
+          "by_type": {
+            "command_execution": 16,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 98.08173079200787,
+        "input_tokens": 211742,
+        "cached_input_tokens": 190080,
+        "output_tokens": 3953,
+        "reported_cost_usd": null,
+        "tools": {
+          "total": 15,
+          "by_type": {
+            "command_execution": 13,
+            "file_change": 2
+          }
+        },
+        "batch_public_cli_calls": 6
+      }
+    },
+    {
+      "case": "codex-to-claude-C0",
+      "before": {
+        "exit": 0,
+        "seconds": 74.06668383296346,
+        "input_tokens": 30,
+        "cached_input_tokens": 197030,
+        "output_tokens": 7847,
+        "reported_cost_usd": 0.34148200000000006,
+        "tools": {
+          "total": 15,
+          "by_type": {
+            "Bash": 13,
+            "Edit": 1,
+            "Write": 1
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 65.93940945802024,
+        "input_tokens": 26,
+        "cached_input_tokens": 153997,
+        "output_tokens": 6518,
+        "reported_cost_usd": 0.2951514,
+        "tools": {
+          "total": 15,
+          "by_type": {
+            "Bash": 12,
+            "Edit": 1,
+            "Write": 2
+          }
+        },
+        "batch_public_cli_calls": 4
+      }
+    },
+    {
+      "case": "codex-to-claude-C1",
+      "before": {
+        "exit": 0,
+        "seconds": 84.17353050003294,
+        "input_tokens": 24,
+        "cached_input_tokens": 151878,
+        "output_tokens": 5932,
+        "reported_cost_usd": 0.2834636,
+        "tools": {
+          "total": 12,
+          "by_type": {
+            "Bash": 10,
+            "Edit": 1,
+            "Write": 1
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 34.51144904200919,
+        "input_tokens": 14,
+        "cached_input_tokens": 66488,
+        "output_tokens": 3577,
+        "reported_cost_usd": 0.17650960000000002,
+        "tools": {
+          "total": 8,
+          "by_type": {
+            "Bash": 6,
+            "Edit": 1,
+            "Write": 1
+          }
+        },
+        "batch_public_cli_calls": 6
+      }
+    },
+    {
+      "case": "codex-to-claude-C2",
+      "before": {
+        "exit": 0,
+        "seconds": 59.5156970830285,
+        "input_tokens": 26,
+        "cached_input_tokens": 157941,
+        "output_tokens": 6085,
+        "reported_cost_usd": 0.3004082,
+        "tools": {
+          "total": 14,
+          "by_type": {
+            "Bash": 12,
+            "Edit": 1,
+            "Write": 1
+          }
+        },
+        "batch_public_cli_calls": null
+      },
+      "after": {
+        "exit": 0,
+        "seconds": 32.446033584012184,
+        "input_tokens": 10,
+        "cached_input_tokens": 44468,
+        "output_tokens": 3243,
+        "reported_cost_usd": 0.25011360000000005,
+        "tools": {
+          "total": 6,
+          "by_type": {
+            "Bash": 4,
+            "Edit": 1,
+            "Write": 1
+          }
+        },
+        "batch_public_cli_calls": 6
+      }
+    }
+  ],
+  "limits": [
+    "One run per condition; order, cache, and prompt were not controlled.",
+    "Tool IDs count attempted tool actions; they are not individual model/API requests.",
+    "A wrapper still executes the public CLIs; fewer AI tool calls do not mean fewer store operations.",
+    "Timeout usage is unknown. Missing values do not mean zero."
+  ]
+}

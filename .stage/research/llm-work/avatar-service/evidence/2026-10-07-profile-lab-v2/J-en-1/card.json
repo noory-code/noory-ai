@@ -1,0 +1,42 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "The user asked for options before deciding, but only pass/fail for a test",
+    "evidence_ids": [
+      "J1",
+      "J2"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In project planning, the user asked to see the alternatives and what would be given up before deciding.",
+      "evidence_ids": [
+        "J1"
+      ]
+    },
+    {
+      "text": "For a routine test result, the user asked only to be told whether it passed.",
+      "evidence_ids": [
+        "J2"
+      ]
+    },
+    {
+      "text": "For a high-risk migration, the user asked for the failure cases and a way back before approving.",
+      "evidence_ids": [
+        "J3"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "In these records, the user asked for more when a decision or approval was coming (J1, J3). They asked for less on a routine result (J2). J5 fits this: they said they want enough to judge what to do.",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "alternative": "The difference may come from what each task needed, such as a rule in one project, and not from whether a decision was pending. J5 is also only what the user said about themselves.",
+  "limitation": "The records do not say why the user made the J1 request. They also do not show how J4 relates to J3, so we cannot tell if these are separate incidents."
+}

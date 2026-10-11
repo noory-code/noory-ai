@@ -1,0 +1,25 @@
+Re-review the Avatar preview after the independent review requested changes.
+Read only; do not edit, delegate, run workflows, or invoke shell commands. Read the actual files in
+/Users/woogis/.codex/worktrees/avatar-service/noory-ai/avatar: web/analysis.mjs, web/ai.mjs, web/app.mjs, scripts/avatar_analysis.py,
+scripts/avatar_web.py, tests/ai.test.mjs, tests/web.test.mjs, tests/test_avatar_analysis.py,
+tests/test_avatar_web.py, and README.md. Return PASS or REVISE with only concrete remaining defects.
+Previous findings and fixes: revoked/latest/historical state now appears in report and history modal;
+record picker starts empty, payload preview is open, changing selection clears consent; a successful
+new AI analysis drops the previous interpretation's note; notes retain their target; model text is
+quoted in Markdown and headings flattened; system prompt defines current/revoked/confirmation flags;
+null CLI results become ValueError; conditions_differ now compares conditions only, projects_differ
+is separate; Avatar's own persona has its own attribution; input text limits now match and total-size
+errors are explicit; foreign Host POST has a regression. Historical revision badges intentionally
+include revoked criteria because they commemorate a past wording change, not present eligibility;
+the badge now explicitly says this.
+Supervisor observed final 42 Python package tests, 7 plugin contracts, 14 Node tests pass. Browser
+regressions in /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/avatar-service/evidence/2026-10-07-web/browser-review-regressions.txt show selection consent reset, note reset, and
+revocation labels. /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/avatar-service/evidence/2026-10-07-web/browser-checks.txt covers actual CLI fixture import, bad import preservation,
+escaped hostile HTML, empty data, mobile no overflow, and late-response discard. Download contents and
+native dialog Escape/focus were separately observed. This is execution evidence, not tests you ran.
+The earlier CLI-isolation uncertainty was checked using installed claude --help: --safe-mode disables
+CLAUDE.md, skills, installed plugins, hooks, MCP servers, custom commands/agents/output styles and
+other customizations; managed policies still apply. Actual tool-free Sonnet analysis succeeded.
+The user requested a local working preview: no public server, payments, accounts, or automatic AI
+settings installation. Do not treat these declared exclusions as defects. Write concise Korean.
+Read code rather than accepting fix claims. Do not claim unexecuted tests or unseen network payloads.

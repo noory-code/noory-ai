@@ -1,0 +1,17 @@
+[
+  {
+    "id": "G1",
+    "act": "attributed_content",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "G2",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "G3",
+    "act": "request_action",
+    "constraint_ref": "none"
+  }
+]

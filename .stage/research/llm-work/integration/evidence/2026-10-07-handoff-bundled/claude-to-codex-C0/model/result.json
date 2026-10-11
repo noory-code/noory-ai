@@ -1,0 +1,19 @@
+{
+  "host": "codex",
+  "exit": 0,
+  "elapsed_seconds": 118.28068516601343,
+  "session_ids": [
+    "01a115ef-dbbc-7250-bbfa-8f52657b4c92"
+  ],
+  "reported_models": [],
+  "usage": [
+    {
+      "input_tokens": 298803,
+      "cached_input_tokens": 280192,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 4822,
+      "reasoning_output_tokens": 1875
+    }
+  ],
+  "assistant_text": "I’ll read the completed port implementation and Stage card, check the current criteria before choosing the host error contract, then implement and test `parse_host`. I’ll run the Avatar fixture wrapper after the code and card are updated.\nThe prior port implementation and its evidence are present. The packet says neither producer was queried, so I’m checking the live criteria now before selecting the invalid-host behavior.\nThe refreshed packet reports no current criteria from either producer. I’ll use `ConfigError` for invalid hosts, matching `parse_port` and the project goal of predictable parsing errors. I’m saving the live Distill response in the requested receipt before making that choice.\n`parse_host` now returns valid strings unchanged and raises `ConfigError` for invalid input. The focused checks passed, including a port regression check, and the card records `Applied criteria: none`. I’ll run the supplied Avatar wrapper and inspect its recorded response.\nImplemented [`parse_host`](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/claude-to-codex-C0/app/host.py). It returns valid hosts unchanged and raises `ConfigError` for invalid input, matching the completed port parser. The live check found no current criterion to apply; its output is saved in [`receiver-check.json`](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/claude-to-codex-C0/.data/receiver-check.json). The [Stage card](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/claude-to-codex-C0/.stage/work/current/W-00000001/W-00000002/_story.md) records `Applied criteria: none` and has an updated Next action.\n\nHost validation and port regression checks passed. The Avatar wrapper returned choice `CH-7931c701cdf2` and confirmed ref `avatar:PC-78d8096ee5ed@2`. No question blocked completion."
+}

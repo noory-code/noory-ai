@@ -5,7 +5,10 @@ kind: development
 venue: codex
 milestone:
 autonomous: false
-acceptance: []
+acceptance:
+  - "python3 -m unittest discover -s avatar/tests -q"
+  - "python3 -m unittest tests.test_plugin_contracts -q"
+  - "git diff --check"
 status: active
 verification: pending
 retrospective: pending
@@ -26,6 +29,12 @@ decision_refs:
 ## Actions
 
 W-00000273의 약속을 바탕으로 독립적인 로컬 기록·조회·수정부터 만듭니다.
+
+검토를 마친 `.stage/research/llm-work/implementation-design.md`의 Avatar 계약을 구현합니다.
+직접 입력, 확인·변경·철회, 출처 첨부, 반복 요청, 변경 이력에 대한 실패 사례부터 확인합니다.
+모듈이 500줄을 넘으면 역할에 따라 나눌지 검토합니다.
+플러그인을 두 호스트가 찾을 수 있도록 필요한 marketplace와 계약 검사도 갱신합니다.
+이 변경은 `avatar/` 밖의 범위를 넘으므로 보고서에 경로와 이유를 적습니다. 카드의 scope는 바꾸지 않습니다.
 
 ## User value
 
@@ -61,7 +70,9 @@ W-00000273의 약속을 바탕으로 독립적인 로컬 기록·조회·수정�
 
 ## Next action
 
-설계 검토 뒤 독립 사용 사례부터 RED 테스트를 작성합니다. 첫 구현은 로컬 명령과 스킬로 제공하고 웹 UI는 요구하지 않습니다.
+제품별 테스트와 독립 리뷰를 마쳤습니다. W-00000277의 세 번째 시험은 실제 수신 세션 여섯 개가 모두 정상 종료했고 독립 리뷰도 통과했습니다.
+2026-10-07 사용자 승인 뒤 전용 worktree의 제품 소스를 커밋했습니다. 커밋 번호는 구현·검증 기록에서 확인합니다.
+작업별 회고와 완료 절차를 진행합니다.
 
 ## Related truth
 
@@ -71,9 +82,13 @@ SSOT, AHA, KISS, TDD, Honesty를 적용합니다. 부모의 사용자 합의가 
 
 2026-10-05: 구현 작업을 등록했습니다. avatar 디렉터리는 아직 만들지 않았습니다.
 
+2026-10-06: Codex CLI의 사용량 오류 뒤 사용자가 이 세션에서 직접 구현하도록 허용했습니다. 감독이 전용 worktree에서 구현과 검사를 이어갔습니다. Claude CLI로 독립 리뷰를 받았으며, 반려된 항목은 실패 시험으로 재현하고 수정했습니다. 드라이버의 완료 판정으로 보고하지 않습니다. 제품 커밋·푸시는 아직 하지 않았습니다.
+
 ## Verification
 
 독립 실행·변경 이력·범위 제한·중복 입력을 검사하고 두 호스트에서 명시적인 스킬 호출을 확인합니다.
+
+2026-10-06: 실행 위치, 제품별 검사 수, 리뷰 원본과 한계는 [구현·검증 기록](../../../../research/llm-work/integration/implementation-status.md)에 모았습니다. 실제 두 호스트 인계와 제품 소스 보존이 남아 있어 이 카드를 완료로 바꾸지 않습니다.
 
 ## Retrospective
 

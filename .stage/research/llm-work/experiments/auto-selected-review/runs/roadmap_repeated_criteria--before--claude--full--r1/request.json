@@ -1,0 +1,28 @@
+{
+  "case": "roadmap_repeated_criteria--before",
+  "host": "claude",
+  "condition": "full",
+  "repeat": 1,
+  "id": "roadmap_repeated_criteria--before--claude--full--r1",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ],
+    "reason": "`--completion-criteria`가 action=\"append\" 없이 default=\"\"인 단일 값 인자로 정의되어 세 번 전달하면 마지막 값 \"Users can install the release\"만 남고, `_replace_section`도 값을 그대로 넣을 뿐 '- ' 항목으로 바꾸지 않으므로 세 값이 입력 순서대로 각각 '- ' 항목으로 남는다는 기준을 만족하지 못합니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 4.939154084015172
+}

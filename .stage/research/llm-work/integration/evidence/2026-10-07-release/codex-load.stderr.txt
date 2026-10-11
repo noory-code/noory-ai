@@ -1,0 +1,17 @@
+Reading additional input from stdin...
+2026-10-07T11:45:04.369576Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"avatar@criteria-release-test"` plugin="\"avatar@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.369619Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"distill@criteria-release-test"` plugin="\"distill@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.369626Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"stage@criteria-release-test"` plugin="\"stage@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.458970Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.533531Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.597748Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.669184Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.731313Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.757126Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"avatar@criteria-release-test"` plugin="\"avatar@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.757162Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"distill@criteria-release-test"` plugin="\"distill@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.757170Z  WARN codex_core_plugins::loader: failed to load plugin: invalid plugin name: only ASCII letters, digits, `.`, `_`, and `-` are allowed in `"stage@criteria-release-test"` plugin="\"stage@criteria-release-test\"" path=/Users/woogis/.codex/plugins/cache
+2026-10-07T11:45:04.793843Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.852837Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.913632Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:04.974337Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:45:05.033425Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back

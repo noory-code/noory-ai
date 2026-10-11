@@ -1,0 +1,35 @@
+{
+  "case_id": "F-new",
+  "messages": [
+    {
+      "id": "F-m1",
+      "author": "user",
+      "text": "저는 보고서를 볼 때 결론을 먼저 읽어요."
+    },
+    {
+      "id": "F-m2",
+      "author": "user",
+      "text": "제가 방금 말한 읽는 순서대로 본문을 보여 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "F1",
+      "message_id": "F-m1",
+      "exact_text": "저는 보고서를 볼 때 결론을 먼저 읽어요.",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "F2",
+      "message_id": "F-m2",
+      "exact_text": "제가 방금 말한 읽는 순서대로 본문을 보여 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      }
+    }
+  ]
+}

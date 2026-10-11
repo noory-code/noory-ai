@@ -1,0 +1,49 @@
+{
+  "case_id": "D-old",
+  "messages": [
+    {
+      "id": "D-m1",
+      "author": "user",
+      "text": "저는 보고서를 읽을 때 결론부터 읽어요."
+    },
+    {
+      "id": "D-m2",
+      "author": "user",
+      "text": "동료는 보고서를 읽을 때 배경부터 읽는다고 했어요."
+    },
+    {
+      "id": "D-m3",
+      "author": "user",
+      "text": "앞에서 말한 읽는 순서로 본문을 보여 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "D1",
+      "message_id": "D-m1",
+      "exact_text": "저는 보고서를 읽을 때 결론부터 읽어요.",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "D2",
+      "message_id": "D-m2",
+      "exact_text": "동료는 보고서를 읽을 때 배경부터 읽는다고 했어요.",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "D3",
+      "message_id": "D-m3",
+      "exact_text": "앞에서 말한 읽는 순서로 본문을 보여 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "unresolved"
+      }
+    }
+  ]
+}

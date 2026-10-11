@@ -1,0 +1,27 @@
+{
+  "project": "test/other",
+  "statement": "Invalid input raises ConfigError.",
+  "applies_when": [
+    {
+      "kind": "path",
+      "any": [
+        "app/"
+      ]
+    }
+  ],
+  "exceptions": [],
+  "notes": [],
+  "overrides": [],
+  "confirmation": "user_stated",
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:fixture/contract/v1",
+    "quote": "Synthetic test statement: v1",
+    "actor": "user",
+    "recorded_by": {
+      "host": "fixture",
+      "session_id": "contract",
+      "via": "cli"
+    }
+  }
+}

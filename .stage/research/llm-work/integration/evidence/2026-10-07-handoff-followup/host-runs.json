@@ -1,0 +1,80 @@
+[
+  {
+    "direction": "claude-to-codex",
+    "condition": "C0",
+    "real_cli": true,
+    "exit": 124,
+    "file_checks_passed": true,
+    "case_root": "claude-to-codex-C0",
+    "sender_raw": "sender-claude/model/stdout.jsonl",
+    "receiver_raw": "claude-to-codex-C0/model/stdout.jsonl",
+    "file_checks": "claude-to-codex-C0/file-checks.json",
+    "frozen_input": "claude-to-codex-C0/frozen-input.json",
+    "seconds": 180.01393704197835
+  },
+  {
+    "direction": "claude-to-codex",
+    "condition": "C1",
+    "real_cli": true,
+    "exit": 0,
+    "file_checks_passed": true,
+    "case_root": "claude-to-codex-C1",
+    "sender_raw": "sender-claude/model/stdout.jsonl",
+    "receiver_raw": "claude-to-codex-C1/model/stdout.jsonl",
+    "file_checks": "claude-to-codex-C1/file-checks.json",
+    "frozen_input": "claude-to-codex-C1/frozen-input.json",
+    "seconds": 129.02063316700514
+  },
+  {
+    "direction": "claude-to-codex",
+    "condition": "C2",
+    "real_cli": true,
+    "exit": 0,
+    "file_checks_passed": true,
+    "case_root": "claude-to-codex-C2",
+    "sender_raw": "sender-claude/model/stdout.jsonl",
+    "receiver_raw": "claude-to-codex-C2/model/stdout.jsonl",
+    "file_checks": "claude-to-codex-C2/file-checks.json",
+    "frozen_input": "claude-to-codex-C2/frozen-input.json",
+    "seconds": 70.26728750002803
+  },
+  {
+    "direction": "codex-to-claude",
+    "condition": "C0",
+    "real_cli": true,
+    "exit": 0,
+    "file_checks_passed": true,
+    "case_root": "codex-to-claude-C0",
+    "sender_raw": "sender-codex/model/stdout.jsonl",
+    "receiver_raw": "codex-to-claude-C0/model/stdout.jsonl",
+    "file_checks": "codex-to-claude-C0/file-checks.json",
+    "frozen_input": "codex-to-claude-C0/frozen-input.json",
+    "seconds": 74.06668383296346
+  },
+  {
+    "direction": "codex-to-claude",
+    "condition": "C1",
+    "real_cli": true,
+    "exit": 0,
+    "file_checks_passed": true,
+    "case_root": "codex-to-claude-C1",
+    "sender_raw": "sender-codex/model/stdout.jsonl",
+    "receiver_raw": "codex-to-claude-C1/model/stdout.jsonl",
+    "file_checks": "codex-to-claude-C1/file-checks.json",
+    "frozen_input": "codex-to-claude-C1/frozen-input.json",
+    "seconds": 84.17353050003294
+  },
+  {
+    "direction": "codex-to-claude",
+    "condition": "C2",
+    "real_cli": true,
+    "exit": 0,
+    "file_checks_passed": true,
+    "case_root": "codex-to-claude-C2",
+    "sender_raw": "sender-codex/model/stdout.jsonl",
+    "receiver_raw": "codex-to-claude-C2/model/stdout.jsonl",
+    "file_checks": "codex-to-claude-C2/file-checks.json",
+    "frozen_input": "codex-to-claude-C2/frozen-input.json",
+    "seconds": 59.5156970830285
+  }
+]

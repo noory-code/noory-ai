@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "ai_summary_as_reported",
+              "other_as_reported",
+              "user_direct"
+            ]
+          },
+          "act": {
+            "enum": [
+              "attributed_content",
+              "report_now",
+              "request_now"
+            ]
+          },
+          "applies_to": {
+            "enum": [
+              "none",
+              "this_task"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "act",
+          "applies_to"
+        ]
+      }
+    }
+  },
+  "required": [
+    "items"
+  ]
+}

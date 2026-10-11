@@ -1,0 +1,18 @@
+{
+  "loaded_skills": {
+    "stage-handoff": "/Users/woogis/.codex/plugins/cache/criteria-release-test/stage/0.63.1/skills/stage-handoff/SKILL.md",
+    "avatar": "/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar/0.1.2/skills/avatar/SKILL.md",
+    "distill-criteria": "/Users/woogis/.codex/plugins/cache/criteria-release-test/distill/1.10.0/skills/distill-criteria/SKILL.md"
+  },
+  "observed_versions": {
+    "stage": "0.63.1",
+    "avatar": "0.1.2",
+    "distill": "1.10.0"
+  },
+  "plugin_paths": {
+    "stage": "/Users/woogis/.codex/plugins/cache/criteria-release-test/stage/0.63.1",
+    "avatar": "/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar/0.1.2",
+    "distill": "/Users/woogis/.codex/plugins/cache/criteria-release-test/distill/1.10.0"
+  },
+  "failures": []
+}

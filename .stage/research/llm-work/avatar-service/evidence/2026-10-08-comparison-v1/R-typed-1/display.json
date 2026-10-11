@@ -1,0 +1,24 @@
+{
+  "target_label": "AI에게 요청한 답",
+  "model_selection": "모델은 두 기록을 다르게 읽었어요",
+  "records": [
+    {
+      "id": "R1",
+      "owner_id": "fictional-R",
+      "speaker": "user",
+      "text": "이 답변은 회의에서 읽을 거예요. 배경과 예시를 충분히 넣어 주세요.",
+      "context": "회의에서 읽을 답변을 AI에게 요청합니다.",
+      "unknowns": "회의 시간과 실제 받은 답변은 없습니다."
+    },
+    {
+      "id": "R2",
+      "owner_id": "fictional-R",
+      "speaker": "user",
+      "text": "휴대폰 알림으로 볼 요약은 핵심 한 문장만 보내 주세요.",
+      "context": "알림에 넣을 요약을 AI에게 요청합니다. R1과 별개 기록입니다.",
+      "unknowns": "R1과 같은 주제인지, 어느 요청이 먼저인지 모릅니다."
+    }
+  ],
+  "question": "두 답변을 각각 어떤 화면이나 자리에서 보실 예정인지, 글자 수나 읽을 시간에 정해진 제한이 있는지 알려 주실 수 있을까요?",
+  "confirmed_personal_rule": false
+}

@@ -1,0 +1,33 @@
+{
+  "case": "roadmap_repeated_criteria--after",
+  "host": "claude",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "roadmap_repeated_criteria--after--claude--auto--r2",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/skills/stage-roadmap/manage_roadmap.py": {
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": [],
+      "entry": "create_milestone",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "`--completion-criteria`는 `action=\"append\"`라 세 값이 입력 순서대로 리스트에 쌓이고, `create_milestone`이 이를 각각 `- {criterion}`으로 줄바꿈해 이어 붙인 뒤 `_replace_section`으로 `## Completion criteria` 본문에 넣으므로 순서와 `- ` 접두가 유지됩니다. 다만 번들 템플릿은 관찰 자료에 없어서, 템플릿에 `## Theme`와 `## Completion criteria` 섹션이 있다는 전제로 판단했습니다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 11.842856415983988
+}

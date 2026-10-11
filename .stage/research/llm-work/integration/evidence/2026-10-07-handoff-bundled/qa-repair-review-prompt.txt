@@ -1,0 +1,15 @@
+Read-only follow-up to the approved QA review at /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/qa-review-verdict.json.
+Do not edit, run commands, or delegate. Only assess the TWO verifier repairs requested there.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/verify_integration.py and /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_verify_bundled_evidence.py.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/qa-repair-red.log and qa-repair-green.log (the latter has 17 passing tests).
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/findings/2026-10-07-bundled-recording.md,
+section 독립 리뷰와 보완, for the disposition of the remaining four findings.
+The original AI runs, their wrapper snapshot, prompts, completion assertions, and archived cards
+are unchanged. There are no new real-host calls. A copied evidence set with a missing reuse.json
+or altered executed wrapper previously passed; now these tests must reject it. Bundled recording
+is identified by the preserved bundled-recording-plan.md, as follow-up conditions already use
+their own preserved plan. This is regression checking of retained local evidence, not a claim of
+cryptographic authenticity against a party who rewrites every artifact and its metadata.
+Judge whether the two repairs address those concrete gaps without relaxing existing assertions.
+Do not re-review product implementation or all historical experiments. Report JSON only:
+approved, findings, limits. Korean explanations. Do not claim to have executed tests.

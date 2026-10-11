@@ -1,0 +1,36 @@
+{
+  "status": "review_returned",
+  "source_sha256": {
+    "avatar/web/story-content.mjs": "efddfd08e6f11f2767d3dc499321a2fa8889eafa9578fc31b5cd3f52521a4db6",
+    "avatar/web/story-model.mjs": "993f3382a9b6e16c76104b93224afcccbd387a1f817b6725f36eb9e234a99c08",
+    "avatar/web/stories.mjs": "9b6656b1199e5799a15eafb4f13afdf9bea8e342e52f19f6a5c405eece29e1bb",
+    "avatar/web/stories.html": "8f4dc7ab7feb1e2e4a6b2e03075297a73e3e8ccb020330fc8a8bfce4948ac918",
+    "avatar/web/stories.css": "53aa531344194207589efde040e13e35832ddb178f79496737a7026bb681cf29",
+    "avatar/scripts/avatar_web.py": "99788fa0e533ffe9121dd448474a2115a7266c056d10a165db967832f436139e",
+    "avatar/web/index.html": "65e35f2031ce4d3af1c86beab383d8ebe55cfa27dd5619513d29e5da7c20f70b",
+    "avatar/web/ai.mjs": "fa14a5dcdc2d0bd36b4d5cd85fdcb2f395e3e5b4fb63b356527d066df942fa11",
+    "avatar/tests/stories.test.mjs": "6d3610324351fedc7ba0d8b484c2034a524ca33ccaf63f721e3fd146d70f8762",
+    "avatar/tests/test_avatar_web.py": "7a73d4ba1292b2aaf7ea7b933c8a01a4fcd784a16d06a97909ec66043845bedc",
+    "avatar/README.md": "6a56fbb31c7c8fc98c3c60119141c8a2060bf6ad040bcade559903a4fec214b9"
+  },
+  "exit": 0,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 32281,
+      "outputTokens": 8983,
+      "cacheReadInputTokens": 30055,
+      "cacheCreationInputTokens": 30747,
+      "webSearchRequests": 0,
+      "costUSD": 0.552923,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1592,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "is_error": false,
+  "seconds": 90.76,
+  "finished_at": "2026-10-07T15:02:39.423132+00:00"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "F1",
+    "source": "other_as_reported",
+    "act": "attributed_content",
+    "applies_to": "none"
+  },
+  {
+    "id": "F2",
+    "source": "user_direct",
+    "act": "request_now",
+    "applies_to": "this_task"
+  }
+]

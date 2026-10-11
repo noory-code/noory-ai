@@ -1,0 +1,20 @@
+[
+  {
+    "id": "G1",
+    "source": "ai_summary_as_reported",
+    "act": "attributed_content",
+    "applies_to": "none"
+  },
+  {
+    "id": "G2",
+    "source": "user_direct",
+    "act": "report_now",
+    "applies_to": "none"
+  },
+  {
+    "id": "G3",
+    "source": "user_direct",
+    "act": "request_now",
+    "applies_to": "this_task"
+  }
+]

@@ -1,0 +1,104 @@
+{
+  "run_id": "context_north--selected--3",
+  "case": "context_north",
+  "family": "H03",
+  "condition": "selected",
+  "repeat": 3,
+  "started_at": "2026-10-04T23:42:10.981476+00:00",
+  "prompt": "{\"request\": \"Atlas 3.2의 north 지역에서 지금 공개 공유를 쓸 수 있나요?\\n[general] Atlas 3.2는 공개 공유를 지원합니다.\\n[exception] north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있습니다.\", \"choices\": [\"supported\", \"unsupported\", \"unknown\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다.",
+  "input_sha256": "ea7bbe165365a100f5a4dfa344f0ae8eb8fcead8801c0f7a369823d2e8235d42",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2는 일반적으로 공개 공유를 지원하지만, north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있다는 예외가 있어 현재는 사용할 수 없습니다.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 2595,
+    "duration_api_ms": 3537,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "77e7b0b4-0f3f-42f5-a9ea-c1276f362d4e",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.005612000000000001,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 860,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 104,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 860,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 104,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 860,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 860
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2는 일반적으로 공개 공유를 지원하지만, north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있다는 예외가 있어 현재는 사용할 수 없습니다.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1008,
+        "outputTokens": 24,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.001128,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 104,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 860,
+        "webSearchRequests": 0,
+        "costUSD": 0.004484,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "88e7d319-6bd2-4a26-98bc-908e9f93d434",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 3.6740784579887986
+}

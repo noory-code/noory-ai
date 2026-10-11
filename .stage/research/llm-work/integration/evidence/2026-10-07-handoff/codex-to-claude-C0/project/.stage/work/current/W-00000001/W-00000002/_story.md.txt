@@ -1,0 +1,21 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Implemented parse_port and verified valid and invalid inputs.
+Applied criteria: distill:CR-3662bef8c657@1
+Implemented parse_host; invalid input raises app.errors.ConfigError, chosen from the epic purpose (predictable for callers) and consistency with parse_port. Verified 'example.com' is returned unchanged and 'bad', '', whitespace, and non-string inputs raise ConfigError.
+Criterion check before the choice (.data/receiver-check.json): distill:CR-3662bef8c657@1 -> unknown (Distill store absent); not applied. Distill current for test/demo-app returned no criteria.
+Applied criteria: none
+Stale judgment: distill:CR-3662bef8c657@1 not current (status unknown); not applied to parse_host. parse_port was not reverted.
+## Success criteria
+- Valid ports and hosts are parsed.
+## Evidence
+- app/port.py SHA-256: 90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350
+- app/host.py SHA-256: 3ccaa2081b3688dffbb535a90e871b977dd073ed86e97bf3553db9230108d476
+## Next action
+Independent review of parse_host and parse_port.

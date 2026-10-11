@@ -1,0 +1,8 @@
+{
+  "loaded_skills": [],
+  "observed_versions": {},
+  "plugin_paths": [],
+  "failures": [
+    "This session did not advertise $stage-handoff, $avatar, or $distill-criteria, or their SKILL.md paths and plugin roots. Their manifests and versions could not be inspected without using an undiscovered location."
+  ]
+}

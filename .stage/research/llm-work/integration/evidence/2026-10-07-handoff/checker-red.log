@@ -1,0 +1,23 @@
+.....FF
+======================================================================
+FAIL: test_stage_supported_bullets_and_dates_keep_applied_refs (test_host_result_checker.HostResultCheckerTest.test_stage_supported_bullets_and_dates_keep_applied_refs) (prefix='- ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_host_result_checker.py", line 52, in test_stage_supported_bullets_and_dates_keep_applied_refs
+    self.assertTrue(check_case(self.root, self.frozen)["passed"])
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_stage_supported_bullets_and_dates_keep_applied_refs (test_host_result_checker.HostResultCheckerTest.test_stage_supported_bullets_and_dates_keep_applied_refs) (prefix='- 2026-10-07: ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_host_result_checker.py", line 52, in test_stage_supported_bullets_and_dates_keep_applied_refs
+    self.assertTrue(check_case(self.root, self.frozen)["passed"])
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.202s
+
+FAILED (failures=2)

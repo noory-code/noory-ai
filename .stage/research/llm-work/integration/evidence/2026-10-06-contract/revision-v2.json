@@ -1,0 +1,16 @@
+{
+  "base_version": 1,
+  "statement": "Invalid input returns None.",
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:fixture/contract/v2",
+    "quote": "Synthetic test statement: v2",
+    "actor": "user",
+    "recorded_by": {
+      "host": "fixture",
+      "session_id": "contract",
+      "via": "cli"
+    }
+  },
+  "reason": "Synthetic change: callers handle absence."
+}

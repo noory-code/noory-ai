@@ -1,0 +1,21 @@
+{
+  "case_id": "X",
+  "items": [
+    {
+      "id": "X1",
+      "message_id": "X-m1",
+      "exact_text": "저는 짧은 글을 자주 읽어요.",
+      "act": "user_report",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "X2",
+      "message_id": "X-m2",
+      "exact_text": "이번 보고서는 자세하게 써 주세요.",
+      "act": "user_task_constraint",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

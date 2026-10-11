@@ -1,0 +1,32 @@
+{
+  "run_id": "K-en-4",
+  "input_sha256": "5c7f4726aa355e2c078531aaa158f274cec8faf5ea6427404253c0c91d9e162f",
+  "requested_model": "sonnet",
+  "effort": "low",
+  "synthetic_only": true,
+  "started_at": "2026-10-07T14:06:23.757072+00:00",
+  "status": "generated",
+  "semantic_review": "pending",
+  "exit": 0,
+  "is_error": false,
+  "model_usage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 4,
+      "outputTokens": 1690,
+      "cacheReadInputTokens": 5709,
+      "cacheCreationInputTokens": 3858,
+      "webSearchRequests": 0,
+      "costUSD": 0.033481800000000006,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 460,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "reported_list_cost_usd": 0.033481800000000006,
+  "structural_errors": [],
+  "seconds": 13.24,
+  "finished_at": "2026-10-07T14:06:36.995098+00:00"
+}

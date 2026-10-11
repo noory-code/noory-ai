@@ -1,0 +1,10 @@
+{
+  "condition": "C0",
+  "project_dir": "project",
+  "card": ".stage/work/current/W-00000001/W-00000002/_story.md",
+  "sender_port_sha256": "90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350",
+  "expected_applied_ref": "none",
+  "stale_ref": null,
+  "sender_card_text": "---\nid: W-00000002\nkind: development\nscope: app/\n---\n## Purpose\nImplement configuration parsing in two steps.\n## Progress\nImplemented parse_port and verified valid and invalid inputs.\nApplied criteria: distill:CR-3662bef8c657@1\n## Success criteria\n- Valid ports and hosts are parsed.\n## Evidence\n- app/port.py SHA-256: 90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350\n## Next action\nImplement parse_host.\n",
+  "require_next_action_update": true
+}

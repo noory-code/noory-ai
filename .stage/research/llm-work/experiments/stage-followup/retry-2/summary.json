@@ -1,0 +1,430 @@
+{
+  "validation_errors": [],
+  "source_sha256": "d89613b24e9ab9e1293b2b449ab7920878c5fecd9a09a83ad015f4d244eeb77c",
+  "validation_helper_sha256": "8ed74983864430960c9e7c9ef8f365851d4288896efd639b862dc175e1beda42",
+  "previous_records_unchanged": 52,
+  "cli_versions_unchanged": true,
+  "this_calls": 4,
+  "this_cli_errors": 1,
+  "all_calls": 33,
+  "all_cli_errors": 4,
+  "all_claude_reported_cost_usd": 0.7035852,
+  "codex_cost_usd": null,
+  "extraction": {
+    "cli_error": null,
+    "contract_passed": true,
+    "usage": {
+      "reported_usage_available": true,
+      "input_tokens": 8696,
+      "output_tokens": 695,
+      "claude_reported_cost_usd": 0,
+      "seconds": 19.959720457991352
+    },
+    "rules": [
+      {
+        "rule": "인터넷 연결 없이 보고서를 내보내야 한다.",
+        "project": "A",
+        "status": "confirmed",
+        "source": "N1",
+        "quote": "프로젝트 A는 인터넷 연결 없이 보고서를 내보내야 합니다."
+      },
+      {
+        "rule": "결과가 정확해야 한다.",
+        "project": "A",
+        "status": "confirmed",
+        "source": "N1",
+        "quote": "결과가 정확해야 합니다."
+      },
+      {
+        "rule": "새 패키지를 추가하지 말아야 한다.",
+        "project": "A",
+        "status": "confirmed",
+        "source": "N2",
+        "quote": "A에서는 새 패키지를 추가하지 마세요."
+      },
+      {
+        "rule": "표준 라이브러리로 먼저 시도해야 한다.",
+        "project": "A",
+        "status": "confirmed",
+        "source": "N2",
+        "quote": "표준 라이브러리로 먼저 해보세요."
+      },
+      {
+        "rule": "CSV 내보내기에 한해서 패키지 P를 추가할 수 있으며 다른 기능에는 허용되지 않는다.",
+        "project": "A",
+        "status": "confirmed",
+        "source": "N3",
+        "quote": "A의 CSV 내보내기에 한해서 패키지 P를 추가해도 됩니다. 다른 기능까지 허용한 것은 아닙니다."
+      },
+      {
+        "rule": "정확성보다 속도를 중시한다.",
+        "project": "미지정",
+        "status": "unconfirmed",
+        "source": "N4",
+        "quote": "AI는 사용자가 정확성보다 속도를 중시할 것이라고 추측했습니다. 사용자는 이 추측을 확인하지 않았습니다."
+      },
+      {
+        "rule": "PDF 패키지 Q를 사용할 수 있으며 이 허용은 B에만 적용된다.",
+        "project": "B",
+        "status": "confirmed",
+        "source": "N5",
+        "quote": "프로젝트 B 담당자는 PDF 패키지 Q의 사용을 허용했습니다. 이 결정은 B에만 적용합니다."
+      }
+    ],
+    "errors": []
+  },
+  "criteria": {
+    "rows": [
+      {
+        "host": "codex",
+        "case": "confirmed_exception",
+        "condition": "raw_notes",
+        "matches": false,
+        "answer": null,
+        "error": "CLI 종료 코드: 1",
+        "usage": {
+          "reported_usage_available": false,
+          "input_tokens": null,
+          "output_tokens": null,
+          "claude_reported_cost_usd": 0,
+          "seconds": 4.296376625017729
+        }
+      },
+      {
+        "host": "codex",
+        "case": "purpose_suffices",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "use_stdlib",
+          "targets": [
+            "json"
+          ],
+          "reason": "프로젝트 A의 현재 과제에서 표준 라이브러리 json으로 인터넷 없이 정확한 JSON 내보내기 요구를 모두 충족할 수 있고 새 패키지는 추가하지 않아야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 7734,
+          "output_tokens": 68,
+          "claude_reported_cost_usd": 0,
+          "seconds": 7.336224500002572
+        }
+      },
+      {
+        "host": "codex",
+        "case": "purpose_suffices",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "use_stdlib",
+          "targets": [
+            "json"
+          ],
+          "reason": "프로젝트 A의 정확한 JSON 내보내기는 인터넷 없이 표준 라이브러리 json으로 요구를 충족하며, 패키지 추가 예외는 CSV에만 적용됩니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 7514,
+          "output_tokens": 65,
+          "claude_reported_cost_usd": 0,
+          "seconds": 8.427808958018431
+        }
+      }
+    ],
+    "groups": [
+      {
+        "host": "codex",
+        "condition": "extracted_rules",
+        "calls": 1,
+        "matches": 1,
+        "actions": {
+          "use_stdlib": 1
+        },
+        "input_tokens": 7734,
+        "output_tokens": 68,
+        "claude_reported_cost_usd": null,
+        "seconds": 7.336224500002572,
+        "missing_usage_calls": 0
+      },
+      {
+        "host": "codex",
+        "condition": "raw_notes",
+        "calls": 2,
+        "matches": 1,
+        "actions": {
+          "null": 1,
+          "use_stdlib": 1
+        },
+        "input_tokens": 7514,
+        "output_tokens": 65,
+        "claude_reported_cost_usd": null,
+        "seconds": 12.72418558303616,
+        "missing_usage_calls": 1
+      }
+    ]
+  },
+  "freshness": {
+    "rows": [],
+    "groups": []
+  },
+  "native_handoff": [],
+  "native_all_attempts": [
+    {
+      "id": "retrospective_owner_conflict--claude-to-codex--stage_card",
+      "case": "retrospective_owner_conflict",
+      "receiver": "codex",
+      "condition": "stage_card",
+      "verified": true,
+      "success": false,
+      "declared_complete": null,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 123.18567395900027,
+      "cli_error": "CLI failure: 1; None",
+      "tools": {
+        "command_execution": 4,
+        "file_change": 1
+      },
+      "tool_count": 5,
+      "failed_codex_commands": 0,
+      "commands": [
+        "/bin/zsh -lc \"pwd && rg --files -g 'AGENTS.md' -g '.stage/work/current/W-00000001/_story.md' -g '\"'!node_modules'\"' -g '\"'!vendor'\"'\"",
+        "/bin/zsh -lc \"sed -n '1,240p' AGENTS.md && sed -n '1,260p' .stage/work/current/W-00000001/_story.md\"",
+        "/bin/zsh -lc \"sed -n '1,240p' stage/AGENTS.md && sed -n '1,320p' stage/scripts/driver_lifecycle.py && rg -n \\\"retrospective_id_for_work_item|write_driver_retrospective|00000041|00000042|00000043\\\" stage/scripts/tests/test_drive.py\"",
+        "/bin/zsh -lc \"sed -n '440,545p' stage/scripts/tests/test_drive.py && rg -n \\\"retrospective_id_for_work_item\\\\(\\\" stage -g '*.py'\""
+      ],
+      "explicit_observation_read_calls": 0,
+      "verification_seconds": 30.734745374997146,
+      "test_stderr": "----------------------------------------------------------------------\nRan 94 tests in 30.630s\n\nOK\n",
+      "usage": {
+        "reported_usage_available": false,
+        "input_tokens": null,
+        "output_tokens": null,
+        "claude_reported_cost_usd": 0,
+        "seconds": 92.39313175002462
+      },
+      "permission_denials": []
+    },
+    {
+      "id": "roadmap_repeated_criteria--claude-to-codex--stage_card",
+      "case": "roadmap_repeated_criteria",
+      "receiver": "codex",
+      "condition": "stage_card",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 168.19176991598215,
+      "cli_error": null,
+      "tools": {
+        "command_execution": 7,
+        "file_change": 2
+      },
+      "tool_count": 9,
+      "failed_codex_commands": 1,
+      "commands": [
+        "/bin/zsh -lc \"pwd && sed -n '1,240p' .stage/work/current/W-00000001/_story.md && find .. -name AGENTS.md -print\"",
+        "/bin/zsh -lc \"sed -n '1,240p' AGENTS.md && sed -n '1,240p' stage/AGENTS.md && sed -n '1,280p' stage/skills/stage-roadmap/manage_roadmap.py && git diff -- stage/skills/stage-roadmap/manage_roadmap.py\"",
+        "/bin/zsh -lc 'rg -n -C 5 \"completion.criteria|create-milestone\" stage/skills/stage-roadmap/manage_roadmap.py stage/scripts/tests/test_roadmap_v4.py'",
+        "/bin/zsh -lc \"sed -n '150,205p' stage/scripts/tests/test_roadmap_v4.py && sed -n '500,525p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+        "/bin/zsh -lc \"sed -n '198,246p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+        "/bin/zsh -lc \"sed -n '180,202p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+        "/bin/zsh -lc 'python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q'"
+      ],
+      "explicit_observation_read_calls": 0,
+      "verification_seconds": 2.9989294999977574,
+      "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.872s\n\nOK\n",
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 200820,
+        "output_tokens": 1816,
+        "claude_reported_cost_usd": 0,
+        "seconds": 165.13640237500658
+      },
+      "permission_denials": []
+    },
+    {
+      "id": "roadmap_repeated_criteria--claude-to-codex--stage_card_observation",
+      "case": "roadmap_repeated_criteria",
+      "receiver": "codex",
+      "condition": "stage_card_observation",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 129.2152422920044,
+      "cli_error": null,
+      "tools": {
+        "command_execution": 6,
+        "file_change": 2
+      },
+      "tool_count": 8,
+      "failed_codex_commands": 0,
+      "commands": [
+        "/bin/zsh -lc \"pwd && sed -n '1,240p' .stage/work/current/W-00000001/_story.md && find .. -name AGENTS.md -print\"",
+        "/bin/zsh -lc \"sed -n '1,240p' stage/AGENTS.md && sed -n '1,280p' stage/skills/stage-roadmap/manage_roadmap.py && rg -n \\\"completion.criteria|completion_criteria|create-milestone\\\" stage/scripts/tests/test_roadmap_v4.py\"",
+        "/bin/zsh -lc \"sed -n '280,680p' stage/skills/stage-roadmap/manage_roadmap.py && sed -n '1,220p' stage/scripts/tests/test_roadmap_v4.py\"",
+        "/bin/zsh -lc \"rg -n \\\"Completion criteria|All checks pass|completion_criteria\\\" stage/scripts/tests/test_roadmap_v4.py stage/templates/v4 -g '*.md' -g '*.py'\"",
+        "/bin/zsh -lc \"sed -n '175,255p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+        "/bin/zsh -lc 'python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q'"
+      ],
+      "explicit_observation_read_calls": 0,
+      "verification_seconds": 3.016132250020746,
+      "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.893s\n\nOK\n",
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 165558,
+        "output_tokens": 1646,
+        "claude_reported_cost_usd": 0,
+        "seconds": 126.13934808401973
+      },
+      "permission_denials": []
+    },
+    {
+      "id": "roadmap_repeated_criteria--codex-to-claude--stage_card",
+      "case": "roadmap_repeated_criteria",
+      "receiver": "claude",
+      "condition": "stage_card",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 26.655133374995785,
+      "cli_error": null,
+      "tools": {
+        "Read": 2,
+        "Grep": 3,
+        "Bash": 2,
+        "Edit": 1
+      },
+      "tool_count": 8,
+      "failed_codex_commands": 0,
+      "commands": [
+        "grep -n \"All checks pass\" -r stage/scripts/tests | head",
+        "python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q 2>&1 | tail -15"
+      ],
+      "explicit_observation_read_calls": 0,
+      "verification_seconds": 2.976205040991772,
+      "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.888s\n\nOK\n",
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 60173,
+        "output_tokens": 1779,
+        "claude_reported_cost_usd": 0.053778400000000004,
+        "seconds": 23.623020041995915
+      },
+      "permission_denials": []
+    },
+    {
+      "id": "roadmap_repeated_criteria--codex-to-claude--stage_card_observation",
+      "case": "roadmap_repeated_criteria",
+      "receiver": "claude",
+      "condition": "stage_card_observation",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 25.285221250000177,
+      "cli_error": null,
+      "tools": {
+        "Read": 2,
+        "Grep": 3,
+        "Edit": 1,
+        "Bash": 1
+      },
+      "tool_count": 7,
+      "failed_codex_commands": 0,
+      "commands": [
+        "python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q 2>&1 | tail -15"
+      ],
+      "explicit_observation_read_calls": 0,
+      "verification_seconds": 2.949585542024579,
+      "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.852s\n\nOK\n",
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 51089,
+        "output_tokens": 1900,
+        "claude_reported_cost_usd": 0.0708646,
+        "seconds": 22.27880908298539
+      },
+      "permission_denials": []
+    },
+    {
+      "id": "retrospective_owner_conflict--codex-to-claude--stage_card",
+      "case": "retrospective_owner_conflict",
+      "receiver": "claude",
+      "condition": "stage_card",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 138.53793874999974,
+      "cli_error": null,
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 58565,
+        "output_tokens": 1618,
+        "claude_reported_cost_usd": 0.059219,
+        "seconds": 107.58422870899085
+      },
+      "commands": [
+        "cd /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/stage-followup-retry-claude-j36fma2g/stage_card; grep -n \"retrospective\" stage/scripts/driver_lifecycle.py | head -50; python3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | tail -30",
+        "cd /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/stage-followup-retry-claude-j36fma2g/stage_card; sed -n 54,110p stage/scripts/driver_lifecycle.py; sed -n 228,306p stage/scripts/driver_lifecycle.py; python3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | grep -E \"^(Ran|OK|FAILED|FAIL|ERROR)\"",
+        "cd /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/stage-followup-retry-claude-j36fma2g/stage_card; grep -n -B3 -A12 \"def test_retrospective_id_is_derived\" stage/scripts/tests/test_drive.py; grep -rn \"retrospective_id_for_work_item\" --include=*.py . | grep -v \"def \"",
+        "cd /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/stage-followup-retry-claude-j36fma2g/stage_card; f=stage/scripts/driver_lifecycle.py\npython3 - <<'E'\nf=\"stage/scripts/driver_lifecycle.py\"\ns=open(f).read()\ns=s.replace(\"retrospective_id_for_work_item(\\n            stage_root,\",\"reserve_retrospective_for_work_item(\\n            stage_root,\")\ns=s.replace(\"def retrospective_id_for_work_item(\\n    stage_root\",\"def retrospective_id_for_work_item(item_id: str) -> str:\\n    \\\"\\\"\\\"Return the retrospective ID matching a work item ID.\\\"\\\"\\\"\\n\\n    if not WORK_ID_RE.fullmatch(item_id):\\n        raise ValueError(f\\\"invalid work item ID for retrospective: {item_id}\\\")\\n    return f\\\"R-{item_id[2:]}\\\"\\n\\n\\ndef reserve_retrospective_for_work_item(\\n    stage_root\")\nopen(f,\"w\").write(s)\nE\npython3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | grep -E \"^(Ran|OK|FAILED|FAIL|ERROR)\""
+      ],
+      "tool_count": 5,
+      "explicit_observation_read_calls": 0,
+      "test_stderr": "----------------------------------------------------------------------\nRan 94 tests in 30.799s\n\nOK\n",
+      "permission_denials": [],
+      "retries_failed_attempt": false
+    },
+    {
+      "id": "retrospective_owner_conflict--codex-to-claude--stage_card_observation",
+      "case": "retrospective_owner_conflict",
+      "receiver": "claude",
+      "condition": "stage_card_observation",
+      "verified": true,
+      "success": true,
+      "declared_complete": true,
+      "outside_target_changes": [],
+      "note_preserved": true,
+      "seconds_including_verification": 142.2552305829886,
+      "cli_error": null,
+      "usage": {
+        "reported_usage_available": true,
+        "input_tokens": 99509,
+        "output_tokens": 2470,
+        "claude_reported_cost_usd": 0.09215720000000001,
+        "seconds": 113.6194312919979
+      },
+      "commands": [
+        "python3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | tail -30",
+        "python3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | grep -E \"^(FAIL|ERROR|Ran|OK|FAILED)\"; grep -rn \"retrospective_id_for_work_item\" --include=*.py . | grep -v \"^./stage/scripts/driver_lifecycle.py\"",
+        "grep -n -B3 -A12 \"derived_without_a_stage_root\" stage/scripts/tests/test_drive.py; grep -rn \"retrospective_id_for_work_item\\|driver_lifecycle import\" stage | grep -v \"\\.pyc\"",
+        "sed -n 655,675p stage/skills/stage-retrospective/close_work.py; grep -n \"retrospective_id_for_work_item\" -B2 -A2 stage/scripts/drive.py | head -30",
+        "python3 - <<'E'\np='stage/scripts/driver_lifecycle.py'\ns=open(p,encoding='utf-8').read()\ns=s.replace(\"        retro_id = retrospective_id_for_work_item(\\n            stage_root,\",\"        retro_id = reserve_retrospective(\\n            stage_root,\")\ns=s.replace('''def retrospective_id_for_work_item(\n    stage_root: Path,''','''def retrospective_id_for_work_item(item_id: str) -> str:\n    \"\"\"Return the retrospective ID matching a work item's number.\"\"\"\n\n    if not WORK_ID_RE.fullmatch(item_id):\n        raise ValueError(f\"invalid work item ID for retrospective: {item_id}\")\n    return f\"R-{item_id[2:]}\"\n\n\ndef reserve_retrospective(\n    stage_root: Path,''')\ns=s.replace('preferred_id = f\"R-{item_id[2:]}\"','preferred_id = retrospective_id_for_work_item(item_id)')\nopen(p,'w',encoding='utf-8').write(s)\nE\npython3 -B -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | grep -E \"^(FAIL|ERROR|Ran|OK|FAILED)\""
+      ],
+      "tool_count": 8,
+      "explicit_observation_read_calls": 0,
+      "test_stderr": "----------------------------------------------------------------------\nRan 94 tests in 28.487s\n\nOK\n",
+      "permission_denials": [],
+      "retries_failed_attempt": false
+    }
+  ],
+  "native_successful_unique_conditions": 6,
+  "native_total_attempts": 7,
+  "pending_comparisons_completed": false,
+  "limits": [
+    "원래 추출 요청과 출처 단위를 명시한 요청의 결과를 구별합니다.",
+    "같은 CLI 설정을 유지했지만 모델 ID를 명시적으로 고정하지 않았습니다.",
+    "시점이 다른 탐색 실험이며 전체 Stage 운영 과정과 실무 절감률을 증명하지 않습니다."
+  ]
+}

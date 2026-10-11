@@ -1,0 +1,44 @@
+{
+  "owner_id": "fictional-K",
+  "language": "en",
+  "headline": {
+    "text": "Your requests shift with the kind of task at hand",
+    "evidence_ids": [
+      "K1",
+      "K2",
+      "K4"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In brainstorming, the user invited five ideas and a playful tone. In implementation, they asked to keep to the chosen scope until it works.",
+      "evidence_ids": [
+        "K1",
+        "K2"
+      ]
+    },
+    {
+      "text": "After a failed retry in which the assistant omitted one of two conditions, the user asked it to follow the two conditions already given. After a successful repair, they said the next step felt clearer.",
+      "evidence_ids": [
+        "K4",
+        "K3"
+      ]
+    },
+    {
+      "text": "In story writing, the user pasted a rude character line and labeled it as story dialogue, so it is not evidence of their own tone.",
+      "evidence_ids": [
+        "K5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these records, the user may ask for open, playful exploration early on, then narrower, more precise requests once work is underway. The reminder about the conditions may have followed from the omission.",
+    "evidence_ids": [
+      "K1",
+      "K2",
+      "K4"
+    ]
+  },
+  "alternative": "The differences may come mostly from the tasks themselves, or from the specific omission, rather than from a broader pattern in how the user communicates.",
+  "limitation": "These records lack the exact brainstorming words, the assistant's responses, and the content of the two conditions, so they can't show what caused any change."
+}

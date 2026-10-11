@@ -1,0 +1,24 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "codex",
+  "condition": "full",
+  "repeat": 1,
+  "id": "retrospective_owner_conflict--after--codex--full--r1",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "W-00000041의 회고 ID는 R-00000041로 고정되며, 현재 소유자 W-00000099와의 충돌 시 세 ID를 모두 포함한 오류를 발생시켜 빈 회고 ID를 반환하고 R-00000042.md나 R-00000043.md를 생성하지 않습니다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 8.750204124982702
+}

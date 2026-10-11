@@ -1,0 +1,39 @@
+{
+  "case_id": "HC",
+  "messages": [
+    {
+      "id": "H-m1",
+      "author": "user",
+      "text": "팀장님은 보고서를 한 장으로 하래요. 동료는 두 장으로 하래요. 이번에는 동료 말대로 맞춰 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "H1",
+      "message_id": "H-m1",
+      "exact_text": "보고서를 한 장으로",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "H2",
+      "message_id": "H-m1",
+      "exact_text": "두 장으로",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "H3",
+      "message_id": "H-m1",
+      "exact_text": "이번에는 동료 말대로 맞춰 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "H2"
+      }
+    }
+  ]
+}

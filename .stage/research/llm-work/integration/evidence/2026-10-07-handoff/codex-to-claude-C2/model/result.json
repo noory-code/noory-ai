@@ -1,0 +1,51 @@
+{
+  "host": "claude",
+  "exit": 0,
+  "elapsed_seconds": 53.11053795804037,
+  "session_ids": [
+    "bd8551c9-f66e-4022-b0b7-d5e9d83cd4d0"
+  ],
+  "reported_models": [
+    "claude-opus-5-5"
+  ],
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 22,
+        "cache_creation_input_tokens": 17137,
+        "cache_read_input_tokens": 127210,
+        "output_tokens": 5302,
+        "output_tokens_details": {
+          "thinking_tokens": 299
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 17137,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 992,
+            "cache_read_input_tokens": 15408,
+            "cache_creation_input_tokens": 4940,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 4940
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "reported_cost_usd": 0.268666
+    }
+  ],
+  "assistant_text": "I implemented `parse_host` in `app/host.py`. Invalid input returns `None` and valid input comes back unchanged. All the requested Avatar records are made.\n\n**Decision**\n- Running the Distill check right before the choice returned `distill:CR-3662bef8c657@2` with status `eligible_current` (exit 0). That output is saved in `.data/receiver-check.json`.\n- The project purpose (\"predictable for callers\") is satisfied by either contract, so it didn't settle the question. The current criterion did: \"Invalid configuration input returns None.\" So `ConfigError` isn't used for hosts.\n- The earlier `@1` (\"raises ConfigError\") is now superseded. Per the packet I didn't undo the earlier work, so `app/port.py` still raises `ConfigError`. Ports and hosts now report errors in different ways. If you want `parse_port` changed to match `@2`, that's a separate decision for you.\n\n**Prior evidence**\nThe packet says \"No recorded evidence; completion is not established.\" However, the card does record `app/port.py` evidence, and the file's SHA-256 still matches it (`90921cfb…5a350`). I didn't re-run any tests on the port code.\n\n**Tests**\nI ran an inline assertion script (there is no test suite in the project) and it passed. `parse_host(\"example.com\")` returns `\"example.com\"`. The function returns `None` for `\"bad\"`, `\"\"`, `\"exa mple.com\"`, `\"example.com\\n\"`, `None` and `5`.\n\n**Card** (`.stage/.../W-00000002/_story.md`)\nI added these lines to Progress below the earlier records, without changing those records:\n- `Applied criteria: distill:CR-3662bef8c657@2`\n- `Stale judgment: distill:CR-3662bef8c657@1 superseded`\n\nI also added the `app/host.py` SHA-256 and the check result under Evidence.\n\n**Avatar** (all commands exited 0; output is saved in `.data/`)\n1. **Choice:** `CH-160943856d8f`, chosen `None`. The reason quote and origin come from `choice-origin.json`, and `source_refs` is `[\"distill:CR-3662bef8c657@2\"]`.\n2. **Proposed criterion:** `avatar:PC-17898a5f74d8@1`.\n3. **Confirmation:** using `confirm-personal.json` produced the new ref `avatar:PC-17898a5f74d8@2` (`user_confirmed`).\n4. **Distill history:** I saved the history for `CR-3662bef8c657` to `.data/distill-history.json` and attached it as a source. The final `show --json` output is in `.data/avatar-show.json`.\n\nNothing blocked the work. I make no claim about general cost improvements."
+}

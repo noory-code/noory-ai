@@ -1,0 +1,166 @@
+{
+  "runs": 4,
+  "target_labels": 12,
+  "matches": 12,
+  "mismatches": [],
+  "model_seconds": 23.93,
+  "reported_list_cost_usd": 0.0441424,
+  "rows": [
+    {
+      "run": "H-1",
+      "id": "H1",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "H-1",
+      "id": "H2",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "H-1",
+      "id": "H3",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "unresolved"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "unresolved"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-1",
+      "id": "H1",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-1",
+      "id": "H2",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-1",
+      "id": "H3",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "H1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "H1"
+      },
+      "match": true
+    },
+    {
+      "run": "H-2",
+      "id": "H1",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "H-2",
+      "id": "H2",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "H-2",
+      "id": "H3",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "unresolved"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "unresolved"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-2",
+      "id": "H1",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-2",
+      "id": "H2",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "HP-2",
+      "id": "H3",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "H1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "H1"
+      },
+      "match": true
+    }
+  ]
+}

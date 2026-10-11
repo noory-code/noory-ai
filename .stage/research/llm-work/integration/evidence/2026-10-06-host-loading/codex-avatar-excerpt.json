@@ -1,0 +1,25 @@
+{
+  "extracted_from": "/Users/woogis/Workspace/repo/noory-ai/.stage/.runtime/codex-avatar-available.json",
+  "source_sha256": "5e067e3a9dce306affecee8e61c262169527a70437cf69d83aa86ee2e9bae1f3",
+  "entries": [
+    {
+      "pluginId": "avatar@noory-ai",
+      "name": "avatar",
+      "marketplaceName": "noory-ai",
+      "version": "0.1.0",
+      "installed": false,
+      "enabled": false,
+      "source": {
+        "source": "local",
+        "path": "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar"
+      },
+      "marketplaceSource": {
+        "sourceType": "local",
+        "source": "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai"
+      },
+      "installPolicy": "AVAILABLE",
+      "authPolicy": "ON_INSTALL"
+    }
+  ],
+  "real_skill_invocation": false
+}

@@ -1,0 +1,61 @@
+{
+  "approved": true,
+  "criteria": [
+    {
+      "criterion": "실제 Claude와 Codex에서 저장·조회·작업 인계·기준 변경·Avatar 확인 흐름을 임시 데이터로 실행한 증거를 남깁니다",
+      "verdict": "pass",
+      "reason": "보관된 최종 카드 여섯 장을 모두 읽었습니다. 받은 AI의 선택은 C2 두 사례가 None, C1 두 사례가 ConfigError이고 C0 두 사례도 ConfigError입니다. 이는 보고서 44~45행과 일치합니다. C2 두 장은 v2를 적용하고 v1을 superseded로 표시했으며, 앞서 끝낸 parse_port는 바꾸지 않고 후속 판단으로 남겼습니다. 두 C0 카드에는 근거 없는 superseded 기록이 없습니다. Claude → Codex C0은 'Applied criteria: none'이고 Codex → Claude C0은 status unknown, not applied로 적었습니다. Claude → Codex C2의 batch-calls.jsonl에는 choice→propose→confirm→history-0→attach-0→show 여섯 호출이 있고 모두 exit 0입니다. 같은 사례의 receiver stdout.jsonl에서는 item_9 criteria check가 item_11 host.py 생성과 카드 갱신보다 앞서고, 그 뒤 item_13 테스트, item_15 wrapper 실행, item_18 카드 갱신이 이어집니다. 전달 세션은 새로 실행하지 않고 재사용했으며 reuse.json에 new_model_call=false 검사가 있습니다. verification.txt에는 real_hosts 'required evidence checked' 출력이 남아 있습니다."
+    },
+    {
+      "criterion": "기준 미확인과 범위 불일치와 기준 변경을 시험하고 같은 설명을 다시 요구한 횟수와 반복한 작업을 기록합니다",
+      "verdict": "pass",
+      "reason": "미확인(unconfirmed)과 범위 불일치(scope_mismatch) 제외는 10월 6일 CLI 계약 검사가 다룹니다(verify_integration.py 41~42행). 기준 변경은 실제 호스트 C2 두 사례에서 관찰됩니다. 재질문 0건과 막는 질문 0건은 저장한 최종 답변만 읽은 수치라고 보고서 52행이 범위를 밝힙니다. 반복 작업과 도구 호출 수는 comparison.json에 사례별로 있고, wrapper 내부 공개 CLI 호출 수(4/6)도 함께 기록해 저장 단계 생략으로 오해하지 않게 했습니다. 다만 재질문 수치는 모든 내부 이벤트를 분류한 결과가 아닙니다."
+    },
+    {
+      "criterion": "관찰한 성공과 실패와 측정할 수 없었던 항목을 구별하며 제품별 테스트와 연구 자료 검사가 통과합니다",
+      "verdict": "pass",
+      "reason": "보고서와 카드는 앞선 두 시험의 실패(C0 종료 코드 124, 리뷰 뒤 세 사례 실패)를 덮지 않고 이력으로 남겼습니다. 시간 제한으로 사용량을 받지 못한 C0은 null로 두고 비교에서 뺐습니다. 한 번의 시험이라는 점, 캐시·순서·프롬프트를 통제하지 않은 점, 도구 ID 수는 API 요청 수가 아니라는 점, CLI가 보고한 금액은 실제 청구액이 아니라는 점도 적었습니다. tests-green.log에는 'Ran 15 tests ... OK'가 있습니다. 제품 테스트는 이번에 다시 돌리지 않았고, 10월 6일에 검사한 소스와 해시가 같다는 sources.json 비교에 기댑니다. 이 판정은 저장된 로그를 읽은 결과이며 저는 어떤 테스트도 실행하지 않았습니다."
+    }
+  ],
+  "findings": [
+    {
+      "severity": "low",
+      "location": "verify_integration.py:104-114",
+      "reason": "재사용 해시 검사는 reuse.json이 있을 때만 실행됩니다. 이번 시험 폴더처럼 재사용을 전제로 한 증거에서 reuse.json이 사라지면 검사가 실패하지 않고 조용히 생략됩니다. 기본 대상이 이번 시험 폴더이므로, 재사용 시험에서는 reuse.json을 필수로 요구하는 편이 안전합니다."
+    },
+    {
+      "severity": "low",
+      "location": "run_bundled_handoff.py:20-22 / verify_integration.py",
+      "reason": "AI가 실제로 실행한 것은 증거 폴더에 복사된 fixture_avatar_batch.py입니다(C2 trace item_15 경로로 확인). 그런데 이 복사본과 integration의 현재 파일이 같은지를 해시로 대조하는 검사가 없습니다. 저도 두 파일의 바이트 동일성은 확인하지 못했습니다."
+    },
+    {
+      "severity": "low",
+      "location": "claude-to-codex-C1, claude-to-codex-C2 최종 카드 Progress",
+      "reason": "받은 Codex가 새로 만든 app/host.py에 대한 Evidence(sha256) 줄이 없습니다. 이전 port.py 증거만 남아 있습니다. Codex → Claude 사례와 Claude → Codex C0에는 host.py 해시가 있어 사례마다 기록 수준이 다릅니다. 현재 검사기는 이 누락을 실패로 보지 않습니다."
+    },
+    {
+      "severity": "low",
+      "location": "codex-to-claude-C1 최종 카드",
+      "reason": "Progress에 구현 설명과 테스트 결과가 거의 없습니다. 'parse_host raises ConfigError'만 있고 observed_at도 날짜뿐입니다. Next action에는 'none exists yet'이라고 적혀 있어 지속 테스트를 남기지 않았음을 스스로 밝힙니다. 기능 판정은 검사기가 하지만 인계 기록의 질은 다른 사례보다 낮습니다."
+    },
+    {
+      "severity": "low",
+      "location": "W-00000277 _story.md acceptance / Verification",
+      "reason": "acceptance의 두 번째 명령 'git diff --check'가 이번 묶음 시험 시점에 통과했다는 기록이 Verification에 없습니다. 통과 기록은 앞선 후속 시험 단락(133행)에만 있습니다."
+    },
+    {
+      "severity": "info",
+      "location": "findings/2026-10-07-bundled-recording.md:5, 33행",
+      "reason": "'180초 제한 → 118.3초 완료'는 한 번의 관찰입니다. wrapper가 Avatar 기록 단계를 대신하므로 시간 단축의 원인을 wrapper 하나로 단정할 수 없습니다. 보고서 75~78행이 이를 제한하고 있어 과대 주장으로 보지는 않지만, 요약 문단에도 '한 번의 시험'을 붙이면 더 정확합니다."
+    }
+  ],
+  "limits": [
+    "저는 명령과 테스트를 하나도 실행하지 않았습니다. verification.txt와 tests-green.log의 저장된 출력을 읽었을 뿐입니다.",
+    "원본 trace는 claude-to-codex-C2의 model/stdout.jsonl과 .data/batch-calls.jsonl만 읽었습니다. 다른 다섯 수신 trace, codex-to-claude-C2의 trace, 전달 세션 trace는 읽지 않았습니다. 조회가 작성보다 먼저였다는 순서는 claude-to-codex-C2 한 사례에서만 확인했습니다.",
+    "검사기는 조회 명령이 있는지만 검사하고 순서는 검사하지 않습니다.",
+    "host-runs.json, summary.json, saved-case-observations.json, reuse.json의 상세 해시, sources.json의 제품 소스 해시는 직접 대조하지 않았습니다.",
+    "제품 구현과 10월 6일 제품 테스트는 다시 검토하지 않았습니다. 제품 소스가 같다는 주장은 검사기 로직과 저장된 통과 출력에 기댄 것입니다.",
+    "C0은 적용한 참조가 없어 Avatar 이력 검사가 해당하지 않습니다. 이력 판정은 C1·C2 네 사례에만 의미가 있습니다.",
+    "이 판정은 연구용 wrapper와 실험 결과에 대한 것입니다. 제품 기능 승인, 커밋·배포, Stage 카드 종료 승인은 별도입니다."
+  ]
+}

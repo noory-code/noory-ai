@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "id": "G-m1",
+      "author": "user",
+      "text": "AI가 지난번 제 말을 '모든 파일을 공개하세요'라고 요약했대요. 제가 실제로 그랬는지 모르겠어요. 우선 원문을 찾아 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "G1",
+      "message_id": "G-m1",
+      "exact_text": "모든 파일을 공개하세요"
+    },
+    {
+      "id": "G2",
+      "message_id": "G-m1",
+      "exact_text": "제가 실제로 그랬는지 모르겠어요."
+    },
+    {
+      "id": "G3",
+      "message_id": "G-m1",
+      "exact_text": "우선 원문을 찾아 주세요."
+    }
+  ]
+}

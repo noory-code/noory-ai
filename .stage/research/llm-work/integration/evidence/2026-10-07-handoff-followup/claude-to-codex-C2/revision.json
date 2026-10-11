@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+    "-m",
+    "distill",
+    "criteria",
+    "revise",
+    "CR-d5be2ead99e6",
+    "--db",
+    "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/claude-to-codex-C2/.data/distill.db",
+    "--payload-file",
+    "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-followup/claude-to-codex-C2/revision.json",
+    "--idempotency-key",
+    "claude-to-codex-C2:revise"
+  ],
+  "exit": 0,
+  "stdout": "{\"generation\": 2, \"inherited\": [\"applies_when\", \"exceptions\", \"notes\", \"overrides\", \"confirmation\", \"ai_confidence\"], \"ref\": \"distill:CR-d5be2ead99e6@2\", \"replayed\": false}\n",
+  "stderr": ""
+}

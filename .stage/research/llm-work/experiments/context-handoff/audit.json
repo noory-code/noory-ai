@@ -1,0 +1,149 @@
+{
+  "open_work_count": 6,
+  "context_characters": 8789,
+  "context_characters_without_work_overviews": 6312,
+  "context_sha256": "a196783a892fbba195e108e64a7b784cd799ffa8c4b78589d66c1f962f5e37a0",
+  "work_items": [
+    {
+      "work": "W-00000263",
+      "path": ".stage/work/current/W-00000263/_epic.md",
+      "status": "active",
+      "ancestors_included": [],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": false,
+        "Progress": false,
+        "Verification": false
+      },
+      "baseline_characters": 9657,
+      "selected_characters": 7180,
+      "removed_characters": 2477,
+      "reduction_percent": 25.65,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "9916d9cf41ca94366d63b8948c4bb077dabf8260f2c2456a319ad86d1c3c96f1",
+      "selected_sha256": "a082512a930d5d7db8fb8131e13fc40517533f48b3e0967424d7dc91c11bee0e"
+    },
+    {
+      "work": "W-00000267",
+      "path": ".stage/work/current/W-00000263/W-00000267/_story.md",
+      "status": "active",
+      "ancestors_included": [
+        "W-00000263"
+      ],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": true,
+        "Progress": true,
+        "Verification": true
+      },
+      "baseline_characters": 11472,
+      "selected_characters": 8995,
+      "removed_characters": 2477,
+      "reduction_percent": 21.592,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "92faea999fb1761045ad79991acabb787b8c0395c80c78941f63d9ac791e944e",
+      "selected_sha256": "0d6f0c0d760fb9dcb73efef659519f66a9f845b408f7b4f4c14b6c7be9e5c968"
+    },
+    {
+      "work": "W-00000268",
+      "path": ".stage/work/current/W-00000268/_story.md",
+      "status": "active",
+      "ancestors_included": [],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": false,
+        "Progress": false,
+        "Verification": false
+      },
+      "baseline_characters": 9794,
+      "selected_characters": 7317,
+      "removed_characters": 2477,
+      "reduction_percent": 25.291,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "3fe742514d1a2f58f92ee21ef4690b4765a157401a7d492a92e6bd2cfe0e0066",
+      "selected_sha256": "fa0da002985b4e5626fdabe190435a7f798d5db842d29d6fae42c095fc22f754"
+    },
+    {
+      "work": "W-00000269",
+      "path": ".stage/work/current/W-00000269/_story.md",
+      "status": "active",
+      "ancestors_included": [],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": false,
+        "Progress": false,
+        "Verification": false
+      },
+      "baseline_characters": 9804,
+      "selected_characters": 7327,
+      "removed_characters": 2477,
+      "reduction_percent": 25.265,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "7ff5ef319d6bc8b198b4a46290134996f7288f20779744542f4b10e82b959bd6",
+      "selected_sha256": "0fa605a31222b20956064dcf66c95f85e6454f5b78f30d1b44f02ed893a27a12"
+    },
+    {
+      "work": "W-00000270",
+      "path": ".stage/work/current/W-00000270/_story.md",
+      "status": "active",
+      "ancestors_included": [],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": false,
+        "Progress": false,
+        "Verification": false
+      },
+      "baseline_characters": 9761,
+      "selected_characters": 7284,
+      "removed_characters": 2477,
+      "reduction_percent": 25.376,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "b7c51ead623cc51cdf66e237665202832b95d8b0c16773b7bad91b85c4801798",
+      "selected_sha256": "a25e3ac1def640d8b392e54701833f65cc3846530f96bb0c95e5acce8e00f738"
+    },
+    {
+      "work": "W-00000271",
+      "path": ".stage/work/current/W-00000263/W-00000271/_story.md",
+      "status": "active",
+      "ancestors_included": [
+        "W-00000263"
+      ],
+      "nonempty_sections": {
+        "Purpose": true,
+        "Success criteria": true,
+        "Next action": true,
+        "Progress": true,
+        "Verification": true
+      },
+      "baseline_characters": 15147,
+      "selected_characters": 12670,
+      "removed_characters": 2477,
+      "reduction_percent": 16.353,
+      "whole_card_and_ancestors_preserved": true,
+      "baseline_sha256": "2cb34d0a71f6314ecde37701e07051779d57e44fbee0c5041e57c0af9697c2ba",
+      "selected_sha256": "bfc373cc839e5a09051c9d36b511f4e47c9a33616d5a8d239344d94a8c5abb25"
+    }
+  ],
+  "empty_section_counts": {
+    "Purpose": 0,
+    "Success criteria": 0,
+    "Next action": 4,
+    "Progress": 4,
+    "Verification": 4
+  },
+  "measurement_seconds_including_copy": 0.19988104200456291,
+  "limits": [
+    "Character counts are not tokenizer counts, latency or money.",
+    "Nonempty text does not prove a correct or complete handoff.",
+    "Empty named sections may be covered elsewhere; no semantic completeness claim.",
+    "The baseline supplies whole target and ancestor cards in addition to hook context.",
+    "The selector removes only three overview sections, retains other shared context and whole cards.",
+    "Removed sibling state can matter; no behavior-equivalence claim.",
+    "No model calls, code edits, task execution, or automatic recovery were tested."
+  ]
+}

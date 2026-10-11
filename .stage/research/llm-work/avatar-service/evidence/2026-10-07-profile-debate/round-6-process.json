@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "seconds": 85.05,
+  "finished_at": "2026-10-07T13:51:55.079361+00:00",
+  "input": "curated design, public research summaries, and fictional cases only",
+  "is_error": false,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 19648,
+      "outputTokens": 7670,
+      "cacheReadInputTokens": 18733,
+      "cacheCreationInputTokens": 18442,
+      "webSearchRequests": 0,
+      "costUSD": 0.3783636,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1141,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

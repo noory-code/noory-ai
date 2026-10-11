@@ -1,0 +1,14 @@
+[
+  {
+    "id": "A1",
+    "label": "direct_request"
+  },
+  {
+    "id": "A2",
+    "label": "quoted_other"
+  },
+  {
+    "id": "A3",
+    "label": "direct_report"
+  }
+]

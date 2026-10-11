@@ -1,0 +1,30 @@
+{
+  "case": "F",
+  "raw_response": "{\"observations\": [\n    {\"kind\": \"task_constraint\", \"evidence_ids\": [\"U1\"]},\n    {\"kind\": \"task_format_request\", \"evidence_ids\": [\"U1\"]}\n]}",
+  "model": "gemma4:latest",
+  "total_duration_ns": 11144672958,
+  "prompt_eval_count": 339,
+  "eval_count": 387,
+  "done": true,
+  "observations": [
+    {
+      "kind": "task_constraint",
+      "evidence_ids": [
+        "U1"
+      ]
+    },
+    {
+      "kind": "task_format_request",
+      "evidence_ids": [
+        "U1"
+      ]
+    }
+  ],
+  "assessment": {
+    "missing_kinds": [],
+    "forbidden_kinds": [
+      "task_constraint"
+    ],
+    "missing_evidence_ids": {}
+  }
+}

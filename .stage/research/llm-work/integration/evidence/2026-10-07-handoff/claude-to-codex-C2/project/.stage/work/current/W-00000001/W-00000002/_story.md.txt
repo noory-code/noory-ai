@@ -1,0 +1,22 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+- Implemented parse_port(value) in app/port.py: accepts only ASCII digit strings for 1..65535 and returns the int; invalid values ('bad', '', '0', '65536', non-strings) raise app.errors.ConfigError.
+- Applied criteria: distill:CR-ff28a7fd534c@1
+- Implemented parse_host(value) in app/host.py: returns a nonempty dotted string without whitespace unchanged; invalid input returns None.
+- Applied criteria: distill:CR-ff28a7fd534c@2
+- Stale judgment: distill:CR-ff28a7fd534c@1 superseded.
+- Recorded synthetic personal criterion: avatar:PC-90945a483d31@2.
+## Evidence
+- app/port.py sha256: 9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8
+- app/host.py sha256: adde41fe57b62c57bf15e6ed51864c92b47b9b9a5575e259bf43a0ada866ad94
+- Host parser assertions passed for valid dotted strings, missing dots, empty strings, whitespace, and non-string input.
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+None; port and host parsing are complete.

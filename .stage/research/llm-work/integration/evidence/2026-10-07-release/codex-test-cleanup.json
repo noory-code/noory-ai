@@ -1,0 +1,30 @@
+{
+  "cache_files_match": {
+    "stage": 376,
+    "avatar": 14,
+    "distill": 122
+  },
+  "removals": [
+    {
+      "plugin": "stage",
+      "exit": 0,
+      "stdout": "Removed plugin `stage` from marketplace `criteria-release-test`.\n",
+      "stderr": ""
+    },
+    {
+      "plugin": "avatar",
+      "exit": 0,
+      "stdout": "Removed plugin `avatar` from marketplace `criteria-release-test`.\n",
+      "stderr": ""
+    },
+    {
+      "plugin": "distill",
+      "exit": 0,
+      "stdout": "Removed plugin `distill` from marketplace `criteria-release-test`.\n",
+      "stderr": ""
+    }
+  ],
+  "config_before_sha256": "8a83de26159c0e448951cd59669b942e5e6316f8b947bd6e3249389569937e91",
+  "config_after_sha256": "8a83de26159c0e448951cd59669b942e5e6316f8b947bd6e3249389569937e91",
+  "config_byte_identical": true
+}

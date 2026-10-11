@@ -1,0 +1,37 @@
+{
+  "case": "roadmap_repeated_criteria--before",
+  "host": "codex",
+  "condition": "auto",
+  "repeat": 1,
+  "id": "roadmap_repeated_criteria--before--codex--auto--r1",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/skills/stage-roadmap/manage_roadmap.py": {
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": [],
+      "entry": "main",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ],
+    "reason": "--completion-criteria는 반복 값을 누적하지 않아 마지막 값만 남고, create_milestone은 이를 '- ' 접두사 없이 섹션에 그대로 기록하므로 세 항목을 입력 순서대로 보존하지 못합니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 14.592780874983873
+}

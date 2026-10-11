@@ -1,0 +1,16 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+- Implemented parse_port in app/port.py: accepts only ASCII digit strings for 1..65535; invalid values raise ConfigError. Tested valid and invalid inputs (passed).
+Applied criteria: distill:CR-d5be2ead99e6@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8","observed_at":"2026-10-07T03:38:59Z"}
+
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+Implement parse_host.

@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-M",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_action",
+  "relation": "different",
+  "evidence_ids": [
+    "M1",
+    "M2"
+  ],
+  "question": "두 작업에서 진행 속도를 다르게 요청하신 데에, 다루는 자료의 종류 말고 팀이나 일정에서 정해진 기준이 따로 있었나요?"
+}

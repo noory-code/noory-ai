@@ -1,0 +1,37 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "claude",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--after--claude--auto--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/scripts/driver_lifecycle.py": {
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "reserve_retrospective",
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ],
+      "entry": "write_driver_retrospective",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "W-00000041의 회고 ID는 retrospective_id_for_work_item에서 R-00000041로 결정되고, reserve_retrospective가 현재 R-00000041.md의 work_item(W-00000099)이 item_id와 다름을 확인해 'retrospective R-00000041 is already current for W-00000099, not W-00000041'이라는 RuntimeError를 발생시키며, write_driver_retrospective가 이를 잡아 빈 문자열 ID와 함께 'cannot write retrospective for W-00000041: ...' 오류로 반환하므로 세 ID가 모두 오류에 포함되고, 다른 ID(R-00000042, R-00000043)를 생성하는 경로가 없어 새 회고도 만들어지지 않는다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 7.694282665994251
+}

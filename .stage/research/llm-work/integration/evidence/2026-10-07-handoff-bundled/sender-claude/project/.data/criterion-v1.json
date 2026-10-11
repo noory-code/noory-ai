@@ -1,0 +1,27 @@
+{
+  "project": "test/demo-app",
+  "statement": "Invalid configuration input raises ConfigError.",
+  "applies_when": [
+    {
+      "kind": "path",
+      "any": [
+        "app/"
+      ]
+    }
+  ],
+  "exceptions": [],
+  "notes": [],
+  "overrides": [],
+  "confirmation": "user_stated",
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:claude/sender-claude/fixture-1",
+    "quote": "[Synthetic test statement] Invalid configuration input raises ConfigError.",
+    "actor": "user",
+    "recorded_by": {
+      "host": "claude",
+      "session_id": "sender-claude",
+      "via": "cli"
+    }
+  }
+}

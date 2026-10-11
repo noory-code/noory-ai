@@ -1,0 +1,68 @@
+{
+  "events": [
+    {
+      "event": "recorded",
+      "generation": 4,
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:33.183500Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v1",
+        "quote_sha256": "0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v1",
+        "source_sha256": null
+      },
+      "reason": null,
+      "recorded_at": "2026-10-05T17:37:33.184206Z",
+      "ref": "distill:CR-882e0d061d7f@1"
+    }
+  ],
+  "generation": 4,
+  "id": "CR-882e0d061d7f",
+  "producer": "distill",
+  "producer_version": "1.10.0",
+  "project": "test/other",
+  "schema": "criteria-history/1",
+  "versions": [
+    {
+      "ai_confidence": null,
+      "applies_when": [
+        {
+          "any": [
+            "app/"
+          ],
+          "kind": "path"
+        }
+      ],
+      "confirmation": "user_stated",
+      "exceptions": [],
+      "notes": [],
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:33.183500Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v1",
+        "quote_sha256": "0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v1",
+        "source_sha256": null
+      },
+      "overrides": [],
+      "reason": null,
+      "recorded_at": "2026-10-05T17:37:33.184206Z",
+      "ref": "distill:CR-882e0d061d7f@1",
+      "statement": "Invalid input raises ConfigError.",
+      "status": "current",
+      "supersedes": null
+    }
+  ]
+}

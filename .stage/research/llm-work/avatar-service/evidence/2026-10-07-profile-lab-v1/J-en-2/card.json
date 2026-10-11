@@ -1,0 +1,44 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Your requests vary in detail with the stakes of the task",
+    "evidence_ids": [
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "observations": [
+    {
+      "text": "For a routine test result, the user asked only to be told whether it passed.",
+      "evidence_ids": [
+        "J2"
+      ]
+    },
+    {
+      "text": "For a high-risk migration, the user asked for failure cases and a way back before approving. In project planning, they asked to see alternatives and what is given up.",
+      "evidence_ids": [
+        "J3",
+        "J1"
+      ]
+    },
+    {
+      "text": "In a later self-description, the user said they don't always want short answers and want enough to judge what to do.",
+      "evidence_ids": [
+        "J5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these records, the amount of detail wanted may depend on whether a decision is at stake: a brief answer for a simple check, more for choices needing approval. The user's own words point to enough to judge.",
+    "evidence_ids": [
+      "J2",
+      "J3",
+      "J1",
+      "J5"
+    ]
+  },
+  "alternative": "A different explanation is that the user simply wanted particular items, such as alternatives or a rollback, rather than more length. The records don't separate stakes from topic.",
+  "limitation": "These records can't show why the user asked for each thing, how the earlier omission relates to the migration request, or whether this holds beyond these contexts."
+}

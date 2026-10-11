@@ -1,0 +1,22 @@
+{
+  "host": "codex",
+  "argv": [
+    "codex",
+    "exec",
+    "--ignore-user-config",
+    "--model",
+    "gpt-6-sol",
+    "-c",
+    "model_reasoning_effort=\"high\"",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--json",
+    "--cd",
+    "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/claude-to-codex-C0",
+    "-"
+  ],
+  "cwd": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/claude-to-codex-C0",
+  "timeout_seconds": 180
+}

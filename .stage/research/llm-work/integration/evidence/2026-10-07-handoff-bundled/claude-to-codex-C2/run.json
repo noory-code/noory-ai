@@ -1,0 +1,13 @@
+{
+  "direction": "claude-to-codex",
+  "condition": "C2",
+  "real_cli": true,
+  "exit": 0,
+  "file_checks_passed": true,
+  "case_root": "claude-to-codex-C2",
+  "sender_raw": "sender-claude/model/stdout.jsonl",
+  "receiver_raw": "claude-to-codex-C2/model/stdout.jsonl",
+  "file_checks": "claude-to-codex-C2/file-checks.json",
+  "frozen_input": "claude-to-codex-C2/frozen-input.json",
+  "seconds": 98.08173079200787
+}

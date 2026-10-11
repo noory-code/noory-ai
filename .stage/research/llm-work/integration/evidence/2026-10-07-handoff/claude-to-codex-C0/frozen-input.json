@@ -1,0 +1,8 @@
+{
+  "condition": "C0",
+  "project_dir": "project",
+  "card": ".stage/work/current/W-00000001/W-00000002/_story.md",
+  "sender_port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+  "expected_applied_ref": "none",
+  "stale_ref": null
+}

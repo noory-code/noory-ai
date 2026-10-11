@@ -1,0 +1,10 @@
+{
+  "completed_requests": [
+    "criteria--confirmed_exception--raw_notes",
+    "criteria--confirmed_exception--extracted_rules"
+  ],
+  "capacity_errors": 2,
+  "error": "정한 재시도 한도에서 응답을 받지 못했습니다.",
+  "request": "criteria--exception_scope--extracted_rules",
+  "stopped_at": "2026-10-05T07:06:45.010255+00:00"
+}

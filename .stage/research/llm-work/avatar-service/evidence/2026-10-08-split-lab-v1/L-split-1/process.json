@@ -1,0 +1,32 @@
+{
+  "run_id": "L-split-1",
+  "mode": "split",
+  "input_sha256": "e361500e9635f140149f67ff2d41aff3353e8c1acac1453b64b3fa628459da2d",
+  "status": "generated",
+  "semantic_review": "pending",
+  "synthetic_only": true,
+  "requested_model": "sonnet",
+  "effort": "low",
+  "started_at": "2026-10-07T15:14:39.328561+00:00",
+  "exit": 0,
+  "model_usage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 4,
+      "outputTokens": 881,
+      "cacheReadInputTokens": 4263,
+      "cacheCreationInputTokens": 5684,
+      "webSearchRequests": 0,
+      "costUSD": 0.0324066,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "reported_list_cost_usd": 0.0324066,
+  "structural_errors": [],
+  "seconds": 9.41,
+  "finished_at": "2026-10-07T15:14:48.737254+00:00"
+}

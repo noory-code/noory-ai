@@ -1,0 +1,45 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Detail requested seems to follow what is being decided",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3"
+    ]
+  },
+  "observations": [
+    {
+      "text": "For a routine test result, the user asked only to be told whether it passed.",
+      "evidence_ids": [
+        "J2"
+      ]
+    },
+    {
+      "text": "Before a project decision and a high-risk migration approval, the user asked for alternatives, trade-offs, failure cases, and a way back.",
+      "evidence_ids": [
+        "J1",
+        "J3"
+      ]
+    },
+    {
+      "text": "In a prior session, the assistant reportedly ignored a requested rollback plan; the user repeated it and added a long explanation. In the next session, the user said they want enough to judge what to do.",
+      "evidence_ids": [
+        "J4",
+        "J5"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these records, the user may want brief answers for simple checks and fuller information when a decision or risk is involved. The longer message in J4 may partly reflect the omission, not a general preference for length.",
+    "evidence_ids": [
+      "J2",
+      "J3",
+      "J4",
+      "J5"
+    ]
+  },
+  "alternative": "The difference could come from the specific topics or the user's familiarity with them, not from the stakes of the decision.",
+  "limitation": "These records cannot show whether J3 and J4 are the same event, why the user asked for these things, or how the user acts outside these contexts."
+}

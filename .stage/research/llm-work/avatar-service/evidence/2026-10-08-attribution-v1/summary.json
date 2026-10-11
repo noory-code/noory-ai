@@ -1,0 +1,188 @@
+{
+  "runs": 10,
+  "model_calls": 8,
+  "code_only_runs": 2,
+  "target_labels": 22,
+  "matches": 22,
+  "mismatches": [],
+  "all_rows": [
+    {
+      "run": "A-1",
+      "target": "A1",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "A-1",
+      "target": "A2",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "A-1",
+      "target": "A3",
+      "expected": "direct_report",
+      "actual": "direct_report",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-1",
+      "target": "B1",
+      "expected": "assistant_content",
+      "actual": "assistant_content",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-1",
+      "target": "B2",
+      "expected": "direct_report",
+      "actual": "direct_report",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-1",
+      "target": "B3",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "C-1",
+      "target": "C1",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "C-1",
+      "target": "C2",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "D-1",
+      "target": "D1",
+      "expected": "unknown",
+      "actual": "unknown",
+      "match": true,
+      "model_called": false
+    },
+    {
+      "run": "E-1",
+      "target": "E1",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "E-1",
+      "target": "E2",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "A-2",
+      "target": "A1",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "A-2",
+      "target": "A2",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "A-2",
+      "target": "A3",
+      "expected": "direct_report",
+      "actual": "direct_report",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-2",
+      "target": "B1",
+      "expected": "assistant_content",
+      "actual": "assistant_content",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-2",
+      "target": "B2",
+      "expected": "direct_report",
+      "actual": "direct_report",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "B-2",
+      "target": "B3",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "C-2",
+      "target": "C1",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "C-2",
+      "target": "C2",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "D-2",
+      "target": "D1",
+      "expected": "unknown",
+      "actual": "unknown",
+      "match": true,
+      "model_called": false
+    },
+    {
+      "run": "E-2",
+      "target": "E1",
+      "expected": "quoted_other",
+      "actual": "quoted_other",
+      "match": true,
+      "model_called": true
+    },
+    {
+      "run": "E-2",
+      "target": "E2",
+      "expected": "direct_request",
+      "actual": "direct_request",
+      "match": true,
+      "model_called": true
+    }
+  ],
+  "model_seconds": 28.22,
+  "reported_list_cost_usd": 0.0863108
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "pluginId": "stage@criteria-release-test",
+    "name": "stage",
+    "marketplaceName": "criteria-release-test",
+    "version": "0.63.2",
+    "installedPath": "/Users/woogis/.codex/plugins/cache/criteria-release-test/stage/0.63.2",
+    "authPolicy": "ON_INSTALL"
+  },
+  {
+    "pluginId": "avatar@criteria-release-test",
+    "name": "avatar",
+    "marketplaceName": "criteria-release-test",
+    "version": "0.1.2",
+    "installedPath": "/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar/0.1.2",
+    "authPolicy": "ON_INSTALL"
+  },
+  {
+    "pluginId": "distill@criteria-release-test",
+    "name": "distill",
+    "marketplaceName": "criteria-release-test",
+    "version": "1.10.0",
+    "installedPath": "/Users/woogis/.codex/plugins/cache/criteria-release-test/distill/1.10.0",
+    "authPolicy": "ON_INSTALL"
+  }
+]

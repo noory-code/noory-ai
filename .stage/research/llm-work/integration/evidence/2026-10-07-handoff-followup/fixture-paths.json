@@ -1,0 +1,82 @@
+[
+  {
+    "original": "claude-to-codex-C0/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "claude-to-codex-C0/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "73b755bc7babd718e4e0af298946bada2901e62ee1107bd0a1377428543c91f8"
+  },
+  {
+    "original": "claude-to-codex-C0/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "claude-to-codex-C0/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "claude-to-codex-C1/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "claude-to-codex-C1/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "bfb28e173b5e770a5e446e8c4cd61f9c4fabcea2127eed05a26e44c128e19799"
+  },
+  {
+    "original": "claude-to-codex-C1/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "claude-to-codex-C1/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "claude-to-codex-C2/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "claude-to-codex-C2/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "9240780cd464be00eba8c06a647f604a419fa524c69252d2842467c4f9ccda69"
+  },
+  {
+    "original": "claude-to-codex-C2/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "claude-to-codex-C2/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "codex-to-claude-C0/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "codex-to-claude-C0/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "423f8adffc5b1c2dadd371710b57f1168879ed770c65a0987dbf6c742527d202"
+  },
+  {
+    "original": "codex-to-claude-C0/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "codex-to-claude-C0/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "codex-to-claude-C1/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "codex-to-claude-C1/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "1d058d0158172c68823223b455f25ba2d8dd30bcc99045456aec2c743923d70c"
+  },
+  {
+    "original": "codex-to-claude-C1/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "codex-to-claude-C1/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "codex-to-claude-C2/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "codex-to-claude-C2/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "068ec741583837cc248d28681147a683c1fc848e3e6b27da5f6e7bf597c702ff"
+  },
+  {
+    "original": "codex-to-claude-C2/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "codex-to-claude-C2/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "sender-claude/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "sender-claude/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "ee02e4051371fc1692d21961ddb281e8abb5364735868cd168c0f9aa8bab5b26"
+  },
+  {
+    "original": "sender-claude/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "sender-claude/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  },
+  {
+    "original": "sender-codex/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+    "stored": "sender-codex/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+    "sha256": "ed23b24b60976089091119be812300d1f45f43809760b20d8107e7e14524b1b4"
+  },
+  {
+    "original": "sender-codex/project/.stage/work/current/W-00000001/_epic.md",
+    "stored": "sender-codex/project/.stage/work/current/W-00000001/_epic.md.txt",
+    "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+  }
+]

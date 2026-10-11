@@ -1,0 +1,24 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "claude",
+  "condition": "full",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--after--claude--full--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "review.json"
+  ],
+  "selection": {},
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "retrospective_id_for_work_item이 W-00000041에서 R-00000041을 결정적으로 도출하고, current_path가 존재하며 work_item이 W-00000099로 item_id와 다르면 reserve_retrospective가 'retrospective R-00000041 is already current for W-00000099, not W-00000041' RuntimeError를 내므로 세 ID가 모두 오류에 담기고, write_driver_retrospective는 이를 잡아 retro_id를 빈 문자열로 반환하며, 다음 번호(R-00000042, R-00000043)를 만드는 경로가 없고 쓰기 전에 예외가 발생해 새 파일이 생성되지 않는다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 4.887520749995019
+}

@@ -1,0 +1,1862 @@
+{
+  "validation_errors": [],
+  "native_handoff": {
+    "planned_runs": 8,
+    "completed_runs": 5,
+    "rows": [
+      {
+        "id": "retrospective_owner_conflict--claude-to-codex--stage_card",
+        "case": "retrospective_owner_conflict",
+        "receiver": "codex",
+        "condition": "stage_card",
+        "verified": true,
+        "success": false,
+        "declared_complete": null,
+        "outside_target_changes": [],
+        "note_preserved": true,
+        "seconds_including_verification": 123.18567395900027,
+        "cli_error": "CLI failure: 1; None",
+        "tools": {
+          "command_execution": 4,
+          "file_change": 1
+        },
+        "tool_count": 5,
+        "failed_codex_commands": 0,
+        "commands": [
+          "/bin/zsh -lc \"pwd && rg --files -g 'AGENTS.md' -g '.stage/work/current/W-00000001/_story.md' -g '\"'!node_modules'\"' -g '\"'!vendor'\"'\"",
+          "/bin/zsh -lc \"sed -n '1,240p' AGENTS.md && sed -n '1,260p' .stage/work/current/W-00000001/_story.md\"",
+          "/bin/zsh -lc \"sed -n '1,240p' stage/AGENTS.md && sed -n '1,320p' stage/scripts/driver_lifecycle.py && rg -n \\\"retrospective_id_for_work_item|write_driver_retrospective|00000041|00000042|00000043\\\" stage/scripts/tests/test_drive.py\"",
+          "/bin/zsh -lc \"sed -n '440,545p' stage/scripts/tests/test_drive.py && rg -n \\\"retrospective_id_for_work_item\\\\(\\\" stage -g '*.py'\""
+        ],
+        "explicit_observation_read_calls": 0,
+        "verification_seconds": 30.734745374997146,
+        "test_stderr": "----------------------------------------------------------------------\nRan 94 tests in 30.630s\n\nOK\n",
+        "usage": {
+          "reported_usage_available": false,
+          "input_tokens": null,
+          "output_tokens": null,
+          "claude_reported_cost_usd": 0,
+          "seconds": 92.39313175002462
+        },
+        "permission_denials": []
+      },
+      {
+        "id": "roadmap_repeated_criteria--claude-to-codex--stage_card",
+        "case": "roadmap_repeated_criteria",
+        "receiver": "codex",
+        "condition": "stage_card",
+        "verified": true,
+        "success": true,
+        "declared_complete": true,
+        "outside_target_changes": [],
+        "note_preserved": true,
+        "seconds_including_verification": 168.19176991598215,
+        "cli_error": null,
+        "tools": {
+          "command_execution": 7,
+          "file_change": 2
+        },
+        "tool_count": 9,
+        "failed_codex_commands": 1,
+        "commands": [
+          "/bin/zsh -lc \"pwd && sed -n '1,240p' .stage/work/current/W-00000001/_story.md && find .. -name AGENTS.md -print\"",
+          "/bin/zsh -lc \"sed -n '1,240p' AGENTS.md && sed -n '1,240p' stage/AGENTS.md && sed -n '1,280p' stage/skills/stage-roadmap/manage_roadmap.py && git diff -- stage/skills/stage-roadmap/manage_roadmap.py\"",
+          "/bin/zsh -lc 'rg -n -C 5 \"completion.criteria|create-milestone\" stage/skills/stage-roadmap/manage_roadmap.py stage/scripts/tests/test_roadmap_v4.py'",
+          "/bin/zsh -lc \"sed -n '150,205p' stage/scripts/tests/test_roadmap_v4.py && sed -n '500,525p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+          "/bin/zsh -lc \"sed -n '198,246p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+          "/bin/zsh -lc \"sed -n '180,202p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+          "/bin/zsh -lc 'python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q'"
+        ],
+        "explicit_observation_read_calls": 0,
+        "verification_seconds": 2.9989294999977574,
+        "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.872s\n\nOK\n",
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 200820,
+          "output_tokens": 1816,
+          "claude_reported_cost_usd": 0,
+          "seconds": 165.13640237500658
+        },
+        "permission_denials": []
+      },
+      {
+        "id": "roadmap_repeated_criteria--claude-to-codex--stage_card_observation",
+        "case": "roadmap_repeated_criteria",
+        "receiver": "codex",
+        "condition": "stage_card_observation",
+        "verified": true,
+        "success": true,
+        "declared_complete": true,
+        "outside_target_changes": [],
+        "note_preserved": true,
+        "seconds_including_verification": 129.2152422920044,
+        "cli_error": null,
+        "tools": {
+          "command_execution": 6,
+          "file_change": 2
+        },
+        "tool_count": 8,
+        "failed_codex_commands": 0,
+        "commands": [
+          "/bin/zsh -lc \"pwd && sed -n '1,240p' .stage/work/current/W-00000001/_story.md && find .. -name AGENTS.md -print\"",
+          "/bin/zsh -lc \"sed -n '1,240p' stage/AGENTS.md && sed -n '1,280p' stage/skills/stage-roadmap/manage_roadmap.py && rg -n \\\"completion.criteria|completion_criteria|create-milestone\\\" stage/scripts/tests/test_roadmap_v4.py\"",
+          "/bin/zsh -lc \"sed -n '280,680p' stage/skills/stage-roadmap/manage_roadmap.py && sed -n '1,220p' stage/scripts/tests/test_roadmap_v4.py\"",
+          "/bin/zsh -lc \"rg -n \\\"Completion criteria|All checks pass|completion_criteria\\\" stage/scripts/tests/test_roadmap_v4.py stage/templates/v4 -g '*.md' -g '*.py'\"",
+          "/bin/zsh -lc \"sed -n '175,255p' stage/skills/stage-roadmap/manage_roadmap.py\"",
+          "/bin/zsh -lc 'python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q'"
+        ],
+        "explicit_observation_read_calls": 0,
+        "verification_seconds": 3.016132250020746,
+        "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.893s\n\nOK\n",
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 165558,
+          "output_tokens": 1646,
+          "claude_reported_cost_usd": 0,
+          "seconds": 126.13934808401973
+        },
+        "permission_denials": []
+      },
+      {
+        "id": "roadmap_repeated_criteria--codex-to-claude--stage_card",
+        "case": "roadmap_repeated_criteria",
+        "receiver": "claude",
+        "condition": "stage_card",
+        "verified": true,
+        "success": true,
+        "declared_complete": true,
+        "outside_target_changes": [],
+        "note_preserved": true,
+        "seconds_including_verification": 26.655133374995785,
+        "cli_error": null,
+        "tools": {
+          "Read": 2,
+          "Grep": 3,
+          "Bash": 2,
+          "Edit": 1
+        },
+        "tool_count": 8,
+        "failed_codex_commands": 0,
+        "commands": [
+          "grep -n \"All checks pass\" -r stage/scripts/tests | head",
+          "python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q 2>&1 | tail -15"
+        ],
+        "explicit_observation_read_calls": 0,
+        "verification_seconds": 2.976205040991772,
+        "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.888s\n\nOK\n",
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 60173,
+          "output_tokens": 1779,
+          "claude_reported_cost_usd": 0.053778400000000004,
+          "seconds": 23.623020041995915
+        },
+        "permission_denials": []
+      },
+      {
+        "id": "roadmap_repeated_criteria--codex-to-claude--stage_card_observation",
+        "case": "roadmap_repeated_criteria",
+        "receiver": "claude",
+        "condition": "stage_card_observation",
+        "verified": true,
+        "success": true,
+        "declared_complete": true,
+        "outside_target_changes": [],
+        "note_preserved": true,
+        "seconds_including_verification": 25.285221250000177,
+        "cli_error": null,
+        "tools": {
+          "Read": 2,
+          "Grep": 3,
+          "Edit": 1,
+          "Bash": 1
+        },
+        "tool_count": 7,
+        "failed_codex_commands": 0,
+        "commands": [
+          "python3 -B -m unittest discover -s stage/scripts/tests -p test_roadmap_v4.py -q 2>&1 | tail -15"
+        ],
+        "explicit_observation_read_calls": 0,
+        "verification_seconds": 2.949585542024579,
+        "test_stderr": "----------------------------------------------------------------------\nRan 14 tests in 2.852s\n\nOK\n",
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 51089,
+          "output_tokens": 1900,
+          "claude_reported_cost_usd": 0.0708646,
+          "seconds": 22.27880908298539
+        },
+        "permission_denials": []
+      }
+    ],
+    "groups": [
+      {
+        "receiver": "claude",
+        "condition": "stage_card",
+        "runs": 1,
+        "successes": 1,
+        "tool_count": 8,
+        "missing_usage_runs": 0,
+        "total_seconds": 26.655133374995785,
+        "input_tokens": 60173,
+        "output_tokens": 1779,
+        "claude_reported_cost_usd": 0.053778400000000004
+      },
+      {
+        "receiver": "claude",
+        "condition": "stage_card_observation",
+        "runs": 1,
+        "successes": 1,
+        "tool_count": 7,
+        "missing_usage_runs": 0,
+        "total_seconds": 25.285221250000177,
+        "input_tokens": 51089,
+        "output_tokens": 1900,
+        "claude_reported_cost_usd": 0.0708646
+      },
+      {
+        "receiver": "codex",
+        "condition": "stage_card",
+        "runs": 2,
+        "successes": 1,
+        "tool_count": 14,
+        "missing_usage_runs": 1,
+        "total_seconds": 291.3774438749824,
+        "input_tokens": 200820,
+        "output_tokens": 1816,
+        "claude_reported_cost_usd": 0
+      },
+      {
+        "receiver": "codex",
+        "condition": "stage_card_observation",
+        "runs": 1,
+        "successes": 1,
+        "tool_count": 8,
+        "missing_usage_runs": 0,
+        "total_seconds": 129.2152422920044,
+        "input_tokens": 165558,
+        "output_tokens": 1646,
+        "claude_reported_cost_usd": 0
+      }
+    ],
+    "all_planned_runs_recorded": false
+  },
+  "criteria": {
+    "planned_decisions": 24,
+    "completed_decisions": 12,
+    "extractions": {
+      "claude": {
+        "rules": [
+          {
+            "rule": "인터넷 연결 없이 보고서를 내보낼 수 있어야 하며 결과가 정확해야 한다.",
+            "project": "A",
+            "status": "confirmed",
+            "source": "N1",
+            "quote": "프로젝트 A는 인터넷 연결 없이 보고서를 내보내야 합니다. 결과가 정확해야 합니다."
+          },
+          {
+            "rule": "새 패키지를 추가하지 않고 표준 라이브러리로 먼저 시도한다. 단, N3의 CSV 내보내기 예외가 있다.",
+            "project": "A",
+            "status": "confirmed",
+            "source": "N2",
+            "quote": "A에서는 새 패키지를 추가하지 마세요. 표준 라이브러리로 먼저 해보세요."
+          },
+          {
+            "rule": "예외: CSV 내보내기에 한해서만 패키지 P 추가를 허용하며, 다른 기능에는 적용되지 않는다.",
+            "project": "A",
+            "status": "confirmed",
+            "source": "N3",
+            "quote": "A의 CSV 내보내기에 한해서 패키지 P를 추가해도 됩니다. 다른 기능까지 허용한 것은 아닙니다."
+          },
+          {
+            "rule": "PDF 패키지 Q의 사용을 허용한다. 이 결정은 B에만 적용되며 다른 프로젝트로 확장되지 않는다.",
+            "project": "B",
+            "status": "confirmed",
+            "source": "N5",
+            "quote": "프로젝트 B 담당자는 PDF 패키지 Q의 사용을 허용했습니다. 이 결정은 B에만 적용합니다."
+          },
+          {
+            "rule": "정확성보다 속도를 중시한다는 기준은 AI의 추측이며 사용자가 확인하지 않았으므로 확정된 기준이 아니다.",
+            "project": "A",
+            "status": "unconfirmed",
+            "source": "N4",
+            "quote": "AI는 사용자가 정확성보다 속도를 중시할 것이라고 추측했습니다. 사용자는 이 추측을 확인하지 않았습니다."
+          }
+        ],
+        "errors": []
+      }
+    },
+    "rows": [
+      {
+        "host": "claude",
+        "case": "confirmed_exception",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "use_package",
+          "targets": [
+            "P"
+          ],
+          "reason": "표준 라이브러리가 CSV 필수 형식을 지원하지 않고 P는 정확히 지원하며, A의 CSV 내보내기에 한해 P 추가가 확정 기록(N3)으로 허용되어 있어 사용자에게 다시 묻지 않고 P를 사용합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1853,
+          "output_tokens": 134,
+          "claude_reported_cost_usd": 0.008748,
+          "seconds": 3.890697541006375
+        }
+      },
+      {
+        "host": "claude",
+        "case": "confirmed_exception",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "use_package",
+          "targets": [
+            "P"
+          ],
+          "reason": "표준 라이브러리가 필수 형식을 지원하지 않고 P는 정확히 지원하며, 사용자가 N3에서 A의 CSV 내보내기에 한해 P 추가를 명시적으로 허용했으므로 이 범위 안에서 P를 사용하면 됩니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1516,
+          "output_tokens": 131,
+          "claude_reported_cost_usd": 0.00737,
+          "seconds": 4.197941249993164
+        }
+      },
+      {
+        "host": "claude",
+        "case": "current_change",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "use_package",
+          "targets": [
+            "Q"
+          ],
+          "reason": "현재 사용자가 이번 PDF 기능에 Q 사용을 명시적으로 지시했고 Q는 A의 오프라인·정확성 요건에도 맞으므로, A의 새 패키지 금지 기록(N2)과 CSV 한정 예외(N3)는 현재 명시 지시를 뒤집지 못하며 B 한정 허용(N5)이나 미확인 속도 추정(N4)에 의존하지 않고 바로 사용하면 됩니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1865,
+          "output_tokens": 194,
+          "claude_reported_cost_usd": 0.009396,
+          "seconds": 4.963077458000043
+        }
+      },
+      {
+        "host": "claude",
+        "case": "current_change",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "use_package",
+          "targets": [
+            "Q"
+          ],
+          "reason": "현재 사용자가 이번 PDF 기능에 Q를 사용하라고 명시적으로 지시했으므로, 과거의 새 패키지 금지 기록(N2)과 CSV 한정 예외(N3)보다 현재 지시가 우선하며 추가 확인 없이 Q 사용을 확정할 수 있습니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1527,
+          "output_tokens": 144,
+          "claude_reported_cost_usd": 0.007544,
+          "seconds": 3.9938901669811457
+        }
+      },
+      {
+        "host": "claude",
+        "case": "exception_scope",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "ask_user",
+          "targets": [
+            "dependency_exception"
+          ],
+          "reason": "A의 PDF 내보내기에는 표준 라이브러리와 P로 불가능해 Q가 필요하지만, A의 새 패키지 금지 규칙에는 CSV 내보내기에 한정된 P 예외만 있고 Q 허용은 B에만 적용되므로 A에서 Q를 쓰려면 사용자에게 의존성 예외를 확인받아야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1859,
+          "output_tokens": 170,
+          "claude_reported_cost_usd": 0.009132,
+          "seconds": 4.164888583996799
+        }
+      },
+      {
+        "host": "claude",
+        "case": "exception_scope",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "ask_user",
+          "targets": [
+            "dependency_exception"
+          ],
+          "reason": "A에서는 새 패키지 추가를 금지한 사용자 지시가 있고 P 예외는 CSV 내보내기에만 해당하며 Q 허용은 프로젝트 B에만 적용되고 속도를 중시한다는 추측은 확인되지 않았으므로, A의 PDF 내보내기를 위한 Q 추가 여부는 사용자에게 예외 허용을 물어봐야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1522,
+          "output_tokens": 180,
+          "claude_reported_cost_usd": 0.007884,
+          "seconds": 3.967191375006223
+        }
+      },
+      {
+        "host": "claude",
+        "case": "project_scope",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "ask_user",
+          "targets": [
+            "project_priority"
+          ],
+          "reason": "프로젝트 C의 목적과 사용자 지시만으로는 속도와 관리 부담 중 무엇을 우선할지 정할 수 없고, A의 P 허용 예외와 B의 Q 허용은 각자 프로젝트에만 적용되며 속도 중시 기준은 사용자가 확인하지 않은 AI 추측이므로 사용자에게 우선순위를 물어야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1912,
+          "output_tokens": 174,
+          "claude_reported_cost_usd": 0.009384,
+          "seconds": 3.8977553749864455
+        }
+      },
+      {
+        "host": "claude",
+        "case": "project_scope",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "ask_user",
+          "targets": [
+            "project_priority"
+          ],
+          "reason": "프로젝트 C의 목적과 현재 사용자 지시로는 속도와 관리 부담 중 우선할 값을 정할 수 없고, A의 P 예외(N3)와 B의 Q 허용(N5)은 각각 해당 프로젝트·기능에만 적용되며 속도 중시 추정(N4)은 사용자가 확인하지 않았으므로 우선순위를 사용자에게 물어야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1574,
+          "output_tokens": 181,
+          "claude_reported_cost_usd": 0.008102,
+          "seconds": 3.6402628750074655
+        }
+      },
+      {
+        "host": "claude",
+        "case": "purpose_suffices",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "use_stdlib",
+          "targets": [
+            "json"
+          ],
+          "reason": "프로젝트 A는 인터넷 없이 정확한 JSON 내보내기가 목적이고 표준 라이브러리 json으로 모든 요구를 충족하며, 새 패키지 금지 기록(N2)이 적용되고 CSV 예외(N3)와 B 프로젝트의 Q 허용(N5)은 이 작업에 해당하지 않으므로 의존성 질문 없이 진행합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1840,
+          "output_tokens": 177,
+          "claude_reported_cost_usd": 0.009126,
+          "seconds": 4.207019916997524
+        }
+      },
+      {
+        "host": "claude",
+        "case": "purpose_suffices",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "use_stdlib",
+          "targets": [
+            "json"
+          ],
+          "reason": "현재 과제가 JSON 내보내기이고 표준 라이브러리 json만으로 오프라인에서 정확하게 요구를 충족할 수 있으며, 패키지 P 예외는 CSV 내보내기에만 해당하고 B의 Q 허용과 확인되지 않은 속도 추측은 적용되지 않으므로 의존성에 대해 사용자에게 물을 필요가 없습니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1503,
+          "output_tokens": 175,
+          "claude_reported_cost_usd": 0.007758,
+          "seconds": 3.9136820000130683
+        }
+      },
+      {
+        "host": "claude",
+        "case": "unconfirmed_guess",
+        "condition": "extracted_rules",
+        "matches": true,
+        "answer": {
+          "action": "choose_algorithm",
+          "targets": [
+            "accurate"
+          ],
+          "reason": "프로젝트 A의 확정된 기록(N1)이 결과의 정확성을 요구하고 속도 우선은 사용자가 확인하지 않은 AI 추측이므로, 느리더라도 정확한 알고리즘을 선택합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1905,
+          "output_tokens": 120,
+          "claude_reported_cost_usd": 0.008816000000000001,
+          "seconds": 3.9431105419935193
+        }
+      },
+      {
+        "host": "claude",
+        "case": "unconfirmed_guess",
+        "condition": "raw_notes",
+        "matches": true,
+        "answer": {
+          "action": "choose_algorithm",
+          "targets": [
+            "accurate"
+          ],
+          "reason": "프로젝트 A는 결과의 정확성이 요구되고(N1) 인터넷과 추가 패키지를 쓰지 않는 조건이므로, 사용자가 확인하지 않은 속도 중시 추측(N4)이나 다른 프로젝트·기능의 예외(N3, N5)에 의존하지 않고 느리더라도 정확한 알고리즘을 선택합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1564,
+          "output_tokens": 169,
+          "claude_reported_cost_usd": 0.007942,
+          "seconds": 3.9221034169895574
+        }
+      }
+    ],
+    "groups": [
+      {
+        "host": "claude",
+        "condition": "extracted_rules",
+        "calls": 6,
+        "matches": 6,
+        "actions": {
+          "use_package": 2,
+          "ask_user": 2,
+          "use_stdlib": 1,
+          "choose_algorithm": 1
+        },
+        "input_tokens": 11234,
+        "output_tokens": 969,
+        "claude_reported_cost_usd": 0.054602,
+        "seconds": 25.066549416980706
+      },
+      {
+        "host": "claude",
+        "condition": "raw_notes",
+        "calls": 6,
+        "matches": 6,
+        "actions": {
+          "use_package": 2,
+          "ask_user": 2,
+          "use_stdlib": 1,
+          "choose_algorithm": 1
+        },
+        "input_tokens": 9206,
+        "output_tokens": 980,
+        "claude_reported_cost_usd": 0.0466,
+        "seconds": 23.635071083990624
+      }
+    ],
+    "extraction_attempts": {
+      "claude": {
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 1402,
+          "output_tokens": 934,
+          "claude_reported_cost_usd": 0.014944000000000002,
+          "seconds": 6.4918573329923674
+        }
+      },
+      "codex": {
+        "error": "CLI 종료 코드: 1",
+        "usage": {
+          "reported_usage_available": false,
+          "input_tokens": null,
+          "output_tokens": null,
+          "claude_reported_cost_usd": 0,
+          "seconds": 5.33690520899836
+        }
+      }
+    }
+  },
+  "freshness": {
+    "original_both_host_plan": 12,
+    "selected_host_plan": 6,
+    "completed_calls": 6,
+    "rows": [
+      {
+        "host": "claude",
+        "condition": "original",
+        "repeat": 1,
+        "answer": {
+          "action": "read",
+          "targets": [
+            "stage/skills/stage-roadmap/manage_roadmap.py"
+          ],
+          "reason": "이력상 마지막 replace 후 파일 해시가 바뀌었지만 제공된 현재 파일 스냅샷은 그 이전 해시와 같아서, 실제 현재 상태를 확인한 뒤 완료 여부를 판단해야 합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12367,
+          "output_tokens": 451,
+          "claude_reported_cost_usd": 0.053973999999999994,
+          "seconds": 6.688269125006627
+        }
+      },
+      {
+        "host": "claude",
+        "condition": "original",
+        "repeat": 2,
+        "answer": {
+          "action": "finish",
+          "targets": [],
+          "reason": "인자 파싱을 append로 바꾼 상태에서 두 번째 replace로 기준 목록을 입력 순서대로 '- ' 항목 문자열로 변환해 전달했고, 그 뒤 실행한 지정 회귀 검사가 OK로 통과했으므로 작업을 완료합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12370,
+          "output_tokens": 373,
+          "claude_reported_cost_usd": 0.053206,
+          "seconds": 7.330199582997011
+        }
+      },
+      {
+        "host": "claude",
+        "condition": "original",
+        "repeat": 3,
+        "answer": {
+          "action": "finish",
+          "targets": [],
+          "reason": "인자 파싱을 append 방식으로 바꾸고 입력 순서대로 '- ' 항목을 만들도록 고친 뒤 회귀 검사가 통과했으므로 작업이 완료되었습니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12368,
+          "output_tokens": 99,
+          "claude_reported_cost_usd": 0.050458,
+          "seconds": 3.1286445000150707
+        }
+      },
+      {
+        "host": "claude",
+        "condition": "time_explicit",
+        "repeat": 1,
+        "answer": {
+          "action": "finish",
+          "targets": [],
+          "reason": "인자 파싱을 append 방식으로 바꾼 수정과 입력 순서대로 '- ' 항목을 만들어 전달하는 수정이 모두 적용되었고, 이후 회귀 검사가 통과(OK)했으므로 추가 수정 없이 완료를 보고합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12520,
+          "output_tokens": 127,
+          "claude_reported_cost_usd": 0.051345999999999996,
+          "seconds": 3.9927117500046734
+        }
+      },
+      {
+        "host": "claude",
+        "condition": "time_explicit",
+        "repeat": 2,
+        "answer": {
+          "action": "finish",
+          "targets": [],
+          "reason": "인자 파싱(append)과 '- ' 항목 변환 수정이 모두 적용되었고 고정 회귀 검사가 통과(OK)했으므로 추가 수정 없이 완료를 보고합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12521,
+          "output_tokens": 98,
+          "claude_reported_cost_usd": 0.05106,
+          "seconds": 3.93386391599779
+        }
+      },
+      {
+        "host": "claude",
+        "condition": "time_explicit",
+        "repeat": 3,
+        "answer": {
+          "action": "finish",
+          "targets": [],
+          "reason": "인자 파싱을 append 방식으로 바꾼 수정과 기준 목록을 입력 순서대로 '- ' 항목 문자열로 변환하는 수정이 적용되었고, 이후 회귀 검사가 통과(OK)했으므로 추가 수정 없이 완료를 보고합니다."
+        },
+        "error": null,
+        "usage": {
+          "reported_usage_available": true,
+          "input_tokens": 12520,
+          "output_tokens": 130,
+          "claude_reported_cost_usd": 0.051376,
+          "seconds": 5.6999149580078665
+        }
+      }
+    ],
+    "groups": [
+      {
+        "host": "claude",
+        "condition": "original",
+        "calls": 3,
+        "matches": null,
+        "actions": {
+          "read": 1,
+          "finish": 2
+        },
+        "input_tokens": 37105,
+        "output_tokens": 923,
+        "claude_reported_cost_usd": 0.157638,
+        "seconds": 17.14711320801871
+      },
+      {
+        "host": "claude",
+        "condition": "time_explicit",
+        "calls": 3,
+        "matches": null,
+        "actions": {
+          "finish": 3
+        },
+        "input_tokens": 37561,
+        "output_tokens": 355,
+        "claude_reported_cost_usd": 0.153782,
+        "seconds": 13.62649062401033
+      }
+    ]
+  },
+  "reuse_audit": {
+    "observed_at": "2026-10-05T06:04:52.411873+00:00",
+    "log_count": 73,
+    "verdict_count": 43,
+    "review_heading_count": 104,
+    "logs_with_multiple_review_headings": 29,
+    "verdict_key_counts": {
+      "reason": 43,
+      "criteria": 43,
+      "verdict": 43,
+      "criterion": 43,
+      "approved": 43,
+      "reviewed_in_round": 12
+    },
+    "verdicts_with_candidate_fingerprint_fields": 0,
+    "reusable_request_rate": null,
+    "logs": [
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000096.md",
+        "sha256": "607acda365e9d0f5fc4361d4db66884d90811544ac4e82591af87f6339c41782",
+        "review_report_headings": 1,
+        "executor_report_headings": 0,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000097.md",
+        "sha256": "d24c91f3c5025250cfcfc24a278eb91d2d7078dac1b98d96b7ea736f04c25135",
+        "review_report_headings": 2,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000105.md",
+        "sha256": "6845bedb4da589162b3e73ad726ae761ec65672819f506cb8915368149c8f918",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000106.md",
+        "sha256": "16e26e783177ad70154133685ed9d91c3a0b97b3f95c21cd7be89b4c8f106957",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000107.md",
+        "sha256": "2fd43c0e98f89d42b4ce166afcf927a3453d57e44e228f4fa85249912a813224",
+        "review_report_headings": 4,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000109.md",
+        "sha256": "c5e4284236890620b6cdd484fdbf344ef45760a50100f64b8f44ecd00857a7bf",
+        "review_report_headings": 2,
+        "executor_report_headings": 5,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000110.md",
+        "sha256": "73f60a5fbea4d65193b8b29e72afd237ff1a2cbdb1c339009134b5ab422ef60e",
+        "review_report_headings": 1,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000114.md",
+        "sha256": "84fb03f697abe69ccd19718c739c0c01779763c26cd2a644c94c9c387c448339",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000116.md",
+        "sha256": "13ee5509cffb0ce18e43747f6dc3e7ccd5a836b4d7cf8ce30e72df7c416e033d",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000117.md",
+        "sha256": "18e3742049df99bea3075321ba421edd77f07ef33a82da8c56018acc02b48532",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000118.md",
+        "sha256": "65c30572ab6cd5d6067970d8ef8e60909ccea49049292f17830f2818c06dbd28",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000121.md",
+        "sha256": "8108370d43074797ac00ab23b66fc51646fe33653510d07bf38d42ddc7800d14",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000124.md",
+        "sha256": "b60fc403b0080ec64856898492a5b9a0df706d6f2f9269719737c9c676992f1c",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000125.md",
+        "sha256": "4906c9599c85d33525a8a12656e110db7ca2ebe84af85007a65997f282c9257d",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000126.md",
+        "sha256": "2305a68172a63874b736f10e453fdcef7ca7b026542135faa80ead2bc8466ac5",
+        "review_report_headings": 1,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000127.md",
+        "sha256": "9a185e91182e5245f9d8f869600dc3db31c219829526dc160408979d05a14f8a",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000128.md",
+        "sha256": "f1a18c055d292b257103cf06b3a74886c4aec40aed795c218a81982f653c245e",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000129.md",
+        "sha256": "8ad5aa1e59037f963f8fb552536932b943de455b81ba1a67e046722bf72a0035",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000131.md",
+        "sha256": "1df953274b7ef7d709367ba7752917cac99bd311c5fd1a4409eb930c16ebd009",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": true
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000132.md",
+        "sha256": "066f72f266127d5fee54f6f8ef51732f6bca52b189963b1a01e8a3cdb9de49dd",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000133.md",
+        "sha256": "9835ec4e0919b53e149ab671a7b49a37b9ed06ccdd1de51f8b356fd7995e2baf",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": true
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000134.md",
+        "sha256": "35d0d2b8fb8b9143a6b79c520cec707a661f6f453ecc8df9ab8ea5e63a6577e0",
+        "review_report_headings": 1,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000138.md",
+        "sha256": "fe23f6897a5786bcd6051c5aab9154d7372d795cea1a06442f26c0031ccab018",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000139.md",
+        "sha256": "a293a04d955e3375d6042c10b5feb51f62f1c5725fba27da2484e05446b71f2c",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000140.md",
+        "sha256": "d890b5a564bd93b985a83bf9744be3be0353b8a4834e1f59bf35cf1557e854c2",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000142.md",
+        "sha256": "1ffcf935baa9313efa170935df63afc4b78bc140aa0d4bb3678f2612984744af",
+        "review_report_headings": 1,
+        "executor_report_headings": 0,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000144.md",
+        "sha256": "1efab500081c82206419e05da9d3889121cf4e0ac2ce97cb7d0e197669ca231a",
+        "review_report_headings": 1,
+        "executor_report_headings": 0,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000153.md",
+        "sha256": "3c3b5c1a189ae667bd8513496d76290eb8f9e649a7f5dae0e78235563c52f088",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000155.md",
+        "sha256": "e23c028b2da26eb177b4d079643aeae498374f91248fd56dbfc7704c2aa81e55",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000157.md",
+        "sha256": "48d12964379b7b95b7a4f8a9245d614a9790409421b73d60dd1d4d888fa9b67d",
+        "review_report_headings": 0,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000163.md",
+        "sha256": "dcc09b912b195dd0072b78eecfb2c6c39418a67b29ffd87c54d9c2abd72c8156",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000166.md",
+        "sha256": "3eac750adce0db39affbd0aed9e6a1822b547061c56509771acae2192e06e804",
+        "review_report_headings": 4,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000170.md",
+        "sha256": "5ef1b83af708e333df1cf25944cf7c0aeb94d3c7d64816998baeae381b340316",
+        "review_report_headings": 1,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000173.md",
+        "sha256": "850a7344b7083732d8dd321d52224232b593662a2310b4fe4e314a5408ef6bda",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000174.md",
+        "sha256": "fa39b6e69021b526562ecd77fda48d91f01c3c65bc143ff06301fa5608047567",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000176.md",
+        "sha256": "f95280540a6d2668a0793099c0a026e7f5c8cba8a14f6f4fde896676a9d397c2",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000177.md",
+        "sha256": "b813fe468f3d929e116f752e920e50c3e43bf62bc8d343dc0369eb4f021d5561",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000178.md",
+        "sha256": "3ac856ee7896a96f93c189a7dbc41b4e23b1abccd752c098414a892c4e3b0610",
+        "review_report_headings": 2,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000179.md",
+        "sha256": "6ab99be38a7702a639a78475e050dacb68bddb2154cf3c86f4877fec0041d7cc",
+        "review_report_headings": 4,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000183.md",
+        "sha256": "8fbb76243fe05f3cb261deced79d23c10f5e6c0b47b51a797aad1fb4b00f3aa9",
+        "review_report_headings": 5,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000184.md",
+        "sha256": "ba716e4ebfb36ca4389be05c0cf72bffa8495a3e7037f7e76ab051328fa90fab",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": true
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000185.md",
+        "sha256": "b3443437b1b543cd9342952f5ac520ecf9347a4ec481db59f23459b906ddec3f",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000187.md",
+        "sha256": "de95a88095dd4d0c7f65c9301b8b0cedd02a8e9e192de2216d2b4a2cbd96ddc0",
+        "review_report_headings": 0,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000188.md",
+        "sha256": "1c512186c4687e51cb954dd16a25540d8d0a7fad309a28b8c7e2afe77385f92f",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000192.md",
+        "sha256": "0291f9d7a41686c26e45d246b4d2d56f16e40a2e8b571fe7a79018df8eca67d0",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000193.md",
+        "sha256": "59bf1ea7d0ae6fb764876fc7f01382d18ad14590e2b1a6515a81e03e815dd545",
+        "review_report_headings": 3,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000197.md",
+        "sha256": "ffd89ac8147bcde5d784dce2a04dff14ebccd71b288d284b73e02730c3ba0419",
+        "review_report_headings": 2,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000200.md",
+        "sha256": "a3f5bc6d7adf44446deadeeab913faec6314a25f5ff2ede8baee6238570187c9",
+        "review_report_headings": 0,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000201.md",
+        "sha256": "4b2873ddaeef30f71308e6ac4a3c8044e47db2e658c100e384d17250d2f7ba62",
+        "review_report_headings": 3,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000202.md",
+        "sha256": "2438cd411ba4d18caf27cfd85676de2df2ddd3caa015345ba8af3def157812ea",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000209.md",
+        "sha256": "ee567145f9dbcc90be3273684f7f5fd316d222ba20d2ffc4b8750a1ccdf14516",
+        "review_report_headings": 3,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000226.md",
+        "sha256": "244b623a03217188a073af43ca5c149d047c9a3cf0084421e4749fb45e9bceac",
+        "review_report_headings": 0,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000227.md",
+        "sha256": "0edb5832c1d30fbfc535ab64bf054aa6eb55bed21c59e1c76ffb06a8139f45e9",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000228.md",
+        "sha256": "3b5a2b81bf8c9f559bad41246b32744801b6b78fd13b4a12e049a1763ef9fa51",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000229.md",
+        "sha256": "ffcbabaabd08cf0f5632f3307f98742ce9382192736b39d77647b4ebefc70542",
+        "review_report_headings": 0,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000232.md",
+        "sha256": "0aa5523021d21ae771aa6bb31ecfcab85215e9afc5473ee896597466a911a0fb",
+        "review_report_headings": 0,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000233.md",
+        "sha256": "592bd63155bc3f3cc9147f1a4f9efb793d14bc1968e787c3d72866875f9aa62d",
+        "review_report_headings": 0,
+        "executor_report_headings": 2,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000234.md",
+        "sha256": "125687feeff73876c5ea8a18c90ddd372dc4d70a9cf8cfc5a788dd945905ecd5",
+        "review_report_headings": 0,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000235.md",
+        "sha256": "88cd6d434435f502c840cf683c0ba7ffd797a13f1e26e41499e572715f267416",
+        "review_report_headings": 1,
+        "executor_report_headings": 0,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000236.md",
+        "sha256": "24b905b95a197882c682f79b4c0ca8ebeab9f31c538e52514788ce6733805418",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000237.md",
+        "sha256": "0c44da1b0ed5a471d0c36dc61a0578a756365caba66560e411a1cbb411256b0d",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000238.md",
+        "sha256": "a36898d98b51fee795064dc9c87d5dc2ff25a59bafc3350764d79ada5f35c073",
+        "review_report_headings": 0,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000239.md",
+        "sha256": "d182a1659ed14fae022a4aba3c00988f8803dec966788d81c52f5c2e658dc586",
+        "review_report_headings": 0,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000243.md",
+        "sha256": "0174e3c067b560e3012caed7a679b35c15a5d7337283f8a0cd5e9566d8140931",
+        "review_report_headings": 0,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000249.md",
+        "sha256": "0315f90dbd349aef12f0dd5239171c2a8a1d5a2609e4aaf59f074e80ef204135",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000252.md",
+        "sha256": "08a74ef758ee58e013b37af80249358c9db0d4b5e544ab0327aa50f3f2acfa62",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000253.md",
+        "sha256": "5c15960b21ef75cf4119f1db1fb62742b9357478040f3d272ef85386eeaa0e68",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000254.md",
+        "sha256": "f3499ed7801e7577e05605fb35027339cdfb29cc0cadef3a1ee9b84d58131815",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000255.md",
+        "sha256": "f6d12b32797eefebcb8d47a47c6d05261da59c79e84ab1ee459a1ba9655a28eb",
+        "review_report_headings": 2,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000256.md",
+        "sha256": "1cb99da890334158bc6a0fa2d559aba2aa27c6777b3a47b82a32d57dfbb8d6f2",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000257.md",
+        "sha256": "d50fb0fc9d49e0d6de479a23a519b35192ec5e8e1054eb6e6d7e08730d2dc422",
+        "review_report_headings": 1,
+        "executor_report_headings": 1,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000258.md",
+        "sha256": "ce24b2dae1dd020ebd4e3a34a5c771ed0e25df52d75c485d2ffd5f4bb22aab53",
+        "review_report_headings": 2,
+        "executor_report_headings": 3,
+        "fingerprint_word_present": false
+      },
+      {
+        "path": ".stage/.runtime/driver/logs/W-00000259.md",
+        "sha256": "f0237d8d1519a32701ff85fb7f02a894c27b4c5059331fe638394bdc0e140a78",
+        "review_report_headings": 3,
+        "executor_report_headings": 4,
+        "fingerprint_word_present": false
+      }
+    ],
+    "verdicts": [
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000117.json",
+        "sha256": "fb96788ed22209c4cc2da592ded440649617cdcee1950f553aea95c37ac80c8e",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 14
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000118.json",
+        "sha256": "cb38825f22967d18d139ae08ef25257e72f02967ae2bc2cf677f9ea788aca3be",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 10
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000131.json",
+        "sha256": "ce77ebfd4110c40461b416893ced7ec0269d25bbd251677766e7fdc11be2b2cb",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000132.json",
+        "sha256": "34bb2abfbb13df9657f328baf3f564eba55132f6ac97aeb67e72ddb985439a25",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000133.json",
+        "sha256": "f125a86264a4d3b9f7417d15137ce9068c62043bb467b93cde51bfbf96733380",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000134.json",
+        "sha256": "95f5e78b3307cd5a0497b0dcf7ea2c97409349ca597889915dc74b318edb6c0a",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000138.json",
+        "sha256": "c321314d00ec4f8d7268e9e4f9f4a6ffe76ecd172741d07a917e4195fba81243",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000139.json",
+        "sha256": "a8356b068562dd0edde71802ae231ed8ca2a259b2dbf4512e687bf3f3a0dadf0",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 7
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000140.json",
+        "sha256": "2dddf1e86453b8695832664eb59852419aa0cc3b8b524480e61380b281d46cb0",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000142.json",
+        "sha256": "9a21e3728db550db6a1d6f57b9edb04ff7e61ee72c5a61bfd6d281a6f0820a5b",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 7
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000144.json",
+        "sha256": "1a6cb2fdd8943959f59ecc3176d1c550bd1507c68e04977939a3816b2fcddebb",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000153.json",
+        "sha256": "f53d22387bc41ec99a678e898bdee4d19da9f658f0c8cd367c4629d1f5bc4405",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000155.json",
+        "sha256": "5a8ed9193def671044c96042beabeba5ec2a3db63111874edbb469d8efd0798c",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000163.json",
+        "sha256": "3fb535139f77bbc9ef7e7f45c8eef39e1b0acab1cddbfb9faffef2daba12be20",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000166.json",
+        "sha256": "794e029df3378335e8cc84448c20132607a42c90d561f7ac56e7dd47ceb0743b",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000170.json",
+        "sha256": "1cf4adf248bccf152739e54652e87614d332146e5ce90e03d59acf46750ba9cb",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000173.json",
+        "sha256": "ef45bc30e43e6ecbfd71bcb27acf5066108fad688381e964e82a0eb97873251d",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 6
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000174.json",
+        "sha256": "05c3170b8d38b97fe00f64029a14502667f7bbda896503b0575c3f343d89369e",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000176.json",
+        "sha256": "3709ca91f35af238e4d2f03cbe46bf95a8aa63dc30e8dfa51a37778bdda9aca1",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 3
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000177.json",
+        "sha256": "e66bc2d09867c9df9f011202bb012486509045349d802421b1a58ca17f9f9b9e",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000178.json",
+        "sha256": "16bb35dad6ba0113d9e0b709dde819c128ac02269c7bca735490b894a0f03c6c",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000179.json",
+        "sha256": "b992d513770be2b1374a2f81f99111a12dbcb20059bbc22dc13875c17696a69d",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000183.json",
+        "sha256": "0e4e3a9ad0e1f755989ac39b060caebd468c548145a726a248e30e87f1aab41f",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000184.json",
+        "sha256": "9c0b4ae46babdf14bdac0be03db9e7cd70bc86ee0f6a86b74ed03c824ddf9670",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000185.json",
+        "sha256": "9e2a299f2345b3daebdce383a60a9efcaca569ea77a7aa9c02ee92c88901c2df",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000188.json",
+        "sha256": "006859b17de9c540eafa20a10a445c146bc43ee32d483d502118e56be24555a1",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000192.json",
+        "sha256": "fc90c54e8aa98e6442289d90d2f89c9cc786131aead8f57f7afec3560282aee8",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000193.json",
+        "sha256": "d08edd6919527773155f65d52a068b1bf45a097e80f483ce0c1f55d77e176121",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000197.json",
+        "sha256": "4a5057242b7c2477c87751f11af2f99ba6004960c0cc8c01985ff837f6dacd67",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000201.json",
+        "sha256": "0135d8dffdbdab15641364033d36112a89af4cf96fe5dc284e059655fadf7833",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "reviewed_in_round",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 7
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000202.json",
+        "sha256": "986022fe7d6a64d815fb78ba81e4b7c6f54d5da92cd8753bfe3e1747cb1043ac",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 5
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000227.json",
+        "sha256": "1aecb051f25ca60f33b380f63ebcbabc0545c704e68c01cfb41227e50f77eae2",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000228.json",
+        "sha256": "a9cab519823b9b0ca84fa44c97c5b1c980e1cda7148dee360016bdce798b300e",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 3
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000235.json",
+        "sha256": "e4dd626f650e67b526d0b72bec80b574a8b90db0376caf51aea11a5e3d88db9a",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000236.json",
+        "sha256": "0dee8c816fe991a793804416d5c392e35adbc7845e3f6f7671a7c151101f0fcc",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000237.json",
+        "sha256": "e0324be450a24d063cea5de258e3d0ca99ac2747fda2126e96d3c6d40c4467f4",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000249.json",
+        "sha256": "6b54f432ae92a37a52b824f884c6121e7234fff745dde73d8c6dd099349cc87e",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000252.json",
+        "sha256": "f49dd24090866512335667a20c4cdec033e7a1f1201edc74e0847c0ecef6b25d",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000253.json",
+        "sha256": "a9b9cce18f94c26313761b5302aa6a9a1afedfcd15094e2c3f2b572405455334",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 3
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000256.json",
+        "sha256": "c1691e86d085156a548009ce5c9a2665399e575eedc0d3b823e647fdf713a0ee",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 3
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000257.json",
+        "sha256": "b8f16b6f8fe099e1b2cac9c568029e8db21dce86cbc59cd22a35bf6ba0f13113",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000258.json",
+        "sha256": "5d3726158bedb7ada64ad683c384afe70601d3187e14d4d5f89c08391f49e1de",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 2
+      },
+      {
+        "path": ".stage/.runtime/driver/verdicts/W-00000259.json",
+        "sha256": "76bf786bc1d8b3b960bdae5b0f1435c0650100fc813aae66a013b16d54faf649",
+        "keys": [
+          "approved",
+          "criteria",
+          "criterion",
+          "reason",
+          "verdict"
+        ],
+        "fingerprint_fields": [],
+        "criterion_count": 4
+      }
+    ],
+    "limits": [
+      "A report heading is not a model invocation ID.",
+      "Fingerprint words in prose are not captured review inputs.",
+      "This scans the present driver log and verdict directories only.",
+      "Missing provenance cannot establish a zero or positive reuse rate."
+    ]
+  },
+  "limits": [
+    "Two historical defects and no repetitions within each native condition.",
+    "Observed tool counts are not counts of model inference requests.",
+    "Uses Stage registration and handoff records, not every plugin hook or driver lifecycle.",
+    "Synthetic criterion transfer does not establish personal-preference learning.",
+    "Historical logs do not provide complete input provenance for a real reuse rate."
+  ]
+}

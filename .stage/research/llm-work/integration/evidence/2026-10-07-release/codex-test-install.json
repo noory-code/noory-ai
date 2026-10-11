@@ -1,0 +1,23 @@
+{
+  "config_before_sha256": "8a83de26159c0e448951cd59669b942e5e6316f8b947bd6e3249389569937e91",
+  "installs": [
+    {
+      "plugin": "stage",
+      "exit": 0,
+      "stdout": "{\n  \"pluginId\": \"stage@criteria-release-test\",\n  \"name\": \"stage\",\n  \"marketplaceName\": \"criteria-release-test\",\n  \"version\": \"0.63.1\",\n  \"installedPath\": \"/Users/woogis/.codex/plugins/cache/criteria-release-test/stage/0.63.1\",\n  \"authPolicy\": \"ON_INSTALL\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "plugin": "avatar",
+      "exit": 0,
+      "stdout": "{\n  \"pluginId\": \"avatar@criteria-release-test\",\n  \"name\": \"avatar\",\n  \"marketplaceName\": \"criteria-release-test\",\n  \"version\": \"0.1.2\",\n  \"installedPath\": \"/Users/woogis/.codex/plugins/cache/criteria-release-test/avatar/0.1.2\",\n  \"authPolicy\": \"ON_INSTALL\"\n}\n",
+      "stderr": ""
+    },
+    {
+      "plugin": "distill",
+      "exit": 0,
+      "stdout": "{\n  \"pluginId\": \"distill@criteria-release-test\",\n  \"name\": \"distill\",\n  \"marketplaceName\": \"criteria-release-test\",\n  \"version\": \"1.10.0\",\n  \"installedPath\": \"/Users/woogis/.codex/plugins/cache/criteria-release-test/distill/1.10.0\",\n  \"authPolicy\": \"ON_INSTALL\"\n}\n",
+      "stderr": ""
+    }
+  ]
+}

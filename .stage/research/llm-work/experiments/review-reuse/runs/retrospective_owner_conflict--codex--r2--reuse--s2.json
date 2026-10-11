@@ -1,0 +1,36 @@
+{
+  "id": "retrospective_owner_conflict--codex--r2--reuse--s2",
+  "case": "retrospective_owner_conflict",
+  "host": "codex",
+  "repeat": 2,
+  "condition": "reuse",
+  "step": 2,
+  "version": "before",
+  "key": "1d114fbcb431f40ce12f0c95f04e0076c3cc6904605e6e93da298b392f5a6ed8",
+  "cache_hit": true,
+  "origin": "retrospective_owner_conflict--codex--r2--reuse--s1",
+  "answer": {
+    "action": "revise",
+    "reason": "R-00000041.md의 work_item이 W-00000099이면 충돌 오류를 내지 않고 다음 ID인 R-00000042를 생성해 반환하므로 요구사항을 위반합니다.",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "30d58dbf1425504b389be20c438824c9e321f361d35c0ded211f044a0cbe910c",
+  "prompt_characters": 12444,
+  "cli": null,
+  "end_to_end_s": 0.0012220840144436806
+}

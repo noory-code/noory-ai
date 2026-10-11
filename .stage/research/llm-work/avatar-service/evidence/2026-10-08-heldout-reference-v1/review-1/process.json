@@ -1,0 +1,24 @@
+{
+  "status": "review_returned",
+  "started_at": "2026-10-07T21:34:16.686581+00:00",
+  "exit": 0,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 17624,
+      "outputTokens": 8135,
+      "cacheReadInputTokens": 14441,
+      "cacheCreationInputTokens": 16066,
+      "webSearchRequests": 0,
+      "costUSD": 0.3539472,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2564,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "reported_list_cost_usd": 0.3539472,
+  "seconds": 85.23,
+  "finished_at": "2026-10-07T21:35:41.916105+00:00"
+}

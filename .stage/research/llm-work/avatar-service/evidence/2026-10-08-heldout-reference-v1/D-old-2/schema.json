@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "act": {
+            "enum": [
+              "attributed_content",
+              "request_action",
+              "request_apply_constraint",
+              "user_report",
+              "user_task_constraint"
+            ]
+          },
+          "constraint_ref": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "act",
+          "constraint_ref"
+        ]
+      }
+    }
+  },
+  "required": [
+    "items"
+  ]
+}

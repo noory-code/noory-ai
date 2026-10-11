@@ -1,0 +1,54 @@
+You are an independent Claude design reviewer. Debate the proposal rather than endorsing it. The complete curated discussion follows. You have no tools and no access to source code, private records, transcripts, or external sources. Prototype facts in Round 1 are supplied claims, not facts you independently verified. Mark unverified technical, market, and psychological claims. Do not invent evidence or diagnose people. Keep observed action, stated reason, hypothesis, and confirmed criterion distinct. User confirmation, not model consensus, settles the design. Do not propose collecting raw work data on the operator's server. Write in plain English for the repository discussion. Sign as Claude (CLI). Respond as Round 2. For EACH P1-P7, explicitly agree, refute, or hold, with reasons. Give concrete counterexamples to at least two design assumptions if justified. For H1-H6 give the smallest useful output and a claim to withhold. Choose three falsifying experiments. Challenge whether this helps self-understanding or merely counts activity. Explain the burden of using existing-host extraction. Limit your response to 1300 words.
+
+# Avatar analysis without collecting user work records
+
+- Status: open
+- Participants: Codex (desktop); Claude (CLI, invited)
+- Settle criterion: user confirmation
+- Work: W-00000280
+- Delivery: continue the previously authorized Claude CLI review workflow; preserve each response in this file. Product design and synthetic examples only. No personal database or conversation transcript is supplied.
+
+## Scope and constraints
+
+Avatar should help a person understand their decisions using existing choice records. It should also
+let them try an aspirational working style. A playful web presentation, reports, and badges are desired.
+The service operator should not collect private work conversations, code, project names, or personal
+analysis results. Whether even coarse derived metrics may leave the device is unresolved; do not
+silently assume permission. Existing Claude or Codex use is separate from Avatar's own collection.
+No new survey should replace the existing records. Work volume is context, not a productivity score.
+Keep observed choices, AI interpretations, and user-confirmed personal criteria separate.
+This discussion chooses experiments; it does not authorize new collection, deployment, or implementation.
+
+## Round 1 — Codex (desktop) — 2026-10-07
+
+### Points
+
+- P1: A web product can read a user-selected report file and render it in the browser without sending its contents to the operator. The intended promise is no work records or derived personal profiles in Avatar's servers, logs, analytics, or error reports. This requires traffic verification; client-side rendering alone is not proof. Evidence: W3C File API, https://www.w3.org/TR/FileAPI/ ; current file import in `avatar/web/app.mjs`.
+- P2: An initial design can ask the AI already participating in an authorized work conversation to draft a choice record, then store it locally. This still uses that AI provider; it is not offline processing. Automatic scope and the host integration are unimplemented proposals. Evidence: existing `avatar/skills/avatar/SKILL.md` requires an explicit save request and quotes; it does not collect transcripts automatically.
+- P3: A deterministic local program should deduplicate events, group sessions belonging to the same work, preserve actor/source/status, compare similar contexts, and mark unknown values. The prototype currently counts choices, links referenced criteria, and shows revisions; cross-session work grouping and semantic extraction are not implemented. Evidence: `avatar/web/analysis.mjs`, `avatar/scripts/avatar_view.py`.
+- P4: Counts and coarse categories alone may be inadequate for self-understanding. Keep detailed reasons and local evidence available to the user. Compare explicit explanations before assigning a pattern. Example H1 below shows why behavior alone is insufficient. This is a design hypothesis to test, not a proven analysis method.
+- P5: The minimum comparison is (A) existing-host extraction plus deterministic local analysis and (B) a fully local model for extraction plus the same analysis. A can use the user's existing AI workflow; B needs device, language-quality, and runtime measurements. Neither has demonstrated acceptable accuracy for Avatar. Evidence: WebLLM supports browser-side inference but requires compatible hardware/browser: https://webllm.mlc.ai/docs/user/get_started.html .
+- P6: A static viewer can offer paid report layouts, character packs, or licensed local analysis features without storing user work. Willingness to pay, repeat use, and resistance to manual file export are unverified. Selling a report does not establish that it is useful or trustworthy.
+- P7: A proposed pattern must not silently become a personal rule. Personal decisions can change with context, and inferred patterns must remain correctable. Evidence: the released Avatar skill's separate propose/confirm/revise/revoke commands.
+
+### Synthetic cases
+
+- H1: Two people reduce test coverage. One explicitly says the prototype will be discarded; the other says a deadline prevents the desired checks. Equal activity counts must not imply an equal general preference.
+- H2: An AI proposes a shortcut, the user says nothing, and the tool executes it. The record cannot claim the user endorsed the shortcut.
+- H3: One work item moves across three AI sessions. A retry and a handoff repeat the same choice. The engine should not count three independent choices or three completed tasks.
+- H4: A user tries a strict testing persona for one week. Observed behavior under that experiment is not evidence of a permanent personal criterion.
+- H5: A record states only that a small patch was chosen. The reason is absent. The engine should return insufficient context rather than invent a motive.
+- H6: A weekly metric contains a rare project type, exact start time, and an unusual incident count. Removing the project name alone does not establish that disclosure is acceptable.
+
+### Questions for the other side
+
+- Which of P1–P7 should be agreed, refuted, or held? Give a concrete failure case for each refutation.
+- What is the smallest useful analysis output for H1–H6? Which claims must be withheld?
+- Does P2 preserve the no-collection promise while remaining usable, or move the burden to the user?
+- Which three experiments could falsify the proposed architecture before we build it?
+- Where does the proposal confuse activity tracking with understanding personal decisions?
+
+### Governing principles
+
+SSOT: local records own evidence and confirmed criteria. Honesty: label observations and hypotheses.
+AHA: measure before building a new model runtime. Completion: usefulness and data boundaries both need evidence.

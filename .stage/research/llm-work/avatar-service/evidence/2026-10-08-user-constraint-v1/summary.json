@@ -1,0 +1,222 @@
+{
+  "runs": 8,
+  "accepted_runs": 8,
+  "failed_runs": [],
+  "target_labels": 16,
+  "scored_labels": 16,
+  "matches": 16,
+  "mismatches": [],
+  "model_seconds": 51.45,
+  "reported_list_cost_usd": 0.0895164,
+  "cost_unavailable_runs": [],
+  "rows": [
+    {
+      "run": "U-1",
+      "id": "U1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "U-1",
+      "id": "U2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "U1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "U1"
+      },
+      "match": true
+    },
+    {
+      "run": "V-1",
+      "id": "V1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "V-1",
+      "id": "V2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "V1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "V1"
+      },
+      "match": true
+    },
+    {
+      "run": "Y-1",
+      "id": "Y1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "Y-1",
+      "id": "Y2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "Y1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "Y1"
+      },
+      "match": true
+    },
+    {
+      "run": "X-1",
+      "id": "X1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "X-1",
+      "id": "X2",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "U-2",
+      "id": "U1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "U-2",
+      "id": "U2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "U1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "U1"
+      },
+      "match": true
+    },
+    {
+      "run": "V-2",
+      "id": "V1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "V-2",
+      "id": "V2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "V1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "V1"
+      },
+      "match": true
+    },
+    {
+      "run": "Y-2",
+      "id": "Y1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "Y-2",
+      "id": "Y2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "Y1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "Y1"
+      },
+      "match": true
+    },
+    {
+      "run": "X-2",
+      "id": "X1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "X-2",
+      "id": "X2",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    }
+  ]
+}

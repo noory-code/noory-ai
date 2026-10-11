@@ -1,0 +1,104 @@
+{
+  "run_id": "example_edit--purpose_check--2",
+  "case": "example_edit",
+  "family": "H01",
+  "condition": "purpose_check",
+  "repeat": 2,
+  "started_at": "2026-10-04T23:41:25.895917+00:00",
+  "prompt": "{\"request\": \"이 예시처럼 제목을 짧게 바꾸고 파일에도 적용해주세요. 예시 본문은 복사하지 마세요.\", \"choices\": [\"report\", \"edit\", \"draft\", \"ask\", \"continue\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다. 행동을 고르기 전에 사용자의 목적, 제약, 미확인 사항을 각각 짧게 적고 purpose 필드에 담으세요.",
+  "input_sha256": "ca13691edf1042b375612dad3c827df16d344da571d92c0b4ccb5ba1db0696d1",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"ask\", \"reason\": \"요청에 언급된 '이 예시'와 적용 대상 파일이 실제로 제공되지 않아, 어떤 제목을 어떻게 짧게 바꿀지와 어느 파일을 수정할지 먼저 확인해야 합니다.\", \"purpose\": \"목적: 예시의 방식(짧은 제목 스타일)을 따라 제목을 줄이고 그 결과를 파일에 반영하는 것. 제약: 예시 본문은 복사하지 말고 제목 스타일만 참고할 것. 미확인 사항: 예시 자체가 첨부되지 않았고, 수정할 파일 경로와 현재 제목이 무엇인지 알 수 없음.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 3019,
+    "duration_api_ms": 3487,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "94148782-4fe2-4045-b0f1-550d0995c956",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.007113,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 867,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 257,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 867,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 257,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 867,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 867
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"ask\", \"reason\": \"요청에 언급된 '이 예시'와 적용 대상 파일이 실제로 제공되지 않아, 어떤 제목을 어떻게 짧게 바꿀지와 어느 파일을 수정할지 먼저 확인해야 합니다.\", \"purpose\": \"목적: 예시의 방식(짧은 제목 스타일)을 따라 제목을 줄이고 그 결과를 파일에 반영하는 것. 제약: 예시 본문은 복사하지 말고 제목 스타일만 참고할 것. 미확인 사항: 예시 자체가 첨부되지 않았고, 수정할 파일 경로와 현재 제목이 무엇인지 알 수 없음.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 966,
+        "outputTokens": 21,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.001071,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 257,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 867,
+        "webSearchRequests": 0,
+        "costUSD": 0.0060420000000000005,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "f6507d83-6d46-4609-95c8-1bde0d71f665",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 4.181164375011576
+}

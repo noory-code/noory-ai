@@ -1,0 +1,803 @@
+Review the supplied source snapshot of a LOCAL fictional Avatar preview. No tools.
+Do not edit, run tests, access user files, browse, or infer absent source. Return PASS or REVISE in
+concise Korean, with exact path+line and concrete defects. Review correctness, state isolation,
+escaping, accessibility, request-versus-behavior attribution, privacy wording, and faithful use of
+the supplied fictional fixtures. Model agreement is not product validation. You did not run tests.
+The existing real-record viewer remains unchanged except a new link and removal of obsolete paid
+report wording. A new /stories page offers staged reading in ko/en, original sources, separate
+person/scene corrections, and a comparison of interpretations. It is explicitly authored fiction.
+The user authorized implementing this prototype. Do not demand live conversation parsing, accounts,
+ads, hosting, or clinical validation as requirements for this bounded preview. Those are deferred.
+The browser supervisor observed owner isolation, correction persistence per scene, HTML escaping,
+language switching, all twelve combinations at 390px without overflow, and only seven local asset
+GETs with no API requests or console errors. Package checks: 44 Python, 7 plugin contracts, 19 Node
+passed. New module and missing-route failures were observed before implementation. The comparison
+panel was then added; it is now part of your source review. Distinguish measured facts from source
+reasoning. Do not invent causal links or temporal ordering between separate scenes. Keep findings
+under 1000 words; prioritize actual user-facing defects over preferences. Do not output reasoning
+traces. Return only the verdict, findings, and limitations.
+FIXTURES:
+{
+  "version": "synthetic-profile-v1",
+  "synthetic": true,
+  "bundles": [
+    {
+      "owner_id": "fictional-J",
+      "bundle_id": "J",
+      "records": [
+        {"id": "J1", "context": "Project planning", "kind": "user_quote", "text": "Before deciding, please show the alternatives and what we give up.", "unknown": "The reason for the request is not supplied."},
+        {"id": "J2", "context": "Routine test result", "kind": "user_quote", "text": "Just tell me whether it passed.", "unknown": "No emotion is supplied."},
+        {"id": "J3", "context": "High-risk migration", "kind": "user_quote", "text": "I need the failure cases and a way back before approving."},
+        {"id": "J4", "context": "A previous session; repairing an assistant omission", "kind": "scenario_summary", "text": "The assistant ignored a requested rollback plan. The user repeated the requirement and added a long explanation.", "unknown": "The exact user words are not supplied. The relationship to J3 and whether these are distinct incidents is not supplied."},
+        {"id": "J5", "context": "The next session; user self-description", "kind": "user_quote", "text": "I don't always want short answers. I want enough to judge what to do."}
+      ]
+    },
+    {
+      "owner_id": "fictional-K",
+      "bundle_id": "K",
+      "records": [
+        {"id": "K1", "context": "Brainstorming", "kind": "scenario_summary", "text": "The user invited five ideas and a playful tone.", "unknown": "The exact user words and the response are not supplied."},
+        {"id": "K2", "context": "Implementation", "kind": "user_quote_with_context", "text": "Now keep to this scope until it works.", "context_detail": "The user selected one idea."},
+        {"id": "K3", "context": "After a successful repair", "kind": "user_quote", "text": "Thanks. That makes the next step clearer."},
+        {"id": "K4", "context": "A failed retry; repairing an assistant omission", "kind": "user_quote_with_context", "text": "Please follow the two conditions I already gave you.", "context_detail": "The assistant omitted one of the conditions. The content of both conditions is not supplied."},
+        {"id": "K5", "context": "Writing a story", "kind": "fictional_character_summary", "text": "The user pasted a deliberately rude fictional character line and explicitly labeled it as story dialogue.", "unknown": "The exact line is not supplied. This is not evidence of the user's own conversational tone."}
+      ]
+    }
+  ]
+}
+
+Bounded final check: your round 2 verified all original repairs but found five
+remaining issues. Verify only these five repairs: (1) comparison entries show a person's correction
+with its label, retaining the original interpretation in a separate disclosure; the new regression
+test was observed failing before this repair; (2) Korean sidebar says understanding broadens, not
+that earlier interpretations were wrong; (3) J5 context no longer asserts a J4 relationship and
+quotes the ambiguous next-session label with its limit; (4) K's repeated request is no longer called
+firm; (5) the language switch has the target language tag. Return PASS if fixed, or remaining concrete
+defects in these five areas. Do not restart a broad feature review. Keep the answer under 500 words.
+
+FILE avatar/web/story-content.mjs
+1: // Edited fictional examples from the J/K research bundles, not live model output.
+2: export const sources = {
+3:   J1: {id: 'J1', kind: 'quote', en: 'Before deciding, please show the alternatives and what we give up.', ko: '결정하기 전에 선택지와 각 선택에서 포기할 점을 보여 달라고 했어요.'},
+4:   J2: {id: 'J2', kind: 'quote', en: 'Just tell me whether it passed.', ko: '테스트가 통과했는지만 알려 달라고 했어요.'},
+5:   J3: {id: 'J3', kind: 'quote', en: 'I need the failure cases and a way back before approving.', ko: '위험한 시스템 변경을 승인하기 전에, 실패할 수 있는 경우와 되돌릴 방법을 요청했어요.'},
+6:   J4: {id: 'J4', kind: 'summary', en: 'The assistant ignored a requested rollback plan. The user repeated the requirement and added a long explanation.', ko: 'AI가 요청받은 복구 계획을 다루지 않았어요. 사용자는 같은 조건을 다시 말하며 길게 설명했어요.'},
+7:   J5: {id: 'J5', kind: 'quote', en: "I don't always want short answers. I want enough to judge what to do.", ko: '늘 짧은 답을 원하는 것은 아니며, 무엇을 할지 판단할 만큼 설명해 주길 바란다고 말했어요.'},
+8:   K1: {id: 'K1', kind: 'summary', en: 'The user invited five ideas and a playful tone.', ko: '사용자는 아이디어 다섯 가지와 장난기 있는 말투를 요청했어요.'},
+9:   K2: {id: 'K2', kind: 'quote', en: 'Now keep to this scope until it works.', ko: '아이디어 하나를 고른 사용자는 작동할 때까지 그 범위를 지켜 달라고 했어요.'},
+10:   K3: {id: 'K3', kind: 'quote', en: 'Thanks. That makes the next step clearer.', ko: '문제를 고친 뒤, 다음 단계가 더 분명해졌다며 감사를 전했어요.'},
+11:   K4: {id: 'K4', kind: 'quote', en: 'Please follow the two conditions I already gave you.', ko: 'AI가 조건 하나를 빠뜨리자, 사용자는 이미 말한 두 조건을 따라 달라고 요청했어요.'},
+12: };
+13: 
+14: export const stories = {
+15:   J: {kind: 'bunny', ko: '답변을 부탁할 때', en: 'Asking for enough', pages: [
+16:     {refs: ['J2'], ko: {scene: '테스트 결과를 물을 때', title: '통과했는지만, 짧게.', observation: 'J는 테스트가 통과했는지만 알려 달라고 했어요.', interpretation: '이 장면에서는 짧은 확인을 원한 듯해요.', alternative: '이미 다른 내용을 알고 있었을 수도 있어요. 이유는 기록에 없어요.'},
+17:       en: {scene: 'Asking about a test', title: 'Just tell me if it passed.', observation: 'J asked only whether the test passed.', interpretation: 'A short confirmation seems to be what J wanted here.', alternative: 'J may already have known the other details. The reason was not recorded.'}},
+18:     {refs: ['J1', 'J3'], ko: {scene: '결정하거나 승인하기 전', title: '승인 전에는, 되돌릴 방법까지.', observation: '계획을 고를 때는 선택지와 포기할 점을 물었어요. 위험한 시스템 변경을 승인하기 전에는 실패할 경우와 복구 방법도 요청했고요.', interpretation: '이 두 장면에서는 선택하기 전에 결과와 대처 방법을 살피고 싶었던 듯해요.', alternative: '원하는 답의 길이보다, 작업마다 필요한 정보가 달랐을 수 있어요.'},
+19:       en: {scene: 'Before a decision or approval', title: 'Before approval, include a way back.', observation: 'For planning, J asked about alternatives and trade-offs. Before a high-risk migration, J asked about possible failures and rollback.', interpretation: 'In these two situations, J may have wanted to consider outcomes and responses before choosing.', alternative: 'Different tasks may have called for different information, rather than a different answer length.'}},
+20:     {refs: ['J5', 'J4'], ko: {scene: '본인이 남긴 설명도 읽어보면', title: '판단할 수 있게, 필요한 만큼.', observation: 'J는 판단할 만큼 설명받고 싶다고 직접 말했어요. 또 다른 기록에서는 AI가 빠뜨린 복구 계획을 다시 요청하며 길게 설명했어요.', interpretation: '이 기록에서 J가 원한 것은 늘 짧은 답이 아니라, 판단에 필요한 답이었을 수 있어요.', alternative: '긴 설명은 AI의 누락을 바로잡느라 필요했을 수 있어요. 평소에도 길게 말하는지는 알 수 없어요.'},
+21:       en: {scene: 'Reading J’s own explanation', title: 'Enough to decide, not just brief.', observation: 'J said they want enough to judge what to do. Another record describes a long explanation after the assistant omitted a requested rollback plan.', interpretation: 'In these records, J may want answers that support a decision, rather than answers that are always short.', alternative: 'The long explanation may have been needed to repair the omission. It does not tell us how much J normally writes.'}},
+22:   ]},
+23:   K: {kind: 'frog', ko: '아이디어를 만들 때', en: 'Exploring and building', pages: [
+24:     {refs: ['K1'], ko: {scene: '아이디어를 모을 때', title: '다섯 가지 아이디어, 재미있는 말투.', observation: 'K는 아이디어 다섯 가지를 요청하면서 장난기 있는 말투도 부탁했어요.', interpretation: '이 장면에서는 여러 안을 재미있게 만나고 싶었던 듯해요.', alternative: '이런 답을 부탁했다고 해서 K가 평소에도 장난스럽게 말한다는 뜻은 아니에요.'},
+25:       en: {scene: 'Gathering ideas', title: 'Five ideas, with a playful tone.', observation: 'K asked for five ideas and a playful tone.', interpretation: 'Here, K may have wanted an engaging way to explore several options.', alternative: 'Asking for a playful reply does not establish that K speaks playfully.'}},
+26:     {refs: ['K2'], ko: {scene: '고른 아이디어를 만들 때', title: '하나를 골랐으니, 이 범위 안에서.', observation: '아이디어 하나를 고른 K는 작동할 때까지 그 범위를 지켜 달라고 했어요.', interpretation: '아이디어를 낼 때와 만들 때, AI에게 바라는 역할이 달랐을 수 있어요.', alternative: 'K의 평소 방식이라기보다 이 작업의 제약 때문일 수도 있어요.'},
+27:       en: {scene: 'Building a chosen idea', title: 'One idea chosen. Keep to its scope.', observation: 'After choosing one idea, K asked the assistant to keep to that scope until it works.', interpretation: 'K may have wanted a different role from the assistant while building than while exploring.', alternative: 'This may reflect the constraints of this task, rather than K’s usual working style.'}},
+28:     {refs: ['K4', 'K3'], ko: {scene: '수정에 관한 두 기록을 보면', title: 'AI가 조건을 빠뜨려, 다시 부탁했어요.', observation: 'AI가 조건 하나를 빠뜨리자 K는 이미 말한 두 조건을 다시 요청했어요. 별개의 기록에서는 문제를 고친 뒤 감사를 전했어요.', interpretation: '반복한 부탁을 K의 성격으로 읽기 전에, AI가 무엇을 빠뜨렸는지 함께 볼 필요가 있어요.', alternative: '두 기록의 순서와 관계는 알 수 없어요. 같은 사건인지도 확인되지 않았어요.'},
+29:       en: {scene: 'Two records about repairs', title: 'The assistant omitted a condition. K asked again.', observation: 'After the assistant omitted a condition, K asked for both conditions again. In a separate record, K thanked it after a successful repair.', interpretation: 'Before reading the repeated request as a trait, it helps to look at what the assistant left out.', alternative: 'The records do not establish their order or connection. We do not know whether they describe the same incident.'}},
+30:   ]},
+31: };
+32: 
+33: export const words = {
+34:   ko: {
+35:     title: '대화 한 장 더 읽으면,', subtitle: '다르게 보이기도 해요.', intro: '아바타가 한 사람을 알아가는 과정을 만나보세요.',
+36:     demo: '가상 대화로 체험해요', back: '내 기록 살펴보기', people: '누구의 이야기를 읽을까요?', language: 'English',
+37:     reading: '읽은 장면', observation: '기록에서 확인했어요', interpretation: '이렇게 이해해 봤어요', alternative: '다르게 볼 수도 있어요',
+38:     evidence: '어떤 대화를 보고 알았나요?', quote: '영어 원문', summary: '가상 장면 요약', paraphrase: '상황을 포함해 한국어로 정리했어요', context: '기록에 주어진 상황과 한계',
+39:     next: '한 장 더 읽기', previous: '앞 장면', again: '처음부터 보기', correction: '이 해석을 고쳐볼래요',
+40:     editLabel: '이 가상 인물을 어떻게 이해하셨나요?', save: '내 해석으로 바꾸기', cancel: '취소',
+41:     corrected: '내가 고쳐 쓴 해석', original: '처음 제안한 해석 보기', reset: '내 수정 지우기', changed: '해석을 바꿨어요.',
+42:     note: '내가 적은 내용은 이 탭에만 남아요. 새로고침하면 사라집니다.',
+43:     order: '대화가 일어난 순서가 아니라, 아바타가 기록을 읽는 순서예요.',
+44:     method: '직접 만든 가상 기록과 편집한 해석입니다. 이 화면을 읽거나 수정할 때 AI를 호출하거나 서버에 내용을 보내지 않습니다.',
+45:     shift: '기록을 더 읽으며 이해를 넓혀요. 사람이 달라졌다는 뜻은 아니에요.',
+46:     compare: '읽은 장면을 나란히 봐요', before: '아바타가 처음 제안한 해석', after: '기록을 더 읽고 제안한 해석',
+47:     comparisonNote: '각 상황을 나란히 봅니다. 앞의 해석이 틀렸다거나 사람이 변했다는 뜻은 아니에요.', removed: '수정한 해석과 작성 중인 메모를 지웠어요.',
+48:     footer: '대화가 쌓이는 만큼, 조금씩 알아가요.', error: '한 글자 이상 적어주세요.',
+49:   },
+50:   en: {
+51:     title: 'One more conversation.', subtitle: 'A different understanding.', intro: 'See how an avatar gets to know someone, a little at a time.',
+52:     demo: 'Explore fictional conversations', back: 'Explore my records', people: 'Whose story will you read?', language: '한국어',
+53:     reading: 'Scenes read', observation: 'What the record says', interpretation: 'One possible reading', alternative: 'Another way to see it',
+54:     evidence: 'Show the conversations behind this', quote: 'Original English text', summary: 'Fictional scene summary', paraphrase: 'Korean summary including context', context: 'Supplied context and limits',
+55:     next: 'Read one more', previous: 'Previous scene', again: 'Read from the start', correction: 'I see it differently',
+56:     editLabel: 'How do you understand this fictional person?', save: 'Use my interpretation', cancel: 'Cancel',
+57:     corrected: 'My revised interpretation', original: 'Read the first interpretation', reset: 'Remove my edit', changed: 'Interpretation updated.',
+58:     note: 'Your edit stays in this tab. Reloading clears it.',
+59:     order: 'This is the order in which the avatar reads, not a timeline of the conversations.',
+60:     method: 'These are authored fictional records and edited interpretations. Reading or editing this page does not call AI or send its contents to a server.',
+61:     shift: 'More records can change our understanding. That does not mean the person changed.',
+62:     compare: 'See the scenes side by side', before: 'Avatar’s original interpretation', after: 'The interpretation with more records',
+63:     comparisonNote: 'These are readings of different situations. They do not establish that an earlier reading was wrong or that the person changed.', removed: 'Your edit and draft have been removed.',
+64:     footer: 'A little more conversation. A little more understanding.', error: 'Please write at least one character.',
+65:   },
+66: };
+67: 
+68: export const sourceContext = {
+69:   J1: {en: 'Project planning. The reason for the request is not supplied.', ko: '프로젝트를 계획하는 장면입니다. 요청한 이유는 주어지지 않았어요.'},
+70:   J2: {en: 'Routine test result. No emotion is supplied.', ko: '일상적인 테스트 결과를 묻는 장면입니다. 당시 감정은 주어지지 않았어요.'},
+71:   J3: {en: 'High-risk migration.', ko: '위험이 큰 시스템 이전 작업입니다.'},
+72:   J4: {en: 'A previous session; repairing an assistant omission. Exact user words and the relationship to J3 are not supplied.', ko: '이전 세션에서 AI의 누락을 바로잡은 기록입니다. 정확한 발언과 J3과의 관계는 주어지지 않았어요.'},
+73:   J5: {en: 'The fixture says: The next session; user self-description. The reference session is not explicitly identified.', ko: '자료에 다음 세션이라고 적혀 있지만 어느 세션의 다음인지는 명시하지 않았어요. 사용자가 자신에 관해 설명한 말입니다.'},
+74:   K1: {en: 'Brainstorming. Exact user words and the response are not supplied.', ko: '아이디어를 내는 장면입니다. 정확한 발언과 AI의 답은 주어지지 않았어요.'},
+75:   K2: {en: 'Implementation. The user selected one idea.', ko: '구현하는 장면입니다. 사용자는 아이디어 하나를 골랐어요.'},
+76:   K3: {en: 'After a successful repair. A connection to K4 is not supplied.', ko: '문제를 고친 뒤 남긴 말입니다. K4와의 관계는 주어지지 않았어요.'},
+77:   K4: {en: 'A failed retry; repairing an assistant omission. The assistant omitted one condition. The content of both conditions is not supplied.', ko: '다시 시도했다가 실패한 장면입니다. AI가 조건 하나를 빠뜨렸어요. 두 조건의 내용은 주어지지 않았어요.'},
+78: };
+
+FILE avatar/web/story-model.mjs
+1: import {stories, sources} from './story-content.mjs';
+2: 
+3: export function createJourney() { return {owner: 'J', step: 0, language: 'ko', corrections: {}}; }
+4: export function move(state, amount) {
+5:   return {...state, step: Math.min(2, Math.max(0, state.step + amount))};
+6: }
+7: export function choose(state, owner) {
+8:   if (!Object.hasOwn(stories, owner)) throw new Error('Unknown fictional person.');
+9:   return owner === state.owner ? state : {...state, owner, step: 0};
+10: }
+11: export function revise(state, text) {
+12:   return {...state, corrections: {...state.corrections, [`${state.owner}:${state.step}`]: text.trim().slice(0, 500)}};
+13: }
+14: export function current(state) {
+15:   const story = stories[state.owner];
+16:   const page = story.pages[state.step];
+17:   return {story, page, copy: page[state.language],
+18:     sources: page.refs.map(id => sources[id]),
+19:     readPages: story.pages.slice(0, state.step + 1).map((p, index) => ({copy: p[state.language], sources: p.refs.map(id => sources[id]), correction: state.corrections[`${state.owner}:${index}`] || ''})),
+20:     correction: state.corrections[`${state.owner}:${state.step}`] || ''};
+21: }
+
+FILE avatar/web/stories.mjs
+1: import {mascot} from './illustrations.mjs';
+2: import {escape} from './ai.mjs';
+3: import {stories, words, sourceContext} from './story-content.mjs';
+4: import {createJourney, move, choose, revise, current} from './story-model.mjs';
+5: 
+6: let state = createJourney();
+7: let editing = false;
+8: const drafts = {};
+9: const key = () => `${state.owner}:${state.step}`;
+10: const app = document.querySelector('#app');
+11: const status = document.querySelector('#status');
+12: 
+13: function sourceHtml(source, w) {
+14:   return '<div class="source"><span>' + source.id + ' / ' + (source.kind === 'quote' ? w.quote : w.summary)
+15:     + '</span><p lang="en">' + escape(source.en) + '</p><small>' + w.context + '</small><p>'
+16:     + escape(sourceContext[source.id][state.language]) + '</p>'
+17:     + (state.language === 'ko' ? '<small>' + w.paraphrase + '</small><p>' + escape(source.ko) + '</p>' : '') + '</div>';
+18: }
+19: 
+20: function render(focus) {
+21:   const w = words[state.language];
+22:   const {story, copy, sources, readPages, correction} = current(state);
+23:   document.documentElement.lang = state.language;
+24:   document.title = state.language === 'ko' ? 'Avatar — 대화 한 장 더 읽기' : 'Avatar — One more conversation';
+25:   app.innerHTML = '<header><a class="brand" href="/">avatar<span class="brand-dot" aria-hidden="true">a</span></a>'
+26:     + '<div class="header-actions"><a href="/">' + w.back + '</a><button class="language" data-action="language" lang="' + (state.language === 'ko' ? 'en' : 'ko') + '">' + w.language + '</button></div></header>'
+27:     + '<main><section class="intro"><p class="demo-label">' + w.demo + '</p><h1>' + w.title + '<br>' + w.subtitle + '</h1><p>' + w.intro + '</p></section>'
+28:     + '<div class="reading-room"><aside><fieldset><legend>' + w.people + '</legend><div class="people">'
+29:     + Object.keys(stories).map(owner => '<button data-owner="' + owner + '" aria-pressed="' + (owner === state.owner) + '"><span>' + owner + '</span>' + stories[owner][state.language] + '</button>').join('')
+30:     + '</div></fieldset><div class="friend">' + mascot(story.kind, state.language === 'ko' ? '대화를 읽는 작은 아바타' : 'A little avatar reading a conversation')
+31:     + '</div><p class="aside-note">' + w.shift + '</p></aside>'
+32:     + '<article class="letter" id="letter" tabindex="-1" aria-labelledby="story-title"><div class="letter-top"><span>' + state.owner + '</span><div class="dots" role="img" aria-label="' + w.reading + ' ' + (state.step + 1) + ' / 3">'
+33:     + [0, 1, 2].map(i => '<i class="' + (i <= state.step ? 'read' : '') + '"></i>').join('') + '</div></div>'
+34:     + '<p class="scene">' + copy.scene + '</p><h2 id="story-title">' + copy.title + '</h2>'
+35:     + '<section class="observation"><h3>' + w.observation + '</h3><p>' + copy.observation + '</p></section>'
+36:     + '<section class="interpretation"><h3>' + (correction ? w.corrected : w.interpretation) + '</h3><p class="meaning">' + escape(correction || copy.interpretation) + '</p>'
+37:     + (correction ? '<details><summary>' + w.original + '</summary><p>' + copy.interpretation + '</p></details><button class="text-button" data-action="reset">' + w.reset + '</button>' : '') + '</section>'
+38:     + '<p class="alternative"><b>' + w.alternative + '</b>' + copy.alternative + '</p>'
+39:     + (state.step === 2 ? '<details class="learning"><summary>' + w.compare + '</summary><p class="quiet">' + w.comparisonNote + '</p>'
+40:       + readPages.map(page => '<section><h3>' + escape(page.copy.scene) + '</h3><small>' + (page.correction ? w.corrected : w.before) + '</small><p>' + escape(page.correction || page.copy.interpretation) + '</p>'
+41:         + (page.correction ? '<details><summary>' + w.original + '</summary><p>' + escape(page.copy.interpretation) + '</p></details>' : '')
+42:         + '<details><summary>' + w.evidence + '</summary>' + page.sources.map(source => sourceHtml(source, w)).join('') + '</details></section>').join('') + '</details>' : '')
+43:     + '<details class="evidence"><summary>' + w.evidence + '</summary>'
+44:     + sources.map(source => sourceHtml(source, w)).join('') + '</details>'
+45:     + (editing ? '<form id="edit-form"><label for="reflection">' + w.editLabel + '</label><textarea id="reflection" maxlength="500" required rows="3">' + escape(drafts[key()] ?? correction) + '</textarea><p>' + w.note + '</p><div class="edit-buttons"><button class="primary" type="submit">' + w.save + '</button><button type="button" class="text-button" data-action="cancel">' + w.cancel + '</button></div></form>'
+46:       : '<button class="edit-link" data-action="edit">' + w.correction + '</button>')
+47:     + '<div class="page-controls"><button data-action="previous"' + (state.step === 0 ? ' disabled' : '') + '>' + w.previous + '</button><button class="primary" data-action="next">' + (state.step === 2 ? w.again : w.next) + '<span aria-hidden="true">↗</span></button></div>'
+48:     + '<p class="order-note">' + w.order + '</p></article></div>'
+49:     + '<p class="method">' + w.method + '</p></main><footer><span>avatar</span><p>' + w.footer + '</p></footer>';
+50:   if (focus) document.querySelector(focus)?.focus({preventScroll: true});
+51:   if (focus === '#letter') document.querySelector('#letter').scrollIntoView({block: 'start', behavior: 'instant'});
+52: }
+53: 
+54: app.addEventListener('click', event => {
+55:   const button = event.target.closest('button');
+56:   if (!button) return;
+57:   if (button.dataset.owner) {
+58:     if (button.dataset.owner === state.owner) return;
+59:     state = choose(state, button.dataset.owner); editing = Object.hasOwn(drafts, key());
+60:     render('[data-owner="' + state.owner + '"]'); return;
+61:   }
+62:   const action = button.dataset.action;
+63:   if (!action) return;
+64:   if (action === 'language') { state = {...state, language: state.language === 'ko' ? 'en' : 'ko'}; render('[data-action="language"]'); return; }
+65:   if (action === 'edit') { editing = true; render('#reflection'); return; }
+66:   if (action === 'cancel') { delete drafts[key()]; editing = false; render('[data-action="edit"]'); return; }
+67:   if (action === 'reset') { state = revise(state, ''); delete drafts[key()]; editing = false; render('[data-action="edit"]'); status.textContent = words[state.language].removed; return; }
+68:   state = action === 'previous' ? move(state, -1) : {...state, step: state.step === 2 ? 0 : state.step + 1};
+69:   editing = Object.hasOwn(drafts, key()); render('#letter');
+70: });
+71: 
+72: app.addEventListener('submit', event => {
+73:   if (event.target.id !== 'edit-form') return;
+74:   event.preventDefault();
+75:   const input = document.querySelector('#reflection');
+76:   if (!input.value.trim()) { input.setCustomValidity(words[state.language].error); input.reportValidity(); return; }
+77:   state = revise(state, input.value); delete drafts[key()]; editing = false; render('[data-action="edit"]');
+78:   status.textContent = words[state.language].changed;
+79: });
+80: app.addEventListener('input', event => { if (event.target.id === 'reflection') { event.target.setCustomValidity(''); drafts[key()] = event.target.value; } });
+81: render();
+
+FILE avatar/web/stories.html
+1: <!doctype html>
+2: <html lang="ko">
+3: <head>
+4:   <meta charset="utf-8">
+5:   <meta name="viewport" content="width=device-width, initial-scale=1">
+6:   <meta name="color-scheme" content="light">
+7:   <title>Avatar — 대화 한 장 더 읽기</title>
+8:   <link rel="stylesheet" href="/stories.css">
+9:   <script type="module" src="/stories.mjs"></script>
+10: </head>
+11: <body>
+12:   <a class="skip" href="#letter">본문으로 이동 / Skip to story</a>
+13:   <div id="app"></div>
+14:   <p id="status" class="sr-only" role="status" aria-live="polite"></p>
+15: </body>
+16: </html>
+
+FILE avatar/web/stories.css
+1: :root{font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;color:#332a4e;background:#f5f1ff;font-synthesis:none;line-height:1.7}
+2: *{box-sizing:border-box}body{margin:0}button,a,input,textarea{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer;color:inherit}a{color:inherit}button:disabled{opacity:.4;cursor:default}button:focus-visible,a:focus-visible,summary:focus-visible,textarea:focus-visible{outline:3px solid #7960b4;outline-offset:5px}header{max-width:1240px;margin:auto;padding:28px 42px;display:flex;justify-content:space-between;align-items:center;gap:24px}.brand{text-decoration:none;font-family:Georgia,serif;font-size:34px;letter-spacing:-2px;display:flex;align-items:center;gap:12px}.brand-dot{background:#332a4e;color:#fffef9;font-family:Georgia,serif;border-radius:50%;font-size:18px;width:28px;height:28px;text-align:center;letter-spacing:0;line-height:24px;transform:rotate(-14deg)}.header-actions{display:flex;gap:26px;align-items:center;font-size:14px}.header-actions a{text-decoration:none}.language{border:1px solid #9c91af;background:transparent;padding:5px 15px;border-radius:20px}
+3: main{max-width:1160px;margin:auto;padding:20px 42px 54px}.intro{padding:18px 0 42px 258px}.demo-label{display:inline-flex;font-size:13px;margin:0 0 18px;background:#e2d9f3;padding:4px 12px;border-radius:6px}.intro h1{font-size:clamp(30px,4vw,48px);font-weight:700;letter-spacing:-1.8px;line-height:1.3;margin:0 0 18px}.intro>p:last-child{color:#6f637c;margin:0;font-size:16px}.reading-room{display:grid;grid-template-columns:218px minmax(0,1fr);gap:40px;align-items:start}aside{padding-top:16px}fieldset{border:0;margin:0;padding:0}legend{font-size:13px;padding:0;margin:0 0 14px;color:#6f637c}.people{display:flex;flex-direction:column;gap:10px}.people button{border:0;background:transparent;border-radius:12px;text-align:left;padding:12px 10px;font-size:13px;display:flex;align-items:center;gap:10px}.people button[aria-pressed=true]{background:#e5ddf4}.people button span{font-family:Georgia,serif;font-size:20px;border-radius:50%;background:#fffef9;flex-shrink:0;width:32px;text-align:center}.friend{margin:34px -12px -10px;transform:rotate(-5deg)}.mascot{width:100%;height:auto}.aside-note{font-size:14px;line-height:1.8;max-width:190px;color:#6f637c;margin:20px auto}.letter{background:#fffef9;padding:38px 48px 26px;border-radius:4px 28px 4px 4px;box-shadow:7px 8px 0 #e6def0;min-width:0;position:relative}.letter:focus{outline:none}.letter-top{display:flex;justify-content:space-between;align-items:center}.letter-top>span{font-family:Georgia,serif;font-style:italic;font-size:24px;display:grid;place-items:center;background:#f6d8bd;width:43px;height:43px;border-radius:50%}.dots{display:flex;gap:9px}.dots i{width:8px;height:8px;border-radius:50%;border:1px solid #a99bb9}.dots .read{background:#7960b4;border-color:#7960b4}.scene{color:#70617e;font-size:13px;margin:26px 0 9px}.letter h2{font-size:29px;letter-spacing:-1px;line-height:1.45;font-weight:700;margin:0 0 26px;word-break:keep-all;overflow-wrap:anywhere}.letter h3{font-size:12px;font-weight:600;letter-spacing:0;color:#70617e;margin:0 0 8px}.observation>p{font-size:16px;margin:0;word-break:keep-all;overflow-wrap:anywhere}.interpretation{background:#e6f2e9;margin:24px -18px 20px;padding:20px 22px;border-radius:3px 16px 16px 16px}.meaning{font-size:19px;font-weight:600;line-height:1.7;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.interpretation details{margin-top:14px;font-size:13px}.interpretation details p{font-size:15px}.alternative{font-size:14px;color:#6f637c;margin:0 0 24px;word-break:keep-all;overflow-wrap:anywhere}.alternative b{display:block;color:#52405f;font-size:12px;font-weight:600;margin-bottom:4px}.evidence{border-top:1px dashed #cabdd4;border-bottom:1px dashed #cabdd4;padding:14px 0;font-size:13px}summary{cursor:pointer}.source{padding:16px 0 6px}.source+.source{border-top:1px solid #e9e1ec;margin-top:8px}.source span,.source small{color:#756780;font-size:11px}.source p{font-size:14px;margin:4px 0 12px;overflow-wrap:anywhere}.source p[lang=en]{font-family:Georgia,serif;font-size:16px}.edit-link{border:0;border-bottom:1px solid #b5a6c1;background:none;padding:0;margin:20px 0 6px;font-size:13px}.page-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:25px 0 12px}.page-controls>button:first-child{border:0;background:none;font-size:13px;padding:8px 0}.primary{border:0;background:#332a4e;color:#fffef9;border-radius:8px;font-weight:600;padding:12px 20px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:28px}.primary:hover{background:#514064}.order-note{font-size:11px;color:#766681;margin:9px 0 0}.method{font-size:12px;color:#756780;max-width:670px;margin:28px 0 0 258px}.text-button{background:none;border:0;padding:8px 0;text-decoration:underline;font-size:12px}form{padding-top:20px}form label{display:block;font-size:14px;margin-bottom:8px}textarea{font:inherit;background:white;color:#332a4e;border:1px solid #b4a4c4;border-radius:8px;width:100%;padding:12px;resize:vertical}form>p{font-size:12px;color:#756780;margin:6px 0 12px}.edit-buttons{display:flex;gap:22px;align-items:center}footer{max-width:1076px;margin:auto;padding:25px 0 35px;border-top:1px solid #ddd1ed;display:flex;align-items:center;justify-content:space-between;color:#756780;font-size:12px}footer>span{font-family:Georgia,serif;font-size:23px;color:#332a4e}.skip{position:absolute;top:-60px;left:16px;z-index:2;background:white;padding:10px}.skip:focus{top:8px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+4: @media(max-width:760px){header{padding:22px 22px}.brand{font-size:29px}.header-actions{gap:14px;font-size:12px}.brand-dot{display:none}main{padding:10px 22px 40px}.intro{padding:16px 0 20px}.intro h1{font-size:35px}.intro>p:last-child{font-size:14px}.reading-room{grid-template-columns:1fr;gap:22px}aside{padding:0;display:flex;align-items:center;gap:12px}fieldset{flex:1;min-width:0}legend{margin-bottom:8px}.people{flex-direction:row;gap:8px}.people button{flex:1;padding:9px 6px;font-size:11px;gap:6px}.people button span{width:25px;font-size:17px}.friend{width:85px;margin:0 -4px -20px;flex-shrink:0}.aside-note{display:none}.letter{padding:25px 25px 20px;box-shadow:5px 6px 0 #e6def0}.letter h2{font-size:24px}.observation>p{font-size:15px}.meaning{font-size:17px}.interpretation{margin-left:-10px;margin-right:-10px;padding:17px}.method{margin:24px 0 0;font-size:11px}.primary{padding:11px 14px;gap:18px}footer{margin:0 22px;padding:20px 0;gap:20px}footer p{text-align:right}.intro h1{letter-spacing:-1.4px}}
+5: .learning{margin:0 0 20px;font-size:13px}.learning h3{margin-top:18px}.learning p{margin:6px 0 14px}.learning small,.quiet{color:#756780}.learning p[lang=en]{font-family:Georgia,serif;font-size:15px}
+6: @media(prefers-reduced-motion:no-preference){.letter{animation:open-letter .24s ease-out}@keyframes open-letter{from{opacity:.7;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}}
+
+FILE avatar/scripts/avatar_web.py
+1: """Serve the local Avatar viewer. Personal records are read only when explicitly enabled."""
+2: from __future__ import annotations
+3: 
+4: import argparse
+5: import json
+6: import sqlite3
+7: import subprocess
+8: import threading
+9: from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+10: from pathlib import Path
+11: from typing import Optional
+12: from urllib.parse import urlsplit
+13: 
+14: from avatar_common import AvatarError
+15: from avatar_analysis import analyze_records
+16: from avatar_view import show
+17: 
+18: WEB = Path(__file__).resolve().parents[1] / 'web'
+19: ASSETS = {'/': ('index.html', 'text/html'), '/index.html': ('index.html', 'text/html'),
+20:           '/style.css': ('style.css', 'text/css'), '/app.mjs': ('app.mjs', 'text/javascript'),
+21:           '/analysis.mjs': ('analysis.mjs', 'text/javascript'),
+22:           '/ai.mjs': ('ai.mjs', 'text/javascript'),
+23:           '/content.mjs': ('content.mjs', 'text/javascript'),
+24:           '/illustrations.mjs': ('illustrations.mjs', 'text/javascript')}
+25: ASSETS.update({
+26:     '/stories': ('stories.html', 'text/html'),
+27:     '/stories.html': ('stories.html', 'text/html'),
+28:     '/stories.css': ('stories.css', 'text/css'),
+29:     '/stories.mjs': ('stories.mjs', 'text/javascript'),
+30:     '/story-content.mjs': ('story-content.mjs', 'text/javascript'),
+31:     '/story-model.mjs': ('story-model.mjs', 'text/javascript'),
+32: })
+33: 
+34: 
+35: def make_server(port: int, home: Optional[Path] = None, ai: bool = False) -> ThreadingHTTPServer:
+36:     analysis_lock = threading.Lock()
+37: 
+38:     class Handler(BaseHTTPRequestHandler):
+39:         def log_message(self, format: str, *args: object) -> None:
+40:             pass
+41: 
+42:         def send(self, status: int, body: bytes, content_type: str) -> None:
+43:             self.send_response(status)
+44:             self.send_header('Content-Type', content_type + '; charset=utf-8')
+45:             self.send_header('Content-Length', str(len(body)))
+46:             self.send_header('Cache-Control', 'no-store')
+47:             self.send_header('X-Content-Type-Options', 'nosniff')
+48:             self.send_header('Referrer-Policy', 'no-referrer')
+49:             self.send_header('Content-Security-Policy',
+50:                              "default-src 'self'; script-src 'self'; style-src 'self'; "
+51:                              "img-src 'self' data:; connect-src 'self'; "
+52:                              "frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+53:             self.end_headers()
+54:             self.wfile.write(body)
+55: 
+56:         def json(self, status: int, data: object) -> None:
+57:             self.send(status, json.dumps(data, ensure_ascii=False).encode('utf-8'),
+58:                       'application/json')
+59: 
+60:         def allowed(self) -> bool:
+61:             expected = '127.0.0.1:' + str(self.server.server_port)
+62:             host = self.headers.get('Host', '')
+63:             origin = self.headers.get('Origin')
+64:             return host == expected and (origin is None or origin == 'http://' + expected)
+65: 
+66:         def do_GET(self) -> None:
+67:             if not self.allowed():
+68:                 self.json(403, {'error': 'Only this local viewer can read these records.'})
+69:                 return
+70:             path = urlsplit(self.path).path
+71:             if path == '/api/config':
+72:                 self.json(200, {'ai': ai, 'local_records': home is not None})
+73:                 return
+74:             if path == '/api/records':
+75:                 if home is None:
+76:                     self.json(403, {'error': 'Start the viewer with --home to enable local records.'})
+77:                     return
+78:                 try:
+79:                     self.json(200, show(home.expanduser() / 'avatar.db'))
+80:                 except (OSError, sqlite3.Error, AvatarError, ValueError):
+81:                     self.json(422, {'error': 'Cannot read this Avatar store. Check it with avatar show.'})
+82:                 return
+83:             asset = ASSETS.get(path)
+84:             if asset is None:
+85:                 self.json(404, {'error': 'Not found.'})
+86:                 return
+87:             try:
+88:                 self.send(200, (WEB / asset[0]).read_bytes(), asset[1])
+89:             except OSError:
+90:                 self.json(404, {'error': 'Viewer asset not found.'})
+91: 
+92:         def do_POST(self) -> None:
+93:             if not self.allowed():
+94:                 self.json(403, {'error': 'Only this local viewer can request analysis.'})
+95:                 return
+96:             if self.command != 'POST' or self.path != '/api/analyze':
+97:                 self.json(405, {'error': 'This viewer does not write Avatar records.'})
+98:                 return
+99:             if not ai:
+100:                 self.json(403, {'error': 'Start with --ai claude to enable analysis.'})
+101:                 return
+102:             if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+103:                 self.json(415, {'error': 'Expected application/json.'})
+104:                 return
+105:             try:
+106:                 length = int(self.headers.get('Content-Length', '0'))
+107:                 if not 0 < length <= 1_000_000:
+108:                     raise ValueError('Invalid body length.')
+109:             except ValueError:
+110:                 self.json(413, {'error': 'The request must be at most 1 MB.'})
+111:                 return
+112:             if not analysis_lock.acquire(blocking=False):
+113:                 self.json(429, {'error': 'An analysis is already running.'})
+114:                 return
+115:             try:
+116:                 self.connection.settimeout(15)
+117:                 payload = json.loads(self.rfile.read(length).decode('utf-8'))
+118:                 self.json(200, analyze_records(payload))
+119:             except (ValueError, UnicodeError):
+120:                 self.json(422, {'error': '분석할 기록이나 반환된 근거를 확인하지 못했어요. 기록을 줄여 다시 시도해주세요.'})
+121:             except (RuntimeError, OSError, subprocess.TimeoutExpired):
+122:                 self.json(503, {'error': 'Claude 분석을 마치지 못했어요. CLI 로그인·사용량을 확인하고 다시 시도해주세요.'})
+123:             finally:
+124:                 analysis_lock.release()
+125: 
+126:         do_PUT = do_POST
+127:         do_DELETE = do_POST
+128:         do_PATCH = do_POST
+129: 
+130:     return ThreadingHTTPServer(('127.0.0.1', port), Handler)
+131: 
+132: 
+133: def main() -> None:
+134:     parser = argparse.ArgumentParser(description=__doc__)
+135:     parser.add_argument('--port', type=int, default=4173)
+136:     parser.add_argument('--home', type=Path, help='Explicit Avatar home to expose read-only.')
+137:     parser.add_argument('--ai', choices=['claude'], help='Enable opt-in analysis through Claude CLI.')
+138:     args = parser.parse_args()
+139:     server = make_server(args.port, args.home, args.ai == 'claude')
+140:     print('Avatar: http://127.0.0.1:' + str(server.server_port), flush=True)
+141:     print('Personal records: ' + ('enabled read-only' if args.home else 'not connected'), flush=True)
+142:     try:
+143:         server.serve_forever()
+144:     except KeyboardInterrupt:
+145:         pass
+146:     finally:
+147:         server.server_close()
+148: 
+149: 
+150: if __name__ == '__main__':
+151:     main()
+
+FILE avatar/web/index.html
+1: <!doctype html>
+2: <html lang="ko">
+3: <head>
+4:   <meta charset="utf-8">
+5:   <meta name="viewport" content="width=device-width, initial-scale=1">
+6:   <meta name="color-scheme" content="light">
+7:   <title>Avatar — 기록 속의 나를 만나요</title>
+8:   <link rel="stylesheet" href="/style.css">
+9:   <script type="module" src="/app.mjs"></script>
+10: </head>
+11: <body>
+12:   <a class="skip" href="#main">본문으로 이동</a>
+13:   <header class="site-header">
+14:     <a class="wordmark" href="#discover" aria-label="Avatar 처음으로"><span class="brand-dot" aria-hidden="true">a</span>avatar<span class="beta">첫 모습</span></a>
+15:     <nav aria-label="주 메뉴">
+16:       <a class="nav" href="/stories" target="_blank" rel="noopener" aria-label="대화로 알아가기 (새 탭)">대화로 알아가기</a>
+17:       <button class="nav active" data-view="discover" aria-current="page">나의 발견</button>
+18:       <button class="nav" data-view="records">나의 기록</button>
+19:       <button class="nav" data-view="personas">닮고 싶은 방식</button>
+20:     </nav>
+21:     <button class="button small outline" id="import-open">기록 가져오기</button>
+22:   </header>
+23:   <div class="source-bar"><span class="source-dot"></span><span id="source-label">예시 기록으로 둘러보고 있어요.</span><button id="source-switch">내 기록으로 바꾸기</button></div>
+24:   <main id="main" tabindex="-1"></main>
+25:   <footer><span class="footer-brand">avatar</span><span>선택이 쌓이면, 나의 이야기가 돼요.</span><button id="clear">불러온 기록 지우기</button></footer>
+26:   <dialog id="modal" aria-labelledby="modal-title"><div id="modal-body"></div><button class="close" id="modal-close" aria-label="닫기">×</button></dialog>
+27:   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+28:   <input id="file" type="file" accept=".json,application/json" hidden>
+29: </body>
+30: </html>
+
+FILE avatar/web/ai.mjs
+1: export const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+2:   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+3: 
+4: export function analysisPayload(data, ids) {
+5:   const selected = new Set(ids);
+6:   const choices = data.choices.filter(c => selected.has(c.id)).map(c => ({
+7:     id: c.id, question: c.question, chosen: c.chosen, reason_quote: c.reason_quote,
+8:     context: {project_key: c.context.project_key, conditions: c.context.conditions || []},
+9:     source_refs: c.source_refs,
+10:   }));
+11:   if (!choices.length || choices.length > 60 || choices.length !== selected.size)
+12:     throw new Error('분석할 기록을 1개에서 60개 사이로 골라주세요.');
+13:   const refs = new Set(choices.flatMap(c => c.source_refs));
+14:   const criteria = data.criteria.flatMap(c => c.versions.filter(v => refs.has(v.ref)).map(v => ({
+15:     ref: v.ref, statement: v.statement, confirmation: v.confirmation,
+16:     current: v.version === c.current_version, revoked: c.revoked,
+17:     applies_when: v.applies_when || [], exceptions: v.exceptions || [],
+18:   })));
+19:   const payload = {choices, criteria};
+20:   if (JSON.stringify(payload).length > 55000 || criteria.length > 100)
+21:     throw new Error('분석할 내용이 너무 길어요. 기록을 더 적게 골라주세요.');
+22:   return payload;
+23: }
+24: 
+25: export function aiSection(analysis, busy, count) {
+26:   return '<section class="ai-section"><div class="section-heading"><div><span class="small-label">나를 한 번 더 들여다봐요</span>'
+27:     + '<h2>' + (analysis ? escape(analysis.headline) : '선택 사이에는 어떤 이야기가 있을까요?') + '</h2></div></div>'
+28:     + (analysis ? '<p class="ai-summary">' + escape(analysis.summary) + '</p><div class="ai-insights">'
+29:       + analysis.insights.map((item, i) => '<article class="ai-insight"><span class="pill">AI가 읽어본 이야기</span><h3>'
+30:         + escape(item.title) + '</h3><p>' + escape(item.interpretation) + '</p><details><summary>다르게 볼 수도 있어요</summary><p>'
+31:         + escape(item.alternative) + '</p></details><button class="text-button" data-action="ai-evidence" data-index="'
+32:         + i + '">근거가 된 ' + item.evidence_ids.length + '개의 선택 보기 ↗</button></article>').join('')
+33:       + '</div><div class="reflection-question"><b>나에게 남기는 질문</b><p>' + escape(analysis.next_question) + '</p></div>'
+34:       + '<p class="quiet">' + analysis.limitations.map(escape).join(' ') + '</p>'
+35:       + '<button class="text-button" data-action="ai-note">해석에 내 생각 더하기</button>'
+36:       : '<p>고른 기록을 Claude가 읽고, 반복된 선택과 그때의 사정을 짚어드려요.<br>해석마다 어떤 기록을 읽었는지 함께 보여드려요.</p>')
+37:     + '<button class="button ink" data-action="ai-select" ' + (busy || !count ? 'disabled' : '') + '>'
+38:     + (busy ? 'Claude가 기록을 읽고 있어요…' : analysis ? '다른 기록으로 다시 돌아보기' : 'AI와 나의 선택 돌아보기')
+39:     + '</button><p class="quiet">' + (analysis ? escape(analysis.analyzed_at) + ' · ' + analysis.selected_ids.length + '개의 기록을 분석했어요. ' : '')
+40:     + '분석할 기록을 직접 고릅니다. AI의 해석은 저장된 기준과 구분해요.</p></section>';
+41: }
+42: 
+43: export function selectionHtml(data, mode, enabled) {
+44:   if (!enabled) return '<p>이 뷰어에서는 Claude 분석을 아직 켜지 않았어요.</p>'
+45:     + '<p>Claude CLI에 로그인한 컴퓨터에서 아래 명령으로 실행하면 사용할 수 있어요.</p>'
+46:     + '<pre>python3 avatar/scripts/avatar_web.py --ai claude</pre>'
+47:     + '<p class="quiet">기본 요약, 리포트와 규칙 내려받기는 계속 사용할 수 있어요.</p>';
+48:   return '<p>' + (mode === 'demo' ? '지금은 설명용 예시 기록입니다.' : '직접 가져온 기록입니다.')
+49:     + ' Claude가 읽을 기록을 골라주세요. 최대 60개까지 함께 볼 수 있어요.</p>'
+50:     + '<button class="text-button" data-action="ai-pick">앞의 30개까지 한 번에 고르기</button>'
+51:     + '<div class="selection-list">' + data.choices.map(c => '<label class="check-label"><input type="checkbox" name="ai-choice" value="'
+52:       + escape(c.id) + '"><span><b>' + escape(c.question) + '</b><small>'
+53:       + escape(c.context.project_key) + ' · ' + escape(c.chosen) + '</small></span></label>').join('') + '</div>'
+54:     + '<details open><summary>Claude에 보낼 내용 전체 보기</summary><pre id="ai-payload" class="rules-preview"></pre></details>'
+55:     + '<p>선택한 질문·선택·이유·상황과 참조한 기준을 Claude로 보냅니다. 현재 로그인한 Claude 계정의 사용량이 소모됩니다.</p>'
+56:     + '<label class="check-label"><input type="checkbox" id="ai-consent">위 내용을 확인했고, 고른 기록을 보내 분석하겠습니다.</label>'
+57:     + '<button class="button ink" id="ai-start" data-action="ai-start" disabled>고른 기록으로 분석하기</button>'
+58:     + '<p class="quiet">원본은 바뀌지 않아요. 결과는 이 탭에만 남으므로 간직하려면 리포트를 내려받으세요.</p>';
+59: }
+60: 
+61: export function aiMarkdown(analysis) {
+62:   if (!analysis) return '';
+63:   const line = text => String(text).replace(/[\r\n]+/g, ' ');
+64:   const quote = text => String(text).split(/\r\n|\r|\n/).map(part => '> ' + part).join('\n');
+65:   return '\n\n## AI와 돌아본 선택\n\n### ' + line(analysis.headline) + '\n\n' + quote(analysis.summary)
+66:     + '\n\n분석 시각: ' + analysis.analyzed_at + '\n분석한 기록: ' + analysis.selected_ids.join(', ')
+67:     + '\n\n' + analysis.insights.map(item => '### ' + line(item.title) + '\n\n' + quote(item.interpretation)
+68:       + '\n\n다르게 볼 가능성:\n' + quote(item.alternative) + '\n근거: ' + item.evidence_ids.map(line).join(', ')).join('\n\n')
+69:     + '\n\n나에게 남기는 질문:\n' + quote(analysis.next_question) + '\n\n한계:\n' + quote(analysis.limitations.join('\n'))
+70:     + '\n\nAI의 해석이며 사용자가 확인한 개인 기준이 아닙니다.\n';
+71: }
+
+FILE avatar/tests/stories.test.mjs
+1: import test from 'node:test';
+2: import assert from 'node:assert/strict';
+3: import {createJourney, move, choose, revise, current} from '../web/story-model.mjs';
+4: 
+5: test('reading order reveals sources without merging fictional owners', () => {
+6:   let state = createJourney();
+7:   assert.deepEqual(current(state).page.refs, ['J2']);
+8:   state = move(move(state, 1), 1);
+9:   assert.equal(state.step, 2);
+10:   assert.equal(choose(state, 'J').step, 2);
+11:   state = choose(state, 'K');
+12:   assert.equal(state.step, 0);
+13:   assert.deepEqual(current(state).page.refs, ['K1']);
+14:   assert.ok(current(move(move(state, 1), 1)).sources.every(s => s.id.startsWith('K')));
+15: });
+16: 
+17: test('corrections stay with their person and reading step and can be removed', () => {
+18:   let state = revise(createJourney(), 'A different explanation');
+19:   assert.equal(current(state).correction, 'A different explanation');
+20:   assert.equal(current(move(state, 1)).correction, '');
+21:   assert.equal(current(choose(state, 'K')).correction, '');
+22:   state = choose(choose(state, 'K'), 'J');
+23:   assert.equal(current(state).correction, 'A different explanation');
+24:   assert.equal(current(revise(state, '')).correction, '');
+25: });
+26: 
+27: test('language changes preserve source identity and corrections are text', () => {
+28:   const state = revise(createJourney(), '<img src=x onerror=alert(1)>');
+29:   assert.deepEqual(current(state).page.refs, current({...state, language: 'en'}).page.refs);
+30:   assert.equal(current(state).correction, '<img src=x onerror=alert(1)>');
+31:   assert.throws(() => choose(state, 'unknown'));
+32:   assert.equal(move(state, -1).step, 0);
+33:   assert.equal(move(state, 99).step, 2);
+34: });
+35: 
+36: test('the scene comparison includes each correction under its own source set', () => {
+37:   let state = revise(createJourney(), 'My first-scene reading');
+38:   state = move(move(state, 1), 1);
+39:   assert.equal(current(state).readPages[0].correction, 'My first-scene reading');
+40:   assert.equal(current(state).readPages[1].correction, '');
+41:   assert.deepEqual(current(state).readPages[0].sources.map(s => s.id), ['J2']);
+42: });
+
+FILE avatar/tests/test_avatar_web.py
+1: from __future__ import annotations
+2: 
+3: import json
+4: import sys
+5: import tempfile
+6: import threading
+7: import unittest
+8: from pathlib import Path
+9: from urllib.error import HTTPError
+10: from urllib.request import Request, urlopen
+11: from unittest.mock import patch
+12: 
+13: sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+14: from avatar_web import make_server
+15: 
+16: 
+17: class AvatarWebTests(unittest.TestCase):
+18:     def setUp(self) -> None:
+19:         self.temp = tempfile.TemporaryDirectory()
+20:         self.home = Path(self.temp.name) / 'absent'
+21:         self.server = make_server(0, self.home)
+22:         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+23:         self.thread.start()
+24:         self.base = 'http://127.0.0.1:' + str(self.server.server_port)
+25: 
+26:     def tearDown(self) -> None:
+27:         self.server.shutdown()
+28:         self.server.server_close()
+29:         self.thread.join()
+30:         self.temp.cleanup()
+31: 
+32:     def test_records_are_read_only_and_do_not_create_an_absent_store(self) -> None:
+33:         with urlopen(self.base + '/api/records') as response:
+34:             self.assertEqual(json.load(response)['choices'], [])
+35:             self.assertEqual(response.headers['Cache-Control'], 'no-store')
+36:         self.assertFalse(self.home.exists())
+37: 
+38:     def test_static_root_and_security_headers(self) -> None:
+39:         with urlopen(self.base + '/') as response:
+40:             self.assertIn('Avatar', response.read().decode())
+41:             self.assertIn("connect-src 'self'", response.headers['Content-Security-Policy'])
+42: 
+43:     def test_story_preview_and_modules_are_available_without_reading_records(self) -> None:
+44:         for path in ('/stories', '/stories.css', '/stories.mjs', '/story-content.mjs',
+45:                      '/story-model.mjs'):
+46:             with urlopen(self.base + path) as response:
+47:                 self.assertEqual(response.status, 200)
+48:                 self.assertGreater(len(response.read()), 50)
+49:         self.assertFalse(self.home.exists())
+50: 
+51:     def test_foreign_origin_and_host_are_rejected(self) -> None:
+52:         for headers in ({'Origin': 'https://elsewhere.example'}, {'Host': 'elsewhere.example'}):
+53:             with self.assertRaises(HTTPError) as caught:
+54:                 urlopen(Request(self.base + '/api/records', headers=headers))
+55:             self.assertEqual(caught.exception.code, 403)
+56: 
+57:     def test_no_arbitrary_files_or_writes(self) -> None:
+58:         for path in ('/../scripts/avatar_store.py', '/%2e%2e/scripts/avatar.py', '/api/missing'):
+59:             with self.assertRaises(HTTPError) as caught:
+60:                 urlopen(self.base + path)
+61:             self.assertEqual(caught.exception.code, 404)
+62:         with self.assertRaises(HTTPError) as caught:
+63:             urlopen(Request(self.base + '/api/records', data=b'{}'))
+64:         self.assertEqual(caught.exception.code, 405)
+65: 
+66:     def test_configuration_matches_launch_mode(self) -> None:
+67:         with urlopen(self.base + '/api/config') as response:
+68:             self.assertFalse(json.load(response)['ai'])
+69:         with self.assertRaises(HTTPError) as caught:
+70:             urlopen(Request(self.base + '/api/analyze', data=b'{}',
+71:                             headers={'Content-Type': 'application/json'}))
+72:         self.assertEqual(caught.exception.code, 403)
+73: 
+74: 
+75: class AvatarAnalysisEndpointTests(AvatarWebTests):
+76:     def setUp(self) -> None:
+77:         self.temp = tempfile.TemporaryDirectory()
+78:         self.home = Path(self.temp.name) / 'absent'
+79:         self.server = make_server(0, self.home, ai=True)
+80:         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+81:         self.thread.start()
+82:         self.base = 'http://127.0.0.1:' + str(self.server.server_port)
+83: 
+84:     def test_configuration_matches_launch_mode(self) -> None:
+85:         with urlopen(self.base + '/api/config') as response:
+86:             self.assertTrue(json.load(response)['ai'])
+87: 
+88:     @patch('avatar_web.analyze_records', return_value={'headline': 'A result'})
+89:     def test_only_valid_same_origin_json_reaches_the_model(self, analyze) -> None:
+90:         for headers, method, expected in [
+91:                 ({'Origin': 'https://other.example', 'Content-Type': 'application/json'}, 'POST', 403),
+92:                 ({'Host': 'other.example', 'Content-Type': 'application/json'}, 'POST', 403),
+93:                 ({'Content-Type': 'text/plain'}, 'POST', 415),
+94:                 ({'Content-Type': 'application/json'}, 'PUT', 405),
+95:                 ({'Content-Type': 'application/json', 'Content-Length': '1000001'}, 'POST', 413)]:
+96:             with self.assertRaises(HTTPError) as caught:
+97:                 urlopen(Request(self.base + '/api/analyze', data=b'{}', headers=headers, method=method))
+98:             self.assertEqual(caught.exception.code, expected)
+99:         analyze.assert_not_called()
+100:         with urlopen(Request(self.base + '/api/analyze', data=b'{"choices":[]}',
+101:                              headers={'Content-Type': 'application/json', 'Origin': self.base})) as response:
+102:             self.assertEqual(json.load(response)['headline'], 'A result')
+103:         analyze.assert_called_once_with({'choices': []})
+104:         self.assertFalse(self.home.exists())
+105: 
+106:     @patch('avatar_web.analyze_records', side_effect=[ValueError('bad evidence'), {'headline': 'retry'}])
+107:     def test_bad_analysis_fails_and_releases_the_lock(self, analyze) -> None:
+108:         request = Request(self.base + '/api/analyze', data=b'{}', headers={'Content-Type': 'application/json'})
+109:         with self.assertRaises(HTTPError) as caught:
+110:             urlopen(request)
+111:         self.assertEqual(caught.exception.code, 422)
+112:         with urlopen(request) as response:
+113:             self.assertEqual(json.load(response)['headline'], 'retry')
+114: 
+115: 
+116: if __name__ == '__main__':
+117:     unittest.main()
+
+FILE avatar/README.md
+1: # Avatar
+2: 
+3: Avatar is a local CLI and host skill for reviewing explicitly recorded choices and
+4: user-confirmed personal criteria. It keeps quoted reasons, provenance, versions, revocations, and
+5: read-only Distill history projections in SQLite.
+6: 
+7: Avatar does not collect conversations automatically, infer personality, authenticate speakers, or
+8: promote project exceptions into personal criteria. It works without Stage or Distill.
+9: 
+10: ## Requirements
+11: 
+12: - Python 3.9 or newer
+13: - No third-party packages
+14: 
+15: The default database is `~/.avatar/avatar.db`. Override it with `--home <directory>` or the
+16: `AVATAR_HOME` environment variable. The database stays outside the plugin installation cache.
+17: 
+18: ## Commands
+19: 
+20: Run commands from this repository with `python3 avatar/scripts/avatar.py`. From an installed host
+21: plugin, resolve `scripts/avatar.py` from the plugin root.
+22: 
+23: ```text
+24: avatar choice add --idempotency-key <key> --payload-file <json>
+25: avatar criterion propose --idempotency-key <key> --payload-file <json>
+26: avatar criterion confirm <PC-id> --version <N> --idempotency-key <key> --payload-file <json>
+27: avatar criterion revise <PC-id> --idempotency-key <key> --payload-file <json>
+28: avatar criterion revoke <PC-id> --idempotency-key <key> --payload-file <json>
+29: avatar source attach --idempotency-key <key> --file <distill-history.json>
+30: avatar show [--choice <CH-id> | --criterion <PC-id>] [--json]
+31: avatar export
+32: avatar check --refs <avatar-ref,...>
+33: ```
+34: 
+35: All mutating commands require an idempotency key. Replaying the same request returns the original
+36: result with `replayed: true`. Reusing the key for different content returns
+37: `E_IDEMPOTENCY_CONFLICT` and writes nothing.
+38: 
+39: Confirmation creates a new immutable version and returns its ref. For example, confirming
+40: proposal `@1` returns confirmed version `@2`. Use the returned ref. Revision creates a new
+41: unconfirmed proposal; it does not reuse the earlier user's confirmation as its source.
+42: 
+43: ## Data boundaries
+44: 
+45: - `CH-` records belong to Avatar and describe one explicit choice.
+46: - `PC-` records belong to Avatar and describe versioned personal criteria.
+47: - Distill `CR-` history is stored as a read-only projection. `show` labels it historical and does
+48:   not claim that it is current.
+49: - `export` emits `criteria-snapshot/1` with `scope: personal`. It includes only the current
+50:   `user_confirmed` versions.
+51: - `check` returns `eligible_current`, `proposed`, `superseded`, `revoked`, `scope_mismatch`, or
+52:   `unknown`. Consumers must apply only `eligible_current` refs.
+53: 
+54: ## Local web preview
+55: 
+56: Run `python3 avatar/scripts/avatar_web.py` from the repository root, then open
+57: `http://127.0.0.1:4173`. The first screen uses clearly marked fictional records.
+58: Import a file created with `python3 avatar/scripts/avatar.py show --json > avatar-records.json`.
+59: Files are processed in the browser tab. Import alone does not upload them. The preview does not persist imported
+60: records or reflection notes; download the report before closing or refreshing the tab.
+61: 
+62: To explicitly connect a local store, start the viewer with `--home <avatar-directory>` and click
+63: the local-record button. The server reads that store only after the request. It never writes records.
+64: Without `--home`, local-store access is disabled, including the default `~/.avatar` store.
+65: 
+66: The preview summarizes linked criteria, differing choices, and wording revisions deterministically.
+67: It does not infer fixed personality traits or validate psychological constructs. Imported
+68: criteria reflect the file's capture time; use the CLI `check` before relying on them for a decision.
+69: Limits: 8 MiB per imported file and 2,000 choices or criteria. External history projections are not
+70: treated as current criteria. Reports include private source text, so review them before sharing.
+71: 
+72: To enable optional AI reflection, install and sign in to Claude Code CLI, then start with
+73: `python3 avatar/scripts/avatar_web.py --ai claude`. Select 1–60 records in the viewer, inspect the
+74: exact payload, and confirm before sending. Questions, choices, quoted reasons, project names,
+75: conditions, and referenced criterion versions go to Claude using the signed-in account's usage.
+76: Origin paths and unrelated record metadata are excluded. Imported criteria are marked with their
+77: confirmation, current-version, and revocation status; they are not silently adopted.
+78: 
+79: The CLI runs Sonnet without tools, skills, MCP servers, or saved sessions. Each interpretation cites
+80: supplied choice IDs and includes an alternative explanation. Unknown evidence IDs fail validation.
+81: This checks references, not whether an interpretation is correct. Users can add corrections to the
+82: downloaded report; these notes do not update the underlying criteria. No analysis runs on page load.
+83: AI requests are limited to one at a time and a 90-second timeout. The browser accepts up to 55,000
+84: JavaScript string units in serialized input; the server separately limits its JSON representation
+85: to 60,000 characters. Individual input text fields are limited to 20,000 characters.
+86: 
+87: Working-style downloads are user-selected experiments. Public articles are attributed and adapted;
+88: they are not the authors' own AI configurations or endorsements. Downloads do not install themselves
+89: or overwrite project instructions. Attach the file to the intended AI conversation and state its scope.
+90: 
+91: This localhost preview has no accounts, payments, or public deployment. Do not expose this stdlib
+92: development server through a public proxy. The Korean UI is a first product preview.
+93: 
+94: ### Fictional conversation preview
+95: 
+96: Open `http://127.0.0.1:4173/stories` to read two fictional people in Korean or English.
+97: The records and interpretations are edited examples, not a live conversation-analysis feature.
+98: Read three scenes, inspect the source text and context, compare interpretations across scenes,
+99: and edit an interpretation. Reading order does not establish when the conversations occurred.
+100: Edits and unfinished drafts stay in memory, separately for each person and scene. Reloading clears them. The page has
+101: no AI calls, uploads, analytics, or ad scripts. Its entry link opens a new tab to preserve records
+102: already imported in the main viewer. The rest of the viewer remains in Korean.
+103: 
+104: ## Development
+105: 
+106: Run the package suite from the repository root:
+107: 
+108: ```bash
+109: python3 -m unittest discover -s avatar/tests -q
+110: python3 -m unittest tests.test_plugin_contracts -q
+111: node --test avatar/tests/*.test.mjs
+112: ```

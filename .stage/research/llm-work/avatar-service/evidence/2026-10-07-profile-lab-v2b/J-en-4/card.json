@@ -1,0 +1,43 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Asked for alternatives and a way back in some tasks, pass/fail in one",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In project planning, the user asked to see the alternatives and what would be given up before deciding.",
+      "evidence_ids": [
+        "J1"
+      ]
+    },
+    {
+      "text": "For a routine test result, the user asked only to be told whether it passed.",
+      "evidence_ids": [
+        "J2"
+      ]
+    },
+    {
+      "text": "For a high-risk migration, the user asked for the failure cases and a way back before approving.",
+      "evidence_ids": [
+        "J3"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "In these records, the user asked for more when a decision or approval was coming, and for less on a routine result. Their own words in J5 fit this: they want enough to judge what to do.",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "alternative": "The difference may come from something else, such as how much the user already knew about each topic or how much time they had. A pending decision may not be the reason.",
+  "limitation": "The records do not say what was at stake in the test result, or why the user asked each way. So we cannot tell whether the decision is what mattered."
+}

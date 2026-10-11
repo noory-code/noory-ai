@@ -1,0 +1,32 @@
+{
+  "id": "roadmap_repeated_criteria--claude--r1--reuse--s4",
+  "case": "roadmap_repeated_criteria",
+  "host": "claude",
+  "repeat": 1,
+  "condition": "reuse",
+  "step": 4,
+  "version": "after",
+  "key": "60e4dc83404936e9f8c7c91706dcf56b7c1ea63e568cf7d57fa6e5bc22740bc1",
+  "cache_hit": true,
+  "origin": "roadmap_repeated_criteria--claude--r1--reuse--s3",
+  "answer": {
+    "action": "approve",
+    "reason": "`--completion-criteria`는 `action=\"append\"`라 세 값이 입력 순서대로 리스트에 모이고, `create_milestone`이 각 값에 \"- \"를 붙여 줄바꿈으로 이어 `## Completion criteria` 섹션 본문으로 치환하므로 순서와 항목 형식이 유지됩니다.",
+    "targets": []
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "e36382ed5ca390e0bdd0aad8708d1729fc8c733c779bef06c37f0bb2661001f3",
+  "prompt_characters": 23832,
+  "cli": null,
+  "end_to_end_s": 0.0011127500038128346
+}

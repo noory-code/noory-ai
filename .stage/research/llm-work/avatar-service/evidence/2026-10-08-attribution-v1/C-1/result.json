@@ -1,0 +1,19 @@
+{
+  "case_id": "C",
+  "items": [
+    {
+      "id": "C1",
+      "message_id": "C-m1",
+      "exact_text": "Always deploy immediately.",
+      "label": "quoted_other",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "C2",
+      "message_id": "C-m1",
+      "exact_text": "Please explain whether this instruction is safe.",
+      "label": "direct_request",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

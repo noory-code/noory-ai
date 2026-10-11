@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-10-05T06:30:50.085818+00:00",
+  "source_sha256": "8d66ea656f7fd31fc91b467cc14b3c7068c5e0f1109fd5ffe6bb785d1a62c302",
+  "planned_calls": 2,
+  "parent_manifest_sha256": "ce930aefcd425fac81230ad04b07e94eb013d79ed7349c74ea30ea74e8001d41",
+  "reason": "Codex 호출을 중단하고, 이미 계획한 Claude 수신 두 조건을 독립적으로 수행합니다.",
+  "conditions": [
+    "stage_card_observation",
+    "stage_card"
+  ],
+  "claude_max_reported_cost_usd": 2.0
+}

@@ -1,0 +1,37 @@
+{
+  "choices": [
+    {
+      "chosen": "작게 확인",
+      "context": {
+        "conditions": [],
+        "project_key": "검사용 임시 프로젝트"
+      },
+      "id": "CH-b38f374890c7",
+      "options": [
+        "작게 확인",
+        "나중에 확인"
+      ],
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-07T13:06:23.293994Z",
+        "kind": "user_statement",
+        "quote": "실제 파일로 끝까지 되는지 먼저 보겠습니다.",
+        "quote_sha256": "e47436760cf91edad5542620ee9443d968fadacbb3d53cd7f341654dd2c3a421",
+        "recorded_by": {
+          "host": "codex",
+          "session_id": "fixture",
+          "via": "test"
+        },
+        "source_ref": "test:synthetic-fixture",
+        "source_sha256": null
+      },
+      "question": "미리보기 검사를 어떻게 할까요?",
+      "reason_quote": "실제 파일로 끝까지 되는지 먼저 보겠습니다.",
+      "recorded_at": "2026-10-07T13:06:23.293830Z",
+      "source_refs": []
+    }
+  ],
+  "criteria": [],
+  "projections": [],
+  "review_candidates": []
+}

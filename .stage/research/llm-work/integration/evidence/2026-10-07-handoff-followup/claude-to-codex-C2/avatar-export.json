@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+    "--home",
+    "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp/claude-to-codex-C2/.data/avatar",
+    "export"
+  ],
+  "exit": 0,
+  "stdout": "{\"checked_at\": \"2026-10-07T03:43:38.848831Z\", \"criteria\": [{\"ai_confidence\": null, \"applies_when\": [], \"confirmation\": \"user_confirmed\", \"exceptions\": [], \"from_choices\": [\"CH-6eaab081cc82\"], \"notes\": [], \"origin\": {\"actor\": \"user\", \"captured_at\": \"2026-10-07T03:43:15.168772Z\", \"kind\": \"user_statement\", \"quote\": \"[Synthetic test statement] I confirm this synthetic personal criterion: Choose an explicit error contract that callers can predict.\", \"quote_sha256\": \"70bef01214cb2c8b57c2b1b496b548568fdf930a84242a5f871c32425347a721\", \"recorded_by\": {\"host\": \"codex\", \"session_id\": \"claude-to-codex-C2\", \"via\": \"cli\"}, \"source_ref\": \"session:codex/claude-to-codex-C2/fixture-1\", \"source_sha256\": null}, \"overrides\": [], \"reason\": \"Confirmed by the user.\", \"recorded_at\": \"2026-10-07T03:43:15.168697Z\", \"ref\": \"avatar:PC-b4af5cdef8c1@2\", \"statement\": \"Choose an explicit error contract that callers can predict.\", \"supersedes\": \"avatar:PC-b4af5cdef8c1@1\", \"version\": 2}], \"generation\": 4, \"producer\": \"avatar\", \"producer_version\": \"0.1.0\", \"retired\": [{\"by\": \"avatar:PC-b4af5cdef8c1@2\", \"ref\": \"avatar:PC-b4af5cdef8c1@1\", \"status\": \"superseded\"}], \"schema\": \"criteria-snapshot/1\", \"scope\": {\"key\": \"personal\", \"kind\": \"personal\"}}\n",
+  "stderr": ""
+}

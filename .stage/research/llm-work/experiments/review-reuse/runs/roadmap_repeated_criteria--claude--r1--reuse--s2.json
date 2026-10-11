@@ -1,0 +1,36 @@
+{
+  "id": "roadmap_repeated_criteria--claude--r1--reuse--s2",
+  "case": "roadmap_repeated_criteria",
+  "host": "claude",
+  "repeat": 1,
+  "condition": "reuse",
+  "step": 2,
+  "version": "before",
+  "key": "49db4cb3dddf404726cfefdabba5202070080f8f81732cf44864258473acacce",
+  "cache_hit": true,
+  "origin": "roadmap_repeated_criteria--claude--r1--reuse--s1",
+  "answer": {
+    "action": "revise",
+    "reason": "create-milestone의 --completion-criteria가 add_argument에 action 지정 없이 default=\"\"인 단일 문자열 옵션이라 세 번 전달하면 마지막 값(Users can install the release)만 남고, _replace_section도 값을 '- ' 항목으로 만들지 않고 그대로 넣으므로 세 값이 순서대로 각각 '- ' 항목으로 남지 않습니다.",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "8f601cf902e6dd926d6bb56481eede56c9c9dd6d446beaeafac956a2bc9ad118",
+  "prompt_characters": 23568,
+  "cli": null,
+  "end_to_end_s": 0.0013987910060677677
+}

@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-P",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_action",
+  "relation": "different",
+  "evidence_ids": [
+    "P1",
+    "P4"
+  ],
+  "question": "작성자가 분명한 동료의 말을 다룰 때도 저장 여부에 대해 따로 정해 두신 기준이 있나요?"
+}

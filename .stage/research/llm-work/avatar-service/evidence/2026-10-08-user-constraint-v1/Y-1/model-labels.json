@@ -1,0 +1,12 @@
+[
+  {
+    "id": "Y1",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "Y2",
+    "act": "request_apply_constraint",
+    "constraint_ref": "Y1"
+  }
+]

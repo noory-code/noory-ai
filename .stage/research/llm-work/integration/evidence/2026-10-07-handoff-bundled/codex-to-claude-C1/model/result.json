@@ -1,0 +1,51 @@
+{
+  "host": "claude",
+  "exit": 0,
+  "elapsed_seconds": 34.51144904200919,
+  "session_ids": [
+    "8e143b5b-6805-4412-ba49-0270d3a7d2e2"
+  ],
+  "reported_models": [
+    "claude-opus-5-5"
+  ],
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 14,
+        "cache_creation_input_tokens": 11452,
+        "cache_read_input_tokens": 66488,
+        "output_tokens": 3577,
+        "output_tokens_details": {
+          "thinking_tokens": 213
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 11452,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 855,
+            "cache_read_input_tokens": 12644,
+            "cache_creation_input_tokens": 2019,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 2019
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "reported_cost_usd": 0.17650960000000002
+    }
+  ],
+  "assistant_text": "I implemented `parse_host` in `app/host.py`. Invalid input raises `ConfigError`, because the project criterion still applies.\n\n**Decision**\n- The prior `app/port.py` hash still matches the hash recorded in the evidence (`742fb7d2…`). `parse_port` also raises `ConfigError`.\n- The project purpose (\"make configuration parsing predictable\") doesn't settle how invalid input should be reported, so I used the criterion from the packet.\n- I ran its distill check right before deciding. It exited 0 and returned `distill:CR-fbed97eb8cc7@1` with status `eligible_current`. The raw output is saved in `.data/receiver-check.json`.\n- `parse_host` returns the string unchanged if it is not empty, contains a dot and has no whitespace. Anything else, including input that isn't a string, raises `app.errors.ConfigError`.\n\n**Tests**\nThe project has no test suite, so I ran a one-off script. It passed:\n- `parse_host(\"example.com\")` returns `\"example.com\"`.\n- `\"bad\"`, `\"\"`, `\"exa mple.com\"`, `\"example.com\\n\"`, `None` and `5` all raise `ConfigError`.\n- `parse_port(\"8080\")` still returns `8080`.\n\n**Card** (`.stage/.../W-00000002/_story.md`)\n- I added these lines to Progress and didn't touch the earlier records:\n  - `Applied criteria: distill:CR-fbed97eb8cc7@1`\n  - the check result\n  - evidence for `app/host.py` (sha256 `e77c1409…`)\n- I didn't add a \"Stale judgment\" line. The packet lists the earlier judgment's status as `eligible_current`, so nothing was superseded.\n- Next action now says both functions are done. The remaining work is an acceptance check or independent review, plus a permanent test suite if you want one.\n\n**Avatar wrapper**\nI ran it with `--chosen ConfigError --refs distill:CR-fbed97eb8cc7@1`. It exited 0.\n- Choice ID: `CH-b0637835a25e`\n- Confirmed ref: `avatar:PC-8d7fc9bc6058@2`\n- It logged 6 calls to `.data/batch-calls.jsonl`: choice add, criterion propose, criterion confirm, distill history, source attach and show. It also wrote `.data/avatar-show.json`.\n\nNothing blocked me and I didn't need to ask you anything. Avatar had no criteria of its own, so the distill criterion was the only one that applied."
+}

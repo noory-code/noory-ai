@@ -1,0 +1,38 @@
+[
+  {
+    "id": "Z2",
+    "expected": {
+      "act": "user_report",
+      "constraint_ref": "none"
+    },
+    "actual": {
+      "act": "user_report",
+      "constraint_ref": "none"
+    },
+    "match": true
+  },
+  {
+    "id": "Z1",
+    "expected": {
+      "act": "user_task_constraint",
+      "constraint_ref": "none"
+    },
+    "actual": {
+      "act": "user_task_constraint",
+      "constraint_ref": "none"
+    },
+    "match": true
+  },
+  {
+    "id": "Z3",
+    "expected": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "Z2"
+    },
+    "actual": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "Z2"
+    },
+    "match": true
+  }
+]

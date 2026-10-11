@@ -1,0 +1,33 @@
+{
+  "case": "roadmap_repeated_criteria--after",
+  "host": "codex",
+  "condition": "auto",
+  "repeat": 1,
+  "id": "roadmap_repeated_criteria--after--codex--auto--r1",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/skills/stage-roadmap/manage_roadmap.py": {
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": [],
+      "entry": "main",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "정상적인 Stage v4 프로젝트에서 두 생성 함수는 성공 시 0을 반환하며, --completion-criteria는 action=\"append\"로 입력 순서를 보존하고 각 값을 '- ' 항목으로 만들어 Completion criteria 섹션에 기록합니다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 14.467484833003255
+}

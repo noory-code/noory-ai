@@ -1,0 +1,90 @@
+{
+  "independent_work_cases": 1,
+  "questions_per_case": 2,
+  "calls": 24,
+  "matches": 24,
+  "validation_errors": [],
+  "groups": [
+    {
+      "host": "claude",
+      "condition": "baseline",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 12272.5,
+      "mean_request_seconds": 3.580169333246886,
+      "mean_cli_seconds": 3.579167822499585,
+      "reported_input_tokens": 31033,
+      "reported_output_tokens": 600,
+      "reported_cost_usd": 0.130116
+    },
+    {
+      "host": "claude",
+      "condition": "selected",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 9753.5,
+      "mean_request_seconds": 3.7574159167488688,
+      "mean_cli_seconds": 3.756554104249517,
+      "reported_input_tokens": 24498,
+      "reported_output_tokens": 659,
+      "reported_cost_usd": 0.104566
+    },
+    {
+      "host": "claude",
+      "condition": "evidence",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 16409.5,
+      "mean_request_seconds": 3.5261099060007837,
+      "mean_cli_seconds": 3.5250098229953437,
+      "reported_input_tokens": 46564,
+      "reported_output_tokens": 619,
+      "reported_cost_usd": 0.19243
+    },
+    {
+      "host": "codex",
+      "condition": "baseline",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 12272.5,
+      "mean_request_seconds": 6.226200343749952,
+      "mean_cli_seconds": 6.225335645751329,
+      "reported_input_tokens": 46222,
+      "reported_output_tokens": 300,
+      "reported_cost_usd": null
+    },
+    {
+      "host": "codex",
+      "condition": "selected",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 9753.5,
+      "mean_request_seconds": 6.901206906506559,
+      "mean_cli_seconds": 6.900525468496198,
+      "reported_input_tokens": 41731,
+      "reported_output_tokens": 278,
+      "reported_cost_usd": null
+    },
+    {
+      "host": "codex",
+      "condition": "evidence",
+      "calls": 4,
+      "matches": 4,
+      "mean_prompt_characters": 16409.5,
+      "mean_request_seconds": 7.050957427243702,
+      "mean_cli_seconds": 7.049888593748619,
+      "reported_input_tokens": 57344,
+      "reported_output_tokens": 270,
+      "reported_cost_usd": null
+    }
+  ],
+  "mismatches": [],
+  "limits": [
+    "All correctness checks concern supplied records and explicit evidence policy.",
+    "The evidence condition has extra information and different expected version action.",
+    "Manual evidence selection cost is excluded; evidence retrieval was not tested.",
+    "Two repetitions per question are not independent work cases.",
+    "CLI timings include startup and service variance; no full task cost claim.",
+    "Reported cost is not a verified invoice; Codex monetary cost is unavailable."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-R",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_answer",
+  "relation": "different",
+  "evidence_ids": [
+    "R1",
+    "R2"
+  ],
+  "question": "두 답변을 각각 어떤 화면이나 자리에서 보실 예정인지, 글자 수나 읽을 시간에 정해진 제한이 있는지 알려 주실 수 있을까요?"
+}

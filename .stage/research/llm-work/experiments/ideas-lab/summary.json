@@ -1,0 +1,2915 @@
+{
+  "planned": 96,
+  "observed": 96,
+  "missing": [],
+  "unexpected": [],
+  "validation_errors": [],
+  "errors": 0,
+  "claude_reported_cost_usd": 0.341592,
+  "codex_reported_cost_usd": null,
+  "groups": [
+    {
+      "idea": "I01",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 3,
+      "errors": 0,
+      "mean_wall_time_s": 3.0910836455004755,
+      "mean_prompt_characters": 969.25,
+      "mean_reported_output_tokens": 123
+    },
+    {
+      "idea": "I01",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.6249729270057287,
+      "mean_prompt_characters": 1134,
+      "mean_reported_output_tokens": 124
+    },
+    {
+      "idea": "I01",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.129259062508936,
+      "mean_prompt_characters": 969.25,
+      "mean_reported_output_tokens": 56
+    },
+    {
+      "idea": "I01",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 7.961125280999113,
+      "mean_prompt_characters": 1134,
+      "mean_reported_output_tokens": 55.5
+    },
+    {
+      "idea": "I02",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.520944187512214,
+      "mean_prompt_characters": 879.75,
+      "mean_reported_output_tokens": 129.75
+    },
+    {
+      "idea": "I02",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.3278231042495463,
+      "mean_prompt_characters": 1190.5,
+      "mean_reported_output_tokens": 102.25
+    },
+    {
+      "idea": "I02",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.502185031000408,
+      "mean_prompt_characters": 879.75,
+      "mean_reported_output_tokens": 46.75
+    },
+    {
+      "idea": "I02",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 8.18865181250294,
+      "mean_prompt_characters": 1190.5,
+      "mean_reported_output_tokens": 54.25
+    },
+    {
+      "idea": "I03",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 4.229223760252353,
+      "mean_prompt_characters": 1470.5,
+      "mean_reported_output_tokens": 115.75
+    },
+    {
+      "idea": "I03",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.7936554792540846,
+      "mean_prompt_characters": 1593.5,
+      "mean_reported_output_tokens": 119.5
+    },
+    {
+      "idea": "I03",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.935911249995115,
+      "mean_prompt_characters": 1470.5,
+      "mean_reported_output_tokens": 52.75
+    },
+    {
+      "idea": "I03",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.853986322748824,
+      "mean_prompt_characters": 1593.5,
+      "mean_reported_output_tokens": 55
+    },
+    {
+      "idea": "I04",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.4368703647414804,
+      "mean_prompt_characters": 863.75,
+      "mean_reported_output_tokens": 98.25
+    },
+    {
+      "idea": "I04",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.3764136357494863,
+      "mean_prompt_characters": 1061.25,
+      "mean_reported_output_tokens": 95.75
+    },
+    {
+      "idea": "I04",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.50594273974275,
+      "mean_prompt_characters": 863.75,
+      "mean_reported_output_tokens": 50.5
+    },
+    {
+      "idea": "I04",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 5.7082824894969235,
+      "mean_prompt_characters": 1061.25,
+      "mean_reported_output_tokens": 49.25
+    },
+    {
+      "idea": "I05",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.553249906253768,
+      "mean_prompt_characters": 1734.25,
+      "mean_reported_output_tokens": 130.25
+    },
+    {
+      "idea": "I05",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.7079439482549787,
+      "mean_prompt_characters": 1819.25,
+      "mean_reported_output_tokens": 119.5
+    },
+    {
+      "idea": "I05",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.264978541999881,
+      "mean_prompt_characters": 1734.25,
+      "mean_reported_output_tokens": 70.5
+    },
+    {
+      "idea": "I05",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.9057534164894605,
+      "mean_prompt_characters": 1819.25,
+      "mean_reported_output_tokens": 47.25
+    },
+    {
+      "idea": "I06",
+      "host": "claude",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 4.2312088542603306,
+      "mean_prompt_characters": 1138.5,
+      "mean_reported_output_tokens": 109.5
+    },
+    {
+      "idea": "I06",
+      "host": "claude",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 3.1705864062532783,
+      "mean_prompt_characters": 1034,
+      "mean_reported_output_tokens": 110
+    },
+    {
+      "idea": "I06",
+      "host": "codex",
+      "condition": "baseline",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.858326458248484,
+      "mean_prompt_characters": 1138.5,
+      "mean_reported_output_tokens": 48.75
+    },
+    {
+      "idea": "I06",
+      "host": "codex",
+      "condition": "enhanced",
+      "runs": 4,
+      "matches": 4,
+      "errors": 0,
+      "mean_wall_time_s": 6.386981583003944,
+      "mean_prompt_characters": 1034,
+      "mean_reported_output_tokens": 57.75
+    }
+  ],
+  "rows": [
+    {
+      "id": "I01_changed--baseline--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt의 허용 개수가 3개에서 4개로 바뀌어 이를 직접 근거로 쓴 approve와 approve에 의존하는 publish를 재검토해야 하며, format.txt는 변경되지 않았고 의존 관계에 null이나 알 수 없는 항목도 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.141188500012504,
+      "reported_input_tokens": 1404,
+      "reported_output_tokens": 137,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006982,
+      "prompt_characters": 995,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_changed--baseline--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt의 내용 변경이 직접 의존하는 approve와 이를 근거로 하는 publish에 영향을 주며, format.txt는 변경되지 않았습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.516310583014274,
+      "reported_input_tokens": 8635,
+      "reported_output_tokens": 56,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 995,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_changed--enhanced--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt의 허용 개수가 3개에서 4개로 바뀌어 이를 직접 근거로 쓴 approve와, approve를 근거로 삼는 publish를 재검토해야 하며 format.txt는 변경이 없어 format은 영향이 없고 불확실한 의존 관계도 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.304305083001964,
+      "reported_input_tokens": 1473,
+      "reported_output_tokens": 141,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007298000000000001,
+      "prompt_characters": 1164,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_changed--enhanced--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt의 내용 변경이 approve에 직접 영향을 주고 publish가 approve를 근거로 하므로 두 판단을 재검토해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.377179582981626,
+      "reported_input_tokens": 8678,
+      "reported_output_tokens": 55,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1164,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_deleted--baseline--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt가 삭제되어 이를 직접 근거로 쓴 approve를 재검토해야 하고, approve를 근거로 쓴 publish도 영향을 받지만 format은 format.txt가 변하지 않았으므로 제외하며 의존 관계가 null이거나 알 수 없는 항목은 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1346942909876816,
+      "reported_input_tokens": 1393,
+      "reported_output_tokens": 145,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007018,
+      "prompt_characters": 988,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_deleted--baseline--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt가 삭제되어 이를 직접 근거로 한 approve와 approve를 근거로 한 publish를 재검토해야 하며, format.txt는 변경되지 않았습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.130109291989356,
+      "reported_input_tokens": 7471,
+      "reported_output_tokens": 61,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 988,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_deleted--enhanced--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt가 삭제되어 이를 직접 근거로 쓰는 approve와 approve에 의존하는 publish를 재검토해야 하며, format.txt는 변경이 없어 format은 영향이 없고 의존 관계가 불명확한 항목도 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.6075719590007793,
+      "reported_input_tokens": 1462,
+      "reported_output_tokens": 124,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007084,
+      "prompt_characters": 1157,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_deleted--enhanced--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "review",
+        "targets": [
+          "approve",
+          "publish"
+        ],
+        "reason": "policy.txt의 삭제가 직접 의존하는 approve와 이를 근거로 쓰는 publish에 영향을 주며, 불확실한 의존 관계는 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.737784708006075,
+      "reported_input_tokens": 8670,
+      "reported_output_tokens": 58,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1157,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unchanged--baseline--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "keep",
+        "targets": []
+      },
+      "answer": {
+        "action": "keep",
+        "targets": [],
+        "reason": "policy.txt와 format.txt의 이전·현재 내용이 동일해 변경이 없고, 모든 판단의 의존 관계도 명확히 알려져 있어 재검토할 대상이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 2.9320657500065863,
+      "reported_input_tokens": 1404,
+      "reported_output_tokens": 95,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006562,
+      "prompt_characters": 995,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unchanged--baseline--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "keep",
+        "targets": []
+      },
+      "answer": {
+        "action": "keep",
+        "targets": [],
+        "reason": "모든 자료의 이전·현재 내용이 동일하고 판단별 의존 관계도 명확하여 재검토할 판단이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.000822625006549,
+      "reported_input_tokens": 7483,
+      "reported_output_tokens": 49,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 995,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unchanged--enhanced--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "keep",
+        "targets": []
+      },
+      "answer": {
+        "action": "keep",
+        "targets": [],
+        "reason": "before와 current의 policy.txt, format.txt 내용이 동일해 변경·삭제된 파일이 없고, 모든 판단의 의존 관계도 명시되어 있어 재검토할 판단이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.137837083020713,
+      "reported_input_tokens": 1450,
+      "reported_output_tokens": 98,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006776000000000001,
+      "prompt_characters": 1110,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unchanged--enhanced--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "keep",
+        "targets": []
+      },
+      "answer": {
+        "action": "keep",
+        "targets": [],
+        "reason": "이전과 현재의 자료 내용이 모두 동일하고 의존 관계도 명확하여 재검토할 판단이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.861733916011872,
+      "reported_input_tokens": 8669,
+      "reported_output_tokens": 47,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1110,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unknown--baseline--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [],
+        "reason": "before와 current가 동일해 알려진 변경은 없지만, audit의 의존 관계가 null로 알 수 없고 publish가 audit을 근거로 쓰므로 두 판단을 보류하고 audit의 의존 관계부터 확인해야 합니다."
+      },
+      "matches": false,
+      "error": null,
+      "wall_time_s": 3.1563860409951303,
+      "reported_input_tokens": 1363,
+      "reported_output_tokens": 115,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006598,
+      "prompt_characters": 899,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unknown--baseline--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ],
+        "reason": "자료 변경은 없지만 audit의 의존 관계가 알 수 없고 publish가 audit을 근거로 하므로 두 판단 모두 보류해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.869793750025565,
+      "reported_input_tokens": 7454,
+      "reported_output_tokens": 58,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 899,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unknown--enhanced--claude--1",
+      "idea": "I01",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ],
+        "reason": "policy.txt와 format.txt는 이전과 현재 내용이 같아 알려진 변경은 없지만, audit의 의존 관계가 기록되지 않았고 publish가 audit를 근거로 쓰므로 두 판단 모두 의존 관계를 먼저 확인해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.4501775829994585,
+      "reported_input_tokens": 1451,
+      "reported_output_tokens": 133,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.00713,
+      "prompt_characters": 1105,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I01_unknown--enhanced--codex--1",
+      "idea": "I01",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "audit",
+          "publish"
+        ],
+        "reason": "자료 변경은 없지만 audit의 의존 관계가 기록되지 않았고 이를 근거로 한 publish도 연결되어 있어 두 판단 모두 의존 관계 확인이 필요합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.8678029169968795,
+      "reported_input_tokens": 7512,
+      "reported_output_tokens": 62,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1105,
+      "scoring_note": "양쪽에 같은 원본과 의존 관계를 줍니다. 개선 조건에는 코드가 해시와 의존 관계로 계산한 답도 제공합니다. 모델 능력 향상으로 해석하면 안 됩니다."
+    },
+    {
+      "id": "I02_conflict--baseline--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ],
+        "reason": "export 버전 2에 대해 문서 a는 supported, 문서 b는 unsupported로 예외 없이 서로 충돌하므로 판단을 보류하고 확인이 필요합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.122380292013986,
+      "reported_input_tokens": 1292,
+      "reported_output_tokens": 94,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006104,
+      "prompt_characters": 922,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_conflict--baseline--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ],
+        "reason": "동일한 주제와 버전에 대해 자료 a와 b의 기본 answer가 서로 충돌하므로 판단을 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.941425833007088,
+      "reported_input_tokens": 7426,
+      "reported_output_tokens": 54,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 922,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_conflict--enhanced--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ],
+        "reason": "export 주제의 버전 2에 대해 문서 a는 supported, 문서 b는 unsupported로 예외 없이 서로 충돌하므로 판단을 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1898037499922793,
+      "reported_input_tokens": 1468,
+      "reported_output_tokens": 89,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006758,
+      "prompt_characters": 1335,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_conflict--enhanced--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "a",
+          "b"
+        ],
+        "reason": "export 버전 2에 대해 자료 a는 지원, 자료 b는 미지원으로 서로 충돌하므로 판단을 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 9.080984250002075,
+      "reported_input_tokens": 8711,
+      "reported_output_tokens": 55,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1335,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_exception--baseline--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ]
+      },
+      "answer": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ],
+        "reason": "export 주제의 버전 2 자료(policy)는 기본 answer가 supported이지만 context의 region이 EU로 예외 조건과 일치하므로 예외 answer인 unsupported가 우선 적용됩니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.4793733330152463,
+      "reported_input_tokens": 1278,
+      "reported_output_tokens": 106,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006168,
+      "prompt_characters": 884,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_exception--baseline--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ]
+      },
+      "answer": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ],
+        "reason": "버전 2의 export 정책에서 region이 EU인 경우 unsupported 예외가 적용됩니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.425737707992084,
+      "reported_input_tokens": 7410,
+      "reported_output_tokens": 43,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 884,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_exception--enhanced--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ]
+      },
+      "answer": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ],
+        "reason": "export 주제 버전 2 자료(policy)의 기본 답은 supported이지만 region이 EU인 예외 조건이 context와 일치해 예외의 unsupported가 우선 적용되며, 출처가 있고 충돌이나 누락된 조건도 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.359879625000758,
+      "reported_input_tokens": 1398,
+      "reported_output_tokens": 124,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006828000000000001,
+      "prompt_characters": 1174,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_exception--enhanced--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ]
+      },
+      "answer": {
+        "action": "unsupported",
+        "targets": [
+          "policy"
+        ],
+        "reason": "정확히 일치하는 export 버전 2의 policy 자료에서 EU 지역 예외가 적용되어 unsupported로 판단합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.642444083001465,
+      "reported_input_tokens": 8650,
+      "reported_output_tokens": 50,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1174,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_missing_scope--baseline--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ],
+        "reason": "export 버전 2 자료는 기본 answer가 supported뿐이고 출처와 예외 목록이 없어, 과제 규칙에 따라 판단을 보류하고 확인을 요청합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.378820333018666,
+      "reported_input_tokens": 1229,
+      "reported_output_tokens": 211,
+      "reported_thinking_tokens": 115,
+      "reported_cost_usd": 0.0070220000000000005,
+      "prompt_characters": 775,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_missing_scope--baseline--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ],
+        "reason": "관련 자료에 예외 목록이 없어 지원 여부 판단을 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.504274417005945,
+      "reported_input_tokens": 8534,
+      "reported_output_tokens": 40,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 775,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_missing_scope--enhanced--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ],
+        "reason": "export 버전 2 자료(partial)는 기본 answer가 supported이지만 출처와 예외 목록이 기록되어 있지 않아 예외 적용 여부를 판단할 수 없으므로 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1302898750000168,
+      "reported_input_tokens": 1356,
+      "reported_output_tokens": 102,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0064399999999999995,
+      "prompt_characters": 1077,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_missing_scope--enhanced--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ]
+      },
+      "answer": {
+        "action": "clarify",
+        "targets": [
+          "partial"
+        ],
+        "reason": "주제와 버전은 일치하지만 출처와 예외 목록이 기록되지 않아 지원 여부 판단을 보류합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.319764125015354,
+      "reported_input_tokens": 8623,
+      "reported_output_tokens": 51,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1077,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_version--baseline--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ]
+      },
+      "answer": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ],
+        "reason": "버전 2와 정확히 일치하는 자료 current가 출처와 빈 예외 목록을 갖추고 기본 answer로 supported를 제시하며, 버전 1 자료 old는 다른 버전이라 제외했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.103202792000957,
+      "reported_input_tokens": 1293,
+      "reported_output_tokens": 108,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006248,
+      "prompt_characters": 938,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_version--baseline--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ]
+      },
+      "answer": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ],
+        "reason": "주제 export의 버전 2와 정확히 일치하는 current 자료가 예외 없이 지원된다고 명시합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.137302165996516,
+      "reported_input_tokens": 8579,
+      "reported_output_tokens": 50,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 938,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_version--enhanced--claude--1",
+      "idea": "I02",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ]
+      },
+      "answer": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ],
+        "reason": "버전 2와 정확히 일치하는 자료 current가 예외 없이 supported로 답하고 충돌하는 다른 자료도 없으며, 버전 1 자료 old는 제외했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.631319167005131,
+      "reported_input_tokens": 1383,
+      "reported_output_tokens": 94,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006468,
+      "prompt_characters": 1176,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I02_version--enhanced--codex--1",
+      "idea": "I02",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ]
+      },
+      "answer": {
+        "action": "supported",
+        "targets": [
+          "current"
+        ],
+        "reason": "주제 export와 버전 2가 정확히 일치하는 출처가 있는 자료 current가 기능을 supported로 명시하며 적용할 예외나 충돌이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 9.711414791992866,
+      "reported_input_tokens": 8645,
+      "reported_output_tokens": 61,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1176,
+      "scoring_note": "양쪽에 같은 원본 자료를 줍니다. 개선 조건에는 코드가 적용 조건을 비교해 계산한 답도 제공합니다. 자유 문서 검색이나 모델 능력 향상을 검증하지 않습니다."
+    },
+    {
+      "id": "I03_already_written--baseline--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "complete",
+        "targets": []
+      },
+      "answer": {
+        "action": "complete",
+        "targets": [],
+        "reason": "a.txt와 b.txt의 현재 내용이 모두 desired(new-a, new-b)와 이미 같으므로 다시 쓸 필요 없이 작업이 완료된 상태입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.0527747079904657,
+      "reported_input_tokens": 1630,
+      "reported_output_tokens": 91,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007426,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_already_written--baseline--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "complete",
+        "targets": []
+      },
+      "answer": {
+        "action": "complete",
+        "targets": [],
+        "reason": "두 파일의 현재 내용이 모두 목표 내용과 같으므로 다시 쓸 필요 없이 작업이 완료되었습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.19438145798631,
+      "reported_input_tokens": 7711,
+      "reported_output_tokens": 44,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_already_written--enhanced--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "complete",
+        "targets": []
+      },
+      "answer": {
+        "action": "complete",
+        "targets": [],
+        "reason": "a.txt와 b.txt의 현재 내용이 모두 목표(new-a, new-b)와 일치하므로 이미 작업이 완료된 상태이며 다시 쓸 파일이 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.614251124992734,
+      "reported_input_tokens": 1683,
+      "reported_output_tokens": 94,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0076679999999999995,
+      "prompt_characters": 1586,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_already_written--enhanced--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "complete",
+        "targets": []
+      },
+      "answer": {
+        "action": "complete",
+        "targets": [],
+        "reason": "현재 a.txt와 b.txt의 내용이 모두 각각의 목표 내용과 같으므로 다시 쓸 필요 없이 작업이 완료된 상태입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.9112496669986285,
+      "reported_input_tokens": 8901,
+      "reported_output_tokens": 51,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1586,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_human_changed--baseline--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "b.txt의 현재 내용(human-note)과 버전이 before(old-b)나 desired(new-b)와 모두 달라 외부 변경에 의한 충돌이므로, a.txt가 아직 old-a 그대로여도 이번 실행에서는 어떤 파일도 바꾸지 않습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.85872937500244,
+      "reported_input_tokens": 1615,
+      "reported_output_tokens": 136,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007816,
+      "prompt_characters": 1475,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_human_changed--baseline--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "b.txt의 현재 내용과 버전이 목표에도 before에도 일치하지 않아 충돌로 판단하며, 이번 실행에서는 a.txt도 변경하지 않습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.34910533297807,
+      "reported_input_tokens": 8856,
+      "reported_output_tokens": 58,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1475,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_human_changed--enhanced--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "b.txt의 현재 내용(human-note)과 버전이 실행 전 상태(old-b)나 목표(new-b)와 모두 달라 외부 변경에 의한 충돌이므로, a.txt가 아직 이전 상태여도 이번 실행에서는 어떤 파일도 바꾸지 않습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.125758209003834,
+      "reported_input_tokens": 1676,
+      "reported_output_tokens": 140,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0081,
+      "prompt_characters": 1597,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_human_changed--enhanced--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "conflict",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "b.txt의 현재 내용과 버전이 before와 달라 충돌하므로 이번 실행에서는 어떤 파일도 변경하지 않습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.030931124987546,
+      "reported_input_tokens": 7735,
+      "reported_output_tokens": 52,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1597,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_no_write--baseline--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ],
+        "reason": "두 파일 모두 현재 내용과 버전이 실행 전(before)과 동일하고 목표 내용과는 달라서 아직 변경이 적용되지 않았으며 충돌도 없으므로 이어서 바꿀 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1813476670067757,
+      "reported_input_tokens": 1613,
+      "reported_output_tokens": 119,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007638000000000001,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_no_write--baseline--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ],
+        "reason": "두 파일 모두 현재 내용과 버전이 before와 같고 아직 desired 내용이 아니므로 이어서 변경할 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.491275042004418,
+      "reported_input_tokens": 8856,
+      "reported_output_tokens": 53,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_no_write--enhanced--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ],
+        "reason": "두 파일 모두 현재 내용·sha256·버전이 before와 완전히 같고 desired와는 달라 아직 바뀌지 않았으며 충돌도 없으므로, 두 파일을 이어서 바꾸는 복구가 가능합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.424554249999346,
+      "reported_input_tokens": 1677,
+      "reported_output_tokens": 122,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007924,
+      "prompt_characters": 1601,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_no_write--enhanced--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "a.txt",
+          "b.txt"
+        ],
+        "reason": "두 파일 모두 현재 내용과 버전이 before와 같고 아직 desired 내용이 아니므로 두 파일의 복구를 이어서 실행할 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.469909916020697,
+      "reported_input_tokens": 7739,
+      "reported_output_tokens": 59,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1601,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_partly_written--baseline--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "a.txt는 현재 내용이 목표(new-a)와 같아 다시 쓰지 않아도 되고, b.txt는 내용과 버전이 모두 before와 같아 충돌 없이 이어서 new-b로 바꿀 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.82404329100973,
+      "reported_input_tokens": 1619,
+      "reported_output_tokens": 117,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0076419999999999995,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_partly_written--baseline--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "a.txt는 이미 목표 내용과 같고 b.txt는 내용과 버전이 모두 before와 같아 b.txt만 이어서 변경할 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.708883167011663,
+      "reported_input_tokens": 7707,
+      "reported_output_tokens": 56,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1469,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_partly_written--enhanced--claude--1",
+      "idea": "I03",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "a.txt는 이미 목표 내용(new-a)과 같아 다시 쓰지 않아도 되고, b.txt는 내용과 버전이 모두 실행 전(before)과 같아 충돌 없이 이어서 new-b로 바꿀 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.0100583330204245,
+      "reported_input_tokens": 1678,
+      "reported_output_tokens": 122,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007928,
+      "prompt_characters": 1590,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I03_partly_written--enhanced--codex--1",
+      "idea": "I03",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ]
+      },
+      "answer": {
+        "action": "recover",
+        "targets": [
+          "b.txt"
+        ],
+        "reason": "a.txt는 이미 목표 내용과 같고 b.txt는 내용과 버전이 모두 before와 같으므로 b.txt만 이어서 바꿀 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.003854582988424,
+      "reported_input_tokens": 8899,
+      "reported_output_tokens": 58,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1590,
+      "scoring_note": "두 조건에 같은 파일 관찰을 줍니다. enhanced는 시제품이 계산한 조치를 추가합니다. 실제 파일 쓰기는 단위 검사로 검증합니다. 모델 평가에서 이점이 나와도 모델의 추론 능력이 좋아졌다는 증거는 아닙니다."
+    },
+    {
+      "id": "I04_missing_info--baseline--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ]
+      },
+      "answer": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ],
+        "reason": "보고서에 반드시 포함할 대상 버전(target_version)이 아직 정해지지 않아 이 자료가 제공될 때까지 보고서 작업을 대기해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.240086917008739,
+      "reported_input_tokens": 1292,
+      "reported_output_tokens": 96,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006123999999999999,
+      "prompt_characters": 896,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_missing_info--baseline--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ]
+      },
+      "answer": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ],
+        "reason": "보고서 작성에 필수인 대상 버전이 아직 정해지지 않아 해당 자료를 기다려야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.326962708000792,
+      "reported_input_tokens": 7410,
+      "reported_output_tokens": 51,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 896,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_missing_info--enhanced--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ]
+      },
+      "answer": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ],
+        "reason": "보고서에 반드시 포함해야 하는 대상 버전(target_version)이 아직 정해지지 않아 해당 정보가 제공될 때까지 대기해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1169462090183515,
+      "reported_input_tokens": 1378,
+      "reported_output_tokens": 93,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006438,
+      "prompt_characters": 1113,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_missing_info--enhanced--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ]
+      },
+      "answer": {
+        "action": "wait_for_info",
+        "targets": [
+          "target_version"
+        ],
+        "reason": "보고서 작성에 필수인 대상 버전이 아직 정해지지 않았으므로 해당 정보가 제공될 때까지 대기해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.751008958002785,
+      "reported_input_tokens": 7465,
+      "reported_output_tokens": 57,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1113,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_scope_change--baseline--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "review_scope",
+        "targets": []
+      },
+      "answer": {
+        "action": "review_scope",
+        "targets": [],
+        "reason": "사용자가 보고서 외부 배포(publish)라는 범위 변경을 제안했고 현재 허용된 작업은 analysis와 report뿐이므로, 배포는 승인하지 않고 범위 재검토 단계로 넘깁니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.3705902919755317,
+      "reported_input_tokens": 1286,
+      "reported_output_tokens": 111,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.00625,
+      "prompt_characters": 883,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_scope_change--baseline--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "review_scope",
+        "targets": []
+      },
+      "answer": {
+        "action": "review_scope",
+        "targets": [],
+        "reason": "외부 배포는 기존 허용 범위에 없는 publish 작업을 추가하려는 범위 변경 제안이므로 범위를 재검토해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.917882709007245,
+      "reported_input_tokens": 7406,
+      "reported_output_tokens": 55,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 883,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_scope_change--enhanced--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review_scope",
+        "targets": []
+      },
+      "answer": {
+        "action": "review_scope",
+        "targets": [],
+        "reason": "사용자가 외부 배포(publish)를 추가하자고 제안했으나 이는 기존 승인 범위(analysis, report)에 포함되지 않으므로 승인하지 않고 범위 재검토 상태로 전환합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.254599416977726,
+      "reported_input_tokens": 1365,
+      "reported_output_tokens": 106,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006516,
+      "prompt_characters": 1082,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_scope_change--enhanced--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "review_scope",
+        "targets": []
+      },
+      "answer": {
+        "action": "review_scope",
+        "targets": [],
+        "reason": "외부 배포는 기존 허용 범위에 없는 범위 변경 제안이므로 범위를 재검토해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.0397891250031535,
+      "reported_input_tokens": 8611,
+      "reported_output_tokens": 49,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1082,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_status--baseline--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ]
+      },
+      "answer": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ],
+        "reason": "사용자가 진행 상황을 물었으므로 분석은 완료되고 보고서 작성만 남았다고 답한 뒤, 이미 허용된 범위인 보고서 작업만 계속하면 된다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.8810456249921117,
+      "reported_input_tokens": 1257,
+      "reported_output_tokens": 104,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006064,
+      "prompt_characters": 837,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_status--baseline--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ]
+      },
+      "answer": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ],
+        "reason": "분석은 완료되었고 기존 허용 범위에서 보고 작업이 남아 있으므로 현재 상황에 답한 뒤 계속해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.5991507079743315,
+      "reported_input_tokens": 7388,
+      "reported_output_tokens": 55,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 837,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_status--enhanced--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ]
+      },
+      "answer": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ],
+        "reason": "사용자가 진행 상황을 물었으므로 허용된 작업 2개 중 분석은 완료되었고 보고서가 남았다고 답한 뒤, 기존 범위인 보고서 작성만 계속합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.132662000018172,
+      "reported_input_tokens": 1331,
+      "reported_output_tokens": 108,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0064,
+      "prompt_characters": 1035,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_status--enhanced--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ]
+      },
+      "answer": {
+        "action": "report_and_continue",
+        "targets": [
+          "report"
+        ],
+        "reason": "분석은 완료되었고 기존 범위에서 보고 작업이 남아 있으므로 현재 상황을 알린 뒤 계속해야 합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.2178950409870595,
+      "reported_input_tokens": 8595,
+      "reported_output_tokens": 53,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1035,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_stop--baseline--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "stop",
+        "targets": []
+      },
+      "answer": {
+        "action": "stop",
+        "targets": [],
+        "reason": "사용자가 명시적으로 작업 중단을 요청했으므로 남은 보고서 작업을 포함해 더 이상 진행하지 않고 멈춥니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.2557586249895394,
+      "reported_input_tokens": 1262,
+      "reported_output_tokens": 82,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.005864,
+      "prompt_characters": 839,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_stop--baseline--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "stop",
+        "targets": []
+      },
+      "answer": {
+        "action": "stop",
+        "targets": [],
+        "reason": "사용자가 여기서 작업을 멈춰 달라고 명시적으로 중단을 요청했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.179774833988631,
+      "reported_input_tokens": 7392,
+      "reported_output_tokens": 41,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 839,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_stop--enhanced--claude--1",
+      "idea": "I04",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "stop",
+        "targets": []
+      },
+      "answer": {
+        "action": "stop",
+        "targets": [],
+        "reason": "사용자가 명시적으로 작업 중단을 요청했으므로 남은 보고서 작업을 진행하지 않고 여기서 멈춥니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.0014469169836957,
+      "reported_input_tokens": 1334,
+      "reported_output_tokens": 76,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006092,
+      "prompt_characters": 1015,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I04_stop--enhanced--codex--1",
+      "idea": "I04",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "stop",
+        "targets": []
+      },
+      "answer": {
+        "action": "stop",
+        "targets": [],
+        "reason": "사용자가 여기서 작업을 멈춰 달라고 명시적으로 요청했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.824436833994696,
+      "reported_input_tokens": 8596,
+      "reported_output_tokens": 38,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1015,
+      "scoring_note": "두 조건 모두 분류한 지시와 같은 작업 상태를 받습니다. enhanced에는 상태기계가 계산한 조치도 있습니다. 자연어 분류와 다음 모델 호출은 시험하지 않습니다. 계산을 코드로 옮긴 효과만 비교합니다."
+    },
+    {
+      "id": "I05_exception_removed--baseline--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ]
+      },
+      "answer": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ],
+        "reason": "현재 입력의 evidence에는 exceptions가 없어 policy 결과가 unknown이지만, policy.json에는 island가 unsupported인 예외가 있고 제안된 변경이 이 예외를 evidence에 복원하므로 restore_exception으로 판단했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.426425083016511,
+      "reported_input_tokens": 1816,
+      "reported_output_tokens": 136,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008620000000000001,
+      "prompt_characters": 1902,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_exception_removed--baseline--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ]
+      },
+      "answer": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ],
+        "reason": "관찰된 원본 policy.json에는 island 예외가 unsupported로 존재하고 제안 변경이 누락된 exceptions를 동일하게 복원하므로 restore_exception입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.501072667015251,
+      "reported_input_tokens": 7763,
+      "reported_output_tokens": 62,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1902,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_exception_removed--enhanced--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ]
+      },
+      "answer": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ],
+        "reason": "입력만 바뀌어 이전 결과 unknown이 이후 unsupported로 달라졌고 도구 응답과 파일 상태 해시는 동일하므로, 예외 복원으로 판단할 수 있는 input.evidence.exceptions 변화가 원인입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.729900167003507,
+      "reported_input_tokens": 1838,
+      "reported_output_tokens": 133,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008678,
+      "prompt_characters": 1833,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_exception_removed--enhanced--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ]
+      },
+      "answer": {
+        "action": "restore_exception",
+        "targets": [
+          "input.evidence.exceptions"
+        ],
+        "reason": "입력 변경으로 정책 상태가 unknown에서 unsupported로 바뀌어 예외 복원으로 판단할 수 있습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.245357207983034,
+      "reported_input_tokens": 8939,
+      "reported_output_tokens": 52,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1833,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_irrelevant_response_change--baseline--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "no_difference",
+        "targets": []
+      },
+      "answer": {
+        "action": "no_difference",
+        "targets": [],
+        "reason": "write 규칙상 output.txt의 실제 내용 \"done\\n\"이 expected_content와 같아 이미 complete이고, 제안된 변경도 success 결과에 trace_label만 추가될 뿐 비교 결과를 바꾸지 않으므로 차이가 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.505151457997272,
+      "reported_input_tokens": 1666,
+      "reported_output_tokens": 125,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.00791,
+      "prompt_characters": 1612,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_irrelevant_response_change--baseline--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "no_difference",
+        "targets": []
+      },
+      "answer": {
+        "action": "no_difference",
+        "targets": [],
+        "reason": "실제 대상 파일 output.txt의 내용이 expected_content와 이미 같고 proposed_change에도 쓰기 완료 상태를 바꾸는 차이가 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.371895041986136,
+      "reported_input_tokens": 7664,
+      "reported_output_tokens": 116,
+      "reported_thinking_tokens": 62,
+      "reported_cost_usd": null,
+      "prompt_characters": 1612,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_irrelevant_response_change--enhanced--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "no_difference",
+        "targets": []
+      },
+      "answer": {
+        "action": "no_difference",
+        "targets": [],
+        "reason": "전후 비교에서 status가 모두 complete로 같고 입력과 파일 상태 해시도 동일하며 도구 응답 해시만 달라졌지만 결과 상태에는 차이가 없으므로 no_difference입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.1080194170062896,
+      "reported_input_tokens": 1823,
+      "reported_output_tokens": 105,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008338,
+      "prompt_characters": 1808,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_irrelevant_response_change--enhanced--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "no_difference",
+        "targets": []
+      },
+      "answer": {
+        "action": "no_difference",
+        "targets": [],
+        "reason": "비교 전후 상태가 모두 complete이고 입력 및 파일 상태가 동일하므로 결과 차이가 없습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.920888749998994,
+      "reported_input_tokens": 8929,
+      "reported_output_tokens": 44,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1808,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_partial_write--baseline--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ]
+      },
+      "answer": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ],
+        "reason": "도구 응답은 success였지만 실제 output.txt 내용은 'title\\n'으로 expected_content 'title\\nbody\\n'와 달라 incomplete이며, 제안된 변경(file_state)이 내용을 expected_content와 일치시켜 쓰기를 완료하므로 repair_write를 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.6302126249938738,
+      "reported_input_tokens": 1673,
+      "reported_output_tokens": 143,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008118,
+      "prompt_characters": 1605,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_partial_write--baseline--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ]
+      },
+      "answer": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ],
+        "reason": "관찰된 실제 내용은 기대 내용과 다르지만 제안된 변경으로 output.txt가 기대 내용과 같아져 쓰기가 완료됩니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.592039750015829,
+      "reported_input_tokens": 8818,
+      "reported_output_tokens": 56,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1605,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_partial_write--enhanced--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ]
+      },
+      "answer": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ],
+        "reason": "입력과 도구 응답의 해시는 그대로이고 file_state만 바뀌어 쓰기 결과가 incomplete에서 complete로 바뀌었으므로, 파일 내용을 바로잡아 완료된 repair_write가 적합합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 4.596054249996087,
+      "reported_input_tokens": 1847,
+      "reported_output_tokens": 121,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008594000000000001,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_partial_write--enhanced--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ]
+      },
+      "answer": {
+        "action": "repair_write",
+        "targets": [
+          "output.txt"
+        ],
+        "reason": "파일 상태 변경 후 쓰기 상태가 incomplete에서 complete로 바뀌어 repair_write 대상은 output.txt입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 8.391141957981745,
+      "reported_input_tokens": 8946,
+      "reported_output_tokens": 49,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_search_missing--baseline--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ]
+      },
+      "answer": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ],
+        "reason": "기존 검색 결과에는 required_document인 policy.json이 없어 missing이었으나 제안된 변경 후 documents에 policy.json이 포함되어 found가 되므로 검색 누락이 해소되어 inspect_search를 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.651210459007416,
+      "reported_input_tokens": 1783,
+      "reported_output_tokens": 117,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008298,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_search_missing--baseline--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ]
+      },
+      "answer": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ],
+        "reason": "제안된 결과에서는 required_document인 policy.json이 documents에 포함되어 검색 누락이 해소됩니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.5949067089823075,
+      "reported_input_tokens": 8895,
+      "reported_output_tokens": 48,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_search_missing--enhanced--claude--1",
+      "idea": "I05",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ]
+      },
+      "answer": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ],
+        "reason": "검색 결과가 missing에서 found로 바뀌었고 입력과 파일 상태 해시는 동일하며 도구 응답만 달라졌으므로, 검색 누락이 해소된 것으로 보아 inspect_search를 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.397801959014032,
+      "reported_input_tokens": 1820,
+      "reported_output_tokens": 119,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.008466,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I05_search_missing--enhanced--codex--1",
+      "idea": "I05",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ]
+      },
+      "answer": {
+        "action": "inspect_search",
+        "targets": [
+          "policy.json"
+        ],
+        "reason": "검색 상태가 missing에서 found로 바뀌어 검색 누락이 해소되었습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.065625749994069,
+      "reported_input_tokens": 8931,
+      "reported_output_tokens": 44,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1818,
+      "scoring_note": "원본과 변경 내용을 기본 조건에 모두 제공합니다. 개선 조건에서는 로컬 함수가 비교와 권고를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_different_versions--baseline--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": "두 매니페스트의 name이 sample-plugin으로 같고 version이 1.2.3과 1.2.4로 서로 다른 유효한 x.y.z 형식이므로 버전 정렬이 필요합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.540532124985475,
+      "reported_input_tokens": 1496,
+      "reported_output_tokens": 130,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.00728,
+      "prompt_characters": 1168,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_different_versions--baseline--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": "두 파일의 name은 같고 version은 모두 유효하지만 서로 다릅니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.417887207993772,
+      "reported_input_tokens": 8707,
+      "reported_output_tokens": 53,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1168,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_different_versions--enhanced--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": "두 파일의 version이 각각 1.2.3과 1.2.4로 유효하지만 서로 달라 align_versions이며, 오류가 없으므로 두 경로를 오름차순으로 나열했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.4480208749882877,
+      "reported_input_tokens": 1433,
+      "reported_output_tokens": 128,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007008,
+      "prompt_characters": 1056,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_different_versions--enhanced--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "align_versions",
+        "targets": [
+          ".claude-plugin/plugin.json",
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": "로컬 도구 결과에서 두 파일의 name은 같고 유효한 version이 1.2.3과 1.2.4로 서로 다릅니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.615112166007748,
+      "reported_input_tokens": 8641,
+      "reported_output_tokens": 72,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1056,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_invalid_version_type--baseline--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ],
+        "reason": "`.claude-plugin/plugin.json`의 version이 문자열이 아닌 숫자 123이라 x.y.z 형식 오류이므로, 잘못된 파일 경로만 대상으로 fallback을 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.4079604580183513,
+      "reported_input_tokens": 1484,
+      "reported_output_tokens": 118,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.007112,
+      "prompt_characters": 1162,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_invalid_version_type--baseline--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ],
+        "reason": ".claude-plugin/plugin.json의 version이 문자열 x.y.z 형식이 아니라 숫자이므로 형식 오류입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.838485582993599,
+      "reported_input_tokens": 7535,
+      "reported_output_tokens": 54,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1162,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_invalid_version_type--enhanced--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ],
+        "reason": ".claude-plugin/plugin.json의 version이 앞자리 0과 접미사가 없는 x.y.z 형식을 만족하지 않아 형식 오류이므로 해당 파일 경로를 대상으로 fallback을 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.424615250027273,
+      "reported_input_tokens": 1445,
+      "reported_output_tokens": 122,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0069960000000000005,
+      "prompt_characters": 1055,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_invalid_version_type--enhanced--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".claude-plugin/plugin.json"
+        ],
+        "reason": ".claude-plugin/plugin.json의 version이 앞자리 0과 접미사가 없는 x.y.z 형식이 아니므로 fallback입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.959045499999775,
+      "reported_input_tokens": 8651,
+      "reported_output_tokens": 57,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1055,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_missing_manifest--baseline--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": ".codex-plugin/plugin.json 파일이 존재하지 않아 비교할 수 없으므로 누락된 파일 경로를 대상으로 fallback을 선택했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 3.056024250021437,
+      "reported_input_tokens": 1424,
+      "reported_output_tokens": 102,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006712000000000001,
+      "prompt_characters": 1056,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_missing_manifest--baseline--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": ".codex-plugin/plugin.json 파일이 누락되어 있어 fallback입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 5.857144625013461,
+      "reported_input_tokens": 8652,
+      "reported_output_tokens": 43,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1056,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_missing_manifest--enhanced--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": ".codex-plugin/plugin.json 파일이 없어 읽지 못했으므로(errno=2) 규칙상 누락된 파일 경로를 대상으로 fallback을 선택합니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 2.8914363750081975,
+      "reported_input_tokens": 1429,
+      "reported_output_tokens": 106,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006772,
+      "prompt_characters": 1034,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_missing_manifest--enhanced--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ]
+      },
+      "answer": {
+        "action": "fallback",
+        "targets": [
+          ".codex-plugin/plugin.json"
+        ],
+        "reason": ".codex-plugin/plugin.json 파일을 읽지 못해 필수 자료가 누락되었습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.176476082997397,
+      "reported_input_tokens": 7486,
+      "reported_output_tokens": 48,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1034,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_same_version--baseline--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "baseline",
+      "expected": {
+        "action": "accept",
+        "targets": []
+      },
+      "answer": {
+        "action": "accept",
+        "targets": [],
+        "reason": "두 매니페스트 파일 모두 존재하고 name이 sample-plugin으로 같으며 version도 유효한 형식의 1.2.3으로 동일하므로 accept입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 6.920318584016059,
+      "reported_input_tokens": 1499,
+      "reported_output_tokens": 88,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.0068720000000000005,
+      "prompt_characters": 1168,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_same_version--baseline--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "baseline",
+      "expected": {
+        "action": "accept",
+        "targets": []
+      },
+      "answer": {
+        "action": "accept",
+        "targets": [],
+        "reason": "두 파일의 name과 version이 모두 유효하며 각각 sample-plugin과 1.2.3으로 같습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.319788416993106,
+      "reported_input_tokens": 7551,
+      "reported_output_tokens": 45,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 1168,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_same_version--enhanced--claude--1",
+      "idea": "I06",
+      "host": "claude",
+      "condition": "enhanced",
+      "expected": {
+        "action": "accept",
+        "targets": []
+      },
+      "answer": {
+        "action": "accept",
+        "targets": [],
+        "reason": "두 파일의 버전이 모두 1.2.3으로 같고 오류가 없다고 관찰되어 accept 규칙에 따라 빈 targets로 판단했습니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 2.918273124989355,
+      "reported_input_tokens": 1402,
+      "reported_output_tokens": 84,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": 0.006444,
+      "prompt_characters": 991,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    },
+    {
+      "id": "I06_same_version--enhanced--codex--1",
+      "idea": "I06",
+      "host": "codex",
+      "condition": "enhanced",
+      "expected": {
+        "action": "accept",
+        "targets": []
+      },
+      "answer": {
+        "action": "accept",
+        "targets": [],
+        "reason": "로컬 도구 결과에서 두 파일의 name이 같고 유효한 버전이 모두 1.2.3으로 일치하여 accept입니다."
+      },
+      "matches": true,
+      "error": null,
+      "wall_time_s": 7.797292583010858,
+      "reported_input_tokens": 8628,
+      "reported_output_tokens": 54,
+      "reported_thinking_tokens": 0,
+      "reported_cost_usd": null,
+      "prompt_characters": 991,
+      "scoring_note": "두 조건에 같은 형식 규칙을 줍니다. 개선 조건에서는 함수가 실제 파일을 읽어 action과 targets를 계산합니다. 모델 능력 향상으로 해석하지 않습니다."
+    }
+  ]
+}

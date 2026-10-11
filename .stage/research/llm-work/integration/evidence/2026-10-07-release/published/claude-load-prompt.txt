@@ -1,0 +1,8 @@
+This is a read-only release-loading test in an empty temporary project.
+Use the Skill tool to load stage:stage-handoff, avatar:avatar, and distill:distill-criteria.
+Read the plugin manifests from the same plugin roots and report their versions and exact paths.
+The expected versions are Stage 0.63.3, Avatar 0.1.2, and Distill 1.10.0. Report observed values;
+do not repeat the expected values without reading. Do not run the workflows, register work,
+write records, read user conversations, or access personal stores. Hooks are disabled for this
+isolated test. Do not invoke MCP mutations or any other skill. Report skill-load failures honestly.
+Return one JSON object with loaded_skills, observed_versions, plugin_paths, and failures.

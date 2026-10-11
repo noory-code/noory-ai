@@ -1,0 +1,222 @@
+{
+  "runs": 8,
+  "accepted_runs": 8,
+  "failed_runs": [],
+  "target_labels": 16,
+  "scored_labels": 16,
+  "matches": 16,
+  "mismatches": [],
+  "model_seconds": 42.31,
+  "reported_list_cost_usd": 0.0859344,
+  "cost_unavailable_runs": [],
+  "rows": [
+    {
+      "run": "E-old-1",
+      "id": "E1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "E-old-1",
+      "id": "E2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "match": true
+    },
+    {
+      "run": "E-new-1",
+      "id": "E1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "E-new-1",
+      "id": "E2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "match": true
+    },
+    {
+      "run": "F-old-1",
+      "id": "F1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "F-old-1",
+      "id": "F2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "match": true
+    },
+    {
+      "run": "F-new-1",
+      "id": "F1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "F-new-1",
+      "id": "F2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "match": true
+    },
+    {
+      "run": "E-old-2",
+      "id": "E1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "E-old-2",
+      "id": "E2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "match": true
+    },
+    {
+      "run": "E-new-2",
+      "id": "E1",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "E-new-2",
+      "id": "E2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      },
+      "match": true
+    },
+    {
+      "run": "F-old-2",
+      "id": "F1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "F-old-2",
+      "id": "F2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "match": true
+    },
+    {
+      "run": "F-new-2",
+      "id": "F1",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "actual": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      },
+      "match": true
+    },
+    {
+      "run": "F-new-2",
+      "id": "F2",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "actual": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      },
+      "match": true
+    }
+  ]
+}

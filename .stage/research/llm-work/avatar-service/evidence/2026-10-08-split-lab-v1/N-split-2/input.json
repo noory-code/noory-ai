@@ -1,0 +1,41 @@
+{
+  "requested_language": "ko",
+  "bundle": {
+    "bundle_id": "N",
+    "owner_id": "fictional-N",
+    "records": [
+      {
+        "id": "N1",
+        "owner_id": "fictional-N",
+        "speaker": "user",
+        "text": "처음 해보는 방법이라 헷갈려요. 단계별로 설명하고, 예시도 하나 넣어 주세요.",
+        "context": "처음 접한 도구의 사용법을 묻는 장면입니다.",
+        "unknowns": "도구 이름과 실제 사용 경험의 범위는 없습니다."
+      },
+      {
+        "id": "N2",
+        "owner_id": "fictional-N",
+        "speaker": "assistant",
+        "text": "설치하고 실행하면 됩니다.",
+        "context": "N1에 대한 AI의 답입니다. 예시는 없습니다.",
+        "unknowns": "이 대화 밖에서 예시를 받았는지는 모릅니다."
+      },
+      {
+        "id": "N3",
+        "owner_id": "fictional-N",
+        "speaker": "user",
+        "text": "예시가 빠졌어요. 아까 부탁한 예시 하나만 더 보여 주세요.",
+        "context": "N2를 읽고 같은 대화에서 다시 부탁합니다.",
+        "unknowns": "요청 뒤 예시를 받았는지는 없습니다."
+      },
+      {
+        "id": "N4",
+        "owner_id": "fictional-N",
+        "speaker": "user",
+        "text": "이 오류는 알아요. 지금은 고치는 명령어 한 줄만 알려 주세요.",
+        "context": "별개 오류 수정 대화입니다.",
+        "unknowns": "N1과의 순서와 같은 도구인지 여부는 없습니다."
+      }
+    ]
+  }
+}

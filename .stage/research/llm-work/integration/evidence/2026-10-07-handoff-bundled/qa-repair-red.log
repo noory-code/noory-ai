@@ -1,0 +1,25 @@
+test_changed_executed_wrapper_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_changed_executed_wrapper_fails) ... FAIL
+test_missing_reused_sender_manifest_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_missing_reused_sender_manifest_fails) ... FAIL
+
+======================================================================
+FAIL: test_changed_executed_wrapper_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_changed_executed_wrapper_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_verify_bundled_evidence.py", line 30, in test_changed_executed_wrapper_fails
+    with self.assertRaisesRegex(ValueError, "recording wrapper"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_reused_sender_manifest_fails (test_verify_bundled_evidence.BundledEvidenceTests.test_missing_reused_sender_manifest_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/test_verify_bundled_evidence.py", line 24, in test_missing_reused_sender_manifest_fails
+    with self.assertRaisesRegex(ValueError, "reused sender manifest"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.513s
+
+FAILED (failures=2)

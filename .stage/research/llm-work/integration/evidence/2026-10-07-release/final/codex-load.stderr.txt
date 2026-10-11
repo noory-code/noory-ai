@@ -1,0 +1,14 @@
+Reading additional input from stdin...
+2026-10-07T11:53:52.150156Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.229944Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.250054Z  WARN codex_mcp::rmcp_client: MCP server startup failed server_name="distill" error=handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response
+2026-10-07T11:53:52.296683Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.322270Z  WARN codex_mcp::rmcp_client: MCP server startup failed server_name="distill" error=handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response
+2026-10-07T11:53:52.371042Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.436362Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.499932Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.566252Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.632331Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.698741Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:53:52.763837Z  WARN codex_rollout::list: state db discrepancy during find_thread_path_by_id_str_in_subdir: falling_back
+2026-10-07T11:54:12.462670Z  WARN codex_mcp::rmcp_client: failed to initialize MCP client during shutdown: MCP startup failed: handshaking with MCP server failed: connection closed: initialize response: connection closed: initialize response

@@ -1,0 +1,19 @@
+Review the uncommitted CI fixes for W-00000279 and prepare the corrected release for W-00000278.
+Read the two cards under /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000278/.
+The human authorized direct supervisor implementation plus independent Claude review, then push, merge and release.
+Read CLAUDE.md and stage/CLAUDE.md in /Users/woogis/.codex/worktrees/criteria-release/noory-ai. Confirm branch codex/criteria-release.
+Do not create another worktree or delegate. Do not commit, push or merge.
+Inspect git diff and the surrounding changed code. Check these fixes independently:
+- Stage record_paths sorts path.parts so Windows case folding cannot change scan order.
+- The audit fixture selects the sorted first duplicate ID instead of relying on filesystem enumeration order.
+  Three spurious INDEX findings disappear because the index now links W-0001 to its own card.
+- Avatar's test setup closes the SQLite connection and still commits the transaction.
+A PureWindowsPath test failed before the fix and passed after it. CI failure logs are in /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-release.
+Focused checks, Avatar's 24 tests and 7 plugin contracts passed. Full Stage suite is running.
+If any actionable defect remains, report it with the path and stop without changing files.
+If the changes are sound, run exactly one release command per call:
+TZ=Asia/Seoul python3 stage/scripts/release_plugin.py stage --bump patch
+TZ=Asia/Seoul python3 stage/scripts/release_plugin.py avatar --bump patch
+This makes Stage 0.63.1 and Avatar 0.1.2. Only their six changelog and manifest files may be changed by you.
+Review the resulting versions and git diff --check. Report your independent verdict, inspected files,
+release result, decisions and scope crossings. Do not claim deployment completed.

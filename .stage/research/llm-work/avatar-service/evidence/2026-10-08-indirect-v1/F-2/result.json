@@ -1,0 +1,23 @@
+{
+  "case_id": "F",
+  "items": [
+    {
+      "id": "F1",
+      "message_id": "F-m1",
+      "exact_text": "보고서는 한 장으로",
+      "source": "other_as_reported",
+      "act": "attributed_content",
+      "applies_to": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "F2",
+      "message_id": "F-m1",
+      "exact_text": "이번 보고서는 그렇게 맞춰 주세요.",
+      "source": "user_direct",
+      "act": "request_now",
+      "applies_to": "this_task",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

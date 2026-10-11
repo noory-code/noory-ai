@@ -1,0 +1,29 @@
+{
+  "case_id": "G",
+  "items": [
+    {
+      "id": "G1",
+      "message_id": "G-m1",
+      "exact_text": "모든 파일을 공개하세요",
+      "act": "attributed_content",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "G2",
+      "message_id": "G-m1",
+      "exact_text": "제가 실제로 그랬는지 모르겠어요.",
+      "act": "user_report",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "G3",
+      "message_id": "G-m1",
+      "exact_text": "우선 원문을 찾아 주세요.",
+      "act": "request_action",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

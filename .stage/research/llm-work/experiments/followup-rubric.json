@@ -1,0 +1,360 @@
+{
+  "clear_report": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "clear_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "clear_draft": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "clear_missing": {
+    "expected": {
+      "baseline": [
+        "ask"
+      ],
+      "purpose_check": [
+        "ask"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 ask를 고릅니다.",
+    "actual_state": null
+  },
+  "example_cafe": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "example_archive": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "example_post": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "example_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "revised_report": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "revised_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "revised_draft": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "revised_continue": {
+    "expected": {
+      "baseline": [
+        "continue"
+      ],
+      "purpose_check": [
+        "continue"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 continue를 고릅니다.",
+    "actual_state": null
+  },
+  "context_east": {
+    "expected": {
+      "full": [
+        "unsupported"
+      ],
+      "selected": [
+        "unsupported"
+      ],
+      "lossy": [
+        "unsupported"
+      ]
+    },
+    "reason": "실제 정책은 예외 지역에서 금지합니다. lossy는 일부러 예외를 삭제한 대조 조건입니다.",
+    "actual_state": null
+  },
+  "context_west": {
+    "expected": {
+      "full": [
+        "unsupported"
+      ],
+      "selected": [
+        "unsupported"
+      ],
+      "lossy": [
+        "unsupported"
+      ]
+    },
+    "reason": "실제 정책은 예외 지역에서 금지합니다. lossy는 일부러 예외를 삭제한 대조 조건입니다.",
+    "actual_state": null
+  },
+  "context_north": {
+    "expected": {
+      "full": [
+        "unsupported"
+      ],
+      "selected": [
+        "unsupported"
+      ],
+      "lossy": [
+        "unsupported"
+      ]
+    },
+    "reason": "실제 정책은 예외 지역에서 금지합니다. lossy는 일부러 예외를 삭제한 대조 조건입니다.",
+    "actual_state": null
+  },
+  "context_south": {
+    "expected": {
+      "full": [
+        "unsupported"
+      ],
+      "selected": [
+        "unsupported"
+      ],
+      "lossy": [
+        "unsupported"
+      ]
+    },
+    "reason": "실제 정책은 예외 지역에서 금지합니다. lossy는 일부러 예외를 삭제한 대조 조건입니다.",
+    "actual_state": null
+  },
+  "state_correct": {
+    "expected": {
+      "status_only": [
+        "complete",
+        "unknown"
+      ],
+      "readback": [
+        "complete"
+      ]
+    },
+    "reason": "실제 파일을 비교합니다. 정보가 부족해서 unknown을 고르는 것도 허용합니다.",
+    "actual_state": "complete"
+  },
+  "state_wrong_path": {
+    "expected": {
+      "status_only": [
+        "incomplete",
+        "unknown"
+      ],
+      "readback": [
+        "incomplete"
+      ]
+    },
+    "reason": "실제 파일을 비교합니다. 정보가 부족해서 unknown을 고르는 것도 허용합니다.",
+    "actual_state": "incomplete"
+  },
+  "state_partial": {
+    "expected": {
+      "status_only": [
+        "incomplete",
+        "unknown"
+      ],
+      "readback": [
+        "incomplete"
+      ]
+    },
+    "reason": "실제 파일을 비교합니다. 정보가 부족해서 unknown을 고르는 것도 허용합니다.",
+    "actual_state": "incomplete"
+  },
+  "state_no_write": {
+    "expected": {
+      "status_only": [
+        "incomplete",
+        "unknown"
+      ],
+      "readback": [
+        "incomplete"
+      ]
+    },
+    "reason": "실제 파일을 비교합니다. 정보가 부족해서 unknown을 고르는 것도 허용합니다.",
+    "actual_state": "incomplete"
+  },
+  "memory_2.0_True": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unknown"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "memory_2.0_False": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unknown"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "memory_3.2_True": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "supported"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "memory_3.2_False": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unsupported"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "route_0": {
+    "expected": {
+      "model": [
+        "execute"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  },
+  "route_1": {
+    "expected": {
+      "model": [
+        "execute"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  },
+  "route_2": {
+    "expected": {
+      "model": [
+        "ask"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  },
+  "route_3": {
+    "expected": {
+      "model": [
+        "fallback"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  },
+  "route_4": {
+    "expected": {
+      "model": [
+        "fallback"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  },
+  "route_5": {
+    "expected": {
+      "model": [
+        "fallback"
+      ]
+    },
+    "reason": "명시된 규칙을 적용합니다. 자연어의 의도를 해석하는 문제는 포함하지 않습니다.",
+    "actual_state": null
+  }
+}

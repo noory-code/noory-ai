@@ -1,0 +1,483 @@
+﻿2026-10-07T11:53:47.5204664Z Current runner version: '2.337.0'
+2026-10-07T11:53:47.5224877Z ##[group]Runner Image Provisioner
+2026-10-07T11:53:47.5225606Z Hosted Compute Agent
+2026-10-07T11:53:47.5226054Z Version: 20260901.588
+2026-10-07T11:53:47.5226460Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T11:53:47.5226924Z Build Date: 2026-09-01T19:56:44Z
+2026-10-07T11:53:47.5227295Z Worker ID: {4939afd8-f428-4f9d-a5b8-59ecd65f4b2e}
+2026-10-07T11:53:47.5227738Z Azure Region: centralus
+2026-10-07T11:53:47.5228229Z ##[endgroup]
+2026-10-07T11:53:47.5229564Z ##[group]Operating System
+2026-10-07T11:53:47.5230165Z Microsoft Windows Server 2025
+2026-10-07T11:53:47.5230676Z 10.0.26100
+2026-10-07T11:53:47.5231151Z Datacenter
+2026-10-07T11:53:47.5231535Z ##[endgroup]
+2026-10-07T11:53:47.5231881Z ##[group]Runner Image
+2026-10-07T11:53:47.5232230Z Image: windows-2025-vs2026
+2026-10-07T11:53:47.5232583Z Version: 20260925.250.1
+2026-10-07T11:53:47.5233532Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20260925.250/images/windows/Windows2025-VS2026-Readme.md
+2026-10-07T11:53:47.5234443Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20260925.250
+2026-10-07T11:53:47.5235041Z ##[endgroup]
+2026-10-07T11:53:47.5235753Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T11:53:47.5237098Z Contents: read
+2026-10-07T11:53:47.5237647Z Metadata: read
+2026-10-07T11:53:47.5238015Z Packages: read
+2026-10-07T11:53:47.5238348Z ##[endgroup]
+2026-10-07T11:53:47.5239724Z Secret source: Actions
+2026-10-07T11:53:47.5240239Z Cache mode: write
+2026-10-07T11:53:47.5240694Z Prepare workflow directory
+2026-10-07T11:53:47.5493803Z Prepare all required actions
+2026-10-07T11:53:47.5528959Z Getting action download info
+2026-10-07T11:53:47.7626494Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-07T11:53:48.2871120Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-07T11:53:48.5225235Z Complete job name: test (windows-latest, 3.12)
+2026-10-07T11:53:48.6305055Z ##[group]Run actions/checkout@v4
+2026-10-07T11:53:48.6305824Z with:
+2026-10-07T11:53:48.6306087Z   repository: noory-code/noory-ai
+2026-10-07T11:53:48.6308417Z   token: ***
+2026-10-07T11:53:48.6308655Z   ssh-strict: true
+2026-10-07T11:53:48.6308905Z   ssh-user: git
+2026-10-07T11:53:48.6309156Z   persist-credentials: true
+2026-10-07T11:53:48.6309433Z   clean: true
+2026-10-07T11:53:48.6309682Z   sparse-checkout-cone-mode: true
+2026-10-07T11:53:48.6309984Z   fetch-depth: 1
+2026-10-07T11:53:48.6310232Z   fetch-tags: false
+2026-10-07T11:53:48.6310498Z   show-progress: true
+2026-10-07T11:53:48.6310759Z   lfs: false
+2026-10-07T11:53:48.6311002Z   submodules: false
+2026-10-07T11:53:48.6311261Z   set-safe-directory: true
+2026-10-07T11:53:48.6311557Z   allow-unsafe-pr-checkout: false
+2026-10-07T11:53:48.6311955Z ##[endgroup]
+2026-10-07T11:53:48.7404965Z Syncing repository: noory-code/noory-ai
+2026-10-07T11:53:48.7406184Z ##[group]Getting Git version info
+2026-10-07T11:53:48.7406582Z Working directory is 'D:\a\noory-ai\noory-ai'
+2026-10-07T11:53:48.7869745Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-07T11:53:49.1745413Z git version 2.55.0.windows.5
+2026-10-07T11:53:49.1783765Z ##[endgroup]
+2026-10-07T11:53:49.1798631Z Temporarily overriding HOME='D:\a\_temp\f4c30e8f-91ad-476b-a49b-43ba57b13c9c' before making global git config changes
+2026-10-07T11:53:49.1805741Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T11:53:49.1807364Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\noory-ai\noory-ai
+2026-10-07T11:53:49.2361459Z Deleting the contents of 'D:\a\noory-ai\noory-ai'
+2026-10-07T11:53:49.2365964Z ##[group]Initializing the repository
+2026-10-07T11:53:49.2371854Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\noory-ai\noory-ai
+2026-10-07T11:53:49.5296866Z Initialized empty Git repository in D:/a/noory-ai/noory-ai/.git/
+2026-10-07T11:53:49.5341187Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/noory-code/noory-ai
+2026-10-07T11:53:49.5876599Z ##[endgroup]
+2026-10-07T11:53:49.5877840Z ##[group]Disabling automatic garbage collection
+2026-10-07T11:53:49.5883065Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-10-07T11:53:49.6090476Z ##[endgroup]
+2026-10-07T11:53:49.6091781Z ##[group]Setting up auth
+2026-10-07T11:53:49.6099156Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T11:53:49.6295735Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-07T11:53:51.0044348Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T11:53:51.0244181Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-07T11:53:51.3787742Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T11:53:51.3986618Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-07T11:53:51.7662822Z [command]"C:\Program Files\Git\bin\git.exe" config --local http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-10-07T11:53:51.7886460Z ##[endgroup]
+2026-10-07T11:53:51.7886908Z ##[group]Fetching the repository
+2026-10-07T11:53:51.7895580Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +2d73f3c0f931d27f7945f2e3ea8cc8351184f40a:refs/remotes/pull/5/merge
+2026-10-07T11:53:54.2868902Z From https://github.com/noory-code/noory-ai
+2026-10-07T11:53:54.2869312Z  * [new ref]         2d73f3c0f931d27f7945f2e3ea8cc8351184f40a -> pull/5/merge
+2026-10-07T11:53:54.2906231Z ##[endgroup]
+2026-10-07T11:53:54.2906597Z ##[group]Determining the checkout info
+2026-10-07T11:53:54.2910537Z ##[endgroup]
+2026-10-07T11:53:54.2918238Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-10-07T11:53:54.3335798Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-10-07T11:53:54.3529938Z ##[group]Checking out the ref
+2026-10-07T11:53:54.3536022Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force refs/remotes/pull/5/merge
+2026-10-07T11:53:54.7074139Z Note: switching to 'refs/remotes/pull/5/merge'.
+2026-10-07T11:53:54.7074503Z 
+2026-10-07T11:53:54.7074699Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-07T11:53:54.7075027Z changes and commit them, and you can discard any commits you make in this
+2026-10-07T11:53:54.7075303Z state without impacting any branches by switching back to a branch.
+2026-10-07T11:53:54.7075456Z 
+2026-10-07T11:53:54.7075570Z If you want to create a new branch to retain commits you create, you may
+2026-10-07T11:53:54.7075967Z do so (now or later) by using -c with the switch command. Example:
+2026-10-07T11:53:54.7076109Z 
+2026-10-07T11:53:54.7076187Z   git switch -c <new-branch-name>
+2026-10-07T11:53:54.7076288Z 
+2026-10-07T11:53:54.7076349Z Or undo this operation with:
+2026-10-07T11:53:54.7076480Z 
+2026-10-07T11:53:54.7076552Z   git switch -
+2026-10-07T11:53:54.7076622Z 
+2026-10-07T11:53:54.7076742Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-07T11:53:54.7076910Z 
+2026-10-07T11:53:54.7077101Z HEAD is now at 2d73f3c Merge e4d55a49d70a2731a514ceece1227aebc354df2c into d7b6de23441a19b0854dd25d6900743dc9620780
+2026-10-07T11:53:54.7179825Z ##[endgroup]
+2026-10-07T11:53:54.7504917Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-10-07T11:53:54.7686012Z 2d73f3c0f931d27f7945f2e3ea8cc8351184f40a
+2026-10-07T11:53:54.8038276Z ##[group]Run actions/setup-python@v5
+2026-10-07T11:53:54.8038486Z with:
+2026-10-07T11:53:54.8038612Z   python-version: 3.12
+2026-10-07T11:53:54.8038741Z   check-latest: false
+2026-10-07T11:53:54.8040099Z   token: ***
+2026-10-07T11:53:54.8090266Z   update-environment: true
+2026-10-07T11:53:54.8090423Z   allow-prereleases: false
+2026-10-07T11:53:54.8090558Z   freethreaded: false
+2026-10-07T11:53:54.8090706Z ##[endgroup]
+2026-10-07T11:53:54.9122644Z ##[group]Installed versions
+2026-10-07T11:53:54.9290709Z (node:9524) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T11:53:54.9291142Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T11:53:54.9291559Z Successfully set up CPython (3.12.10)
+2026-10-07T11:53:54.9291974Z ##[endgroup]
+2026-10-07T11:53:54.9620386Z ##[group]Run python -m unittest discover -s hooks/tests -q
+2026-10-07T11:53:54.9620772Z [36;1mpython -m unittest discover -s hooks/tests -q[0m
+2026-10-07T11:53:55.0146810Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-07T11:53:55.0147027Z env:
+2026-10-07T11:53:55.0147199Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:53:55.0147477Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-10-07T11:53:55.0147731Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:53:55.0147960Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:53:55.0148184Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:53:55.0148371Z ##[endgroup]
+2026-10-07T11:54:03.3648197Z ----------------------------------------------------------------------
+2026-10-07T11:54:03.3648480Z Ran 377 tests in 5.912s
+2026-10-07T11:54:03.3648672Z 
+2026-10-07T11:54:03.3648720Z OK (skipped=44)
+2026-10-07T11:54:03.4799505Z ##[group]Run python -m unittest discover -s scripts/tests -q
+2026-10-07T11:54:03.4799788Z [36;1mpython -m unittest discover -s scripts/tests -q[0m
+2026-10-07T11:54:03.4847561Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-10-07T11:54:03.4847760Z env:
+2026-10-07T11:54:03.4847917Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:54:03.4848172Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.12.10\x64/lib/pkgconfig
+2026-10-07T11:54:03.4848421Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:54:03.4848636Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:54:03.4848853Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.12.10\x64
+2026-10-07T11:54:03.4849024Z ##[endgroup]
+2026-10-07T11:55:12.1572730Z Mode: execute
+2026-10-07T11:55:12.1572977Z Target parent: W-00000001
+2026-10-07T11:55:12.1573179Z Selected item: W-00000002
+2026-10-07T11:55:12.1577074Z Executor: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBQYXRoKCdleGVjdXRvci13b3JrLnR4dCcpLndyaXRlX3RleHQoJ2RvbmVcbicsIGVuY29kaW5nPSd1dGYtOCcpOyBpbXBvcnQganNvbiwgb3M7IGZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aDsgbG9nID0gUGF0aChvcy5lbnZpcm9uWydTVEFHRV9XT1JLX0xPR19QQVRIJ10pOyBsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgJ1xuIyMjIEV4ZWN1dG9yIHJlcG9ydFxuV2hhdCBjaGFuZ2VkOiB0ZXN0IGV4ZWN1dG9yIGNoYW5nZWQgaXRzIGRlY2xhcmVkIHBhdGhzXG5XaHk6IGV4ZXJjaXNlIHRoZSBkcml2ZXIgY29udHJhY3RcbkNoYW5nZWQgcGF0aHMgKEpTT04pOlxuJyArIGpzb24uZHVtcHMoWydleGVjdXRvci13b3JrLnR4dCddKSArICdcblJldmlldyByZXF1ZXN0OiByZXZpZXcgZXZlcnkgc3VjY2VzcyBjcml0ZXJpb25cbicsIGVuY29kaW5nPSd1dGYtOCcp'))"
+2026-10-07T11:55:12.1581464Z Acceptance: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('cmFpc2UgU3lzdGVtRXhpdCgwKQ=='))"
+2026-10-07T11:55:12.1586554Z Independent reviewer: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('aW1wb3J0IGpzb24sIG9zCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApsb2cgPSBQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1dPUktfTE9HX1BBVEgnXSkKcmVwb3J0ID0gKCdcbiMjIyBSZXZpZXdlciByZXBvcnRcbkNSSVRFUklBIFZFUkRJQ1Q6XG4tIGNyaXRlcmlvbjogUEFTUyAtIHRlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHNcbkFQUFJPVkVEXG5PVVQtT0YtQ1JJVEVSSUEgT0JTRVJWQVRJT05TOlxuLSBOb25lXG4nKQpsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgcmVwb3J0LCBlbmNvZGluZz0ndXRmLTgnKQpQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1JFVklFV19WRVJESUNUX0ZJTEUnXSkud3JpdGVfdGV4dCgKICAgIGpzb24uZHVtcHMoeydjcml0ZXJpYSc6IFt7J2NyaXRlcmlvbic6ICdjcml0ZXJpb24nLCAndmVyZGljdCc6ICdQQVNTJywgJ3JlYXNvbic6ICd0ZXN0IHJldmlld2VyIGluc3BlY3RlZCB0aGUgaW5wdXRzJ31dLCAnYXBwcm92ZWQnOiBUcnVlfSksIGVuY29kaW5nPSd1dGYtOCcpCnByaW50KCdBUFBST1ZFRCcp'))"
+2026-10-07T11:55:12.1590901Z Attempt: 1/unlimited
+2026-10-07T11:55:12.1591031Z Iteration: 1/unlimited
+2026-10-07T11:55:12.1591171Z Execution time: 0s/unlimited
+2026-10-07T11:55:12.1591395Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:12.1591626Z Executor result:
+2026-10-07T11:55:12.1595230Z $ C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBQYXRoKCdleGVjdXRvci13b3JrLnR4dCcpLndyaXRlX3RleHQoJ2RvbmVcbicsIGVuY29kaW5nPSd1dGYtOCcpOyBpbXBvcnQganNvbiwgb3M7IGZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aDsgbG9nID0gUGF0aChvcy5lbnZpcm9uWydTVEFHRV9XT1JLX0xPR19QQVRIJ10pOyBsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgJ1xuIyMjIEV4ZWN1dG9yIHJlcG9ydFxuV2hhdCBjaGFuZ2VkOiB0ZXN0IGV4ZWN1dG9yIGNoYW5nZWQgaXRzIGRlY2xhcmVkIHBhdGhzXG5XaHk6IGV4ZXJjaXNlIHRoZSBkcml2ZXIgY29udHJhY3RcbkNoYW5nZWQgcGF0aHMgKEpTT04pOlxuJyArIGpzb24uZHVtcHMoWydleGVjdXRvci13b3JrLnR4dCddKSArICdcblJldmlldyByZXF1ZXN0OiByZXZpZXcgZXZlcnkgc3VjY2VzcyBjcml0ZXJpb25cbicsIGVuY29kaW5nPSd1dGYtOCcp'))"
+2026-10-07T11:55:12.1598430Z [exit 0]
+2026-10-07T11:55:12.1598498Z 
+2026-10-07T11:55:12.1598550Z Preflight result:
+2026-10-07T11:55:12.1600102Z $ C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('cmFpc2UgU3lzdGVtRXhpdCgwKQ=='))"
+2026-10-07T11:55:12.1600422Z [exit 0]
+2026-10-07T11:55:12.1600479Z 
+2026-10-07T11:55:21.9887366Z Mode: execute
+2026-10-07T11:55:21.9887672Z Target parent: W-00000001
+2026-10-07T11:55:21.9887901Z Selected item: W-00000002
+2026-10-07T11:55:21.9895353Z Executor: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFVzZXJzXFxSVU5ORVJ+MVxcQXBwRGF0YVxcTG9jYWxcXFRlbXBcXHRtcHFxZmMyaXA3XFxleGVjdXRvci1jb3VudCcpOyBwYXRoLndyaXRlX3RleHQoc3RyKGludChwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKSkgKyAxKSBpZiBwYXRoLmV4aXN0cygpIGVsc2UgJzEnLCBlbmNvZGluZz0ndXRmLTgnKTsgUGF0aCgnZXhlY3V0b3Itd29yay50eHQnKS53cml0ZV90ZXh0KCdkb25lXG4nLCBlbmNvZGluZz0ndXRmLTgnKTsgaW1wb3J0IGpzb24sIG9zOyBmcm9tIHBhdGhsaWIgaW1wb3J0IFBhdGg7IGxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKTsgbG9nLndyaXRlX3RleHQobG9nLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKSArICdcbiMjIyBFeGVjdXRvciByZXBvcnRcbldoYXQgY2hhbmdlZDogdGVzdCBleGVjdXRvciBjaGFuZ2VkIGl0cyBkZWNsYXJlZCBwYXRoc1xuV2h5OiBleGVyY2lzZSB0aGUgZHJpdmVyIGNvbnRyYWN0XG5DaGFuZ2VkIHBhdGhzIChKU09OKTpcbicgKyBqc29uLmR1bXBzKFsnZXhlY3V0b3Itd29yay50eHQnXSkgKyAnXG5SZXZpZXcgcmVxdWVzdDogcmV2aWV3IGV2ZXJ5IHN1Y2Nlc3MgY3JpdGVyaW9uXG4nLCBlbmNvZGluZz0ndXRmLTgnKQ=='))"
+2026-10-07T11:55:21.9902928Z Acceptance: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFVzZXJzXFxSVU5ORVJ+MVxcQXBwRGF0YVxcTG9jYWxcXFRlbXBcXHRtcHFxZmMyaXA3XFxhY2NlcHRhbmNlLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcp'))"
+2026-10-07T11:55:21.9919300Z Independent reviewer: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('dHJ5OgogICAgZXhlYygiZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFxcVXNlcnNcXFxcUlVOTkVSfjFcXFxcQXBwRGF0YVxcXFxMb2NhbFxcXFxUZW1wXFxcXHRtcHFxZmMyaXA3XFxcXHJldmlld2VyLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpIikKZXhjZXB0IFN5c3RlbUV4aXQgYXMgZXhjOgogICAgaWYgZXhjLmNvZGUgbm90IGluIChOb25lLCAwKToKICAgICAgICByYWlzZQppbXBvcnQganNvbiwgb3MKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKQpyZXBvcnQgPSAoJ1xuIyMjIFJldmlld2VyIHJlcG9ydFxuQ1JJVEVSSUEgVkVSRElDVDpcbi0gY3JpdGVyaW9uOiBQQVNTIC0gdGVzdCByZXZpZXdlciBpbnNwZWN0ZWQgdGhlIGlucHV0c1xuQVBQUk9WRURcbk9VVC1PRi1DUklURVJJQSBPQlNFUlZBVElPTlM6XG4tIE5vbmVcbicpCmxvZy53cml0ZV90ZXh0KGxvZy5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykgKyByZXBvcnQsIGVuY29kaW5nPSd1dGYtOCcpClBhdGgob3MuZW52aXJvblsnU1RBR0VfUkVWSUVXX1ZFUkRJQ1RfRklMRSddKS53cml0ZV90ZXh0KAogICAganNvbi5kdW1wcyh7J2NyaXRlcmlhJzogW3snY3JpdGVyaW9uJzogJ2NyaXRlcmlvbicsICd2ZXJkaWN0JzogJ1BBU1MnLCAncmVhc29uJzogJ3Rlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHMnfV0sICdhcHByb3ZlZCc6IFRydWV9KSwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0FQUFJPVkVEJyk='))"
+2026-10-07T11:55:21.9930728Z Attempt: 1/unlimited
+2026-10-07T11:55:21.9931467Z Iteration: 1/unlimited
+2026-10-07T11:55:21.9931723Z Execution time: 0s/unlimited
+2026-10-07T11:55:21.9932093Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:21.9932474Z Executor result:
+2026-10-07T11:55:21.9942855Z $ C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFVzZXJzXFxSVU5ORVJ+MVxcQXBwRGF0YVxcTG9jYWxcXFRlbXBcXHRtcHFxZmMyaXA3XFxleGVjdXRvci1jb3VudCcpOyBwYXRoLndyaXRlX3RleHQoc3RyKGludChwYXRoLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKSkgKyAxKSBpZiBwYXRoLmV4aXN0cygpIGVsc2UgJzEnLCBlbmNvZGluZz0ndXRmLTgnKTsgUGF0aCgnZXhlY3V0b3Itd29yay50eHQnKS53cml0ZV90ZXh0KCdkb25lXG4nLCBlbmNvZGluZz0ndXRmLTgnKTsgaW1wb3J0IGpzb24sIG9zOyBmcm9tIHBhdGhsaWIgaW1wb3J0IFBhdGg7IGxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKTsgbG9nLndyaXRlX3RleHQobG9nLnJlYWRfdGV4dChlbmNvZGluZz0ndXRmLTgnKSArICdcbiMjIyBFeGVjdXRvciByZXBvcnRcbldoYXQgY2hhbmdlZDogdGVzdCBleGVjdXRvciBjaGFuZ2VkIGl0cyBkZWNsYXJlZCBwYXRoc1xuV2h5OiBleGVyY2lzZSB0aGUgZHJpdmVyIGNvbnRyYWN0XG5DaGFuZ2VkIHBhdGhzIChKU09OKTpcbicgKyBqc29uLmR1bXBzKFsnZXhlY3V0b3Itd29yay50eHQnXSkgKyAnXG5SZXZpZXcgcmVxdWVzdDogcmV2aWV3IGV2ZXJ5IHN1Y2Nlc3MgY3JpdGVyaW9uXG4nLCBlbmNvZGluZz0ndXRmLTgnKQ=='))"
+2026-10-07T11:55:21.9950454Z [exit 0]
+2026-10-07T11:55:21.9950535Z 
+2026-10-07T11:55:21.9950592Z Acceptance result:
+2026-10-07T11:55:21.9952689Z $ C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFVzZXJzXFxSVU5ORVJ+MVxcQXBwRGF0YVxcTG9jYWxcXFRlbXBcXHRtcHFxZmMyaXA3XFxhY2NlcHRhbmNlLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcp'))"
+2026-10-07T11:55:21.9953946Z [exit 0]
+2026-10-07T11:55:21.9954005Z 
+2026-10-07T11:55:21.9954069Z Independent reviewer result:
+2026-10-07T11:55:21.9962698Z $ C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('dHJ5OgogICAgZXhlYygiZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnQzpcXFxcVXNlcnNcXFxcUlVOTkVSfjFcXFxcQXBwRGF0YVxcXFxMb2NhbFxcXFxUZW1wXFxcXHRtcHFxZmMyaXA3XFxcXHJldmlld2VyLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpIikKZXhjZXB0IFN5c3RlbUV4aXQgYXMgZXhjOgogICAgaWYgZXhjLmNvZGUgbm90IGluIChOb25lLCAwKToKICAgICAgICByYWlzZQppbXBvcnQganNvbiwgb3MKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKQpyZXBvcnQgPSAoJ1xuIyMjIFJldmlld2VyIHJlcG9ydFxuQ1JJVEVSSUEgVkVSRElDVDpcbi0gY3JpdGVyaW9uOiBQQVNTIC0gdGVzdCByZXZpZXdlciBpbnNwZWN0ZWQgdGhlIGlucHV0c1xuQVBQUk9WRURcbk9VVC1PRi1DUklURVJJQSBPQlNFUlZBVElPTlM6XG4tIE5vbmVcbicpCmxvZy53cml0ZV90ZXh0KGxvZy5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykgKyByZXBvcnQsIGVuY29kaW5nPSd1dGYtOCcpClBhdGgob3MuZW52aXJvblsnU1RBR0VfUkVWSUVXX1ZFUkRJQ1RfRklMRSddKS53cml0ZV90ZXh0KAogICAganNvbi5kdW1wcyh7J2NyaXRlcmlhJzogW3snY3JpdGVyaW9uJzogJ2NyaXRlcmlvbicsICd2ZXJkaWN0JzogJ1BBU1MnLCAncmVhc29uJzogJ3Rlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHMnfV0sICdhcHByb3ZlZCc6IFRydWV9KSwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0FQUFJPVkVEJyk='))"
+2026-10-07T11:55:21.9972189Z [exit 0]
+2026-10-07T11:55:21.9972292Z APPROVED
+2026-10-07T11:55:49.2781121Z Mode: execute
+2026-10-07T11:55:49.2781595Z Target parent: W-00000001
+2026-10-07T11:55:49.2781801Z Selected item: W-00000002
+2026-10-07T11:55:49.2782135Z Executor: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('cmFpc2UgU3lzdGVtRXhpdCgwKQ=='))"
+2026-10-07T11:55:49.2782642Z Acceptance: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('cmFpc2UgU3lzdGVtRXhpdCgwKQ=='))"
+2026-10-07T11:55:49.2786941Z Independent reviewer: C:\hostedtoolcache\windows\Python\3.12.10\x64\python.exe -c "import base64;exec(base64.b64decode('aW1wb3J0IGpzb24sIG9zCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApsb2cgPSBQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1dPUktfTE9HX1BBVEgnXSkKcmVwb3J0ID0gKCdcbiMjIyBSZXZpZXdlciByZXBvcnRcbkNSSVRFUklBIFZFUkRJQ1Q6XG4tIGNyaXRlcmlvbjogUEFTUyAtIHRlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHNcbkFQUFJPVkVEXG5PVVQtT0YtQ1JJVEVSSUEgT0JTRVJWQVRJT05TOlxuLSBOb25lXG4nKQpsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgcmVwb3J0LCBlbmNvZGluZz0ndXRmLTgnKQpQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1JFVklFV19WRVJESUNUX0ZJTEUnXSkud3JpdGVfdGV4dCgKICAgIGpzb24uZHVtcHMoeydjcml0ZXJpYSc6IFt7J2NyaXRlcmlvbic6ICdjcml0ZXJpb24nLCAndmVyZGljdCc6ICdQQVNTJywgJ3JlYXNvbic6ICd0ZXN0IHJldmlld2VyIGluc3BlY3RlZCB0aGUgaW5wdXRzJ31dLCAnYXBwcm92ZWQnOiBUcnVlfSksIGVuY29kaW5nPSd1dGYtOCcpCnByaW50KCdBUFBST1ZFRCcp'))"
+2026-10-07T11:55:49.2791147Z Attempt: 1/unlimited
+2026-10-07T11:55:49.2791271Z Iteration: 1/unlimited
+2026-10-07T11:55:49.2791604Z Execution time: 0s/unlimited
+2026-10-07T11:55:49.2791819Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:49.2792059Z W-00000001: driver exited with status 0
+2026-10-07T11:55:49.2792291Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmpzwfk3rtt\worktrees\W-00000001
+2026-10-07T11:55:49.2792538Z Merge branch: stage/worktree/W-00000001
+2026-10-07T11:55:49.2792688Z W-00000002: driver exited with status 0
+2026-10-07T11:55:49.2792902Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmpzwfk3rtt\worktrees\W-00000002
+2026-10-07T11:55:49.2793124Z Merge branch: stage/worktree/W-00000002
+2026-10-07T11:55:49.2793282Z Removed worktree and branch for W-00000001
+2026-10-07T11:55:49.2793442Z Removed worktree and branch for W-00000001
+2026-10-07T11:55:49.2793595Z W-00000001: driver exited with status 0
+2026-10-07T11:55:49.2793814Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmptlmj02mb\worktrees\W-00000001
+2026-10-07T11:55:49.2794051Z Merge branch: stage/worktree/W-00000001
+2026-10-07T11:55:49.2794201Z W-00000002: driver exited with status 0
+2026-10-07T11:55:49.2794414Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmptlmj02mb\worktrees\W-00000002
+2026-10-07T11:55:49.2794637Z Merge branch: stage/worktree/W-00000002
+2026-10-07T11:55:49.2794785Z W-00000003: driver exited with status 0
+2026-10-07T11:55:49.2794995Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmptlmj02mb\worktrees\W-00000003
+2026-10-07T11:55:49.2795220Z Merge branch: stage/worktree/W-00000003
+2026-10-07T11:55:49.2795366Z W-00000001: driver exited with status 0
+2026-10-07T11:55:49.2795579Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmp2qz6t5ze\worktrees\W-00000001
+2026-10-07T11:55:49.2795931Z Merge branch: stage/worktree/W-00000001
+2026-10-07T11:55:49.2796087Z W-00000002: driver exited with status 0
+2026-10-07T11:55:49.2796302Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmp2qz6t5ze\worktrees\W-00000002
+2026-10-07T11:55:49.2796660Z Merge branch: stage/worktree/W-00000002
+2026-10-07T11:55:49.2796923Z W-00000001: driver exited with status 0
+2026-10-07T11:55:49.2797158Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmp_sdk4t3c\worktrees\W-00000001
+2026-10-07T11:55:49.2797381Z Merge branch: stage/worktree/W-00000001
+2026-10-07T11:55:49.2797536Z W-00000002: driver exited with status 0
+2026-10-07T11:55:49.2797744Z Worktree: C:\Users\runneradmin\AppData\Local\Temp\tmp_sdk4t3c\worktrees\W-00000002
+2026-10-07T11:55:49.2797962Z Merge branch: stage/worktree/W-00000002
+2026-10-07T11:55:49.2798180Z Unattended run on isolated branch: stage/driver/W-00000001-1791374147 (base: master)
+2026-10-07T11:55:49.2798466Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:49.2798750Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:55:49.2799028Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:55:49.2799460Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374147. Human review + merge required; the base branch was not modified.
+2026-10-07T11:55:49.2799881Z Unattended run on isolated branch: stage/driver/W-00000001-1791374148 (base: master)
+2026-10-07T11:55:49.2800169Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:49.2800445Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:55:49.2800716Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:55:49.2800990Z [W-00000002] completed on stage/driver/W-00000001-1791374148
+2026-10-07T11:55:54.0829768Z Outcome: blocked — cannot commit ancestor lifecycle for W-00000002: simulated lifecycle commit failure; handoff on stage/driver/W-00000001-1791374148
+2026-10-07T11:55:54.0830800Z Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+2026-10-07T11:55:54.0831606Z Unattended run on isolated branch: stage/driver/W-00000001-1791374149 (base: master)
+2026-10-07T11:55:54.0832093Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:54.0832552Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:55:54.0832996Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:55:54.0833687Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374149. Human review + merge required; the base branch was not modified.
+2026-10-07T11:55:54.0834386Z Unattended run on isolated branch: stage/driver/W-00000001-1791374150 (base: master)
+2026-10-07T11:55:54.0834859Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:54.0835324Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:55:54.0835778Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:55:54.0836256Z [W-00000002] close failed (acceptance or independent review); close_work output:
+2026-10-07T11:55:54.0836623Z simulated close failure; retry 1/2
+2026-10-07T11:55:54.0836974Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:54.0837443Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:55:54.0837882Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:55:54.0838567Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374150. Human review + merge required; the base branch was not modified.
+2026-10-07T11:55:54.0839274Z Unattended run on isolated branch: stage/driver/W-00000001-1791374153 (base: master)
+2026-10-07T11:55:54.0839746Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:55:54.0840391Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8767981Z Outcome: blocked — cannot commit escalation lifecycle for W-00000002: simulated lifecycle commit failure
+2026-10-07T11:56:21.8768919Z Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+2026-10-07T11:56:21.8769478Z Unattended run on isolated branch: stage/driver/W-00000001-1791374154 (base: master)
+2026-10-07T11:56:21.8770165Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8770892Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8771632Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374154. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8772303Z Unattended run on isolated branch: stage/driver/W-00000001-1791374156 (base: master)
+2026-10-07T11:56:21.8772844Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8773302Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8773967Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374156. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8774645Z Unattended run on isolated branch: stage/driver/W-00000001-1791374157 (base: master)
+2026-10-07T11:56:21.8775116Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8775569Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8776249Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374157. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8776931Z Unattended run on isolated branch: stage/driver/W-00000001-1791374161 (base: master)
+2026-10-07T11:56:21.8778159Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8778659Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8779105Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8779508Z [W-00000002] completed on stage/driver/W-00000001-1791374161
+2026-10-07T11:56:21.8780135Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374161. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8780825Z Unattended run on isolated branch: stage/driver/W-00000001-1791374165 (base: master)
+2026-10-07T11:56:21.8781291Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8781751Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8782195Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8782612Z [W-00000002] completed on stage/driver/W-00000001-1791374165
+2026-10-07T11:56:21.8783270Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374165. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8783966Z Unattended run on isolated branch: stage/driver/W-00000001-1791374167 (base: master)
+2026-10-07T11:56:21.8784439Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8784925Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8785384Z [W-00000001] executor infrastructure failure; retry without spending attempt 0/1
+2026-10-07T11:56:21.8785862Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8786327Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8786933Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8787327Z [W-00000001] completed on stage/driver/W-00000001-1791374167
+2026-10-07T11:56:21.8787950Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374167. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8788628Z Unattended run on isolated branch: stage/driver/W-00000001-1791374174 (base: master)
+2026-10-07T11:56:21.8789103Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8789567Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8790233Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8790687Z [W-00000001] close failed (acceptance or independent review); close_work output:
+2026-10-07T11:56:21.8791072Z independent review did not pass; retry 1/2
+2026-10-07T11:56:21.8791450Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8791909Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8792345Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8792745Z [W-00000001] completed on stage/driver/W-00000001-1791374174
+2026-10-07T11:56:21.8793378Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374174. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8794066Z Unattended run on isolated branch: stage/driver/W-00000001-1791374175 (base: master)
+2026-10-07T11:56:21.8794534Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8795006Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8795457Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8795983Z [W-00000002] completed on stage/driver/W-00000001-1791374175
+2026-10-07T11:56:21.8796389Z STOP: iteration limit 1 reached; 1 closed; handoff on stage/driver/W-00000001-1791374175
+2026-10-07T11:56:21.8796865Z Unattended run on isolated branch: stage/driver/W-00000001-1791374177 (base: master)
+2026-10-07T11:56:21.8797338Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8797796Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8798246Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8798636Z [W-00000002] completed on stage/driver/W-00000001-1791374177
+2026-10-07T11:56:21.8799209Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374177. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8799900Z Unattended run on isolated branch: stage/driver/W-00000001-1791374179 (base: master)
+2026-10-07T11:56:21.8800587Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374179. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:21.8801258Z Unattended run on isolated branch: stage/driver/W-00000001-1791374180 (base: master)
+2026-10-07T11:56:21.8801715Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:21.8802173Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:21.8802618Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:21.8803002Z [W-00000002] completed on stage/driver/W-00000001-1791374180
+2026-10-07T11:56:28.4846177Z Outcome: blocked — parent aggregation-close failed: W-00000001: parent close failed: boom; handoff on stage/driver/W-00000001-1791374180
+2026-10-07T11:56:28.4846753Z Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+2026-10-07T11:56:28.4847913Z Unattended run on isolated branch: stage/driver/W-00000001-1791374183 (base: master)
+2026-10-07T11:56:28.4848259Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:28.4848619Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:28.4848937Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:28.4849233Z [W-00000002] completed on stage/driver/W-00000001-1791374183
+2026-10-07T11:56:28.4849536Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:28.4849861Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:28.4850172Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:28.4850457Z [W-00000003] completed on stage/driver/W-00000001-1791374183
+2026-10-07T11:56:28.4850910Z Unattended run finished: 2 item(s) closed on isolated branch stage/driver/W-00000001-1791374183. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:28.4851392Z Unattended run on isolated branch: stage/driver/W-00000001-1791374185 (base: master)
+2026-10-07T11:56:28.4851722Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:28.4852046Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:28.4852471Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:28.4852754Z [W-00000001] completed on stage/driver/W-00000001-1791374185
+2026-10-07T11:56:28.4853174Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374185. Human review + merge required; the base branch was not modified.
+2026-10-07T11:56:28.4853633Z Unattended run on isolated branch: stage/driver/W-00000001-1791374186 (base: master)
+2026-10-07T11:56:28.4854132Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:28.4854453Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:28.4854771Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:28.4855089Z [W-00000001] close failed (acceptance or independent review); close_work output:
+2026-10-07T11:56:28.4855361Z independent review did not pass; retry 1/2
+2026-10-07T11:56:28.4855631Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:56:28.4855960Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:56:28.4856419Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:56:28.4856702Z [W-00000001] completed on stage/driver/W-00000001-1791374186
+2026-10-07T11:56:28.4857366Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374186. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1716914Z ======================================================================
+2026-10-07T11:58:19.1717727Z FAIL: test_real_driver_round_observes_each_worktree_root (test_drive_parallel.DriveParallelTest.test_real_driver_round_observes_each_worktree_root)
+2026-10-07T11:58:19.1718498Z ----------------------------------------------------------------------
+2026-10-07T11:58:19.1718846Z Traceback (most recent call last):
+2026-10-07T11:58:19.1724529Z   File "D:\a\noory-ai\noory-ai\stage\scripts\tests\test_drive_parallel.py", line 571, in test_real_driver_round_observes_each_worktree_root
+2026-10-07T11:58:19.1724973Z     self.assertEqual(str(tree), observed["git_root"])
+2026-10-07T11:58:19.1725378Z AssertionError: 'C:\\Users\\runneradmin\\AppData\\Local\\Tem[39 chars]0001' != 'C:/Users/runneradmin/AppData/Local/Temp/tmp[31 chars]0001'
+2026-10-07T11:58:19.1725845Z - C:\Users\runneradmin\AppData\Local\Temp\tmp_klsmwnb\probe-worktrees\W-00000001
+2026-10-07T11:58:19.1726474Z ?   ^     ^           ^       ^     ^    ^           ^               ^
+2026-10-07T11:58:19.1726765Z + C:/Users/runneradmin/AppData/Local/Temp/tmp_klsmwnb/probe-worktrees/W-00000001
+2026-10-07T11:58:19.1727057Z ?   ^     ^           ^       ^     ^    ^           ^               ^
+2026-10-07T11:58:19.1727214Z 
+2026-10-07T11:58:19.1727217Z 
+2026-10-07T11:58:19.1727313Z ======================================================================
+2026-10-07T11:58:19.1727893Z FAIL: test_unattended_cleanup_failure_retains_recoverable_worktree (test_drive_unattended.UnattendedTest.test_unattended_cleanup_failure_retains_recoverable_worktree)
+2026-10-07T11:58:19.1728365Z ----------------------------------------------------------------------
+2026-10-07T11:58:19.1728604Z Traceback (most recent call last):
+2026-10-07T11:58:19.1729038Z   File "D:\a\noory-ai\noory-ai\stage\scripts\tests\test_drive_unattended.py", line 734, in test_unattended_cleanup_failure_retains_recoverable_worktree
+2026-10-07T11:58:19.1729469Z     self.assertIn(str(worktree_path), output.getvalue())
+2026-10-07T11:58:19.1733345Z AssertionError: 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193' not found in "Unattended worktree: C:\\Users\\runneradmin\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193\nUnattended branch: stage/driver/W-00000001-1791374193\nUnattended run on isolated branch: stage/driver/W-00000001-1791374193 (base: master)\nWARNING: preflights.codex is not configured; continuing without a venue health check\nWARNING: reapers.codex is not configured after executor turn; jobs may remain\nWARNING: reapers.claude is not configured after reviewer turn; jobs may remain\n[W-00000001] completed on stage/driver/W-00000001-1791374193\nUnattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374193. Human review + merge required; the base branch was not modified.\nOutcome: blocked � cannot remove unattended worktree C:\\Users\\runneradmin\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193: fatal: 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193' contains modified or untracked files, use --force to delete it. Recovery retained on branch stage/driver/W-00000001-1791374193 at C:\\Users\\runneradmin\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193. After preserving any changes, run `git worktree remove C:\\Users\\runneradmin\\AppData\\Local\\Temp\\tmp4u4sima0\\unattended\\W-00000001-1791374193`.\nRecommended next action: attempt cap reached / no progress / global limit exceeded \u2192 escalate_work\n"
+2026-10-07T11:58:19.1736390Z 
+2026-10-07T11:58:19.1736512Z ----------------------------------------------------------------------
+2026-10-07T11:58:19.1736754Z Ran 659 tests in 255.202s
+2026-10-07T11:58:19.1736878Z 
+2026-10-07T11:58:19.1736954Z FAILED (failures=2, skipped=1)
+2026-10-07T11:58:19.1737348Z Outcome: blocked — unattended mode requires a `limits` config (absent is not unlimited here); refusing to run
+2026-10-07T11:58:19.1737834Z Recommended next action: attempt cap reached / no progress / global limit exceeded → escalate_work
+2026-10-07T11:58:19.1738212Z Unattended run on isolated branch: stage/driver/W-00000001-1791374188 (base: master)
+2026-10-07T11:58:19.1738567Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1738910Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1739243Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1739582Z [W-00000002] close failed (acceptance or independent review); close_work output:
+2026-10-07T11:58:19.1739867Z obsolete first review output; retry 1/2
+2026-10-07T11:58:19.1740149Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1740601Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1740930Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1741415Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374188. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1741893Z Unattended run on isolated branch: stage/driver/W-00000001-1791374190 (base: master)
+2026-10-07T11:58:19.1742231Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1742580Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1742904Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1743663Z [W-00000001] review infrastructure failure; retry without spending attempt 0/1
+2026-10-07T11:58:19.1743995Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1744305Z [W-00000001] completed on stage/driver/W-00000001-1791374190
+2026-10-07T11:58:19.1744876Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374190. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1745502Z Unattended run on isolated branch: stage/driver/W-00000001-1791374194 (base: master)
+2026-10-07T11:58:19.1745840Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1746169Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1746507Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1746800Z [W-00000001] completed on stage/driver/W-00000001-1791374194
+2026-10-07T11:58:19.1747228Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374194. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1748381Z Unattended run on isolated branch: stage/driver/W-00000001-1791374198 (base: master)
+2026-10-07T11:58:19.1748727Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1749061Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1749355Z [W-00000001] completed on stage/driver/W-00000001-1791374198
+2026-10-07T11:58:19.1749800Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374198. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1750287Z Unattended run on isolated branch: stage/driver/W-00000001-1791374199 (base: master)
+2026-10-07T11:58:19.1750629Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1751107Z Unattended run finished: 0 item(s) closed on isolated branch stage/driver/W-00000001-1791374199. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1751581Z Unattended run on isolated branch: stage/driver/W-00000001-1791374200 (base: master)
+2026-10-07T11:58:19.1751918Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1752259Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1752673Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1786162Z [W-00000001] completed on stage/driver/W-00000001-1791374200
+2026-10-07T11:58:19.1786828Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374200. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1787545Z Unattended run on isolated branch: stage/driver/W-00000001-1791374201 (base: master)
+2026-10-07T11:58:19.1788079Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1788578Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1789040Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1789351Z [W-00000001] close failed (acceptance or independent review); close_work output:
+2026-10-07T11:58:19.1789625Z independent review did not pass; retry 1/2
+2026-10-07T11:58:19.1789878Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1790191Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1790485Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1790774Z [W-00000001] completed on stage/driver/W-00000001-1791374201
+2026-10-07T11:58:19.1791206Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374201. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1791728Z Unattended worktree: C:\Users\runneradmin\AppData\Local\Temp\tmpf5sybj4j\unattended\W-00000001-1791374203
+2026-10-07T11:58:19.1792072Z Unattended branch: stage/driver/W-00000001-1791374203
+2026-10-07T11:58:19.1792342Z Unattended run on isolated branch: stage/driver/W-00000001-1791374203 (base: master)
+2026-10-07T11:58:19.1792652Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1792987Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1793250Z [W-00000001] executor failed; retry 1/3
+2026-10-07T11:58:19.1793511Z WARNING: preflights.codex is not configured; continuing without a venue health check
+2026-10-07T11:58:19.1793834Z WARNING: reapers.codex is not configured after executor turn; jobs may remain
+2026-10-07T11:58:19.1794150Z WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+2026-10-07T11:58:19.1794452Z [W-00000001] completed on stage/driver/W-00000001-1791374203
+2026-10-07T11:58:19.1794971Z Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1791374203. Human review + merge required; the base branch was not modified.
+2026-10-07T11:58:19.1795482Z Removed unattended worktree: C:\Users\runneradmin\AppData\Local\Temp\tmpf5sybj4j\unattended\W-00000001-1791374203
+2026-10-07T11:58:19.1795869Z Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+2026-10-07T11:58:19.1796197Z Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+2026-10-07T11:58:19.1796513Z Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+2026-10-07T11:58:19.1796787Z Ignoring unrelated schema-v4 migration journal.
+2026-10-07T11:58:19.1797048Z Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+2026-10-07T11:58:19.1797432Z This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+2026-10-07T11:58:19.1797888Z Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+2026-10-07T11:58:19.1798386Z Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+2026-10-07T11:58:19.1798792Z   unchanged operations/verification.md (unchanged)
+2026-10-07T11:58:19.1799117Z   delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+2026-10-07T11:58:19.1799460Z   convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+2026-10-07T11:58:19.1799761Z   convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+2026-10-07T11:58:19.1800022Z   update backlog index (1 closed rows removed)
+2026-10-07T11:58:19.1800232Z   stamp  settings.json schema_version = 4
+2026-10-07T11:58:19.1800486Z Schema-v4 responsibility relocation complete; continuing to schema v5.
+2026-10-07T11:58:19.1800797Z Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+2026-10-07T11:58:19.1801251Z This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+2026-10-07T11:58:19.1801622Z Stage project already uses schema v5; no migration needed.
+2026-10-07T11:58:19.1801990Z Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+2026-10-07T11:58:19.1802387Z   unchanged operations/verification.md (unchanged)
+2026-10-07T11:58:19.1802687Z   delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+2026-10-07T11:58:19.1803017Z   convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+2026-10-07T11:58:19.1803452Z   convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+2026-10-07T11:58:19.1803712Z   update backlog index (1 closed rows removed)
+2026-10-07T11:58:19.1803919Z   stamp  settings.json schema_version = 4
+2026-10-07T11:58:19.1804186Z Schema-v4 responsibility relocation complete; continuing to schema v5.
+2026-10-07T11:58:19.1804484Z Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+2026-10-07T11:58:19.1804864Z This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+2026-10-07T11:58:19.2578911Z ##[error]Process completed with exit code 1.
+2026-10-07T11:58:19.2770975Z Post job cleanup.
+2026-10-07T11:58:19.3824369Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-10-07T11:58:19.4022387Z git version 2.55.0.windows.5
+2026-10-07T11:58:19.4075170Z Temporarily overriding HOME='D:\a\_temp\b856d759-52e7-46ba-8113-94dc455d169e' before making global git config changes
+2026-10-07T11:58:19.4075858Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T11:58:19.4082324Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\noory-ai\noory-ai
+2026-10-07T11:58:19.4333524Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T11:58:19.4581052Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-10-07T11:58:19.8273017Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T11:58:19.8449405Z http.https://github.com/.extraheader
+2026-10-07T11:58:19.8477489Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all http.https://github.com/.extraheader
+2026-10-07T11:58:19.8675816Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-10-07T11:58:20.2480096Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T11:58:20.2699472Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-10-07T11:58:20.6648950Z Cleaning up orphan processes
+2026-10-07T11:58:20.6792556Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

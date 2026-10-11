@@ -1,0 +1,35 @@
+{
+  "rules": [
+    {
+      "rule": "보고서는 인터넷 연결 없이 내보내야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N1",
+      "quote": "프로젝트 A는 인터넷 연결 없이 보고서를 내보내야 합니다."
+    },
+    {
+      "rule": "결과는 정확해야 한다.",
+      "project": "A",
+      "status": "confirmed",
+      "source": "N1",
+      "quote": "결과가 정확해야 합니다."
+    },
+    {
+      "rule": "정확성보다 속도를 중시한다는 기준은 AI의 추측이며 사용자 확인이 없다.",
+      "project": "A",
+      "status": "unconfirmed",
+      "source": "N4",
+      "quote": "AI는 사용자가 정확성보다 속도를 중시할 것이라고 추측했습니다. 사용자는 이 추측을 확인하지 않았습니다."
+    },
+    {
+      "rule": "PDF 패키지 Q를 사용할 수 있으며 이 허용은 프로젝트 B에만 적용된다.",
+      "project": "B",
+      "status": "confirmed",
+      "source": "N5",
+      "quote": "프로젝트 B 담당자는 PDF 패키지 Q의 사용을 허용했습니다. 이 결정은 B에만 적용합니다."
+    }
+  ],
+  "errors": [
+    ""
+  ]
+}

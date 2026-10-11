@@ -1,0 +1,36 @@
+{
+  "original": "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-followup/sender-codex",
+  "new_model_call": false,
+  "source_files": {
+    "check-v1.json": "3d41cec951ff08479a072a3a2964fb7d2532b49023b753a3021f38219a67639e",
+    "port-check.json": "2c97a33a37d3c2ec3e0f9907316f32e8e0ffd4ce2faaba2de9988a26e72aeeb9",
+    "sender-result.json": "d6d4a872b5f4f23c0ab4e6a351874d01d0a667f5012988a26ffcfc5ea3e5d379",
+    "model/result.json": "b08a1740515956f9c557c514873ece833def17117a9fd95fc1ee61749fde3728",
+    "model/input.json": "ba3b9193cbfe21f1c43f15d5af53e4302672a73983eb9a6f8cfb0fdf73ded8df",
+    "model/prompt.txt": "7c4ac19fea50ae6327d29cbc2610d6b9579c0a7da71de775f3b026cd1137ae97",
+    "model/stderr.txt": "c03ab9be092515f93e21f4d1c44d565773e259746d148afc051a34ed3bd83a47",
+    "model/stdout.jsonl": "1d53600daaab8d7ef875eed080169acde577e039a7e91703eaac6cead2cb9cab",
+    "project/app/port.py": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7",
+    "project/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "project/app/errors.py": "b3ccfc05544c7c0286eccb9c8c02ab29769dc49d93596743de6c1f1c5c8b8d58",
+    "project/.data/distill.db": "d16193152cd4165b42a7ccd52006f5614a64f45541332a8652920bfcc4a64758",
+    "project/.data/criterion-v1.json": "ffb8a6e999f44599e04aae37fd8c5467bb101d38a66a3fa61e019ed7e55aa753",
+    "project/.data/producers.json": "8d019fa255e05b1b32aa1bfc090a4d979d1bf7592fb25d85bfe0aaaf3064ff14",
+    "project/.data/check-result.json": "6a6c381bfb2c2870708e3e9f3c82b8b186a4bb2045822acdcd741b12ee56f867",
+    "project/.data/record-result.json": "aad1ea5f1d354bffb13a0f4375ccd8cee6e51d1f3967d61a8afc4ee33c7d03c9",
+    "project/.stage/work/current/W-00000001/_epic.md.txt": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286",
+    "project/.stage/work/current/W-00000001/W-00000002/_story.md.txt": "ed23b24b60976089091119be812300d1f45f43809760b20d8107e7e14524b1b4"
+  },
+  "restored_cards": [
+    {
+      "original": "sender-codex/project/.stage/work/current/W-00000001/W-00000002/_story.md",
+      "stored": "sender-codex/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt",
+      "sha256": "ed23b24b60976089091119be812300d1f45f43809760b20d8107e7e14524b1b4"
+    },
+    {
+      "original": "sender-codex/project/.stage/work/current/W-00000001/_epic.md",
+      "stored": "sender-codex/project/.stage/work/current/W-00000001/_epic.md.txt",
+      "sha256": "8e58bc609a1b27770647a7955eb26296276c3ef0c7461a397fa5a44f94d9c286"
+    }
+  ]
+}

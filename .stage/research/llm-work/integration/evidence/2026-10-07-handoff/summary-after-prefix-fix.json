@@ -1,0 +1,252 @@
+{
+  "cases": [
+    {
+      "direction": "claude-to-codex",
+      "condition": "C0",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C0",
+        "port_unchanged": true,
+        "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "raised": "ConfigError"
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 151.10951270797523,
+      "input_tokens": 351528,
+      "cached_input_tokens": 333056,
+      "cache_creation_tokens": 0,
+      "output_tokens": 6741,
+      "reported_cost_usd": null,
+      "session_ids": [
+        "01a11466-37d5-7c43-a483-b99739ae189a"
+      ],
+      "assistant_text": "I’ll inspect the completed port work and the task card, then implement `parse_host` and run the project checks. I’ll save the required criterion check and Avatar receipts in `.data`.\nThe port implementation and its card record are present. The refreshed handoff packet reports no current criteria from either store; I’ll check the stores directly before choosing the host error contract and record the result.\nThe current Distill check is saved in `.data/receiver-check.json` and contains no criteria. I chose `ConfigError` for invalid hosts because the project calls for predictable parsing and `parse_port` already uses that contract.\n`parse_host` passes focused valid and invalid input checks, and the prior port parser still passes a smoke test. Avatar recorded the synthetic choice and returned the proposed criterion ref; I’ll confirm it with the supplied fixture and save the final show output.\nImplemented [parse_host](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C0/app/host.py): it returns a valid host unchanged and raises `ConfigError` for invalid input. The [card](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C0/.stage/work/current/W-00000001/W-00000002/_story.md) records `Applied criteria: none`; the [current check](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C0/.data/receiver-check.json) found no current Distill criteria. I chose `ConfigError` to match the existing port parser’s predictable error contract.\n\nHost validation and a port smoke check passed. The synthetic Avatar criterion was confirmed as `avatar:PC-0540737626c0@2`; its final output is in [avatar-show.json](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C0/.data/avatar-show.json). No question blocked completion.",
+      "prompt_bytes": 6530
+    },
+    {
+      "direction": "claude-to-codex",
+      "condition": "C1",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C1",
+        "port_unchanged": true,
+        "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "raised": "ConfigError"
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 89.82848841696978,
+      "input_tokens": 458231,
+      "cached_input_tokens": 425472,
+      "cache_creation_tokens": 0,
+      "output_tokens": 6812,
+      "reported_cost_usd": null,
+      "session_ids": [
+        "01a11466-38d7-7463-9acf-b4da8a42d666"
+      ],
+      "assistant_text": "I’ll read the completed port work and the task card, then check the current criterion immediately before choosing how `parse_host` reports invalid input.\nThe port implementation and its recorded file hash are present in the card. The handoff marks the `ConfigError` criterion as current but requires a fresh check, so I’m running that check now and saving its output.\n`parse_host` now returns valid hosts unchanged and raises `ConfigError` for invalid values. The host cases and existing port case pass. I’m checking the Avatar CLI arguments before recording the requested fixtures.\nAvatar recorded the choice and returned a confirmed criterion ref, `avatar:PC-04dc244bfc99@2`. Next I’m attaching the public Distill history for the criterion used in the implementation, then I’ll save and inspect Avatar’s final JSON view.\nImplemented [parse_host](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C1/app/host.py). It returns a valid host unchanged and raises `ConfigError` for invalid input, following the current criterion recorded in [receiver-check.json](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C1/.data/receiver-check.json).\n\nHost acceptance checks and the existing port check passed. I updated the [card](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C1/.stage/work/current/W-00000001/W-00000002/_story.md) without changing earlier Progress records. Avatar’s confirmed fixture is `avatar:PC-04dc244bfc99@2`; its final output is in [avatar-show.json](/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C1/.data/avatar-show.json). No question blocked completion.",
+      "prompt_bytes": 7597
+    },
+    {
+      "direction": "claude-to-codex",
+      "condition": "C2",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C2",
+        "port_unchanged": true,
+        "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "returned": null
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 79.8687289999798,
+      "input_tokens": 351239,
+      "cached_input_tokens": 331008,
+      "cache_creation_tokens": 0,
+      "output_tokens": 6707,
+      "reported_cost_usd": null,
+      "session_ids": [
+        "01a11467-99b9-7a32-b63f-82a5167079e3"
+      ],
+      "assistant_text": "I’ll inspect the completed port implementation and card, then run the current criterion check immediately before choosing the host error contract. After implementing and testing `parse_host`, I’ll record the requested CLI receipts.\nThe port file matches the hash recorded in the card. Its earlier `ConfigError` choice cites criterion version `@1`, which the handoff marks superseded. I’ll check the current `@2` criterion now for the host decision.\nThe current check returned `eligible_current` for `distill:CR-ff28a7fd534c@2`, so `parse_host` now returns `None` for invalid input. I’ve appended the applied ref and the superseded judgment to the card. Next I’ll test the parser and use the public CLIs to record the fixtures.\nThe host assertions passed. Avatar recorded the `None` choice, then proposed and confirmed the requested synthetic personal criterion. I’ll fetch the applied Distill criterion’s history, attach it through Avatar’s CLI, and save the final `show --json` output.\nImplemented [parse_host](/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C2/app/host.py). It returns a valid dotted host unchanged and returns `None` for invalid input, following the current `distill:CR-ff28a7fd534c@2` check saved in [receiver-check.json](/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C2/.data/receiver-check.json). The prior port implementation was left as completed.\n\nHost assertions passed for valid input, missing dots, empty strings, whitespace, and non-string input. I updated the [card](/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C2/.stage/work/current/W-00000001/W-00000002/_story.md) and saved the final [Avatar show JSON](/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/claude-to-codex-C2/.data/avatar-show.json). No question blocked completion.",
+      "prompt_bytes": 7591
+    },
+    {
+      "direction": "codex-to-claude",
+      "condition": "C0",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C0",
+        "port_unchanged": true,
+        "port_sha256": "90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "raised": "ConfigError"
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 71.6825093330117,
+      "input_tokens": 28,
+      "cached_input_tokens": 179280,
+      "cache_creation_tokens": 16906,
+      "output_tokens": 7434,
+      "reported_cost_usd": 0.31989600000000007,
+      "session_ids": [
+        "064ea24b-e4bb-4f2d-971f-c0ef3cd00f60"
+      ],
+      "assistant_text": "Task H is done: `app/host.py` now has `parse_host`, invalid input raises `ConfigError`, and the Avatar fixtures are recorded. No question blocked me.\n\n**Prior work (P):** The `app/port.py` SHA-256 matches the hash recorded on the card, so it is the same file. My test run also confirmed `parse_port` accepts and rejects the right inputs. Note the packet said \"No recorded evidence; completion is not established,\" even though the card does list evidence.\n\n**Criterion check:** I ran `distill criteria check --refs distill:CR-3662bef8c657@1` right before the choice and saved its output to `.data/receiver-check.json`. The status came back `unknown` with `\"store\": \"absent\"` (`distill.db` doesn't exist), and `criteria history` for that ID returned `E_NOT_FOUND`. `criteria current` for `test/demo-app` returned no criteria. Because the status wasn't `eligible_current`, I didn't apply that criterion.\n\n**Decision:** No current criterion applied, so I chose the contract from the purpose chain. The project's purpose is \"Make configuration parsing predictable for callers,\" and `parse_port` already raises `ConfigError`, so `parse_host` raises `app.errors.ConfigError` too. Valid hosts are returned unchanged. Returning `None` would have given callers a second, inconsistent way of reporting errors.\n\n**Tests:** An inline Python check passed:\n- `parse_host(\"example.com\")` returns `\"example.com\"`.\n- `\"bad\"`, `\"\"`, `\"exa mple.com\"`, `\"example.com\\n\"`, `None` and `5` all raise `ConfigError`.\n- `parse_port` still behaves correctly on valid and invalid input.\n\nThere is no test suite in the project.\n\n**Card Progress:** I added new lines and left the earlier ones as they were. They include `Applied criteria: none` and a note that CR-3662bef8c657@1 isn't current. I didn't write \"superseded\" because nothing shows it was superseded: its status is `unknown`, not replaced. I also didn't revert `parse_port`. I added the `app/host.py` hash to Evidence and set Next action to independent review.\n\n**Avatar (all exit 0, output saved in `.data/`):**\n1. `choice add` recorded choice → `CH-aeb556228690` (chosen `ConfigError`, quote from `choice-origin.json`, `source_refs: []`).\n2. `criterion propose` → `avatar:PC-891b2c824d1c@1`.\n3. `criterion confirm` with `confirm-personal.json` → new ref `avatar:PC-891b2c824d1c@2` (`user_confirmed`).\n4. I skipped step 4 because I applied no Distill ref, so there was no history to attach. The final `show --json` output is in `.data/avatar-show.json`.\n\nThis confirmed criterion is a test fixture, not a real preference of yours. It was recorded after the host choice, so it played no part in that decision. This is a single small test, and I'm not claiming any general cost improvement from it.",
+      "prompt_bytes": 6531
+    },
+    {
+      "direction": "codex-to-claude",
+      "condition": "C1",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C1",
+        "port_unchanged": true,
+        "port_sha256": "90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "raised": "ConfigError"
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 84.58705670799827,
+      "input_tokens": 24,
+      "cached_input_tokens": 151946,
+      "cache_creation_tokens": 17406,
+      "output_tokens": 6324,
+      "reported_cost_usd": 0.2962132,
+      "session_ids": [
+        "00200e05-7ffa-4186-b96d-9cf0b21aa705"
+      ],
+      "assistant_text": "I implemented Task H, and every Avatar fixture step ran with exit 0. Nothing blocked me.\n\n**Decision: invalid host input raises `app.errors.ConfigError`.**\n- The packet's purpose chain (\"predictable for callers\") doesn't say which error contract to use, so the choice came from the project criterion `distill:CR-3662bef8c657@1` (\"Invalid configuration input raises ConfigError.\").\n- That criterion's only condition is the path `app/`, which covers `app/host.py`. It has no notes or exceptions to resolve.\n- I ran its check command immediately before making the choice. It exited 0 and returned `eligible_current`. The actual output is saved to `.data/receiver-check.json`.\n- No judgment was superseded, so I added no `Stale judgment` line. The packet's \"Stale judgments\" section lists this same ref as `eligible_current`.\n\n**Prior evidence:** The packet said \"No recorded evidence; completion is not established\", but the story card does record a SHA-256 for `app/port.py`. I recomputed it and it matches (`90921cfb…a350`). I did not re-review the port work beyond a quick check that `parse_port('8080')` returns 8080.\n\n**Implementation:** `app/host.py` returns a valid host unchanged and raises `ConfigError` for anything else. A valid host is a nonempty string that contains a dot and no whitespace.\n\n**Tests:** The project has no test suite. I ran a direct assertion script that passed:\n- `'example.com'` is returned unchanged.\n- `'bad'`, `''`, `'exa mple.com'`, `'a.b\\t'`, `None` and `5` each raise `ConfigError`.\n- `parse_port('8080') == 8080`.\n\n**Card** (`.stage/.../W-00000002/_story.md`): I added new Progress lines and left the earlier ones as they were. The new lines include `Applied criteria: distill:CR-3662bef8c657@1`. I also added the `app/host.py` SHA-256 under Evidence.\n\n**Avatar** (in the isolated home, using only the public CLI; I did not read either database):\n1. **choice add:** recorded `CH-cf5c3d286a54`, with chosen = `ConfigError`, the quote and origin from `choice-origin.json`, and `source_refs = [\"distill:CR-3662bef8c657@1\"]`.\n2. **criterion propose:** created `avatar:PC-2b3561fa88d9@1` from that choice.\n3. **criterion confirm:** confirmed it using `confirm-personal.json`. The new ref is `avatar:PC-2b3561fa88d9@2` (`user_confirmed`).\n4. **source attach:** attached the Distill history for `CR-3662bef8c657`.\n\nThe final `show --json` output is in `.data/avatar-show.json`. The CLI output from each step is in `.data/avatar-*.json` and `.data/distill-history.json`, and the payloads I sent are in `.data/*-payload.json`.\n\nAll quotes and the confirmation are synthetic fixtures, not real user preferences. This work makes no claim about cost.",
+      "prompt_bytes": 7594
+    },
+    {
+      "direction": "codex-to-claude",
+      "condition": "C2",
+      "exit": 0,
+      "passed": true,
+      "checks": {
+        "passed": true,
+        "condition": "C2",
+        "port_unchanged": true,
+        "port_sha256": "90921cfb6beeaa16916dbcb08f668ddeb68240c37f6df43f12bd526d33a5f350",
+        "valid_host": true,
+        "invalid_contract": true,
+        "observed": {
+          "valid": {
+            "returned": "example.com"
+          },
+          "invalid": {
+            "returned": null
+          }
+        },
+        "applied_ref_recorded": true,
+        "stale_judgment_recorded": true,
+        "limits": [
+          "C0 has no required invalid-input contract; its outcome is observational.",
+          "This checks files and records, not whether an AI CLI produced them."
+        ],
+        "avatar_flow": true
+      },
+      "seconds": 53.11053795804037,
+      "input_tokens": 22,
+      "cached_input_tokens": 127210,
+      "cache_creation_tokens": 17137,
+      "output_tokens": 5302,
+      "reported_cost_usd": 0.268666,
+      "session_ids": [
+        "bd8551c9-f66e-4022-b0b7-d5e9d83cd4d0"
+      ],
+      "assistant_text": "I implemented `parse_host` in `app/host.py`. Invalid input returns `None` and valid input comes back unchanged. All the requested Avatar records are made.\n\n**Decision**\n- Running the Distill check right before the choice returned `distill:CR-3662bef8c657@2` with status `eligible_current` (exit 0). That output is saved in `.data/receiver-check.json`.\n- The project purpose (\"predictable for callers\") is satisfied by either contract, so it didn't settle the question. The current criterion did: \"Invalid configuration input returns None.\" So `ConfigError` isn't used for hosts.\n- The earlier `@1` (\"raises ConfigError\") is now superseded. Per the packet I didn't undo the earlier work, so `app/port.py` still raises `ConfigError`. Ports and hosts now report errors in different ways. If you want `parse_port` changed to match `@2`, that's a separate decision for you.\n\n**Prior evidence**\nThe packet says \"No recorded evidence; completion is not established.\" However, the card does record `app/port.py` evidence, and the file's SHA-256 still matches it (`90921cfb…5a350`). I didn't re-run any tests on the port code.\n\n**Tests**\nI ran an inline assertion script (there is no test suite in the project) and it passed. `parse_host(\"example.com\")` returns `\"example.com\"`. The function returns `None` for `\"bad\"`, `\"\"`, `\"exa mple.com\"`, `\"example.com\\n\"`, `None` and `5`.\n\n**Card** (`.stage/.../W-00000002/_story.md`)\nI added these lines to Progress below the earlier records, without changing those records:\n- `Applied criteria: distill:CR-3662bef8c657@2`\n- `Stale judgment: distill:CR-3662bef8c657@1 superseded`\n\nI also added the `app/host.py` SHA-256 and the check result under Evidence.\n\n**Avatar** (all commands exited 0; output is saved in `.data/`)\n1. **Choice:** `CH-160943856d8f`, chosen `None`. The reason quote and origin come from `choice-origin.json`, and `source_refs` is `[\"distill:CR-3662bef8c657@2\"]`.\n2. **Proposed criterion:** `avatar:PC-17898a5f74d8@1`.\n3. **Confirmation:** using `confirm-personal.json` produced the new ref `avatar:PC-17898a5f74d8@2` (`user_confirmed`).\n4. **Distill history:** I saved the history for `CR-3662bef8c657` to `.data/distill-history.json` and attached it as a source. The final `show --json` output is in `.data/avatar-show.json`.\n\nNothing blocked the work. I make no claim about general cost improvements.",
+      "prompt_bytes": 7592
+    }
+  ],
+  "complete_matrix": true,
+  "passed_cases": 6,
+  "limits": [
+    "CLI sessions, not individual API requests, are counted as cases.",
+    "Input and cache fields follow each provider's reporting and are not directly comparable.",
+    "Null price means no observed price; it does not mean free.",
+    "Question requests need transcript review; no automatic zero is assumed."
+  ]
+}

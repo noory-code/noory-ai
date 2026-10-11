@@ -1,0 +1,15 @@
+{
+  "base_version": 2,
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:fixture/contract/revoke",
+    "quote": "Synthetic test statement: revoke",
+    "actor": "user",
+    "recorded_by": {
+      "host": "fixture",
+      "session_id": "contract",
+      "via": "cli"
+    }
+  },
+  "reason": "Synthetic retirement."
+}

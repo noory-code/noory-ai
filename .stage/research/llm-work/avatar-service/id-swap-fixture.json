@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "case_id": "A",
+      "messages": [
+        {"id": "Z-m1", "author": "user", "text": "저는 보통 결론을 먼저 읽어요."},
+        {"id": "Z-m2", "author": "user", "text": "부록은 시간 순서로 정리해 주세요."},
+        {"id": "Z-m3", "author": "user", "text": "본문은 제가 읽는 순서로 보여 주세요."}
+      ],
+      "targets": [
+        {"id": "Z1", "message_id": "Z-m1", "exact_text": "저는 보통 결론을 먼저 읽어요.", "expected": {"act": "user_report", "constraint_ref": "none"}},
+        {"id": "Z2", "message_id": "Z-m2", "exact_text": "부록은 시간 순서로 정리해 주세요.", "expected": {"act": "user_task_constraint", "constraint_ref": "none"}},
+        {"id": "Z3", "message_id": "Z-m3", "exact_text": "본문은 제가 읽는 순서로 보여 주세요.", "expected": {"act": "request_apply_constraint", "constraint_ref": "Z1"}}
+      ]
+    },
+    {
+      "case_id": "B",
+      "messages": [
+        {"id": "Z-m2", "author": "user", "text": "저는 보통 결론을 먼저 읽어요."},
+        {"id": "Z-m1", "author": "user", "text": "부록은 시간 순서로 정리해 주세요."},
+        {"id": "Z-m3", "author": "user", "text": "본문은 제가 읽는 순서로 보여 주세요."}
+      ],
+      "targets": [
+        {"id": "Z2", "message_id": "Z-m2", "exact_text": "저는 보통 결론을 먼저 읽어요.", "expected": {"act": "user_report", "constraint_ref": "none"}},
+        {"id": "Z1", "message_id": "Z-m1", "exact_text": "부록은 시간 순서로 정리해 주세요.", "expected": {"act": "user_task_constraint", "constraint_ref": "none"}},
+        {"id": "Z3", "message_id": "Z-m3", "exact_text": "본문은 제가 읽는 순서로 보여 주세요.", "expected": {"act": "request_apply_constraint", "constraint_ref": "Z2"}}
+      ]
+    }
+  ]
+}

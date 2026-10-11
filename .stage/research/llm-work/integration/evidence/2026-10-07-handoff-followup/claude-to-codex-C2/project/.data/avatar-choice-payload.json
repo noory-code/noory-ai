@@ -1,0 +1,35 @@
+{
+  "question": "How should invalid host input be reported?",
+  "options": [
+    "ConfigError",
+    "None",
+    "other"
+  ],
+  "chosen": "None",
+  "reason_quote": "[Synthetic test statement] Callers should be able to predict how errors are handled.",
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:codex/claude-to-codex-C2/fixture-1",
+    "quote": "[Synthetic test statement] Callers should be able to predict how errors are handled.",
+    "actor": "user",
+    "recorded_by": {
+      "host": "codex",
+      "session_id": "claude-to-codex-C2",
+      "via": "cli"
+    }
+  },
+  "context": {
+    "project_key": "test/demo-app",
+    "conditions": [
+      {
+        "kind": "path",
+        "any": [
+          "app/"
+        ]
+      }
+    ]
+  },
+  "source_refs": [
+    "distill:CR-d5be2ead99e6@2"
+  ]
+}

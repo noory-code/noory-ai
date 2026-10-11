@@ -1,0 +1,12 @@
+{
+  "scratch": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-d_2gh3zp",
+  "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "codex": "codex-cli 0.160.0",
+  "claude": "2.1.289 (Claude Code)",
+  "requested_models": {
+    "codex": "gpt-6-sol",
+    "claude": "opus[1m]"
+  },
+  "real_user_data": false,
+  "product_cli_contract": "/Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-06-contract/sources.json"
+}

@@ -1,0 +1,151 @@
+{
+  "routing": [
+    {
+      "input": {
+        "schema": 1,
+        "type": "read"
+      },
+      "expected": "execute",
+      "actual": "execute"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "write",
+        "approved": true
+      },
+      "expected": "execute",
+      "actual": "execute"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "write",
+        "approved": false
+      },
+      "expected": "ask",
+      "actual": "ask"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "write"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "write",
+        "approved": "true"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "write",
+        "approved": 1
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "delete",
+        "approved": true
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 2,
+        "type": "read"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": true,
+        "type": "read"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": "1",
+        "type": "read"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1.0,
+        "type": "read"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "READ"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "schema": 1,
+        "type": "read and write"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {
+        "text": "먼저 읽고 필요하면 수정"
+      },
+      "expected": "fallback",
+      "actual": "fallback"
+    },
+    {
+      "input": {},
+      "expected": "fallback",
+      "actual": "fallback"
+    }
+  ],
+  "completion": [
+    {
+      "checks": {},
+      "expected": false,
+      "actual": false
+    },
+    {
+      "checks": {
+        "report_saved": true,
+        "results_verified": false
+      },
+      "expected": false,
+      "actual": false
+    },
+    {
+      "checks": {
+        "report_saved": true,
+        "results_verified": true
+      },
+      "expected": true,
+      "actual": true
+    }
+  ],
+  "passed": 18,
+  "model_calls": 0,
+  "limit": "모의 계약을 검사했습니다. 실제 서비스 통합이나 목적 해석은 시험하지 않았습니다."
+}

@@ -1,0 +1,40 @@
+{
+  "case": "retrospective_owner_conflict--before",
+  "host": "claude",
+  "condition": "auto",
+  "repeat": 1,
+  "id": "retrospective_owner_conflict--before--claude--auto--r1",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/scripts/driver_lifecycle.py": {
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ],
+      "entry": "write_driver_retrospective",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ],
+    "reason": "preferred_path(R-00000041.md)가 존재하고 work_item이 W-00000099로 다른 항목 소유일 때 오류를 내지 않고 if 블록을 그냥 빠져나가, 이후 max(numbers)+1 할당 루프에서 R-00000042.md를 새로 만들어 그 ID를 반환하므로 빈 문자열 반환과 R-00000041·W-00000099·W-00000041이 담긴 오류 요건을 모두 어깁니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "retrospective_owner_conflict"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 8.725296249991516
+}

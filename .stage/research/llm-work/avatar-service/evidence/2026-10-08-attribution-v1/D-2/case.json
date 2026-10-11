@@ -1,0 +1,18 @@
+{
+  "case_id": "D",
+  "messages": [
+    {
+      "id": "D-m1",
+      "author": "unknown",
+      "text": "Never save these notes."
+    }
+  ],
+  "targets": [
+    {
+      "id": "D1",
+      "message_id": "D-m1",
+      "exact_text": "Never save these notes.",
+      "expected": "unknown"
+    }
+  ]
+}

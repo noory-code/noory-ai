@@ -1,0 +1,24 @@
+{
+  "target_label": "AI에게 요청한 행동",
+  "model_selection": "모델은 두 기록을 다르게 읽었어요",
+  "records": [
+    {
+      "id": "P1",
+      "owner_id": "fictional-P",
+      "speaker": "user",
+      "text": "동료가 아래처럼 말했어요. 저는 아직 판단을 못 했으니 두 선택의 영향을 먼저 정리해 주세요.",
+      "context": "동료의 제안을 옮기고 비교를 부탁합니다.",
+      "unknowns": "선택지의 내용과 나중에 내린 결정은 없습니다."
+    },
+    {
+      "id": "P4",
+      "owner_id": "fictional-P",
+      "speaker": "user",
+      "text": "작성자가 없는 문장은 제 기준으로 저장하지 말아 주세요.",
+      "context": "P3의 메모를 다루며 사용자가 요청했습니다.",
+      "unknowns": "다른 상황에서 어떤 기준을 저장하는지는 없습니다."
+    }
+  ],
+  "question": "괜찮으시다면, 두 선택지가 각각 무엇인지 알려 주실 수 있을까요?",
+  "confirmed_personal_rule": false
+}

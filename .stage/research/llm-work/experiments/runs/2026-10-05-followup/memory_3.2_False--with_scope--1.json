@@ -1,0 +1,104 @@
+{
+  "run_id": "memory_3.2_False--with_scope--1",
+  "case": "memory_3.2_False",
+  "family": "H05",
+  "condition": "with_scope",
+  "repeat": 1,
+  "started_at": "2026-10-04T23:44:58.217863+00:00",
+  "prompt": "{\"request\": \"현재 Atlas 3.2의 오프라인 기능을 쓸 수 있나요? 저장한 기록: 오프라인 기능을 지원하지 않습니다. 기록 출처: Atlas 3.2 공식 안내. 적용 버전: 3.2. 해당 버전의 설명은 현재도 유효합니다. 다른 버전에는 적용된다고 보장하지 않습니다.\", \"choices\": [\"supported\", \"unsupported\", \"unknown\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다.",
+  "input_sha256": "e4ac08c0b16e16d4cfc785ba892533bf1eec1359b15d25854a69fd711a244fde",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2 공식 안내에 따르면 해당 버전은 오프라인 기능을 지원하지 않으며, 이 설명은 현재도 유효합니다.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 1924,
+    "duration_api_ms": 2430,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "bbc99dfd-686a-4af7-9ef9-3baaeb92da39",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.005576,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 899,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 81,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 899,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 81,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 899,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 899
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2 공식 안내에 따르면 해당 버전은 오프라인 기능을 지원하지 않으며, 이 설명은 현재도 유효합니다.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1046,
+        "outputTokens": 24,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.0011660000000000002,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 81,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 899,
+        "webSearchRequests": 0,
+        "costUSD": 0.00441,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "e020640e-ff6b-48a8-8a3b-5639ac02fdde",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 3.1460565000015777
+}

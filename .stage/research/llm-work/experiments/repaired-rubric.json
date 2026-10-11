@@ -1,0 +1,194 @@
+{
+  "repaired_clear_report": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_clear_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_clear_draft": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_clear_missing": {
+    "expected": {
+      "baseline": [
+        "ask"
+      ],
+      "purpose_check": [
+        "ask"
+      ]
+    },
+    "reason": "명확 요청입니다. 명시한 최신 요구에서 ask를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_example_cafe": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_example_archive": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_example_post": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_example_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "예시 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_revised_report": {
+    "expected": {
+      "baseline": [
+        "report"
+      ],
+      "purpose_check": [
+        "report"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 report를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_revised_edit": {
+    "expected": {
+      "baseline": [
+        "edit"
+      ],
+      "purpose_check": [
+        "edit"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 edit를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_revised_draft": {
+    "expected": {
+      "baseline": [
+        "draft"
+      ],
+      "purpose_check": [
+        "draft"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 draft를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_revised_continue": {
+    "expected": {
+      "baseline": [
+        "continue"
+      ],
+      "purpose_check": [
+        "continue"
+      ]
+    },
+    "reason": "수정 요청입니다. 명시한 최신 요구에서 continue를 고릅니다.",
+    "actual_state": null
+  },
+  "repaired_memory_2.0_True": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unknown"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "repaired_memory_2.0_False": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unknown"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "repaired_memory_3.2_True": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "supported"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  },
+  "repaired_memory_3.2_False": {
+    "expected": {
+      "conclusion_only": [
+        "unknown"
+      ],
+      "with_scope": [
+        "unsupported"
+      ]
+    },
+    "reason": "버전이 없는 기록은 적용 여부를 모릅니다. 명시한 범위가 같을 때만 답할 수 있습니다.",
+    "actual_state": null
+  }
+}

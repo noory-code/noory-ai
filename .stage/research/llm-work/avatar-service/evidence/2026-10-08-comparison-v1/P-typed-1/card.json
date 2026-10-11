@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-P",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_action",
+  "relation": "different",
+  "evidence_ids": [
+    "P1",
+    "P4"
+  ],
+  "question": "괜찮으시다면, 두 선택지가 각각 무엇인지 알려 주실 수 있을까요?"
+}

@@ -1,0 +1,55 @@
+{
+  "original_fixture_sha256": "67b52dc5ca0ab59d9c6dc3f4629cfcf3307268a70417e7e38af80dda0aa8c789",
+  "original_prepare_sha256": "e3624811425c44ec29196a42cd04bd4726f9d70b0487fd1c479c2a3311424bce",
+  "source_sha256": "74d5713b483aa3ece3b43355ba323a10b5987b0cf16d135d9b74bcef9050c839",
+  "selection": [
+    {
+      "case": "roadmap_repeated_criteria--before",
+      "file": "stage/skills/stage-roadmap/manage_roadmap.py",
+      "entry": "main",
+      "full_characters": 21441,
+      "selected_characters": 21441,
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": []
+    },
+    {
+      "case": "roadmap_repeated_criteria--after",
+      "file": "stage/skills/stage-roadmap/manage_roadmap.py",
+      "entry": "main",
+      "full_characters": 21690,
+      "selected_characters": 21690,
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": []
+    },
+    {
+      "case": "retrospective_owner_conflict--before",
+      "file": "stage/scripts/driver_lifecycle.py",
+      "entry": "write_driver_retrospective",
+      "full_characters": 10867,
+      "selected_characters": 6482,
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ]
+    },
+    {
+      "case": "retrospective_owner_conflict--after",
+      "file": "stage/scripts/driver_lifecycle.py",
+      "entry": "write_driver_retrospective",
+      "full_characters": 10472,
+      "selected_characters": 6085,
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "reserve_retrospective",
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ]
+    }
+  ],
+  "regression_verified": true
+}

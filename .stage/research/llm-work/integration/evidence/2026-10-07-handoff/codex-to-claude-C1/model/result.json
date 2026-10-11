@@ -1,0 +1,51 @@
+{
+  "host": "claude",
+  "exit": 0,
+  "elapsed_seconds": 84.58705670799827,
+  "session_ids": [
+    "00200e05-7ffa-4186-b96d-9cf0b21aa705"
+  ],
+  "reported_models": [
+    "claude-opus-5-5"
+  ],
+  "usage": [
+    {
+      "usage": {
+        "input_tokens": 24,
+        "cache_creation_input_tokens": 17406,
+        "cache_read_input_tokens": 151946,
+        "output_tokens": 6324,
+        "output_tokens_details": {
+          "thinking_tokens": 183
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 17406,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1126,
+            "cache_read_input_tokens": 17758,
+            "cache_creation_input_tokens": 2859,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 2859
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "reported_cost_usd": 0.2962132
+    }
+  ],
+  "assistant_text": "I implemented Task H, and every Avatar fixture step ran with exit 0. Nothing blocked me.\n\n**Decision: invalid host input raises `app.errors.ConfigError`.**\n- The packet's purpose chain (\"predictable for callers\") doesn't say which error contract to use, so the choice came from the project criterion `distill:CR-3662bef8c657@1` (\"Invalid configuration input raises ConfigError.\").\n- That criterion's only condition is the path `app/`, which covers `app/host.py`. It has no notes or exceptions to resolve.\n- I ran its check command immediately before making the choice. It exited 0 and returned `eligible_current`. The actual output is saved to `.data/receiver-check.json`.\n- No judgment was superseded, so I added no `Stale judgment` line. The packet's \"Stale judgments\" section lists this same ref as `eligible_current`.\n\n**Prior evidence:** The packet said \"No recorded evidence; completion is not established\", but the story card does record a SHA-256 for `app/port.py`. I recomputed it and it matches (`90921cfb…a350`). I did not re-review the port work beyond a quick check that `parse_port('8080')` returns 8080.\n\n**Implementation:** `app/host.py` returns a valid host unchanged and raises `ConfigError` for anything else. A valid host is a nonempty string that contains a dot and no whitespace.\n\n**Tests:** The project has no test suite. I ran a direct assertion script that passed:\n- `'example.com'` is returned unchanged.\n- `'bad'`, `''`, `'exa mple.com'`, `'a.b\\t'`, `None` and `5` each raise `ConfigError`.\n- `parse_port('8080') == 8080`.\n\n**Card** (`.stage/.../W-00000002/_story.md`): I added new Progress lines and left the earlier ones as they were. The new lines include `Applied criteria: distill:CR-3662bef8c657@1`. I also added the `app/host.py` SHA-256 under Evidence.\n\n**Avatar** (in the isolated home, using only the public CLI; I did not read either database):\n1. **choice add:** recorded `CH-cf5c3d286a54`, with chosen = `ConfigError`, the quote and origin from `choice-origin.json`, and `source_refs = [\"distill:CR-3662bef8c657@1\"]`.\n2. **criterion propose:** created `avatar:PC-2b3561fa88d9@1` from that choice.\n3. **criterion confirm:** confirmed it using `confirm-personal.json`. The new ref is `avatar:PC-2b3561fa88d9@2` (`user_confirmed`).\n4. **source attach:** attached the Distill history for `CR-3662bef8c657`.\n\nThe final `show --json` output is in `.data/avatar-show.json`. The CLI output from each step is in `.data/avatar-*.json` and `.data/distill-history.json`, and the payloads I sent are in `.data/*-payload.json`.\n\nAll quotes and the confirmation are synthetic fixtures, not real user preferences. This work makes no claim about cost."
+}

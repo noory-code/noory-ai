@@ -1,0 +1,17 @@
+[
+  {
+    "id": "Z1",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "Z2",
+    "act": "request_action",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "Z3",
+    "act": "request_apply_constraint",
+    "constraint_ref": "Z1"
+  }
+]

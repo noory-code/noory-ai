@@ -1,0 +1,6 @@
+{
+  "statement": "Choose an explicit error contract that callers can predict.",
+  "from_choices": [
+    "CH-346050c824d8"
+  ]
+}

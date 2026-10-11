@@ -1,0 +1,13 @@
+{
+  "reason": "The initial checker rejected bulleted Applied criteria records that Stage already accepts.",
+  "old_checker_sha256": "40f83e14b8c82e0060e6363d07fd8a79b0e6aa603f03e587982435966b9dcb8c",
+  "new_checker_sha256": "1966048bbfc6a7f0827bc73bd544bbbae5ab3ca17b73ee5278ddbde53b61aaf8",
+  "model_reruns": 0,
+  "product_changes": 0,
+  "raw_output_changes": 0,
+  "expectations_changed": false,
+  "tests": {
+    "red": "checker-red.log",
+    "green": "checker-green.log"
+  }
+}

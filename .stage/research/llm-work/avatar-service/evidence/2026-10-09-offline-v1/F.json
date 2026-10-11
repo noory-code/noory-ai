@@ -1,0 +1,27 @@
+{
+  "case": "F",
+  "observations": [
+    {
+      "kind": "task_constraint",
+      "evidence_ids": [
+        "U1"
+      ]
+    }
+  ],
+  "assessment": {
+    "missing_kinds": [
+      "task_format_request"
+    ],
+    "forbidden_kinds": [],
+    "missing_evidence_ids": {
+      "task_format_request": [
+        "U1"
+      ]
+    }
+  },
+  "model": "gemma4:latest",
+  "total_duration_ns": 7613828084,
+  "prompt_eval_count": 279,
+  "eval_count": 365,
+  "done": true
+}

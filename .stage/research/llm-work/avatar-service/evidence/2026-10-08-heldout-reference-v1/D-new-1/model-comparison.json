@@ -1,0 +1,38 @@
+[
+  {
+    "id": "D1",
+    "expected": {
+      "act": "user_report",
+      "constraint_ref": "none"
+    },
+    "actual": {
+      "act": "user_report",
+      "constraint_ref": "none"
+    },
+    "match": true
+  },
+  {
+    "id": "D2",
+    "expected": {
+      "act": "attributed_content",
+      "constraint_ref": "none"
+    },
+    "actual": {
+      "act": "attributed_content",
+      "constraint_ref": "none"
+    },
+    "match": true
+  },
+  {
+    "id": "D3",
+    "expected": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "unresolved"
+    },
+    "actual": {
+      "act": "request_apply_constraint",
+      "constraint_ref": "unresolved"
+    },
+    "match": true
+  }
+]

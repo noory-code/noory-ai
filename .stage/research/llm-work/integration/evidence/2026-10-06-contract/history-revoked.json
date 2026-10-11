@@ -1,0 +1,145 @@
+{
+  "events": [
+    {
+      "event": "recorded",
+      "generation": 1,
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:32.136602Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v1",
+        "quote_sha256": "0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v1",
+        "source_sha256": null
+      },
+      "reason": null,
+      "recorded_at": "2026-10-05T17:37:32.140157Z",
+      "ref": "distill:CR-20a8c4530ae0@1"
+    },
+    {
+      "event": "revised",
+      "generation": 2,
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:32.682298Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v2",
+        "quote_sha256": "0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v2",
+        "source_sha256": null
+      },
+      "reason": "Synthetic change: callers handle absence.",
+      "recorded_at": "2026-10-05T17:37:32.683703Z",
+      "ref": "distill:CR-20a8c4530ae0@2"
+    },
+    {
+      "event": "revoked",
+      "generation": 5,
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:33.781420Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: revoke",
+        "quote_sha256": "452a2dc1711f90856e8f4c5eda7ee557d0a17b1eda9275aa5e3c24c174d0ece9",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/revoke",
+        "source_sha256": null
+      },
+      "reason": "Synthetic retirement.",
+      "recorded_at": "2026-10-05T17:37:33.782079Z",
+      "ref": "distill:CR-20a8c4530ae0@2"
+    }
+  ],
+  "generation": 5,
+  "id": "CR-20a8c4530ae0",
+  "producer": "distill",
+  "producer_version": "1.10.0",
+  "project": "test/demo-app",
+  "schema": "criteria-history/1",
+  "versions": [
+    {
+      "ai_confidence": null,
+      "applies_when": [
+        {
+          "any": [
+            "app/"
+          ],
+          "kind": "path"
+        }
+      ],
+      "confirmation": "user_stated",
+      "exceptions": [],
+      "notes": [],
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:32.136602Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v1",
+        "quote_sha256": "0248490d9368c202a1f9071bd5e1601a3c7f15b7375129ec7f48c49409fbd63a",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v1",
+        "source_sha256": null
+      },
+      "overrides": [],
+      "reason": null,
+      "recorded_at": "2026-10-05T17:37:32.140157Z",
+      "ref": "distill:CR-20a8c4530ae0@1",
+      "statement": "Invalid input raises ConfigError.",
+      "status": "superseded",
+      "supersedes": null
+    },
+    {
+      "ai_confidence": null,
+      "applies_when": [
+        {
+          "any": [
+            "app/"
+          ],
+          "kind": "path"
+        }
+      ],
+      "confirmation": "user_stated",
+      "exceptions": [],
+      "notes": [],
+      "origin": {
+        "actor": "user",
+        "captured_at": "2026-10-05T17:37:32.682298Z",
+        "kind": "user_statement",
+        "quote": "Synthetic test statement: v2",
+        "quote_sha256": "0b0546383c1cb6f52597e7b2be5c9c77f98df48b47e213ed7bfa2c1e954e4796",
+        "recorded_by": {
+          "host": "fixture",
+          "session_id": "contract",
+          "via": "cli"
+        },
+        "source_ref": "session:fixture/contract/v2",
+        "source_sha256": null
+      },
+      "overrides": [],
+      "reason": "Synthetic change: callers handle absence.",
+      "recorded_at": "2026-10-05T17:37:32.683703Z",
+      "ref": "distill:CR-20a8c4530ae0@2",
+      "statement": "Invalid input returns None.",
+      "status": "revoked",
+      "supersedes": "distill:CR-20a8c4530ae0@1"
+    }
+  ]
+}

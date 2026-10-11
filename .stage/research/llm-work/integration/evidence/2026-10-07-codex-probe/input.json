@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "codex",
+    "exec",
+    "--ignore-user-config",
+    "--model",
+    "gpt-6-sol",
+    "--sandbox",
+    "read-only",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--json",
+    "--cd",
+    "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-codex-probe-v6thao9r",
+    "Reply with exactly READY. Do not use tools or read or write files."
+  ],
+  "timeout_seconds": 60
+}

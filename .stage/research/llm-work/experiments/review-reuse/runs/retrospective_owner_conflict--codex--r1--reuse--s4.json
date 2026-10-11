@@ -1,0 +1,32 @@
+{
+  "id": "retrospective_owner_conflict--codex--r1--reuse--s4",
+  "case": "retrospective_owner_conflict",
+  "host": "codex",
+  "repeat": 1,
+  "condition": "reuse",
+  "step": 4,
+  "version": "after",
+  "key": "6068efc159aa4bfd33cc9a8b35fa653c74df41a24b007382420387a9614c0e5a",
+  "cache_hit": true,
+  "origin": "retrospective_owner_conflict--codex--r1--reuse--s3",
+  "answer": {
+    "action": "approve",
+    "reason": "W-00000041은 결정적으로 R-00000041에 매핑되고, 기존 파일의 work_item이 W-00000099이면 reserve_retrospective가 세 ID를 모두 포함한 충돌 오류를 내며 write_driver_retrospective는 빈 ID를 반환하므로 R-00000042.md나 R-00000043.md를 생성하지 않습니다.",
+    "targets": []
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "error": null,
+  "matches": true,
+  "reported_cost_usd": null,
+  "reported_tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "prompt_sha256": "c220c9741a1a77233deeb6feb0e076f0f1ec928cd1f6309f8e706fb0914e6d2e",
+  "prompt_characters": 12049,
+  "cli": null,
+  "end_to_end_s": 0.0011566249886527658
+}

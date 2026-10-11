@@ -1,0 +1,28 @@
+{
+  "project": "test/demo-app",
+  "statement": "A synthetic AI guess.",
+  "applies_when": [
+    {
+      "kind": "path",
+      "any": [
+        "app/"
+      ]
+    }
+  ],
+  "exceptions": [],
+  "notes": [],
+  "overrides": [],
+  "confirmation": "none",
+  "origin": {
+    "kind": "user_statement",
+    "source_ref": "session:fixture/contract/ai-guess",
+    "quote": "Synthetic test statement: ai-guess",
+    "actor": "ai",
+    "recorded_by": {
+      "host": "fixture",
+      "session_id": "contract",
+      "via": "cli"
+    }
+  },
+  "ai_confidence": 0.99
+}

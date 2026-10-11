@@ -1,0 +1,37 @@
+{
+  "case": "roadmap_repeated_criteria--before",
+  "host": "claude",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "roadmap_repeated_criteria--before--claude--auto--r2",
+  "criterion_id": "roadmap_repeated_criteria",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/skills/stage-roadmap/manage_roadmap.py": {
+      "mode": "full",
+      "reason": "all_functions_referenced",
+      "symbols": [],
+      "entry": "create_milestone",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ],
+    "reason": "`--completion-criteria`는 `add_argument(..., default=\"\")`로 `action=\"append\"` 없이 정의되어 세 번 전달하면 마지막 값(Users can install the release)만 남고, `_replace_section`은 값을 '- ' 접두 없이 그대로 기록하므로 세 값이 순서대로 각각 '- ' 항목으로 남지 않습니다."
+  },
+  "expected": {
+    "action": "revise",
+    "targets": [
+      "roadmap_repeated_criteria"
+    ]
+  },
+  "matches": true,
+  "request_seconds": 8.424598082987359
+}

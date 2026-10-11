@@ -1,0 +1,108 @@
+{
+  "run_id": "example_post--purpose_check--1",
+  "case": "example_post",
+  "family": "H01",
+  "condition": "purpose_check",
+  "repeat": 1,
+  "started_at": "2026-10-04T23:45:18.395877+00:00",
+  "prompt": "{\"request\": \"회사 공지 같은 톤이면 좋겠어요. 아래 내용을 모임 안내문 초안으로 써주세요. 회사 규정은 필요 없어요.\", \"choices\": [\"report\", \"edit\", \"draft\", \"ask\", \"continue\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다. 행동을 고르기 전에 사용자의 목적, 제약, 미확인 사항을 각각 짧게 적고 purpose 필드에 담으세요.",
+  "input_sha256": "1781355e0e988c4b6c974cb162447b660aba6b3f1502dc7e809b88d9f81e3c9a",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": []
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"ask\", \"reason\": \"'아래 내용'이라고 하셨지만 실제로 전달된 모임 내용(일시, 장소, 대상, 안건 등)이 없어 초안을 쓰려면 먼저 그 내용을 받아야 합니다.\", \"purpose\": \"목적: 모임 안내문 초안 작성. 제약: 회사 공지 같은 톤을 쓰되 회사 규정은 넣지 않는다. 미확인: 안내문에 담을 모임 내용(일시, 장소, 대상, 참석 방법, 문의처 등)이 전달되지 않았다.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 4201,
+    "duration_api_ms": 4634,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "9366f527-a9c0-4f4d-b4fb-28bc37dec9d8",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.008111,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 879,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 353,
+      "output_tokens_details": {
+        "thinking_tokens": 137
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 879,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 353,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 879,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 879
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"ask\", \"reason\": \"'아래 내용'이라고 하셨지만 실제로 전달된 모임 내용(일시, 장소, 대상, 안건 등)이 없어 초안을 쓰려면 먼저 그 내용을 받아야 합니다.\", \"purpose\": \"목적: 모임 안내문 초안 작성. 제약: 회사 공지 같은 톤을 쓰되 회사 규정은 넣지 않는다. 미확인: 안내문에 담을 모임 내용(일시, 장소, 대상, 참석 방법, 문의처 등)이 전달되지 않았다.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 976,
+        "outputTokens": 17,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.0010609999999999999,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 353,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 879,
+        "webSearchRequests": 0,
+        "costUSD": 0.007050000000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 137,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "14f1f36f-b8a1-4651-8186-d41b79b3af50",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 5.226696124998853
+}

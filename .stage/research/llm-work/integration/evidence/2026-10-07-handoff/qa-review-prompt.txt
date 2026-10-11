@@ -1,0 +1,22 @@
+Independent read-only QA review. Do not edit, run commands or delegate. Return JSON
+with approved, criteria (criterion/verdict/reason), findings (severity/location/reason), limits.
+The supervisor implemented the harness. You are a new reviewer, not an experiment participant.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000277/_story.md for the three success criteria.
+Read the report /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/findings/2026-10-07-three-plugin-handoff.md.
+Read the active integration scripts run_real_handoff.py, host_process.py, verify_integration.py,
+check_host_result.py, recheck_handoff.py in /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/.
+Inspect evidence under /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff: real-host-plan.md, host-runs-initial.json, host-runs.json,
+checker-correction.json, summary.json, representative original and rechecked file-checks,
+and the preserved actual Python files and model result/raw logs for both C2 cases.
+All six cases ran once in fresh sessions. An initial checker falsely rejected bulleted applied
+refs that Stage already supports. A regression failed; the checker was fixed and preserved files
+were rechecked without changing model responses, prompts, expected behavior or product sources.
+The original three failures remain in host-runs-initial.json. The corrected matrix and the full
+verify_integration.py --require-real-hosts command pass (supervisor observation, not your run).
+Known limitation: senders wrote file hashes under Evidence as prose. Stage's documented contract
+expects JSON lines in Progress, so packets correctly reported no parseable evidence. Receivers
+read the original card and files; the independent checker confirms unchanged bytes. The report
+explicitly does NOT claim automatic Stage evidence validation succeeded. Judge the claims within
+that limit. Avatar uses disclosed synthetic user fixtures, not real personal data or identity proof.
+Do not require cost savings: this is an observation study and reports that no general savings
+claim is supported. Find concrete defects or inflated claims. Do not claim to have run tests.

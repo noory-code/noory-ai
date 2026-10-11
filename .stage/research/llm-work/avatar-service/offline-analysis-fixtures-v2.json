@@ -1,0 +1,63 @@
+{
+  "format": "avatar-offline-analysis-lab/2",
+  "cases": [
+    {
+      "id": "A",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "이번 화면에 로그인은 넣지 마세요."},
+        {"id": "A1", "role": "assistant", "text": "첫 시안에 로그인 버튼을 넣었습니다."},
+        {"id": "U2", "role": "user", "text": "앞에서 로그인은 빼 달라고 했어요. 버튼을 빼 주세요."}
+      ],
+      "required_kinds": ["task_constraint", "assistant_constraint_miss", "user_correction"],
+      "required_ids": {"task_constraint": ["U1"], "assistant_constraint_miss": ["U1", "A1"], "user_correction": ["U2"]},
+      "forbidden_kinds": ["unverified_outcome", "reported_third_party_requirement"]
+    },
+    {
+      "id": "B",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "버튼이 실제로 동작하는지 테스트 결과를 보여 주세요."},
+        {"id": "A1", "role": "assistant", "text": "좋아 보입니다."},
+        {"id": "U2", "role": "user", "text": "실제로 테스트했는지 결과를 알려 주세요."}
+      ],
+      "required_kinds": ["evidence_request", "unverified_outcome"],
+      "required_ids": {"evidence_request": ["U1", "U2"], "unverified_outcome": ["U1", "A1"]},
+      "forbidden_kinds": ["assistant_constraint_miss", "user_correction"]
+    },
+    {
+      "id": "C",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "팀장님이 보고서는 한 장으로 하라고 하셨어요. 이번 보고서도 한 장으로 써 주세요."}
+      ],
+      "required_kinds": ["task_constraint", "reported_third_party_requirement"],
+      "required_ids": {"task_constraint": ["U1"], "reported_third_party_requirement": ["U1"]},
+      "forbidden_kinds": ["user_correction", "assistant_constraint_miss"]
+    },
+    {
+      "id": "D",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "AI가 제가 모든 파일을 공개하자고 했다고 요약했어요. 원래 대화에서 그런 말을 했는지 찾아 주세요."}
+      ],
+      "required_kinds": ["evidence_request", "reported_ai_claim"],
+      "required_ids": {"evidence_request": ["U1"], "reported_ai_claim": ["U1"]},
+      "forbidden_kinds": ["task_constraint", "reported_third_party_requirement"]
+    },
+    {
+      "id": "E",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "어떻게 생각하세요?"}
+      ],
+      "required_kinds": [],
+      "required_ids": {},
+      "forbidden_kinds": ["task_constraint", "assistant_constraint_miss", "user_correction", "evidence_request", "unverified_outcome", "reported_third_party_requirement", "reported_ai_claim", "task_format_request"]
+    },
+    {
+      "id": "F",
+      "messages": [
+        {"id": "U1", "role": "user", "text": "이번 답변은 이유까지 길게 설명해 주세요."}
+      ],
+      "required_kinds": ["task_format_request"],
+      "required_ids": {"task_format_request": ["U1"]},
+      "forbidden_kinds": ["task_constraint", "assistant_constraint_miss", "user_correction", "reported_third_party_requirement"]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "case": "A",
+  "raw_response": "{\"observations\": [{\"kind\": \"task_constraint\", \"evidence_ids\": [\"U1\"]}, {\"kind\": \"assistant_constraint_miss\", \"evidence_ids\": [\"A1\"]}, {\"kind\": \"user_correction\", \"evidence_ids\": [\"U2\", \"U1\"]}]}",
+  "model": "gemma4:latest",
+  "total_duration_ns": 9792497958,
+  "prompt_eval_count": 337,
+  "eval_count": 589,
+  "done": true,
+  "validation_error": "Relational observation needs both speakers"
+}

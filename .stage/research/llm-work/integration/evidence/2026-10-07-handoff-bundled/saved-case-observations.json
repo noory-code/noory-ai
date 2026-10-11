@@ -1,0 +1,182 @@
+[
+  {
+    "case": "claude-to-codex-C0",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C0",
+      "port_unchanged": true,
+      "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "raised": "ConfigError"
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  },
+  {
+    "case": "claude-to-codex-C1",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C1",
+      "port_unchanged": true,
+      "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "raised": "ConfigError"
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  },
+  {
+    "case": "claude-to-codex-C2",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C2",
+      "port_unchanged": true,
+      "port_sha256": "9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "returned": null
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  },
+  {
+    "case": "codex-to-claude-C0",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C0",
+      "port_unchanged": true,
+      "port_sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "raised": "ConfigError"
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  },
+  {
+    "case": "codex-to-claude-C1",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C1",
+      "port_unchanged": true,
+      "port_sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "raised": "ConfigError"
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  },
+  {
+    "case": "codex-to-claude-C2",
+    "exit": 0,
+    "file_checks": {
+      "passed": true,
+      "condition": "C2",
+      "port_unchanged": true,
+      "port_sha256": "742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7",
+      "valid_host": true,
+      "invalid_contract": true,
+      "observed": {
+        "valid": {
+          "returned": "example.com"
+        },
+        "invalid": {
+          "returned": null
+        }
+      },
+      "applied_ref_recorded": true,
+      "stale_judgment_recorded": true,
+      "next_action_updated": true,
+      "limits": [
+        "C0 has no required invalid-input contract; its outcome is observational.",
+        "This checks files and records, not whether an AI CLI produced them."
+      ]
+    },
+    "avatar_choices_match": true,
+    "avatar_confirmation": true,
+    "avatar_applied_history": true
+  }
+]

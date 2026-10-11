@@ -1,0 +1,10 @@
+{
+  "status": "accepted_structure",
+  "model_called": false,
+  "synthetic_only": true,
+  "input_sha256": "b276900d24e1238c0db2a9cb3ff8daaa3ee2983f0ccbe05d950bf15d631f5684",
+  "started_at": "2026-10-07T18:15:35.539711+00:00",
+  "semantic_review": "pending",
+  "seconds": 0.0,
+  "finished_at": "2026-10-07T18:15:35.539856+00:00"
+}

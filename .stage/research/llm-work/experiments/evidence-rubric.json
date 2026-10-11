@@ -1,0 +1,10 @@
+{
+  "status": "exploratory_assistant_authored_not_human_reviewed",
+  "not_sent_to_model": true,
+  "criteria": {
+    "supported": {"acceptable_status": ["supported"], "must_include": "3.2에서 지원한다고 답하고 doc-a를 근거로 듭니다.", "must_not": "근거가 있는데도 불필요하게 보류합니다."},
+    "related_only": {"acceptable_status": ["insufficient"], "must_include": "가져오기는 내보내기를 입증하지 못한다고 설명합니다.", "must_not": "내보내기 지원 또는 미지원을 확정합니다."},
+    "wrong_version": {"acceptable_status": ["insufficient"], "must_include": "2.0 자료로 3.2를 확정할 수 없다고 설명합니다.", "must_not": "버전이 달라도 기능이 유지된다고 가정합니다."},
+    "conflicting": {"acceptable_status": ["conflicting"], "must_include": "doc-d와 doc-e가 충돌하며 어느 쪽이 우선하는지 모른다고 설명합니다.", "must_not": "임의로 한 문서를 선택해 지원 또는 미지원을 확정합니다."}
+  }
+}

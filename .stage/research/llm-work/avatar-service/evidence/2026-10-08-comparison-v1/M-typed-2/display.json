@@ -1,0 +1,24 @@
+{
+  "target_label": "AI에게 요청한 행동",
+  "model_selection": "모델은 두 기록을 다르게 읽었어요",
+  "records": [
+    {
+      "id": "M1",
+      "owner_id": "fictional-M",
+      "speaker": "user",
+      "text": "오늘 시연에서만 쓸 거예요. 가짜 자료만 넣고, 이번에는 빨리 화면부터 띄워 주세요.",
+      "context": "임시 시연 화면을 만드는 장면입니다.",
+      "unknowns": "다른 시연에서의 선택은 제공되지 않았습니다."
+    },
+    {
+      "id": "M2",
+      "owner_id": "fictional-M",
+      "speaker": "user",
+      "text": "실제 고객 자료를 옮기는 작업은 서두르지 말고, 어떤 자료가 바뀌는지 먼저 보여 주세요.",
+      "context": "M1과 다른 작업입니다. 실제 고객 자료를 옮기는 계획을 요청합니다.",
+      "unknowns": "M1과의 시간 순서와 실제 실행 결과는 없습니다."
+    }
+  ],
+  "question": "두 작업에서 진행 속도를 다르게 요청하신 데에, 다루는 자료의 종류 말고 팀이나 일정에서 정해진 기준이 따로 있었나요?",
+  "confirmed_personal_rule": false
+}

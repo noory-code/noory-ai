@@ -1,0 +1,10 @@
+{
+  "case": "B",
+  "raw_response": "[{\"id\": \"U1\", \"role\": \"user\", \"text\": \"버튼이 실제로 동작하는지 테스트 결과를 보여 주세요.\"}, {\"id\": \"U2\", \"role\": \"user\", \"text\": \"실제로 테스트했는지 결과를 알려 주세요.\"}]",
+  "model": "gemma4:latest",
+  "total_duration_ns": 3683864417,
+  "prompt_eval_count": 388,
+  "eval_count": 58,
+  "done": true,
+  "validation_error": "Unexpected response fields"
+}

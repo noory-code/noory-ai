@@ -1,0 +1,35 @@
+{
+  "case_id": "E-new",
+  "messages": [
+    {
+      "id": "E-m1",
+      "author": "user",
+      "text": "부록은 시간 순서로 정리해 주세요."
+    },
+    {
+      "id": "E-m2",
+      "author": "user",
+      "text": "본문도 같은 순서로 정리해 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "E1",
+      "message_id": "E-m1",
+      "exact_text": "부록은 시간 순서로 정리해 주세요.",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "E2",
+      "message_id": "E-m2",
+      "exact_text": "본문도 같은 순서로 정리해 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "E1"
+      }
+    }
+  ]
+}

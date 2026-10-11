@@ -1,0 +1,90 @@
+{
+  "purpose": "receiver check immediately before H error-contract choice",
+  "calls": [
+    {
+      "argv": [
+        "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+        "-m",
+        "distill",
+        "criteria",
+        "current",
+        "--db",
+        "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C0/.data/distill.db",
+        "--project",
+        "test/demo-app"
+      ],
+      "exit": 0,
+      "stdout": "{\"checked_at\": \"2026-10-07T10:39:16.507347Z\", \"criteria\": [], \"generation\": 0, \"producer\": \"distill\", \"producer_version\": \"1.10.0\", \"retired\": [], \"schema\": \"criteria-snapshot/1\", \"scope\": {\"key\": \"test/demo-app\", \"kind\": \"project\"}, \"store\": \"absent\"}\n",
+      "stderr": "",
+      "json": {
+        "checked_at": "2026-10-07T10:39:16.507347Z",
+        "criteria": [],
+        "generation": 0,
+        "producer": "distill",
+        "producer_version": "1.10.0",
+        "retired": [],
+        "schema": "criteria-snapshot/1",
+        "scope": {
+          "key": "test/demo-app",
+          "kind": "project"
+        },
+        "store": "absent"
+      }
+    },
+    {
+      "argv": [
+        "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+        "-m",
+        "distill",
+        "criteria",
+        "check",
+        "--db",
+        "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C0/.data/distill.db",
+        "--project",
+        "test/demo-app",
+        "--refs",
+        "distill:CR-fbed97eb8cc7@1"
+      ],
+      "exit": 0,
+      "stdout": "{\"checked_at\": \"2026-10-07T10:39:16.598288Z\", \"generation\": 0, \"results\": [{\"ref\": \"distill:CR-fbed97eb8cc7@1\", \"status\": \"unknown\"}], \"store\": \"absent\"}\n",
+      "stderr": "",
+      "json": {
+        "checked_at": "2026-10-07T10:39:16.598288Z",
+        "generation": 0,
+        "results": [
+          {
+            "ref": "distill:CR-fbed97eb8cc7@1",
+            "status": "unknown"
+          }
+        ],
+        "store": "absent"
+      }
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py",
+        "--home",
+        "/private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-18nlptut/codex-to-claude-C0/.data/avatar",
+        "export"
+      ],
+      "exit": 0,
+      "stdout": "{\"checked_at\": \"2026-10-07T10:39:16.656060Z\", \"criteria\": [], \"generation\": 0, \"producer\": \"avatar\", \"producer_version\": \"0.1.0\", \"retired\": [], \"schema\": \"criteria-snapshot/1\", \"scope\": {\"key\": \"personal\", \"kind\": \"personal\"}, \"store\": \"absent\"}\n",
+      "stderr": "",
+      "json": {
+        "checked_at": "2026-10-07T10:39:16.656060Z",
+        "criteria": [],
+        "generation": 0,
+        "producer": "avatar",
+        "producer_version": "0.1.0",
+        "retired": [],
+        "schema": "criteria-snapshot/1",
+        "scope": {
+          "key": "personal",
+          "kind": "personal"
+        },
+        "store": "absent"
+      }
+    }
+  ]
+}

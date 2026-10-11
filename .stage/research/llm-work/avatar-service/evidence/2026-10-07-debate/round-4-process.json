@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "seconds": 49.52,
+  "finished_at": "2026-10-07T13:33:45.575092+00:00",
+  "input": "curated design discussion and synthetic cases only",
+  "is_error": false,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 11159,
+      "outputTokens": 4505,
+      "cacheReadInputTokens": 10181,
+      "cacheCreationInputTokens": 9739,
+      "webSearchRequests": 0,
+      "costUSD": 0.21024420000000005,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 405,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

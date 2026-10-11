@@ -1,0 +1,12 @@
+{
+  "owner_id": "fictional-M",
+  "language": "ko",
+  "status": "compare",
+  "target": "requested_action",
+  "relation": "different",
+  "evidence_ids": [
+    "M1",
+    "M2"
+  ],
+  "question": "두 작업에서 요청이 달랐던 데에 자료 종류 말고 일정이나 확인 절차 같은 다른 조건도 있었는지 알려 주실 수 있을까요?"
+}

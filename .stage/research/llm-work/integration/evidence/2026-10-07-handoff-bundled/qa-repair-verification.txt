@@ -1,0 +1,1 @@
+{"cli_contract": "passed", "commands": 27, "real_hosts": "required evidence checked"}

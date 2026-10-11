@@ -1,0 +1,30 @@
+{
+  "case_id": "A",
+  "messages": [
+    {
+      "id": "A-m1",
+      "author": "user",
+      "text": "회의 자료에는 배경과 예시를 넣어 주세요. 동료는 저에게 '넌 늘 말을 길게 해'라고 했어요. 제 말 길이를 잰 기록은 없어요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "A1",
+      "message_id": "A-m1",
+      "exact_text": "회의 자료에는 배경과 예시를 넣어 주세요.",
+      "expected": "direct_request"
+    },
+    {
+      "id": "A2",
+      "message_id": "A-m1",
+      "exact_text": "넌 늘 말을 길게 해",
+      "expected": "quoted_other"
+    },
+    {
+      "id": "A3",
+      "message_id": "A-m1",
+      "exact_text": "제 말 길이를 잰 기록은 없어요.",
+      "expected": "direct_report"
+    }
+  ]
+}

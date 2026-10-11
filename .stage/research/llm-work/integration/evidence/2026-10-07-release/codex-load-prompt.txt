@@ -1,0 +1,8 @@
+This is a read-only release-loading test in an empty temporary project.
+Use the available $stage-handoff, $avatar, and $distill-criteria skills in inspection-only mode.
+Read their actual SKILL.md paths advertised by this session and the manifests in the SAME plugin
+roots. Report loaded skill paths and observed versions. Expected versions are Stage 0.63.1,
+Avatar 0.1.2, Distill 1.10.0; read the values instead of assuming them. Do not carry out workflows,
+register work, write files, read conversations, or access personal stores. Do not invoke MCP tools.
+Do not use the repository directories to simulate a plugin that this session did not discover.
+Return one JSON object with loaded_skills, observed_versions, plugin_paths, and failures.

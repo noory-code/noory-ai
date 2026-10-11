@@ -1,0 +1,19 @@
+Independently review the uncommitted Windows release repairs in /Users/woogis/.codex/worktrees/criteria-release/noory-ai.
+The user has authorized the supervisor to implement directly, then push, merge and release.
+Read CLAUDE.md and stage/CLAUDE.md. Confirm branch codex/criteria-release.
+Read the exact card file /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000278/W-00000279.md with Read.
+Use one command per Bash call. Do not list directories outside the worktree, request sandbox bypass,
+run tests, create another worktree, commit, push or merge. The supervisor runs tests.
+Inspect git diff and its changed files. Also read these new files not shown by git diff:
+stage/scripts/tests/python_shell_command.py and stage/scripts/tests/test_windows_contracts.py.
+The preceding CI run got past hooks and exposed 54 failures plus 18 errors in the Windows scripts suite.
+Common causes were multiline Python crossing cmd.exe, path separators and short Windows path aliases,
+UTF-8 escalation messages on a legacy output pipe, and lost CRLF bytes when closing/reopening records.
+Four new regressions failed before the fixes and passed after. The full local suite is running.
+Judge whether the fixes preserve tested behavior, especially exact record bytes and fixture semantics.
+Do not weaken tests or skip Windows tests. If you find an actionable defect, report it and make no changes.
+If approved, run only this release command:
+TZ=Asia/Seoul python3 stage/scripts/release_plugin.py stage --bump patch
+Stage should become 0.63.2. Avatar stays 0.1.2 and Distill stays 1.10.0.
+You may change only Stage's CHANGELOG.md and two host manifests by that release command.
+Check the resulting diff and report your verdict, evidence, limits and scope crossings.

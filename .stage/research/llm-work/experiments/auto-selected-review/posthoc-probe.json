@@ -1,0 +1,76 @@
+{
+  "after_model_experiment": true,
+  "rows": [
+    {
+      "case": "roadmap_repeated_criteria--before",
+      "file": "stage/skills/stage-roadmap/manage_roadmap.py",
+      "source_sha256": "aaff2ff31062edf0c87f5ce623c2ea0fe1444a124b26b33aa2ddfec08555a27f",
+      "top_level_functions": 23,
+      "explicit_names_in_criterion": [],
+      "entries_producing_smaller_source": [],
+      "all_entries_keep_full_source": true,
+      "seconds": 0.11894879100145772
+    },
+    {
+      "case": "roadmap_repeated_criteria--after",
+      "file": "stage/skills/stage-roadmap/manage_roadmap.py",
+      "source_sha256": "9832121478daa33e54c8383942bcf2f68aa5367f0f69ac1a0b6d3833e760d8e2",
+      "top_level_functions": 23,
+      "explicit_names_in_criterion": [],
+      "entries_producing_smaller_source": [],
+      "all_entries_keep_full_source": true,
+      "seconds": 0.11142312499578111
+    },
+    {
+      "case": "retrospective_owner_conflict--before",
+      "file": "stage/scripts/driver_lifecycle.py",
+      "source_sha256": "bdb9d5236f785fcb6e4e1c4424731aab1ab5b201e09c109102967a3451b379c9",
+      "top_level_functions": 9,
+      "explicit_names_in_criterion": [
+        "write_driver_retrospective"
+      ],
+      "entries_producing_smaller_source": [
+        "write_driver_retrospective",
+        "current_card_path",
+        "mark_retrospective",
+        "close_via_close_work",
+        "escalate_via_escalate_work",
+        "shell_command",
+        "audit_check",
+        "set_frontmatter_field",
+        "retrospective_id_for_work_item"
+      ],
+      "all_entries_keep_full_source": false,
+      "seconds": 0.016550582979107276
+    },
+    {
+      "case": "retrospective_owner_conflict--after",
+      "file": "stage/scripts/driver_lifecycle.py",
+      "source_sha256": "2329593d33a44cc1631046ad2a93a8eee109d2575d0630699c09f88a392f6c12",
+      "top_level_functions": 10,
+      "explicit_names_in_criterion": [
+        "write_driver_retrospective"
+      ],
+      "entries_producing_smaller_source": [
+        "write_driver_retrospective",
+        "current_card_path",
+        "mark_retrospective",
+        "close_via_close_work",
+        "escalate_via_escalate_work",
+        "shell_command",
+        "audit_check",
+        "set_frontmatter_field",
+        "retrospective_id_for_work_item",
+        "reserve_retrospective"
+      ],
+      "all_entries_keep_full_source": false,
+      "seconds": 0.01587112501147203
+    }
+  ],
+  "source_sha256": "7a9e88c541d4bf9669cac7a0a82e46145ae30e0a979a0bf2fc44405095e85dbf",
+  "limits": [
+    "모델 비교가 끝난 뒤 추가로 확인했습니다. 세 번째 비교 조건의 결과가 아닙니다.",
+    "기준에 함수 이름이 나온다는 사실만으로 일반적인 검토 시작점을 확정할 수는 없습니다.",
+    "모든 시작점의 소스를 비교한 시간이며 실제 운영에 연결한 선택기의 시간은 아닙니다."
+  ]
+}

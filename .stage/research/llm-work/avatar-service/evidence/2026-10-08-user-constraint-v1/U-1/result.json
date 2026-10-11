@@ -1,0 +1,21 @@
+{
+  "case_id": "U",
+  "items": [
+    {
+      "id": "U1",
+      "message_id": "U-m1",
+      "exact_text": "이번 안내문은 세 문단으로 써 주세요.",
+      "act": "user_task_constraint",
+      "constraint_ref": "none",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "U2",
+      "message_id": "U-m1",
+      "exact_text": "끝의 요약도 그 형식으로 써 주세요.",
+      "act": "request_apply_constraint",
+      "constraint_ref": "U1",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "user_statement",
+  "source_ref": "session:codex/claude-to-codex-C2/fixture-1",
+  "quote": "[Synthetic test statement] Callers should be able to predict how errors are handled.",
+  "actor": "user",
+  "recorded_by": {
+    "host": "codex",
+    "session_id": "claude-to-codex-C2",
+    "via": "cli"
+  }
+}

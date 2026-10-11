@@ -1,0 +1,17 @@
+{
+  "distill": {
+    "argv": [
+      "/Users/woogis/Workspace/repo/novel-ai-stage-worktrees/W-00000274-distill/plugins/distill/.venv/bin/python",
+      "-m",
+      "distill"
+    ],
+    "db": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/codex-to-claude-C2/.data/distill.db"
+  },
+  "avatar": {
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai/avatar/scripts/avatar.py"
+    ],
+    "home": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-real-handoff-z_p2ez19/codex-to-claude-C2/.data/avatar"
+  }
+}

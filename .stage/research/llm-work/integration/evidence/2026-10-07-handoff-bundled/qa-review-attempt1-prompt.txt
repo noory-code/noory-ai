@@ -1,0 +1,32 @@
+Independent read-only QA review. Do not edit files, run commands, or delegate.
+Return JSON: approved, criteria (criterion/verdict/reason), findings (severity/location/reason), limits.
+Read the three success criteria and history/dispositions in /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000277/_story.md.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/findings/2026-10-07-bundled-recording.md and /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/implementation-status.md.
+Review /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/fixture_avatar_batch.py, test_fixture_avatar_batch.py, run_bundled_handoff.py,
+run_real_handoff.py, verify_integration.py, compare_recording_runs.py and bundled-recording-plan.md.
+The only new workflow is a research-only wrapper for explicitly pre-authorized SYNTHETIC fixtures.
+It accepts the AI's choice and applied refs and calls Avatar/Distill public CLIs. It does NOT
+choose, write the parser, query criteria before the choice, or update Stage. The AI still does those.
+Do not treat this as a deployed personal-criteria auto-confirmation feature; the report disclaims that.
+Five real-CLI wrapper tests plus ten prior checker tests passed (supervisor observation); tests-green.log records 15.
+First two experiments remain separately preserved with their failures. In this third experiment,
+two existing successful sender sessions were REUSED, with per-file digests in sender-*/reuse.json.
+Exactly six new receiver sessions ran once each under the same 180-second limit. All six ended normally.
+The strict verifier passed with exit 0. Its only changes since the previous run are sender reuse
+hash validation and choosing this evidence folder by default; completion/record conditions were not relaxed.
+Inspect host-runs.json, verification.txt, comparison.json, summary.json, saved-case-observations.json,
+fixture-paths.json, and the receiver cards under /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled.
+Cards are byte-identical archived text: <case>/project/.stage/work/current/W-00000001/W-00000002/_story.md.txt.
+Inspect representative C0 and both directions' C2 raw traces and .data/batch-calls.jsonl to judge
+unknown/current status, query-before-write order, explicit confirmation, actual public calls and projections.
+The verifier checks lookup presence, not ordering; report manual ordering evidence only if you inspect it.
+Check the counts/claims: five conditions used fewer AI tools, one used the same; one was slower.
+Tool IDs are not model API requests; the wrapper still invokes 4 or 6 actual public CLIs.
+One trial per condition with uncontrolled order/cache/prompt does not establish general savings.
+The full research checker found a broken link (fixed) and two Japanese diagnostics in an OLD
+selected-review preparation script. Those two messages were translated. Original source bytes
+are preserved at /Users/woogis/Workspace/repo/noory-ai/.stage/research/llm-work/integration/evidence/2026-10-07-handoff-bundled/legacy-prepare-recorded.py.txt with the historical SHA recorded in
+legacy-source-preservation.json; old preparation.json/input/results stayed unchanged. The scope
+crossing is disclosed in W-00000277. research-check.txt shows the full documentation check passing.
+Product sources remain unchanged from the Oct 6 test/review hashes. Do not claim to run tests.
+Find concrete remaining defects or overclaims, and distinguish product acceptance from release/commit closure.

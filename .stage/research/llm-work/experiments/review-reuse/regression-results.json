@@ -1,0 +1,152 @@
+{
+  "created_at_utc": "2026-10-05T00:37:55.748554+00:00",
+  "method": "각 수정 커밋의 stage 전체 트리와 그 커밋의 고정된 검사 한 개를 사용했습니다. 수정 전 조건에서는 대상 파일 하나만 부모 버전으로 바꿨습니다. 원래 커밋 당시 실행 로그가 아니라 새로 복원한 실험입니다.",
+  "python": "3.14.6 (main, Jun 10 2026, 10:03:53) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "git_version": "git version 2.54.0 (Apple Git-157)",
+  "repository_head": "d7b6de23441a19b0854dd25d6900743dc9620780",
+  "prepare_sha256": "d7ad3a44179734403483cebcf951f1414ae4e02b282809e156f7a12230763095",
+  "case_count": 2,
+  "run_count": 4,
+  "all_regressions_verified": true,
+  "cases": [
+    {
+      "id": "roadmap_repeated_criteria",
+      "commit": "a1cd08dac15ddac5ac873d5d73e2db2c9aa48a68",
+      "parent": "7692c3b3b1d8d4be918823d4586fe02620180176",
+      "target": "stage/skills/stage-roadmap/manage_roadmap.py",
+      "test": "test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value",
+      "test_file": "stage/scripts/tests/test_roadmap_v4.py",
+      "support_files_revision": "a1cd08dac15ddac5ac873d5d73e2db2c9aa48a68",
+      "before_target_blob": "7a8bab7c62bf7f858d719af45aa422013de29292",
+      "after_target_blob": "86727354079e47301e981f1c38987414cf9c5e71",
+      "commit_tree": "a3db3f151e677c9a908243596794338c4a067930",
+      "parent_tree": "f669b2ac2f0540bf6551f74a01727e58adb9b365",
+      "commit_stage_tree": "334e2db5761ae2995f57c17a49a9879be41e11f4",
+      "parent_stage_tree": "625779ff7935145f84311b337b027b0fcb1483f4",
+      "archive_sha256": "e74884790b1e8bdc2b1bfc14c29a5e94523fd4ee6a9342675c35b9bb66a16316",
+      "regression_verified": true,
+      "runs": [
+        {
+          "version": "after",
+          "command": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "-m",
+            "unittest",
+            "test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value",
+            "-v"
+          ],
+          "cwd_relative": "stage/scripts/tests",
+          "elapsed_seconds": 0.27857724999194033,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "test_completion_criteria_is_repeatable_and_preserves_every_value (test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.152s\n\nOK\n",
+          "archive_stage_sha256": "70f1239582e27206854d6ba39a7c403109f3dc05db6d4f4e60fbdae211936d5b",
+          "tested_stage_sha256": "70f1239582e27206854d6ba39a7c403109f3dc05db6d4f4e60fbdae211936d5b",
+          "after_test_stage_sha256": "70f1239582e27206854d6ba39a7c403109f3dc05db6d4f4e60fbdae211936d5b",
+          "file_count": 369,
+          "changed_from_archive": [],
+          "test_file_sha256": "4ece4da27869428be1eea37126c9173280642133c47bfdf0acbcf6a281c5fefe",
+          "target_sha256": "9832121478daa33e54c8383942bcf2f68aa5367f0f69ac1a0b6d3833e760d8e2",
+          "source_tree_unchanged_by_test": true
+        },
+        {
+          "version": "before",
+          "command": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "-m",
+            "unittest",
+            "test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value",
+            "-v"
+          ],
+          "cwd_relative": "stage/scripts/tests",
+          "elapsed_seconds": 0.2797200829954818,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "test_completion_criteria_is_repeatable_and_preserves_every_value (test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value) ... FAIL\n\n======================================================================\nFAIL: test_completion_criteria_is_repeatable_and_preserves_every_value (test_roadmap_v4.RoadmapCliTest.test_completion_criteria_is_repeatable_and_preserves_every_value)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private<temporary-extraction>/stage/scripts/tests/test_roadmap_v4.py\", line 191, in test_completion_criteria_is_repeatable_and_preserves_every_value\n    self.assertIn(\n    ~~~~~~~~~~~~~^\n        \"## Completion criteria\\n\\n\"\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n        milestone_text,\n        ^^^^^^^^^^^^^^^\n    )\n    ^\nAssertionError: '## Completion criteria\\n\\n- Every check passes\\n- Every artifact is published\\n- Users can install the release\\n' not found in '---\\nid: M-00000001\\ntheme: TH-00000001\\ndecision_refs:\\n---\\n\\n# M-00000001 Stable release\\n\\n## Purpose\\n\\n\\n## Period\\n\\n\\n## Scope\\n\\n\\n## Theme\\n\\nTH-00000001\\n\\n## Linked backlog\\n\\n\\n## Completion criteria\\n\\nUsers can install the release\\n\\n'\n\n----------------------------------------------------------------------\nRan 1 test in 0.154s\n\nFAILED (failures=1)\n",
+          "archive_stage_sha256": "70f1239582e27206854d6ba39a7c403109f3dc05db6d4f4e60fbdae211936d5b",
+          "tested_stage_sha256": "4dd7713ed0411c26a5b2528f8001e8b0d71ee22b500555feca7fbed68117db3d",
+          "after_test_stage_sha256": "4dd7713ed0411c26a5b2528f8001e8b0d71ee22b500555feca7fbed68117db3d",
+          "file_count": 369,
+          "changed_from_archive": [
+            "stage/skills/stage-roadmap/manage_roadmap.py"
+          ],
+          "test_file_sha256": "4ece4da27869428be1eea37126c9173280642133c47bfdf0acbcf6a281c5fefe",
+          "target_sha256": "aaff2ff31062edf0c87f5ce623c2ea0fe1444a124b26b33aa2ddfec08555a27f",
+          "source_tree_unchanged_by_test": true
+        }
+      ]
+    },
+    {
+      "id": "retrospective_owner_conflict",
+      "commit": "244a219957377557af4c85c5c81426aee6f12b8a",
+      "parent": "a54a3c972ed4444aca8ec86c34ba9bdd14443ec3",
+      "target": "stage/scripts/driver_lifecycle.py",
+      "test": "test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item",
+      "test_file": "stage/scripts/tests/test_drive.py",
+      "support_files_revision": "244a219957377557af4c85c5c81426aee6f12b8a",
+      "before_target_blob": "2fa78c3e8a3447e8170380313d3a0b6f87f49d52",
+      "after_target_blob": "0d49172bb703b31230b51091f5743b2640ed8ff2",
+      "commit_tree": "e7e7f8cdc4d2c3468555e4f27348e1aece670735",
+      "parent_tree": "75975e067462bdb3cf8056af84062e1767248ab0",
+      "commit_stage_tree": "a466d64bec4ff2c5c567e0614ac0daf9d6fb882d",
+      "parent_stage_tree": "5c225acb998fe06d19b0c389453b7346da2a5349",
+      "archive_sha256": "1e61bb43ac1f80a0b09fe395a7d3bb8dadced92736889a1132b436cec3880c03",
+      "regression_verified": true,
+      "runs": [
+        {
+          "version": "after",
+          "command": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "-m",
+            "unittest",
+            "test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item",
+            "-v"
+          ],
+          "cwd_relative": "stage/scripts/tests",
+          "elapsed_seconds": 0.17537449998781085,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "test_driver_retrospective_refuses_id_owned_by_another_work_item (test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 0.073s\n\nOK\n",
+          "archive_stage_sha256": "40d0a31ba8378945885a9745875d8986d4f0769e6944916e18f5dc21f7ae3a65",
+          "tested_stage_sha256": "40d0a31ba8378945885a9745875d8986d4f0769e6944916e18f5dc21f7ae3a65",
+          "after_test_stage_sha256": "40d0a31ba8378945885a9745875d8986d4f0769e6944916e18f5dc21f7ae3a65",
+          "file_count": 370,
+          "changed_from_archive": [],
+          "test_file_sha256": "e89294ff773c71e06f2df38345a8b8b680d5595104317bacd99517e397f778d5",
+          "target_sha256": "2329593d33a44cc1631046ad2a93a8eee109d2575d0630699c09f88a392f6c12",
+          "source_tree_unchanged_by_test": true
+        },
+        {
+          "version": "before",
+          "command": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "-m",
+            "unittest",
+            "test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item",
+            "-v"
+          ],
+          "cwd_relative": "stage/scripts/tests",
+          "elapsed_seconds": 0.17491241701645777,
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "test_driver_retrospective_refuses_id_owned_by_another_work_item (test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item) ... FAIL\n\n======================================================================\nFAIL: test_driver_retrospective_refuses_id_owned_by_another_work_item (test_drive.DriveTest.test_driver_retrospective_refuses_id_owned_by_another_work_item)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private<temporary-extraction>/stage/scripts/tests/test_drive.py\", line 524, in test_driver_retrospective_refuses_id_owned_by_another_work_item\n    self.assertEqual(\"\", retro_id)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nAssertionError: '' != 'R-00000042'\n+ R-00000042\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.074s\n\nFAILED (failures=1)\n",
+          "archive_stage_sha256": "40d0a31ba8378945885a9745875d8986d4f0769e6944916e18f5dc21f7ae3a65",
+          "tested_stage_sha256": "12f17b4ae325a86cab65f701075741cb5888ef8a8d5029c7e89199fa69f1b177",
+          "after_test_stage_sha256": "12f17b4ae325a86cab65f701075741cb5888ef8a8d5029c7e89199fa69f1b177",
+          "file_count": 370,
+          "changed_from_archive": [
+            "stage/scripts/driver_lifecycle.py"
+          ],
+          "test_file_sha256": "e89294ff773c71e06f2df38345a8b8b680d5595104317bacd99517e397f778d5",
+          "target_sha256": "bdb9d5236f785fcb6e4e1c4424731aab1ab5b201e09c109102967a3451b379c9",
+          "source_tree_unchanged_by_test": true
+        }
+      ]
+    }
+  ]
+}

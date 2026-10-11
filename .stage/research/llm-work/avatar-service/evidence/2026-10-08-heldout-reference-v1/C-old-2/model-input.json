@@ -1,0 +1,36 @@
+{
+  "messages": [
+    {
+      "id": "C-m1",
+      "author": "user",
+      "text": "저는 보통 결론을 먼저 읽어요."
+    },
+    {
+      "id": "C-m2",
+      "author": "user",
+      "text": "부록은 시간 순서로 정리해 주세요."
+    },
+    {
+      "id": "C-m3",
+      "author": "user",
+      "text": "본문은 결론부터 보여 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "C1",
+      "message_id": "C-m1",
+      "exact_text": "저는 보통 결론을 먼저 읽어요."
+    },
+    {
+      "id": "C2",
+      "message_id": "C-m2",
+      "exact_text": "부록은 시간 순서로 정리해 주세요."
+    },
+    {
+      "id": "C3",
+      "message_id": "C-m3",
+      "exact_text": "본문은 결론부터 보여 주세요."
+    }
+  ]
+}

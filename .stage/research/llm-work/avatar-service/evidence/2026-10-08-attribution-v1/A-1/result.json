@@ -1,0 +1,26 @@
+{
+  "case_id": "A",
+  "items": [
+    {
+      "id": "A1",
+      "message_id": "A-m1",
+      "exact_text": "회의 자료에는 배경과 예시를 넣어 주세요.",
+      "label": "direct_request",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "A2",
+      "message_id": "A-m1",
+      "exact_text": "넌 늘 말을 길게 해",
+      "label": "quoted_other",
+      "confirmed_personal_rule": false
+    },
+    {
+      "id": "A3",
+      "message_id": "A-m1",
+      "exact_text": "제 말 길이를 잰 기록은 없어요.",
+      "label": "direct_report",
+      "confirmed_personal_rule": false
+    }
+  ]
+}

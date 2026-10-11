@@ -1,0 +1,48 @@
+[
+  {
+    "input": {
+      "type": "read",
+      "schema": 1,
+      "approved": false
+    },
+    "decision": "execute"
+  },
+  {
+    "input": {
+      "type": "write",
+      "schema": 1,
+      "approved": true
+    },
+    "decision": "execute"
+  },
+  {
+    "input": {
+      "type": "write",
+      "schema": 1,
+      "approved": false
+    },
+    "decision": "ask"
+  },
+  {
+    "input": {
+      "type": "delete",
+      "schema": 1,
+      "approved": true
+    },
+    "decision": "fallback"
+  },
+  {
+    "input": {
+      "type": "read",
+      "schema": 2,
+      "approved": true
+    },
+    "decision": "fallback"
+  },
+  {
+    "input": {
+      "text": "잠깐 읽고 필요하면 알아서 변경해줘"
+    },
+    "decision": "fallback"
+  }
+]

@@ -1,0 +1,104 @@
+{
+  "run_id": "context_north--full--2",
+  "case": "context_north",
+  "family": "H03",
+  "condition": "full",
+  "repeat": 2,
+  "started_at": "2026-10-04T23:45:06.624836+00:00",
+  "prompt": "{\"request\": \"Atlas 3.2의 north 지역에서 지금 공개 공유를 쓸 수 있나요?\\n[note-0] 내부 회의실 0번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-1] 내부 회의실 1번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-2] 내부 회의실 2번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-3] 내부 회의실 3번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-4] 내부 회의실 4번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-5] 내부 회의실 5번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-6] 내부 회의실 6번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-7] 내부 회의실 7번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-8] 내부 회의실 8번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-9] 내부 회의실 9번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-10] 내부 회의실 10번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-11] 내부 회의실 11번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-12] 내부 회의실 12번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-13] 내부 회의실 13번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-14] 내부 회의실 14번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-15] 내부 회의실 15번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-16] 내부 회의실 16번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-17] 내부 회의실 17번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-18] 내부 회의실 18번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-19] 내부 회의실 19번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-20] 내부 회의실 20번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-21] 내부 회의실 21번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-22] 내부 회의실 22번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-23] 내부 회의실 23번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-24] 내부 회의실 24번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-25] 내부 회의실 25번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-26] 내부 회의실 26번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-27] 내부 회의실 27번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-28] 내부 회의실 28번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-29] 내부 회의실 29번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[general] Atlas 3.2는 공개 공유를 지원합니다.\\n[exception] north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있습니다.\\n[note-30] 내부 회의실 30번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-31] 내부 회의실 31번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-32] 내부 회의실 32번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-33] 내부 회의실 33번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-34] 내부 회의실 34번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-35] 내부 회의실 35번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-36] 내부 회의실 36번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-37] 내부 회의실 37번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-38] 내부 회의실 38번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-39] 내부 회의실 39번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-40] 내부 회의실 40번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-41] 내부 회의실 41번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-42] 내부 회의실 42번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-43] 내부 회의실 43번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-44] 내부 회의실 44번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-45] 내부 회의실 45번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-46] 내부 회의실 46번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-47] 내부 회의실 47번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-48] 내부 회의실 48번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-49] 내부 회의실 49번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-50] 내부 회의실 50번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-51] 내부 회의실 51번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-52] 내부 회의실 52번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-53] 내부 회의실 53번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-54] 내부 회의실 54번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-55] 내부 회의실 55번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-56] 내부 회의실 56번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-57] 내부 회의실 57번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-58] 내부 회의실 58번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\\n[note-59] 내부 회의실 59번의 표시 색상은 파랑입니다. 공유 기능과 무관합니다.\", \"choices\": [\"supported\", \"unsupported\", \"unknown\"]}",
+  "system_prompt": "주어진 요청과 자료를 보고 판단하세요. 실제 외부 작업은 수행하지 않습니다. JSON 객체 하나로 답하세요. decision은 제공한 choices 중 하나이며 reason은 한 문장입니다. report는 분석 보고서 작성, edit는 파일 수정, draft는 발송하지 않을 초안 작성, ask는 필요한 정보 질문, continue는 맡은 일 계속 수행을 뜻합니다. 그 외 choices는 문맥에 따라 지원 여부, 완료 여부, 규칙에 따른 처리 여부를 뜻합니다.",
+  "input_sha256": "e0c9c647352be417f9cbf60743f3890d63840f32a07a4ec656eff35013f60f97",
+  "messages": [
+    {
+      "model": "claude-sonnet-5-5",
+      "text": [
+        "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2는 일반적으로 공개 공유를 지원하지만, north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있다는 예외가 있어 현재는 사용할 수 없습니다.\"}"
+      ]
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 2260,
+    "duration_api_ms": 2882,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "8b361bc5-31bd-4fe0-96ae-16dc189ec4d7",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.01966,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 3682,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 104,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 3682,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 104,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 3682,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 3682
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"decision\": \"unsupported\", \"reason\": \"Atlas 3.2는 일반적으로 공개 공유를 지원하지만, north 지역은 검증이 끝날 때까지 공개 공유가 꺼져 있다는 예외가 있어 현재는 사용할 수 없습니다.\"}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 3768,
+        "outputTokens": 24,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.003888,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 104,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 3682,
+        "webSearchRequests": 0,
+        "costUSD": 0.015772,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "78b6c17c-b031-472d-b06a-93bb47acb346",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "wall_time_s": 3.680410834000213
+}

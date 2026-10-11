@@ -5,7 +5,12 @@ kind: development
 venue: codex
 milestone:
 autonomous: false
-acceptance: []
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_handoff_packet.py -q"
+  - "python3 -m unittest discover -s stage/hooks/tests -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+  - "python3 stage/scripts/audit_stage.py --project-root ."
+  - "git diff --check"
 status: active
 verification: pending
 retrospective: pending
@@ -26,6 +31,11 @@ AI 세션이 바뀌어도 프로젝트의 목적과 현재 기준을 따라 남�
 ## Actions
 
 W-00000273의 약속과 W-00000274의 조회 경로를 바탕으로 좁은 실행 항목을 정합니다.
+
+검토를 마친 `.stage/research/llm-work/implementation-design.md`의 Stage 계약을 구현합니다.
+실제 파일과 기준이 바뀌는 사례를 먼저 실패하는 테스트로 확인합니다.
+생산자의 공개 CLI만 호출하고, 형제 플러그인의 코드나 DB를 직접 읽지 않습니다.
+독립 검토 뒤 확인된 Distill·Avatar 명령 출력을 연결 시험에도 사용합니다.
 
 ## User value
 
@@ -58,7 +68,9 @@ W-00000273의 약속과 W-00000274의 조회 경로를 바탕으로 좁은 실�
 
 ## Next action
 
-선행 설계와 Distill 경로가 준비되면 대상 스킬·스크립트의 호출처를 열거하고 실패하는 연결 테스트를 먼저 만듭니다.
+제품별 테스트와 독립 리뷰를 마쳤습니다. W-00000277의 세 번째 시험은 실제 수신 세션 여섯 개가 모두 정상 종료했고 독립 리뷰도 통과했습니다.
+2026-10-07 사용자 승인 뒤 전용 worktree의 제품 소스를 커밋했습니다. 커밋 번호는 구현·검증 기록에서 확인합니다.
+작업별 회고와 완료 절차를 진행합니다.
 
 ## Related truth
 
@@ -68,9 +80,13 @@ SSOT, TDD, Honesty, Completion을 적용합니다. stage/CLAUDE.md와 stage/docs
 
 2026-10-05: 작업을 등록했습니다. 기존 드라이버와 독립 리뷰 코드는 바꾸지 않았습니다.
 
+2026-10-06: Codex CLI의 사용량 오류 뒤 사용자가 이 세션에서 직접 구현하도록 허용했습니다. 감독이 전용 worktree에서 구현과 검사를 이어갔습니다. Claude CLI로 독립 리뷰를 받았으며, 반려된 항목은 실패 시험으로 재현하고 수정했습니다. 드라이버의 완료 판정으로 보고하지 않습니다. 제품 커밋·푸시는 아직 하지 않았습니다.
+
 ## Verification
 
 좁은 연결 테스트 후 Stage hooks와 scripts 전체 unittest를 실행합니다.
+
+2026-10-06: 실행 위치, 제품별 검사 수, 리뷰 원본과 한계는 [구현·검증 기록](../../../../research/llm-work/integration/implementation-status.md)에 모았습니다. 실제 두 호스트 인계와 제품 소스 보존이 남아 있어 이 카드를 완료로 바꾸지 않습니다.
 
 ## Retrospective
 

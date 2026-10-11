@@ -1,0 +1,28 @@
+{
+  "case": "D",
+  "raw_response": "{\"observations\": [{\"kind\": \"evidence_request\", \"evidence_ids\": [\"U1\"]}]}",
+  "model": "gemma4:latest",
+  "total_duration_ns": 12139383291,
+  "prompt_eval_count": 353,
+  "eval_count": 381,
+  "done": true,
+  "observations": [
+    {
+      "kind": "evidence_request",
+      "evidence_ids": [
+        "U1"
+      ]
+    }
+  ],
+  "assessment": {
+    "missing_kinds": [
+      "reported_ai_claim"
+    ],
+    "forbidden_kinds": [],
+    "missing_evidence_ids": {
+      "reported_ai_claim": [
+        "U1"
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+Review the uncommitted Avatar web preview in /Users/woogis/.codex/worktrees/avatar-service/noory-ai. Read only; do not edit, delegate,
+run workflows, or invoke shell commands. Read the actual files with Read: avatar/scripts/avatar_web.py,
+avatar/scripts/avatar_analysis.py, avatar/web/app.mjs, avatar/web/ai.mjs, avatar/web/analysis.mjs,
+avatar/web/content.mjs, avatar/web/index.html, avatar/web/style.css, avatar/README.md,
+avatar/tests/test_avatar_web.py, avatar/tests/test_avatar_analysis.py, avatar/tests/web.test.mjs,
+avatar/tests/ai.test.mjs. Existing avatar/scripts/avatar_view.py and avatar_common.py establish record shapes.
+The user wants a playful LOCAL product preview that analyzes already accumulated Avatar records,
+shows evidence/reports/badges, and exports aspirational working styles inspired by sourced public
+developer articles. They explicitly corrected quiz-first products. No accounts, payment, public
+hosting, personality diagnosis, silent personal criterion changes, or direct AI settings installation.
+AI analysis runs only when enabled and after a user picks records, previews the payload, and confirms.
+The supervisor observed 40 Python tests and 10 Node tests pass before two added regression repairs;
+the actual Claude Sonnet UI analysis of eight fictional demo records succeeded with exact citations.
+You must independently review source for concrete correctness/security/product mismatches. Focus on
+provenance, historical/proposed/revoked criteria, foreign-origin access, unexpected private data
+transmission, malformed imports, asynchronous state changes, output escaping, credible sourced persona
+claims, and meaningful tests. Distinguish actionable defects from future product work. Do not claim to
+have executed tests. Return concise Korean: verdict PASS or REVISE, severity+file+line for defects,
+and scope/limitations. Cite source evidence for every defect.

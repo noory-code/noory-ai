@@ -1,0 +1,12 @@
+[
+  {
+    "id": "X1",
+    "act": "user_report",
+    "constraint_ref": "none"
+  },
+  {
+    "id": "X2",
+    "act": "user_task_constraint",
+    "constraint_ref": "none"
+  }
+]

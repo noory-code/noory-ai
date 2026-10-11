@@ -1,0 +1,17 @@
+Execute the release preparation part of W-00000278 only.
+Read /Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/W-00000278/_story.md and its parent
+/Users/woogis/Workspace/repo/noory-ai/.stage/work/current/W-00000272/_epic.md. Read CLAUDE.md and stage/CLAUDE.md
+in this worktree. The human has explicitly authorized pushing, merging, and releasing.
+The supervisor handles Git publication and host verification. You only prepare the versions.
+Work in /Users/woogis/.codex/worktrees/criteria-release/noory-ai; confirm branch codex/criteria-release before acting.
+The supervisor already created this separate worktree and cherry-picked the reviewed Stage and
+Avatar product commits. Do not create another worktree or delegate. Do not commit, push, or merge.
+Run the repository release command for Stage with --bump minor (0.62.0 -> 0.63.0).
+Run it for Avatar with --bump patch (development package 0.1.0 -> first published 0.1.1).
+Use TZ=Asia/Seoul so release dates match the user's date, 2026-10-07.
+Use the existing release script; never rewrite either manifest by hand.
+Only the two plugins' CHANGELOG.md and both plugin manifests should change (six files).
+If the commands fail, report the failure and stop. Do not change product implementation or tests.
+Afterwards read the six files, run git diff --check and git diff --stat, and report what changed,
+why, decisions, every scope crossing, and what remains. Do not claim deployment completed.
+Return a concise Korean executor report with an exact JSON array of changed paths.

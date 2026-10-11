@@ -1,0 +1,45 @@
+{
+  "owner_id": "fictional-J",
+  "language": "en",
+  "headline": {
+    "text": "Detail requested seems to follow the decision at hand",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3"
+    ]
+  },
+  "observations": [
+    {
+      "text": "In project planning, the user asked to see alternatives and what would be given up before deciding. For a high-risk migration, they asked for failure cases and a way back before approving.",
+      "evidence_ids": [
+        "J1",
+        "J3"
+      ]
+    },
+    {
+      "text": "For a routine test result, the user asked only to be told whether it passed.",
+      "evidence_ids": [
+        "J2"
+      ]
+    },
+    {
+      "text": "In a later session, the user said they do not always want short answers and want enough to judge what to do. A prior-session summary says the assistant ignored a rollback plan, and the user repeated it with a long explanation.",
+      "evidence_ids": [
+        "J5",
+        "J4"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these records, the user may ask for more or less depending on whether a decision or approval is pending. Short for a routine check, fuller when choices or risks must be weighed.",
+    "evidence_ids": [
+      "J1",
+      "J2",
+      "J3",
+      "J5"
+    ]
+  },
+  "alternative": "The brief request for the test result may simply reflect a yes-or-no question, not a different style. The longer explanation in the earlier session may have been prompted by the assistant's omission.",
+  "limitation": "These records cannot show why the user asked for each level of detail, whether J3 and J4 are the same or different incidents, or how the user behaves outside these contexts."
+}

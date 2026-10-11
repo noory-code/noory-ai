@@ -1,0 +1,24 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+- Implemented parse_port(value) in app/port.py: accepts only ASCII digit strings for 1..65535 and returns the int; invalid values ('bad', '', '0', '65536', non-strings) raise app.errors.ConfigError.
+- Applied criteria: distill:CR-ff28a7fd534c@1
+- Implemented parse_host(value) in app/host.py: returns a nonempty dotted string without whitespace unchanged; invalid input raises app.errors.ConfigError.
+- Applied criteria: none
+- Stale judgment: distill:CR-ff28a7fd534c@1 superseded.
+- Recorded synthetic Avatar criterion: avatar:PC-0540737626c0@2.
+## Evidence
+- app/port.py sha256: 9186926652fd50bca9a6c2389ce12e5112b4b659b8745c0cc05809016da1c5a8
+- app/host.py sha256: 2343b98d348293e16e0b4f05b34a7043f0e939c91e647da46139fc2ceec3611a
+- Host validation and port smoke checks passed.
+- Current criterion check: .data/receiver-check.json (no current Distill criteria).
+- Avatar fixture receipt: .data/avatar-show.json.
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+Complete.

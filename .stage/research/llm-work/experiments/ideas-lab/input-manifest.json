@@ -1,0 +1,17 @@
+{
+  "cases_sha256": "621a1cc91ef0f065eee48556255450d9f43ce6565f060172e7425f01aec919fb",
+  "counts": {
+    "I01": 4,
+    "I02": 4,
+    "I03": 4,
+    "I04": 4,
+    "I05": 4,
+    "I06": 4
+  },
+  "source_hashes": {
+    "evidence.py": "a79073da12a6e33dedc5684aab9e2711fb68ed6d2f9fc12ad3cdb04954fead1e",
+    "recovery.py": "18ac66f386f6858006b9c584960c4c8442e18b1065661afa0979b8fa46b27a05",
+    "replay.py": "65ae2903cfbeeee388581d0fa9ab629a2e48345fa4343ac480d108834e800d40",
+    "build_cases.py": "f5d88bae4c59bb38840039c6c79c076969974421395bcb43b64e566f1c28e06d"
+  }
+}

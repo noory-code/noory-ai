@@ -1,0 +1,8 @@
+{
+  "loaded_skills": [],
+  "observed_versions": {},
+  "plugin_paths": {},
+  "failures": [
+    "The session did not advertise SKILL.md paths for stage-handoff, avatar, or distill-criteria. No plugin roots or manifests for those skills were inspected, so their versions could not be verified."
+  ]
+}

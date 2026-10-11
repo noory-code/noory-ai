@@ -1,0 +1,35 @@
+{
+  "case_id": "Y",
+  "messages": [
+    {
+      "id": "Y-m1",
+      "author": "user",
+      "text": "저는 보통 결론을 먼저 읽어요."
+    },
+    {
+      "id": "Y-m2",
+      "author": "user",
+      "text": "이번 보고서도 그 순서로 보여 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "Y1",
+      "message_id": "Y-m1",
+      "exact_text": "저는 보통 결론을 먼저 읽어요.",
+      "expected": {
+        "act": "user_report",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "Y2",
+      "message_id": "Y-m2",
+      "exact_text": "이번 보고서도 그 순서로 보여 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "Y1"
+      }
+    }
+  ]
+}

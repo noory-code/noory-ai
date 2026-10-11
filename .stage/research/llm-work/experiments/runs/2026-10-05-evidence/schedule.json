@@ -1,0 +1,34 @@
+[
+  {
+    "case": "conflicting",
+    "condition": "baseline"
+  },
+  {
+    "case": "wrong_version",
+    "condition": "evidence_check"
+  },
+  {
+    "case": "supported",
+    "condition": "baseline"
+  },
+  {
+    "case": "supported",
+    "condition": "evidence_check"
+  },
+  {
+    "case": "related_only",
+    "condition": "evidence_check"
+  },
+  {
+    "case": "related_only",
+    "condition": "baseline"
+  },
+  {
+    "case": "conflicting",
+    "condition": "evidence_check"
+  },
+  {
+    "case": "wrong_version",
+    "condition": "baseline"
+  }
+]

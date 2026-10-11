@@ -1,0 +1,27 @@
+{
+  "case": "D",
+  "observations": [
+    {
+      "kind": "reported_ai_claim",
+      "evidence_ids": [
+        "U1"
+      ]
+    }
+  ],
+  "assessment": {
+    "missing_kinds": [
+      "evidence_request"
+    ],
+    "forbidden_kinds": [],
+    "missing_evidence_ids": {
+      "evidence_request": [
+        "U1"
+      ]
+    }
+  },
+  "model": "gemma4:latest",
+  "total_duration_ns": 12288580583,
+  "prompt_eval_count": 293,
+  "eval_count": 598,
+  "done": true
+}

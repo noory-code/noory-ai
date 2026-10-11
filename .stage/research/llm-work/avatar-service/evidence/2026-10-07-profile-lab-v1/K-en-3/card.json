@@ -1,0 +1,44 @@
+{
+  "owner_id": "fictional-K",
+  "language": "en",
+  "headline": {
+    "text": "Requests move from open play to firm scope and repair",
+    "evidence_ids": [
+      "K1",
+      "K2",
+      "K4"
+    ]
+  },
+  "observations": [
+    {
+      "text": "While brainstorming, the user invited five ideas and asked for a playful tone.",
+      "evidence_ids": [
+        "K1"
+      ]
+    },
+    {
+      "text": "During implementation, after selecting one idea, the user asked the assistant to keep to that scope until it works.",
+      "evidence_ids": [
+        "K2"
+      ]
+    },
+    {
+      "text": "After a failed retry in which the assistant omitted one of two given conditions, the user asked it to follow the conditions already provided. After a later successful repair, the user thanked it and said the next step was clearer.",
+      "evidence_ids": [
+        "K4",
+        "K3"
+      ]
+    }
+  ],
+  "interpretation": {
+    "text": "Within these contexts, the user may be asking for wide, light exploration early and tighter, constraint-focused help once building or fixing begins. The thanks after repair suggests clear scope may have helped.",
+    "evidence_ids": [
+      "K1",
+      "K2",
+      "K4",
+      "K3"
+    ]
+  },
+  "alternative": "The difference may come from the task rather than a style: the stricter wording in K4 may simply respond to the omitted condition, and implementation naturally calls for narrower requests than brainstorming.",
+  "limitation": "These records don't show the assistant's replies, what the two conditions were, or whether scope was kept. The rude line in the story context is fictional dialogue and says nothing about the user's own tone."
+}

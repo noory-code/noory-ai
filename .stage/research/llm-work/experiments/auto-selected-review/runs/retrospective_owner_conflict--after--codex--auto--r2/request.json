@@ -1,0 +1,37 @@
+{
+  "case": "retrospective_owner_conflict--after",
+  "host": "codex",
+  "condition": "auto",
+  "repeat": 2,
+  "id": "retrospective_owner_conflict--after--codex--auto--r2",
+  "criterion_id": "retrospective_owner_conflict",
+  "calls": [
+    "locate.json",
+    "review.json"
+  ],
+  "selection": {
+    "stage/scripts/driver_lifecycle.py": {
+      "mode": "selected",
+      "reason": "static_names",
+      "symbols": [
+        "reserve_retrospective",
+        "retrospective_id_for_work_item",
+        "write_driver_retrospective"
+      ],
+      "entry": "write_driver_retrospective",
+      "selection_valid": true
+    }
+  },
+  "error": null,
+  "answer": {
+    "action": "approve",
+    "targets": [],
+    "reason": "W-00000041의 회고 ID를 R-00000041로 결정한 뒤 기존 소유자 W-00000099와의 충돌 오류를 발생시키고 이를 빈 회고 ID와 세 ID가 모두 포함된 오류로 반환하며, R-00000042.md나 R-00000043.md를 생성하는 경로는 없다."
+  },
+  "expected": {
+    "action": "approve",
+    "targets": []
+  },
+  "matches": true,
+  "request_seconds": 14.703030791977653
+}

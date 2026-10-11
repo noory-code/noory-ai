@@ -1,0 +1,8 @@
+{
+  "status": "timeout",
+  "timeout_seconds": 180,
+  "verdict": null,
+  "stdout": "qa-review-attempt1.stdout.txt",
+  "stderr": "qa-review-attempt1.stderr.txt",
+  "note": "subprocess.TimeoutExpired; no reviewer verdict was returned"
+}

@@ -1,0 +1,603 @@
+{
+  "cases_sha256": "621a1cc91ef0f065eee48556255450d9f43ce6565f060172e7425f01aec919fb",
+  "source_hashes": {
+    "test_replay.py": "e6b5900983bf7db083336d607be373020030ad6925fe1aea9925b97e4bd82b47",
+    "recovery.py": "18ac66f386f6858006b9c584960c4c8442e18b1065661afa0979b8fa46b27a05",
+    "build_cases.py": "f5d88bae4c59bb38840039c6c79c076969974421395bcb43b64e566f1c28e06d",
+    "test_recovery.py": "c6cdd58f73908d981dc42961a64209e82eb3ad6e9849fe210cf525a74d591562",
+    "summarize.py": "917fe5a2ab2fbd08409e57690c41e201b4b875cbfc7e726ad0e5a809e4e289b4",
+    "replay.py": "65ae2903cfbeeee388581d0fa9ab629a2e48345fa4343ac480d108834e800d40",
+    "test_evidence.py": "371e0d15aca676ea81775dc0bbaa6673366b02bd0c386c3098cf3d757f5ca89c",
+    "test_models.py": "4174028686ba63f2e8b882f9bd1f273ff56cc6003b8ebeb66e44ab1460c9d4a4",
+    "run_models.py": "28fe73bfc1bf65501bedcf65befbfcd8517da43f4082bd4e117d7e71dc7eb095",
+    "evidence.py": "a79073da12a6e33dedc5684aab9e2711fb68ed6d2f9fc12ad3cdb04954fead1e"
+  },
+  "cli_versions": {
+    "claude": "2.1.289 (Claude Code)",
+    "codex": "codex-cli 0.146.0"
+  },
+  "claude_model_requested": "claude-sonnet-5-5",
+  "codex_model_requested": "CLI default",
+  "codex_effort_requested": "low",
+  "schedule": [
+    {
+      "case": "I05_exception_removed",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_version",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I02_conflict",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_irrelevant_response_change",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_scope_change",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_search_missing",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_changed",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_status",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unchanged",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_invalid_version_type",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_exception_removed",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_status",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_missing_manifest",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_scope_change",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_different_versions",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unchanged",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I03_partly_written",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_deleted",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_version",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_same_version",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I02_missing_scope",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unchanged",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_deleted",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_different_versions",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I05_partial_write",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I05_search_missing",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unchanged",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_scope_change",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_status",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_missing_manifest",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_invalid_version_type",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_already_written",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_partial_write",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_conflict",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_human_changed",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I03_human_changed",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I05_search_missing",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_same_version",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_scope_change",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_missing_info",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_missing_manifest",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unknown",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_missing_info",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unknown",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_partly_written",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_exception",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I05_irrelevant_response_change",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_stop",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_changed",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I03_no_write",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_different_versions",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_already_written",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_stop",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I02_version",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_human_changed",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_conflict",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_no_write",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_partial_write",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_irrelevant_response_change",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_version",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unknown",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_deleted",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I02_exception",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_invalid_version_type",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_already_written",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_deleted",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_stop",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_different_versions",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_exception_removed",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_already_written",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_stop",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_missing_info",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_partial_write",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_no_write",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_conflict",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_changed",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_same_version",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I01_unknown",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_missing_scope",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I01_changed",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_invalid_version_type",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_exception",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_missing_scope",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I04_missing_info",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I05_exception_removed",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I03_partly_written",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I03_partly_written",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_human_changed",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I03_no_write",
+      "condition": "enhanced",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I04_status",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I06_same_version",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I02_exception",
+      "condition": "enhanced",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_search_missing",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I02_missing_scope",
+      "condition": "baseline",
+      "host": "claude",
+      "repeat": 1
+    },
+    {
+      "case": "I05_irrelevant_response_change",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    },
+    {
+      "case": "I06_missing_manifest",
+      "condition": "baseline",
+      "host": "codex",
+      "repeat": 1
+    }
+  ],
+  "parallelism": 4,
+  "claude_reported_cost_limit_usd": 5,
+  "codex_cost_limit_usd": null
+}

@@ -1,0 +1,493 @@
+{
+  "purpose": "앞선 결과를 읽은 뒤 평가 자료를 보완했습니다. 독립된 최종 시험은 아닙니다.",
+  "base_runner_sha256": "3f8da70c547824c7dd1f3f20b15c0efc9a21bfa72f3fd863f6825a07c37edd18",
+  "repair_runner_sha256": "bd30511e2379abba805c1bbd535eb7dc640a774f3774655a86f2eda15ce0e8ee",
+  "source_hashes": {
+    "repaired-cases.json": "425e41adc990265b32843130145f3d0de7b32e13979a184ff2ab53cd0a5fbbe8",
+    "repaired-rubric.json": "55f22108dabc8f18fd2b3cac57ab99c02bcb1c80a8e0010f281770b22b7d5794"
+  },
+  "same_runtime_as": "2026-10-05-followup/manifest.json",
+  "schedule": [
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_missing",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_edit",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_report",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "conclusion_only",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_continue",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_archive",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_revised_draft",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_example_post",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_True",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_revised_edit",
+      "condition": "purpose_check",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_clear_draft",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "purpose_check",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_example_cafe",
+      "condition": "baseline",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_clear_report",
+      "condition": "baseline",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "conclusion_only",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "baseline",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_3.2_False",
+      "condition": "with_scope",
+      "repeat": 3
+    },
+    {
+      "case": "repaired_clear_edit",
+      "condition": "purpose_check",
+      "repeat": 2
+    },
+    {
+      "case": "repaired_memory_2.0_False",
+      "condition": "with_scope",
+      "repeat": 1
+    },
+    {
+      "case": "repaired_memory_3.2_True",
+      "condition": "with_scope",
+      "repeat": 3
+    }
+  ],
+  "remaining_reported_budget_usd": 3.8
+}

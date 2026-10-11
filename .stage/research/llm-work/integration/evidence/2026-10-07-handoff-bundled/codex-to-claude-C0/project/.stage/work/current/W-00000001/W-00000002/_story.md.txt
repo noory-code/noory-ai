@@ -1,0 +1,19 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7","observed_at":"2026-10-07T03:40:01.380845Z"}
+Implemented app/host.py parse_host: returns valid hosts unchanged; raises app.errors.ConfigError for invalid input (same contract as parse_port, per purpose "predictable for callers").
+Criteria check (.data/receiver-check.json, 2026-10-07T10:39:16Z): distill current = [] (store absent); avatar export = [] (store absent); distill:CR-fbed97eb8cc7@1 status unknown, not applied, not established as superseded or revoked.
+Applied criteria: none
+Evidence: {"kind":"file","path":"app/host.py","sha256":"fc2356374c825695f308dd5256cff104a0a6a4dbc055c23aee5958293f884f7d","observed_at":"2026-10-07T10:40:00Z"}
+Tests: python -m unittest tests.test_host -> 2 tests OK
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+parse_port and parse_host are both implemented. Next: run acceptance checks and an independent review against the success criteria, then close W-00000002. Revisit distill:CR-fbed97eb8cc7@1 (status unknown) only if its producer store becomes available.

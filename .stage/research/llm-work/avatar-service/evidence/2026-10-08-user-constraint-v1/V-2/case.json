@@ -1,0 +1,35 @@
+{
+  "case_id": "V",
+  "messages": [
+    {
+      "id": "V-m1",
+      "author": "user",
+      "text": "표의 금액은 원화로 표시해 주세요."
+    },
+    {
+      "id": "V-m2",
+      "author": "user",
+      "text": "앞서 정한 단위로 그래프도 그려 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "V1",
+      "message_id": "V-m1",
+      "exact_text": "표의 금액은 원화로 표시해 주세요.",
+      "expected": {
+        "act": "user_task_constraint",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "V2",
+      "message_id": "V-m2",
+      "exact_text": "앞서 정한 단위로 그래프도 그려 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "V1"
+      }
+    }
+  ]
+}

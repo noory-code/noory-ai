@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "id": "B-m1",
+      "author": "assistant",
+      "text": "당신은 항상 짧은 답을 좋아하네요."
+    },
+    {
+      "id": "B-m2",
+      "author": "user",
+      "text": "그건 제가 한 말이 아니에요. 휴대폰 알림에는 한 문장만 써 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "B2",
+      "message_id": "B-m2",
+      "exact_text": "그건 제가 한 말이 아니에요."
+    },
+    {
+      "id": "B3",
+      "message_id": "B-m2",
+      "exact_text": "휴대폰 알림에는 한 문장만 써 주세요."
+    }
+  ]
+}

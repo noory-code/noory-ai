@@ -1,0 +1,14 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7","observed_at":"2026-10-07T03:40:01.380845Z"}
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+Implement parse_host.

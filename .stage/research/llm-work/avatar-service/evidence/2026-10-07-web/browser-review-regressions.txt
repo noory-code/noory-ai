@@ -1,0 +1,4 @@
+Script ran on page and returned:
+```json
+{"initialSelected":0,"previewVisible":true,"consentedEnabled":true,"selectionClearsConsent":true,"newAnalysisDropsOldNote":true,"newAnalysisShown":true,"historyShowsRevocation":true,"reportShowsRevocation":true}
+```

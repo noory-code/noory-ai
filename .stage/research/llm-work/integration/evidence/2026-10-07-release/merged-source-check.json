@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-10-07T12:09:49.133152+00:00",
+  "temporary_root": "/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/criteria-merged-arhxhms4",
+  "repositories": {
+    "noory-ai": "72fddba172c05731b5035e4517c4750a1ad81453",
+    "novel-ai": "eb42c708f44ee2c7d5f4b25460add297551e8a85"
+  },
+  "plugins": {
+    "stage": {
+      "files": 378,
+      "matches_loaded_source": true,
+      "version": "0.63.3"
+    },
+    "avatar": {
+      "files": 14,
+      "matches_loaded_source": true,
+      "version": "0.1.2"
+    },
+    "distill": {
+      "files": 122,
+      "matches_loaded_source": true,
+      "version": "1.10.0"
+    }
+  }
+}

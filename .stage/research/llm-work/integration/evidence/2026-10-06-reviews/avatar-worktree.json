@@ -1,0 +1,6 @@
+{
+  "path": "/Users/woogis/.codex/worktrees/criteria-integration/noory-ai",
+  "head": "59b00ff0dc97e38e774000c4b8d961fd334e5a12",
+  "status": " M .agents/plugins/marketplace.json\n M .claude-plugin/marketplace.json\n M .github/workflows/plugin-contracts.yml\n M CLAUDE.md\n M README.md\n M tests/test_plugin_contracts.py\n?? .github/workflows/avatar.yml\n?? avatar/\n",
+  "product_committed": false
+}

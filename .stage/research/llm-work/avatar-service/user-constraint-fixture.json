@@ -1,0 +1,46 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "case_id": "U",
+      "messages": [{"id": "U-m1", "author": "user", "text": "이번 안내문은 세 문단으로 써 주세요. 끝의 요약도 그 형식으로 써 주세요."}],
+      "targets": [
+        {"id": "U1", "message_id": "U-m1", "exact_text": "이번 안내문은 세 문단으로 써 주세요.", "expected": {"act": "user_task_constraint", "constraint_ref": "none"}},
+        {"id": "U2", "message_id": "U-m1", "exact_text": "끝의 요약도 그 형식으로 써 주세요.", "expected": {"act": "request_apply_constraint", "constraint_ref": "U1"}}
+      ]
+    },
+    {
+      "case_id": "V",
+      "messages": [
+        {"id": "V-m1", "author": "user", "text": "표의 금액은 원화로 표시해 주세요."},
+        {"id": "V-m2", "author": "user", "text": "앞서 정한 단위로 그래프도 그려 주세요."}
+      ],
+      "targets": [
+        {"id": "V1", "message_id": "V-m1", "exact_text": "표의 금액은 원화로 표시해 주세요.", "expected": {"act": "user_task_constraint", "constraint_ref": "none"}},
+        {"id": "V2", "message_id": "V-m2", "exact_text": "앞서 정한 단위로 그래프도 그려 주세요.", "expected": {"act": "request_apply_constraint", "constraint_ref": "V1"}}
+      ]
+    },
+    {
+      "case_id": "Y",
+      "messages": [
+        {"id": "Y-m1", "author": "user", "text": "저는 보통 결론을 먼저 읽어요."},
+        {"id": "Y-m2", "author": "user", "text": "이번 보고서도 그 순서로 보여 주세요."}
+      ],
+      "targets": [
+        {"id": "Y1", "message_id": "Y-m1", "exact_text": "저는 보통 결론을 먼저 읽어요.", "expected": {"act": "user_report", "constraint_ref": "none"}},
+        {"id": "Y2", "message_id": "Y-m2", "exact_text": "이번 보고서도 그 순서로 보여 주세요.", "expected": {"act": "request_apply_constraint", "constraint_ref": "Y1"}}
+      ]
+    },
+    {
+      "case_id": "X",
+      "messages": [
+        {"id": "X-m1", "author": "user", "text": "저는 짧은 글을 자주 읽어요."},
+        {"id": "X-m2", "author": "user", "text": "이번 보고서는 자세하게 써 주세요."}
+      ],
+      "targets": [
+        {"id": "X1", "message_id": "X-m1", "exact_text": "저는 짧은 글을 자주 읽어요.", "expected": {"act": "user_report", "constraint_ref": "none"}},
+        {"id": "X2", "message_id": "X-m2", "exact_text": "이번 보고서는 자세하게 써 주세요.", "expected": {"act": "user_task_constraint", "constraint_ref": "none"}}
+      ]
+    }
+  ]
+}

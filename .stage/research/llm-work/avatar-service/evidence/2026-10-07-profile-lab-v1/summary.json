@@ -1,0 +1,16 @@
+{
+  "generated": 16,
+  "attempted": 16,
+  "model_ids": [
+    "claude-sonnet-5-5"
+  ],
+  "total_call_seconds": 164.42,
+  "median_call_seconds": 10.46,
+  "minimum_call_seconds": 6.84,
+  "maximum_call_seconds": 14.24,
+  "reported_generation_list_cost_usd": 0.37929,
+  "cost_is_account_charge": false,
+  "independent_review_included": false,
+  "semantic_review": "See the separate human-readable review and dispositions.",
+  "development_examples_not_held_out": true
+}

@@ -1,0 +1,30 @@
+{
+  "case_id": "F",
+  "messages": [
+    {
+      "id": "F-m1",
+      "author": "user",
+      "text": "팀장님이 보고서는 한 장으로 하라고 하셨어요. 이번 보고서는 그렇게 맞춰 주세요."
+    }
+  ],
+  "targets": [
+    {
+      "id": "F1",
+      "message_id": "F-m1",
+      "exact_text": "보고서는 한 장으로",
+      "expected": {
+        "act": "attributed_content",
+        "constraint_ref": "none"
+      }
+    },
+    {
+      "id": "F2",
+      "message_id": "F-m1",
+      "exact_text": "이번 보고서는 그렇게 맞춰 주세요.",
+      "expected": {
+        "act": "request_apply_constraint",
+        "constraint_ref": "F1"
+      }
+    }
+  ]
+}

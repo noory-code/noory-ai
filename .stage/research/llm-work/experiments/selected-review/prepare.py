@@ -1,0 +1,68 @@
+"""실제 과거 결함을 다시 검증하고 선택할 시작점을 고정합니다."""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+
+from selector import select_source
+
+ROOT = Path(__file__).resolve().parent
+ORIGINAL = ROOT.parent / "review-reuse"
+ENTRIES = {"roadmap_repeated_criteria": "main",
+           "retrospective_owner_conflict": "write_driver_retrospective"}
+
+
+def digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def save(path: Path, data: object) -> None:
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def main() -> None:
+    if (ROOT / "fixtures.json").exists():
+        raise FileExistsError("준비한 입력을 덮어쓰지 않습니다.")
+    spec = importlib.util.spec_from_file_location("prior_prepare", ORIGINAL / "prepare.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    fixtures, regression = module.prepare()
+    if fixtures != json.loads((ORIGINAL / "fixtures.json").read_text()):
+        raise ValueError("과거 입력과 복원한 결과가 다릅니다.")
+    save(ROOT / "regression-results.json", regression)
+    if not regression["all_regressions_verified"]:
+        raise ValueError("수정 전후 회귀 검증을 통과하지 못했습니다.")
+    cases = []
+    for fixture in fixtures:
+        for version, values in fixture["versions"].items():
+            cases.append({"id": f"{fixture['id']}--{version}", "criterion_id": fixture["id"],
+                          "criterion": fixture["criterion"], "files": values["files"],
+                          "entry": ENTRIES[fixture["id"]], "kind": "historical",
+                          "expected": {"action": "revise" if version == "before" else "approve",
+                                       "targets": [fixture["id"]] if version == "before" else []}})
+    missing = next(value for value in cases if value["id"] == "retrospective_owner_conflict--after")
+    cases.append({**missing, "id": "retrospective_owner_conflict--missing",
+                  "kind": "missing_source", "files": {},
+                  "expected": {"action": "uncertain", "targets": [missing["criterion_id"]]}})
+    audit = []
+    for case in cases:
+        for name, source in case["files"].items():
+            selected = select_source(source, case["entry"])
+            audit.append({"case": case["id"], "file": name, "entry": case["entry"],
+                          "full_characters": len(source), "selected_characters": len(selected["source"]),
+                          **{k: selected[k] for k in ("mode", "reason", "symbols")}})
+    save(ROOT / "fixtures.json", cases)
+    save(ROOT / "preparation.json", {
+        "original_fixture_sha256": digest((ORIGINAL / "fixtures.json").read_bytes()),
+        "original_prepare_sha256": digest((ORIGINAL / "prepare.py").read_bytes()),
+        "source_sha256": digest(Path(__file__).read_bytes()),
+        "selection": audit, "regression_verified": True,
+    })
+    print(json.dumps(audit, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()

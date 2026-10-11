@@ -1,0 +1,17 @@
+---
+id: W-00000002
+kind: development
+scope: app/
+---
+## Purpose
+Implement configuration parsing in two steps.
+## Progress
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Evidence: {"kind":"file","path":"app/port.py","sha256":"742fb7d2523d9df0b93cf788cdbb4f3dd08b5ec9b387975458a1f8fe4a60bbe7","observed_at":"2026-10-07T03:40:01.380845Z"}
+Applied criteria: distill:CR-fbed97eb8cc7@1
+Check: distill:CR-fbed97eb8cc7@1 -> eligible_current (generation 1, checked_at 2026-10-07T03:43:47.910017Z; .data/receiver-check.json). parse_host raises ConfigError on invalid input.
+Evidence: {"kind":"file","path":"app/host.py","sha256":"f1b0e30bf4eb65b6e93c26d89cf596fa7489b7823fb2d820283866089b125869","observed_at":"2026-10-07T03:44:00Z"}
+## Success criteria
+- Valid ports and hosts are parsed.
+## Next action
+parse_port and parse_host are both implemented. Remaining: acceptance check and independent review of app/port.py and app/host.py against the success criteria; add a committed test suite if the project wants one.

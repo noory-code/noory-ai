@@ -1,0 +1,227 @@
+{
+  "run_id": "wrong_version-baseline",
+  "requested_model": "claude-sonnet-5-5",
+  "started_at": "2026-10-04T23:28:07.670816+00:00",
+  "prompt": "{\"question\": \"Orchid 3.2에서 CSV 내보내기를 쓸 수 있나요? 제공한 자료만 보고 답해주세요.\", \"documents\": [{\"id\": \"doc-c\", \"text\": \"Orchid 2.0 사용자 안내서. CSV 내보내기를 지원합니다. 이 문서는 2.0의 기능만 설명하며 다른 버전의 기능은 다루지 않습니다.\"}]}",
+  "system_prompt": "제공한 자료만 사용해 사용자의 질문에 한국어로 답하세요. 답은 JSON 객체 하나로 작성하세요. status는 supported, insufficient, conflicting 중 하나를 사용하고, answer에는 짧은 설명을, sources에는 근거 문서 ID 배열을 넣으세요.",
+  "input_sha256": "259f8eebf9135cc491185837ebd2cd6e4e22b5daa767a99b919b0333d5752d2f",
+  "events": [
+    {
+      "kind": "system",
+      "elapsed_s": 0.2825095829903148,
+      "data": {
+        "subtype": "init",
+        "model": "claude-sonnet-5-5",
+        "tools": []
+      }
+    },
+    {
+      "kind": "other_message",
+      "elapsed_s": 1.3574661670136265,
+      "data": {
+        "type": "RateLimitEvent"
+      }
+    },
+    {
+      "kind": "assistant",
+      "elapsed_s": 2.4054161249950994,
+      "data": {
+        "model": "claude-sonnet-5-5",
+        "blocks": [
+          {
+            "text": "{\"status\":\"insufficient\",\"answer\":\"제공된 자료(doc-c)는 Orchid 2.0에서 CSV 내보내기를 지원한다고만 설명하며, 다른 버전의 기능은 다루지 않는다고 밝히고 있습니다. 따라서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지는 자료만으로 확인할 수 없습니다.\",\"sources\":[\"doc-c\"]}"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "result",
+      "elapsed_s": 2.4175721670035273,
+      "data": {
+        "subtype": "success",
+        "duration_ms": 2140,
+        "duration_api_ms": 2517,
+        "is_error": false,
+        "num_turns": 1,
+        "session_id": "d75f20e0-0ace-42eb-9dcb-dc2f1a329f9b",
+        "stop_reason": "end_turn",
+        "total_cost_usd": 0.005608999999999999,
+        "usage": {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 716,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 160,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 716,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 160,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 716,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 716
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        },
+        "result": "{\"status\":\"insufficient\",\"answer\":\"제공된 자료(doc-c)는 Orchid 2.0에서 CSV 내보내기를 지원한다고만 설명하며, 다른 버전의 기능은 다루지 않는다고 밝히고 있습니다. 따라서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지는 자료만으로 확인할 수 없습니다.\",\"sources\":[\"doc-c\"]}",
+        "structured_output": null,
+        "model_usage": {
+          "claude-haiku-4-5-20251001": {
+            "inputTokens": 1031,
+            "outputTokens": 22,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 0,
+            "webSearchRequests": 0,
+            "costUSD": 0.001141,
+            "contextWindow": 200000,
+            "maxOutputTokens": 32000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-haiku-4-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          },
+          "claude-sonnet-5-5": {
+            "inputTokens": 2,
+            "outputTokens": 160,
+            "cacheReadInputTokens": 0,
+            "cacheCreationInputTokens": 716,
+            "webSearchRequests": 0,
+            "costUSD": 0.004468,
+            "contextWindow": 1000000,
+            "maxOutputTokens": 128000,
+            "thinkingTokens": 0,
+            "canonicalModel": "claude-sonnet-5-5",
+            "provider": "firstParty",
+            "costBasis": "list"
+          }
+        },
+        "permission_denials": [],
+        "deferred_tool_use": null,
+        "errors": null,
+        "api_error_status": null,
+        "uuid": "0561bf18-a2ff-443c-b6d0-55c5f56fbf94",
+        "terminal_reason": "completed",
+        "origin": null
+      }
+    }
+  ],
+  "result": {
+    "subtype": "success",
+    "duration_ms": 2140,
+    "duration_api_ms": 2517,
+    "is_error": false,
+    "num_turns": 1,
+    "session_id": "d75f20e0-0ace-42eb-9dcb-dc2f1a329f9b",
+    "stop_reason": "end_turn",
+    "total_cost_usd": 0.005608999999999999,
+    "usage": {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 716,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 160,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 716,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 160,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 716,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 716
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "result": "{\"status\":\"insufficient\",\"answer\":\"제공된 자료(doc-c)는 Orchid 2.0에서 CSV 내보내기를 지원한다고만 설명하며, 다른 버전의 기능은 다루지 않는다고 밝히고 있습니다. 따라서 Orchid 3.2에서 CSV 내보내기를 쓸 수 있는지는 자료만으로 확인할 수 없습니다.\",\"sources\":[\"doc-c\"]}",
+    "structured_output": null,
+    "model_usage": {
+      "claude-haiku-4-5-20251001": {
+        "inputTokens": 1031,
+        "outputTokens": 22,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 0,
+        "webSearchRequests": 0,
+        "costUSD": 0.001141,
+        "contextWindow": 200000,
+        "maxOutputTokens": 32000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-haiku-4-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      },
+      "claude-sonnet-5-5": {
+        "inputTokens": 2,
+        "outputTokens": 160,
+        "cacheReadInputTokens": 0,
+        "cacheCreationInputTokens": 716,
+        "webSearchRequests": 0,
+        "costUSD": 0.004468,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "deferred_tool_use": null,
+    "errors": null,
+    "api_error_status": null,
+    "uuid": "0561bf18-a2ff-443c-b6d0-55c5f56fbf94",
+    "terminal_reason": "completed",
+    "origin": null
+  },
+  "error": null,
+  "configuration": {
+    "tools": [],
+    "allowed_tools": [],
+    "setting_sources": [],
+    "strict_mcp_config": true,
+    "permission_mode": "default",
+    "max_turns": 4,
+    "max_budget_usd": 0.5,
+    "extra_args": {
+      "restricted": null,
+      "disable-slash-commands": null,
+      "no-session-persistence": null
+    },
+    "timeout_s": 120,
+    "reasoning_configuration": "CLI와 모델의 기본값을 사용합니다. 별도로 지정하지 않았습니다."
+  },
+  "finished_at": "2026-10-04T23:28:10.866958+00:00",
+  "wall_time_s": 3.19612591699115
+}
