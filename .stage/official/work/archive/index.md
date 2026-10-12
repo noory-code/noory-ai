@@ -211,3 +211,5 @@
 | W-00000259 | completed | [items/W-00000259/_story.md](items/W-00000259/_story.md) |
 | W-00000260 | completed | [items/W-00000260/_story.md](items/W-00000260/_story.md) |
 | W-00000261 | completed | [items/W-00000261/_story.md](items/W-00000261/_story.md) |
+| W-00000262 | completed | [items/W-00000262/_story.md](items/W-00000262/_story.md) |
+| W-00000283 | completed | [items/W-00000283/_story.md](items/W-00000283/_story.md) |
