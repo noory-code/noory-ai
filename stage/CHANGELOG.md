@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
+  kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
+
 ## 0.63.4 — 2026-10-11
 
 - Show one scope-boundary line to the user while sending the full work context to the agent through

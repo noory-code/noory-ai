@@ -411,6 +411,13 @@ executor report with an empty changed-path array. An accepted finding requires r
 progress. Out-of-criteria
 observations do not enter this blocking round trip.
 
+A criterion that fails on concrete inputs fails for a kind of input, not for those inputs alone.
+The reviewer names that kind in the `reason` beside its examples. An executor that accepts the
+finding names the kind, fixes every input of that kind, and adds a test for each variant it covers.
+Fixing only the quoted examples lets the next round quote the next example, and the cap runs out on
+a sequence of near-identical rounds (Dasina R-00000028: one undersized control per round; Dasina
+R-00000031: one rejected Japanese sentence per round).
+
 When all criteria pass, the cumulative checkpoint becomes the item commit. When the round-trip
 cap is reached, the driver removes every item checkpoint while retaining the cumulative files in
 the working tree, then escalates for human attention; executor output is not committed. A command
