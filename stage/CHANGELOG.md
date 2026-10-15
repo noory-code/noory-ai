@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Pin the project's six Codex driver commands to `gpt-6-sol` so they do not use the home default.
 - Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
   kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
 

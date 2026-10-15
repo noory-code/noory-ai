@@ -137,7 +137,7 @@ class TemplateV4Test(unittest.TestCase):
                 expected_model = (
                     "--model 'opus[1m]'"
                     if name in {"executor.claude", "reviewer.claude"}
-                    else "--model gpt-5.6-sol"
+                    else "--model gpt-6-sol"
                 )
                 self.assertIn(expected_model, command)
 
