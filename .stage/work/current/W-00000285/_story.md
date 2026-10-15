@@ -7,10 +7,10 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest stage.scripts.tests.test_template_v4 -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000285
 promotion: not_applicable
 review: not_required
 scope: .stage/settings.json, stage/scripts/tests/test_template_v4.py, stage/CHANGELOG.md
@@ -59,11 +59,82 @@ decision_refs:
 
 ## Progress
 
+드라이버 1판의 변경 내용은 `.stage/.runtime/driver/logs/W-00000285.md`에 있다. 1판 리뷰가 기준 3개를 모두 승인했다(`.stage/.runtime/driver/verdicts/W-00000285.json`).
 
 ## Verification
 
+2026-10-15 Claude가 직접 확인했다.
+
+- 리뷰어는 지시상 `git diff`를 쓰지 않아 "나머지 문장은 그대로"를 글자 단위로 확인하지 못했다고 적었다. Claude가 `git diff --word-diff=porcelain .stage/settings.json`으로 봤고, 바뀐 낱말은 `--model gpt-6-sol` 추가 6개뿐이다.
+- 리뷰어의 다른 지적: Codex가 명령으로 넘긴 `gpt-6-sol`을 받아들이는지는 다음 noory-ai 드라이버 실행에서 처음 확인된다(defer — 오늘 Codex 실행은 모두 홈 설정 `gpt-6-sol`로 돌았으므로 모델 자체는 쓸 수 있다). CHANGELOG Unreleased의 다른 줄은 W-00000284 것이다(no change needed).
+- 닫을 때 Stage scripts 전체 시험을 검사로 돌린다(아래 기록).
+
+### Executed at close — 2026-10-15
+
+```
+$ python3 -m unittest stage.scripts.tests.test_template_v4 -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 22 tests in 0.010s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (258 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1792043924
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1792043924. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpv5vdqzhp/unattended/W-00000001-1792043924
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 659 tests in 135.176s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 378 tests in 1.794s
+
+OK
+```
 
 ## Retrospective
 
+[R-00000285](../../retrospectives/R-00000285.md).
 
 ## Promotion decision
+
+이 작업 카드가 소유한 결정이나 승격 경로가 없으므로 `not_applicable`이다.
