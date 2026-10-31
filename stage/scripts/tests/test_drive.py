@@ -2969,6 +2969,49 @@ class DriveTest(unittest.TestCase):
         self.assertEqual(0, log.splitlines().count("### Executor report"))
         self.assertIn("### Driver failure", log)
 
+    def test_executor_editing_close_owned_card_fields_fails_the_attempt(self):
+        executor = python_command(
+            "import json, os, re\n"
+            "from pathlib import Path\n"
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')\n"
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH'])\n"
+            "card.write_text(re.sub(r'(?m)^status: active$', 'status: active\\nverification: passed', "
+            "card.read_text(encoding='utf-8'), count=1), encoding='utf-8')\n"
+            "card_rel = os.path.relpath(card, Path.cwd()).replace(os.sep, '/')\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "report = ('\\n### Executor report\\n"
+            "What changed: did the work and marked the card verified\\n"
+            "Why: exercise the close-owned field boundary\\n"
+            "Decisions made: None\\n"
+            "Work not done: None\\n"
+            "Changed paths (JSON):\\n' + json.dumps(sorted(['executor-work.txt', card_rel])) + '\\n"
+            "Review request: reject the hand-set verification\\n')\n"
+            "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        )
+        tmp, root = self.make_project(executor=executor)
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            card = (root / ".stage/work/current/W-00000001/W-00000002/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertNotIn("verification:", card)
+        self.assertIn("status: active", card)
+        self.assertIn(
+            "executor changed close-owned work card field(s) verification: `` -> `passed`",
+            result.stdout,
+        )
+        self.assertNotIn("Acceptance result:", result.stdout)
+
     def test_executor_claim_must_match_driver_observed_paths_before_review(self):
         executor = reporting_python_command(
             "from pathlib import Path; "

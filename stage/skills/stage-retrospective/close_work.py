@@ -92,6 +92,9 @@ EXECUTOR_REPORT_MARKER = "### Executor report"
 # The report lines close copies onto the card; the rest of a report is attempt-local.
 CARD_REPORT_LABELS = ("What changed", "Why", "Decisions made", "Work not done")
 REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
+# Card fields only this close tool and the retrospective procedure write; an
+# executor that sets them claims an outcome no check produced (O-00000054).
+CLOSE_OWNED_FIELDS = ("status", "verification", "review", "retrospective", "retrospective_ref")
 
 
 def field(text: str, name: str) -> str:
@@ -315,6 +318,58 @@ def review_criteria_evidence(path: Path) -> str:
         f"- {entry['verdict']}: {fence_safe(entry['criterion'])}\n"
         f"  Reason: {fence_safe(entry['reason'])}"
         for entry in criteria
+    )
+
+
+def close_owned_fields(card_path: Path) -> dict[str, str | None]:
+    """Each close-owned frontmatter line of a card as written, or None when absent."""
+
+    lines = card_path.read_text(encoding="utf-8").split("\n")
+    end = lines.index("---", 1) if lines[:1] == ["---"] and "---" in lines[1:] else 0
+    found: dict[str, str | None] = dict.fromkeys(CLOSE_OWNED_FIELDS)
+    for line in lines[1:end]:
+        name = line.split(":", 1)[0]
+        if name in found and found[name] is None:
+            found[name] = line
+    return found
+
+
+def _field_value(line: str | None) -> str:
+    return line.split(":", 1)[1].strip() if line else ""
+
+
+def close_owned_fields_error(card_path: Path, before: dict[str, str | None]) -> str:
+    """Restore each close-owned field an executor changed during its turn and name
+    the changes, or return '' when it changed none.
+
+    Restoring keeps a rejected attempt from leaving a hand-set value that the next
+    attempt's snapshot would take as the starting point.
+    """
+    after = close_owned_fields(card_path)
+    changed = [name for name in CLOSE_OWNED_FIELDS if after[name] != before.get(name)]
+    if not changed:
+        return ""
+    lines = card_path.read_text(encoding="utf-8").split("\n")
+    for name in changed:
+        end = lines.index("---", 1)
+        index = next(
+            (i for i in range(1, end) if lines[i].split(":", 1)[0] == name), None
+        )
+        original = before.get(name)
+        if index is None and original is not None:
+            lines.insert(end, original)
+        elif index is not None and original is None:
+            del lines[index]
+        elif index is not None and original is not None:
+            lines[index] = original
+    card_path.write_text("\n".join(lines), encoding="utf-8")
+    changes = "; ".join(
+        f"{name}: `{_field_value(before.get(name))}` -> `{_field_value(after[name])}`"
+        for name in changed
+    )
+    return (
+        f"executor changed close-owned work card field(s) {changes}"
+        " — close_work.py and the retrospective procedure own them; restored them"
     )
 
 

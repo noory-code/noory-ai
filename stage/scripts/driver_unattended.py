@@ -31,6 +31,8 @@ for import_dir in (
 
 from close_work import (  # noqa: E402
     clip,
+    close_owned_fields,
+    close_owned_fields_error,
     ensure_work_log,
     executor_report_error,
     executor_review_dispositions,
@@ -281,6 +283,7 @@ def run_unattended(
                 reviewer_command=reviewer_command,
             )
             log_before = read_work_log(log_path)
+            card_fields_before = close_owned_fields(item.path)
             pending_findings = review_verdict_failures(verdict_file)
             repository_before = repository_fingerprint(project_root)
             repository_paths_before = repository_path_snapshot(project_root)
@@ -394,7 +397,7 @@ def run_unattended(
             changed_paths,
             pending_findings,
             ignored_paths=[log_path.relative_to(project_root).as_posix()],
-        )
+        ) or close_owned_fields_error(item.path, card_fields_before)
         reasoned_no_change = (
             bool(pending_findings)
             and not disposition_error

@@ -32,6 +32,8 @@ for import_dir in (
 from close_work import (  # noqa: E402
     clear_review_verdict,
     ensure_work_log,
+    close_owned_fields,
+    close_owned_fields_error,
     executor_report_error,
     executor_review_dispositions,
     read_work_log,
@@ -179,6 +181,7 @@ def run_supervised_round(
                 reviewer_command=reviewer_command,
             )
         log_before = read_work_log(log_path)
+        card_fields_before = close_owned_fields(item.path)
         previous_verdict = (
             item_state.get("resume_previous_verdict")
             if args.resume
@@ -331,7 +334,7 @@ def run_supervised_round(
                         ignored_paths=[
                             log_path.relative_to(project_root).as_posix()
                         ],
-                    )
+                    ) or close_owned_fields_error(item.path, card_fields_before)
                     if report_error:
                         step_ok = False
                         failure = report_error

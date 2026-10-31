@@ -1463,6 +1463,57 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("no '## Progress' section", proc.stderr)
         self.assertEqual(before, after)
 
+    def test_close_owned_field_changes_are_named_and_restored(self):
+        close_work = load_close_module()
+        original = (
+            "---\nid: W-00000001\nstatus: active\nverification: pending\n"
+            "retrospective: pending\npromotion: pending\n---\n\n# Body\nverification: prose\n"
+        )
+        cases = {
+            "changed": (
+                original.replace("verification: pending", "verification: passed"),
+                "verification: `pending` -> `passed`",
+            ),
+            "added": (
+                original.replace("promotion: pending\n", "promotion: pending\nreview: passed\n"),
+                "review: `` -> `passed`",
+            ),
+            "removed": (
+                original.replace("retrospective: pending\n", ""),
+                "retrospective: `pending` -> ``",
+            ),
+        }
+        for label, (edited, expected) in cases.items():
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as tmp:
+                card = Path(tmp) / "_story.md"
+                card.write_text(original, encoding="utf-8")
+                before = close_work.close_owned_fields(card)
+                card.write_text(edited, encoding="utf-8")
+
+                error = close_work.close_owned_fields_error(card, before)
+
+                self.assertIn(expected, error)
+                self.assertIn("restored them", error)
+                self.assertEqual(before, close_work.close_owned_fields(card))
+                self.assertIn("# Body\nverification: prose\n", card.read_text(encoding="utf-8"))
+
+    def test_promotion_and_body_edits_are_not_close_owned_changes(self):
+        close_work = load_close_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            card = Path(tmp) / "_story.md"
+            card.write_text(
+                "---\nid: W-1\nstatus: active\npromotion: pending\n---\n\nBody\n",
+                encoding="utf-8",
+            )
+            before = close_work.close_owned_fields(card)
+            card.write_text(
+                "---\nid: W-1\nstatus: active\npromotion: not_applicable\n---\n\n"
+                "Body\nstatus: completed\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual("", close_work.close_owned_fields_error(card, before))
+
     def review_committed_paths_command(self) -> str:
         return python_command(
             "import json, os; from pathlib import Path; "

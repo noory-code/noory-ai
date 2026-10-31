@@ -253,14 +253,17 @@ Review request: <non-empty one-line request>
 ```
 
 `Review dispositions (JSON)` is present only when a prior verdict has failed criteria. `Decisions
-made:` records choices the executor made while doing needed work, including choices to cross
-scope. `Work not done:` records needed work it left undone because the action itself was wrong;
-scope is never a reason to leave needed work undone. Use `None` instead of leaving either field
-empty; the driver rejects a report that omits either field. Every attempt's `Decisions made:`
-restates each earlier decision still in effect: at close, `close_work.py` copies the `What
-changed:`, `Why:`, `Decisions made:`, and `Work not done:` lines of the latest report verbatim
-into the card's `## Progress`, because the work log is not committed. Reviewer commands must read both fields and judge whether the purpose and scope-boundary
-reporting contract was followed; they must not reconstruct unreported choices only from the code.
+made:` records choices the executor made while doing needed work, including choices to cross scope.
+`Work not done:` records needed work it left undone because the action itself was wrong; scope is
+never a reason to leave needed work undone. Use `None` instead of leaving either field empty; the
+driver rejects a report that omits either field. Every attempt's `Decisions made:` restates each
+earlier decision still in effect: at close, `close_work.py` copies the `What changed:`, `Why:`,
+`Decisions made:`, and `Work not done:` lines of the latest report verbatim into the card's `##
+Progress`, because the work log is not committed. Executors never edit the card's close-owned fields
+(`status`, `verification`, `review`, `retrospective`, `retrospective_ref`); the driver rejects an
+attempt that changes them and restores them. Reviewer commands must read both fields and judge
+whether the purpose and scope-boundary reporting contract was followed; they must not reconstruct
+unreported choices only from the code.
 
 ## Optional per-venue turn reaping
 
