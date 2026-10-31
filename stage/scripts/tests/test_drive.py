@@ -485,6 +485,29 @@ class DriveTest(unittest.TestCase):
         self.assertEqual("30", command[command.index("--review-timeout") + 1])
         self.assertEqual(90, run.call_args.kwargs["timeout"])
 
+    def test_close_outer_bound_covers_every_check_plus_the_review_budget(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        write_card(
+            root / ".stage",
+            "W-00000001",
+            promotion="deferred",
+            acceptance=(PASS_COMMAND, PASS_COMMAND),
+        )
+        drive = self.load_module()
+        completed = subprocess.CompletedProcess([], 0, "closed\n", "")
+
+        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+            closed, output = drive.close_via_close_work(
+                root, "W-00000001", ["true"], 30, review_timeout=3600
+            )
+
+        self.assertTrue(closed, output)
+        command = run.call_args.args[0]
+        self.assertEqual("30", command[command.index("--timeout") + 1])
+        self.assertEqual("3600", command[command.index("--review-timeout") + 1])
+        self.assertEqual(30 * 3 + 3600 + 60, run.call_args.kwargs["timeout"])
+
     def test_driver_retrospective_ids_follow_work_items_across_isolated_projects(self):
         drive = self.load_module()
         results: list[tuple[str, str, Path]] = []

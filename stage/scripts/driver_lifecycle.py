@@ -30,7 +30,7 @@ from close_work import work_log_reference  # noqa: E402
 from driver_environment import project_environment  # noqa: E402
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import record_path  # noqa: E402
-from stage_work import WorkItem, parse_frontmatter  # noqa: E402
+from stage_work import WorkItem, parse_frontmatter, parse_string_list  # noqa: E402
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
 ESCALATE_WORK = STAGE_ROOT / "scripts" / "escalate_work.py"
@@ -121,15 +121,21 @@ def close_via_close_work(
     extra_checks: list[str],
     timeout: int,
     promotion_default: str | None = None,
+    review_timeout: int | None = None,
 ) -> tuple[bool, str]:
-    """Reuse the reviewed close_work.py: acceptance + (autonomous) independent review + close."""
+    """Reuse the reviewed close_work.py: acceptance + (autonomous) independent review + close.
 
-    raw_promotion = parse_frontmatter(
-        current_card_path(project_root / ".stage", item_id)
-    ).get("promotion", "")
+    `timeout` bounds each check and `review_timeout` (default: `timeout`) bounds the
+    review. The outer kill covers every check plus the review, so close_work is
+    never cut off while its own budgets still run and the reviewer is never orphaned.
+    """
+
+    card_fields = parse_frontmatter(current_card_path(project_root / ".stage", item_id))
+    raw_promotion = card_fields.get("promotion", "")
     promotion = raw_promotion.strip() if isinstance(raw_promotion, str) else ""
     if promotion == "pending" and promotion_default is not None:
         promotion = promotion_default
+    review_budget = timeout if review_timeout is None else review_timeout
     command = [
         sys.executable,
         str(CLOSE_WORK),
@@ -140,24 +146,24 @@ def close_via_close_work(
         promotion,
         "--timeout",
         str(timeout),
-        # The outer kill below is sized from `timeout`; a longer review budget
-        # would let it kill close_work and orphan the reviewer process.
         "--review-timeout",
-        str(timeout),
+        str(review_budget),
     ]
     for check in extra_checks:
         command += ["--check", check]
+    check_count = len(parse_string_list(card_fields.get("acceptance"))) + len(extra_checks)
+    outer_timeout = timeout * check_count + review_budget + 60
     try:
         proc = subprocess.run(
             command,
             cwd=str(project_root),
             capture_output=True,
             text=True,
-            timeout=timeout + 60,
+            timeout=outer_timeout,
             env=project_environment(project_root),
         )
     except subprocess.TimeoutExpired:
-        return False, f"close_work timed out after {timeout + 60}s"
+        return False, f"close_work timed out after {outer_timeout}s"
     except OSError as exc:
         return False, str(exc)
     return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")

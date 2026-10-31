@@ -325,7 +325,8 @@ class UnattendedTest(unittest.TestCase):
             )
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             calls.append(("close", item_id))
             set_status(str(project_root), item_id, "completed")
@@ -534,6 +535,40 @@ class UnattendedTest(unittest.TestCase):
             [call for call in calls if call[0] == "close"],
         )
         self.assertEqual([], [call for call in calls if call[0] == "escalate"])
+
+    def test_unattended_close_gets_the_longer_review_budget_within_the_wall_clock(self):
+        for wall_clock, expected_low, expected_high in ((300, 31, 300), (7200, 3600, 3600)):
+            with self.subTest(wall_clock=wall_clock):
+                limits = {
+                    "max_attempts_per_item": 3,
+                    "max_iterations": 50,
+                    "max_wall_clock_seconds": wall_clock,
+                }
+                root, stage_root = self.make(limits=limits)
+                self.card(stage_root, "W-00000001")
+                self.commit_all(root)
+                drive = load_module()
+                calls: list = []
+                self.install_stubs(drive, calls)
+                budgets: list = []
+                close = drive.unattended.close_via_close_work
+
+                def recording_close(*args, review_timeout=None, **kwargs):
+                    budgets.append((args[3], review_timeout))
+                    return close(*args, review_timeout=review_timeout, **kwargs)
+
+                drive.unattended.close_via_close_work = recording_close
+
+                rc = drive.run_unattended(
+                    self.args(root, "W-00000001"), root, stage_root, time.time()
+                )
+
+                self.assertEqual(0, rc)
+                self.assertEqual(1, len(budgets))
+                check_timeout, review_timeout = budgets[0]
+                self.assertLessEqual(check_timeout, 30)
+                self.assertGreaterEqual(review_timeout, expected_low)
+                self.assertLessEqual(review_timeout, expected_high)
 
     def test_unattended_records_the_exact_executor_and_reviewer_commands(self):
         limits = {
@@ -836,7 +871,8 @@ class UnattendedTest(unittest.TestCase):
             close_calls: list[str] = []
 
             def stub_close(
-                project_root, item_id, extra_checks, timeout, promotion_default=None
+                project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
             ):
                 close_calls.append(item_id)
                 log = (
@@ -949,7 +985,8 @@ class UnattendedTest(unittest.TestCase):
             close_calls = 0
 
             def stub_close(
-                project_root, item_id, extra_checks, timeout, promotion_default=None
+                project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
             ):
                 nonlocal close_calls
                 close_calls += 1
@@ -1023,7 +1060,8 @@ class UnattendedTest(unittest.TestCase):
         escalation_reasons: list[str] = []
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             log = stage_root / ".runtime/driver/logs" / f"{item_id}.md"
             write_review_verdict(
@@ -1095,7 +1133,8 @@ class UnattendedTest(unittest.TestCase):
             close_calls = 0
 
             def stub_close(
-                project_root, item_id, extra_checks, timeout, promotion_default=None
+                project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
             ):
                 nonlocal close_calls
                 close_calls += 1
@@ -1158,7 +1197,8 @@ class UnattendedTest(unittest.TestCase):
         close_calls: list[str] = []
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             close_calls.append(item_id)
             if len(close_calls) == 1:
@@ -1766,7 +1806,8 @@ class UnattendedTest(unittest.TestCase):
         lifecycle_calls: list[str] = []
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             close_calls.append(item_id)
             return False, "simulated close failure"
@@ -1812,7 +1853,8 @@ class UnattendedTest(unittest.TestCase):
         escalation_reasons: list[str] = []
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             return False, close_outputs.pop(0)
 
@@ -1860,7 +1902,7 @@ class UnattendedTest(unittest.TestCase):
         escalation_reasons: list[str] = []
 
         drive.unattended.close_via_close_work = (
-            lambda project_root, item_id, extra_checks, timeout: (
+            lambda project_root, item_id, extra_checks, timeout, review_timeout=None: (
                 False,
                 "$ python acceptance.py\n[exit 1]\nacceptance failure sentinel",
             )
@@ -2040,7 +2082,8 @@ class UnattendedTest(unittest.TestCase):
         original_close = drive.unattended.close_via_close_work
 
         def fail_parent_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             if item_id == "W-00000001":
                 return False, "simulated parent close failure"
@@ -2079,7 +2122,8 @@ class UnattendedTest(unittest.TestCase):
             )
 
         def stub_close(
-            project_root, item_id, extra_checks, timeout, promotion_default=None
+            project_root, item_id, extra_checks, timeout, promotion_default=None,
+                review_timeout=None,
         ):
             calls.append(("close", item_id))
             if item_id == "W-00000001":  # the parent close fails

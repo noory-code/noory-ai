@@ -33,6 +33,7 @@ from close_work import (  # noqa: E402
     clip,
     close_owned_fields,
     close_owned_fields_error,
+    DEFAULT_REVIEW_TIMEOUT,
     ensure_work_log,
     executor_report_error,
     executor_review_dispositions,
@@ -638,6 +639,11 @@ def run_unattended(
                 item.item_id,
                 [],
                 cmd_timeout,
+                # A high-effort review gets close_work's longer budget, still capped
+                # by the run's remaining wall clock.
+                review_timeout=remaining_timeout(
+                    now, wall, max(args.timeout, DEFAULT_REVIEW_TIMEOUT)
+                ),
             )
             try:
                 read_work_log(log_path)
