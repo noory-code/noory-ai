@@ -31,6 +31,9 @@ for import_dir in (
 
 from close_work import (  # noqa: E402
     clip,
+    close_owned_fields,
+    close_owned_fields_error,
+    DEFAULT_REVIEW_TIMEOUT,
     ensure_work_log,
     executor_report_error,
     executor_review_dispositions,
@@ -281,6 +284,7 @@ def run_unattended(
                 reviewer_command=reviewer_command,
             )
             log_before = read_work_log(log_path)
+            card_fields_before = close_owned_fields(item.path)
             pending_findings = review_verdict_failures(verdict_file)
             repository_before = repository_fingerprint(project_root)
             repository_paths_before = repository_path_snapshot(project_root)
@@ -395,6 +399,9 @@ def run_unattended(
             pending_findings,
             ignored_paths=[log_path.relative_to(project_root).as_posix()],
         )
+        # Always check and restore, whatever else failed this attempt, so a
+        # hand-set value never becomes the next attempt's starting point.
+        card_field_error = close_owned_fields_error(item.path, card_fields_before)
         reasoned_no_change = (
             bool(pending_findings)
             and not disposition_error
@@ -435,6 +442,13 @@ def run_unattended(
             except RuntimeError as exc:
                 executor_ok = False
                 executor_failure = str(exc)
+        if card_field_error:
+            executor_failure = (
+                card_field_error if executor_ok else f"{executor_failure}; {card_field_error}"
+            )
+            executor_ok = False
+            executor_rejected = False
+            unchanged_repository = False
         if scope_widened:
             before_scope = json.dumps(list(item.scope), ensure_ascii=False)
             after_scope = json.dumps(
@@ -635,6 +649,11 @@ def run_unattended(
                 item.item_id,
                 [],
                 cmd_timeout,
+                # A high-effort review gets close_work's longer budget, still capped
+                # by the run's remaining wall clock.
+                review_timeout=remaining_timeout(
+                    now, wall, max(args.timeout, DEFAULT_REVIEW_TIMEOUT)
+                ),
             )
             try:
                 read_work_log(log_path)

@@ -9,7 +9,8 @@ autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000296

@@ -262,17 +262,19 @@ outside the card's declared scope. Every executor decision and scope boundary cr
 work the purpose does not need is skipped without a task-specific report.
 
 Each attempt appends exactly one `### Executor report` with non-empty one-line `What changed:`,
-`Why:`, `Decisions made:`, `Work not done:`, and `Review request:` fields plus the existing
-`Changed paths (JSON):` array and any required `Review dispositions (JSON):` array. `Decisions
-made:` records choices made while doing needed work, including choices to cross scope.
-`Work not done:` records needed work left undone because the action itself was wrong; scope is
-never a reason to leave needed work undone. The executor writes `None` when either field has
-nothing to report; it never leaves the field empty, and a report missing either field is rejected.
-Every attempt's `Decisions made:` restates each earlier decision still in effect, because at close
-`close_work.py` copies the `What changed:`, `Why:`, `Decisions made:`, and `Work not done:` lines
-of the latest report verbatim into the card's `## Progress`; the work log is not committed. Every configured reviewer and review-strength
-command reads both fields and judges whether the purpose and scope-boundary reporting contract was
-followed.
+`Why:`, `Decisions made:`, `Work not done:`, and `Review request:` fields plus the existing `Changed
+paths (JSON):` array and any required `Review dispositions (JSON):` array. `Decisions made:` records
+choices made while doing needed work, including choices to cross scope. `Work not done:` records
+needed work left undone because the action itself was wrong; scope is never a reason to leave needed
+work undone. The executor writes `None` when either field has nothing to report; it never leaves the
+field empty, and a report missing either field is rejected. Every attempt's `Decisions made:`
+restates each earlier decision still in effect, because at close `close_work.py` copies the `What
+changed:`, `Why:`, `Decisions made:`, and `Work not done:` lines of the latest report verbatim into
+the card's `## Progress`; the work log is not committed. Executors never edit the card's close-owned
+fields (`status`, `verification`, `review`, `retrospective`, `retrospective_ref`); the driver
+rejects an attempt that changes them and restores them. Every configured reviewer and
+review-strength command reads both fields and judges whether the purpose and scope-boundary
+reporting contract was followed.
 
 The driver snapshots the durable log before it records the current `### Driver commands`. If an
 executor rewrites the file from that exact snapshot, preserves every prior byte, and adds one valid

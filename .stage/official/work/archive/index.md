@@ -219,3 +219,17 @@
 | W-00000269 | completed | [items/W-00000269/_story.md](items/W-00000269/_story.md) |
 | W-00000270 | completed | [items/W-00000270/_story.md](items/W-00000270/_story.md) |
 | W-00000286 | completed | [items/W-00000286/_story.md](items/W-00000286/_story.md) |
+| W-00000287 | completed | [items/W-00000287/_story.md](items/W-00000287/_story.md) |
+| W-00000289 | completed | [items/W-00000289/_story.md](items/W-00000289/_story.md) |
+| W-00000290 | completed | [items/W-00000290/_story.md](items/W-00000290/_story.md) |
+| W-00000291 | completed | [items/W-00000291/_story.md](items/W-00000291/_story.md) |
+| W-00000292 | completed | [items/W-00000292/_story.md](items/W-00000292/_story.md) |
+| W-00000293 | completed | [items/W-00000293/_story.md](items/W-00000293/_story.md) |
+| W-00000294 | completed | [items/W-00000294/_story.md](items/W-00000294/_story.md) |
+| W-00000295 | completed | [items/W-00000295/_story.md](items/W-00000295/_story.md) |
+| W-00000296 | completed | [items/W-00000296/_story.md](items/W-00000296/_story.md) |
+| W-00000297 | completed | [items/W-00000297/_story.md](items/W-00000297/_story.md) |
+| W-00000300 | completed | [items/W-00000300/_story.md](items/W-00000300/_story.md) |
+| W-00000301 | completed | [items/W-00000301/_story.md](items/W-00000301/_story.md) |
+| W-00000302 | completed | [items/W-00000302/_story.md](items/W-00000302/_story.md) |
+| W-00000303 | completed | [items/W-00000303/_story.md](items/W-00000303/_story.md) |

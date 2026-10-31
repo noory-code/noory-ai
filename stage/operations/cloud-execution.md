@@ -55,7 +55,11 @@ python3 stage/scripts/import_executor_report.py --project-root . W-00000001 --co
 ```
 
 It validates the report against the executor contract and that commit's changed
-paths, and appends it to the work log only when it passes.
+paths, and appends it to the work log only when it passes. When the card took
+several attempts, pass `--commit` once per attempt commit, oldest first: the
+report is read from the last one, and its `Changed paths (JSON)` must list every
+path those commits changed, as the contract requires. List the commits instead
+of a range so another card's commits in between are left out.
 
 ## Close
 

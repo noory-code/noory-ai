@@ -29,6 +29,9 @@
   // Skip work the purpose does not need without reporting it.
   // When you judge the work item itself wrong, change nothing at all and report why, so a person can withdraw or redesign it.
   // Before exiting, set the selected card's frontmatter 'promotion' to the actual final choice.
+  // Do not edit the card's status, verification, review, retrospective, or retrospective_ref
+  // fields; close_work.py and the retrospective procedure own them, and the driver rejects and
+  // restores an attempt that changes them.
   // Use 'not_applicable' only when the card owns no decision or only one-time venue exceptions;
   // any other linked decision requires an explicit 'approved', 'deferred', or 'rejected' choice.
   // After every declared promotion path has been written, use 'promoted' so the audit can distinguish choosing promotion from completing it.
