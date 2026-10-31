@@ -1703,6 +1703,48 @@ class DriveTest(unittest.TestCase):
             self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
             self.assertTrue(state["items"]["W-00000002"]["last_fingerprint"])
 
+    def test_a_reviewer_that_changes_repository_files_fails_the_round(self):
+        tmp, root = self.make_project(
+            executor=reporting_python_command(
+                "from pathlib import Path; "
+                "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                ["executor-work.txt"],
+            ),
+            reviewer=approving_reviewer_command(
+                "from pathlib import Path; "
+                "Path('reviewer-wrote.txt').write_text('x', encoding='utf-8')"
+            ),
+        )
+        with tmp:
+            write_card(
+                root / ".stage",
+                "W-00000002",
+                parent="W-00000001",
+                acceptance=(PASS_COMMAND,),
+            )
+            initialize_git(root)
+
+            result = self.run_cli(root, "--execute")
+            state = json.loads(
+                (root / ".stage/.runtime/driver/W-00000001.json").read_text(encoding="utf-8")
+            )
+            verdict_exists = (
+                root / ".stage/.runtime/driver/verdicts/W-00000002.json"
+            ).exists()
+            kept = (root / "reviewer-wrote.txt").exists()
+
+        self.assertNotEqual(0, result.returncode, result.stdout)
+        self.assertIn(
+            "the review changed repository files other than its verdict file: "
+            "reviewer-wrote.txt; verdict removed",
+            result.stdout,
+        )
+        self.assertNotIn("ready to commit + close_work", result.stdout)
+        self.assertFalse(verdict_exists)
+        self.assertTrue(kept)
+        # A real failed attempt, not an infrastructure retry.
+        self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
+
     def test_execute_records_the_exact_executor_and_reviewer_commands_in_the_work_log(self):
         executor = reporting_python_command(
             "from pathlib import Path; "

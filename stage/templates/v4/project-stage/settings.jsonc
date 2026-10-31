@@ -73,7 +73,9 @@
   // $STAGE_CHANGED_PATHS_FILE and --allowedTools with an Edit rule for the absolute path
   // /$STAGE_REVIEW_VERDICT_FILE (Edit rules govern every file write) plus
   // Bash(python3 -m unittest:*), then -- before the prompt.
-  // Do not grant edits to project files.
+  // Do not grant edits to project files. Those rules cover only the reviewer's own tool
+  // calls, not code its tests run, so close_work.py and the driver compare the repository
+  // around every review command and fail a review that changed any file but its verdict.
   // Read the non-empty Decisions made: and Work not done: fields in the latest executor report and judge whether the purpose and scope-boundary reporting contract was followed.
   // When a criterion fails on example inputs, name in its reason the kind of input those
   // examples belong to, so the next executor round can fix the whole kind.

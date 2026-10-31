@@ -1,37 +1,43 @@
-"""The Claude reviewer may change no repository file but its verdict.
+"""A review may change no repository file but its verdict.
 
-Permission rules stop the reviewer's own Write, Edit, and shell redirections, but
-code that `python3 -m unittest` imports and runs is not a tool call and can write
-anywhere. These tests drive `claude_review_companion.main()` with a stand-in
-reviewer process that runs a real unittest process, so the repository check is
-exercised at import, setUp, and test-body time without calling a model.
+Permission rules stop a Claude reviewer's own Write, Edit, and shell redirections,
+but code that `python3 -m unittest` imports and runs is not a tool call and can
+write anywhere; a Codex reviewer may write directly. `close_work.run_close_review`
+compares the repository around any review command. These tests give it a reviewer
+command that runs a real unittest process, so the check is exercised at import,
+setUp, and test-body time without calling a model. The supervised driver's copy
+of the check is covered in `test_drive.py`.
 
-`LiveReviewerWriteProbeTest` runs the real `claude` CLI through both review paths
-and is skipped unless STAGE_LIVE_REVIEW_PROBE=1, because it needs credentials,
-network access, and model time.
+`LiveReviewerWriteProbeTest` runs the real `claude` CLI through both Claude review
+paths and is skipped unless STAGE_LIVE_REVIEW_PROBE=1, because it needs
+credentials, network access, and model time.
 """
 
 from __future__ import annotations
 
-import io
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from pathlib import Path
-from unittest import mock
+
+from python_shell_command import python_command
 
 STAGE = Path(__file__).resolve().parents[2]
 REPO_ROOT = STAGE.parent
 COMPANION = STAGE / "scripts" / "claude_review_companion.py"
 sys.path.insert(0, str(STAGE / "scripts"))
+sys.path.insert(0, str(STAGE / "skills" / "stage-retrospective"))
 import claude_review_companion  # noqa: E402
+import close_work  # noqa: E402
 
-VERDICT_RELATIVE = ".stage/.runtime/driver/verdicts/W-00000001.json"
+ITEM_ID = "W-00000001"
+CARD_RELATIVE = f".stage/work/current/{ITEM_ID}/_story.md"
+VERDICT_RELATIVE = f".stage/.runtime/driver/verdicts/{ITEM_ID}.json"
 APPROVED = {
     "criteria": [{"criterion": "probe", "verdict": "PASS", "reason": "probe"}],
     "approved": True,
@@ -78,16 +84,19 @@ def probe_module(at_import: str = "", in_setup: str = "", in_body: str = "") -> 
     )
 
 
-# Stands in for `claude -p`: runs the project's tests, as the allowed
-# `Bash(python3 -m unittest:*)` rule lets a reviewer do, then writes the verdict.
-FAKE_REVIEWER = (
-    "import json, os, subprocess, sys\n"
-    "proc = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-q'],"
-    " stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
-    "open(os.environ['STAGE_REVIEW_VERDICT_FILE'], 'w', encoding='utf-8').write("
-    f"json.dumps({APPROVED!r}))\n"
-    "raise SystemExit(int(os.environ.get('FAKE_REVIEW_EXIT', proc.returncode)))\n"
-)
+def unittest_reviewer(exit_status: int | None = None) -> str:
+    """A reviewer that runs the project's tests, as `Bash(python3 -m unittest:*)`
+    lets a Claude reviewer do, then writes an approving verdict."""
+
+    status = "proc.returncode" if exit_status is None else str(exit_status)
+    return python_command(
+        "import json, os, subprocess, sys\n"
+        "proc = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', "
+        "'-q'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
+        "open(os.environ['STAGE_REVIEW_VERDICT_FILE'], 'w', encoding='utf-8').write("
+        f"json.dumps({APPROVED!r}))\n"
+        f"raise SystemExit({status})\n"
+    )
 
 
 def git(root: Path, *args: str) -> str:
@@ -96,8 +105,8 @@ def git(root: Path, *args: str) -> str:
     ).stdout
 
 
-def make_repository(root: Path, test_module: str) -> Path:
-    """Create a committed repository whose test module is `test_module`."""
+def make_repository(root: Path, test_module: str, card_criterion: str = "probe") -> Path:
+    """Create a committed repository with a card and `test_module`; return the card."""
 
     git(root, "init", "-q")
     git(root, "config", "user.email", "stage@example.invalid")
@@ -107,92 +116,91 @@ def make_repository(root: Path, test_module: str) -> Path:
     (root / "tests").mkdir()
     (root / "tests/__init__.py").write_text("", encoding="utf-8")
     (root / "tests/test_probe.py").write_text(test_module, encoding="utf-8")
+    card = root / CARD_RELATIVE
+    card.parent.mkdir(parents=True)
+    card.write_text(
+        f"# {ITEM_ID} Probe\n\n## Success criteria\n\n- {card_criterion}\n", encoding="utf-8"
+    )
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "base")
-    verdict = root / VERDICT_RELATIVE
-    verdict.parent.mkdir(parents=True)
-    return verdict
+    return card
 
 
-class ReviewWriteGuardTest(unittest.TestCase):
+def close_review(root: Path, card: Path, command: str) -> tuple[bool, str]:
+    return close_work.run_close_review(root, card, ITEM_ID, command, 120, 1800)
+
+
+class CloseReviewWriteGuardTest(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
-        self.fake = self.tmp / "fake_reviewer.py"
-        self.fake.write_text(FAKE_REVIEWER, encoding="utf-8")
-        self.cwd = Path.cwd()
-        self.addCleanup(os.chdir, self.cwd)
 
-    def review(self, root: Path, verdict: Path, **env: str) -> tuple[int, str]:
-        """Run the companion's main() in `root` with the fake reviewer as `claude`."""
-
-        os.chdir(root)
-        out = io.StringIO()
-        environ = {"STAGE_REVIEW_VERDICT_FILE": str(verdict), **env}
-        with ExitStack() as stack:
-            stack.enter_context(mock.patch.dict(os.environ, environ))
-            stack.enter_context(
-                mock.patch.object(claude_review_companion.shutil, "which", return_value="claude")
-            )
-            stack.enter_context(
-                mock.patch.object(
-                    claude_review_companion,
-                    "claude_command",
-                    return_value=[sys.executable, str(self.fake)],
-                )
-            )
-            stack.enter_context(redirect_stdout(out))
-            stack.enter_context(redirect_stderr(io.StringIO()))
-            code = claude_review_companion.main(["Review the card."])
-        return code, out.getvalue()
+    def repository(self, name: str, test_module: str) -> tuple[Path, Path]:
+        root = self.tmp / name
+        root.mkdir()
+        return root, make_repository(root, test_module)
 
     def test_writes_from_test_code_fail_the_review_and_remove_the_verdict(self):
         for place, parts in WRITE_AT.items():
             with self.subTest(place=place):
-                root = self.tmp / place.replace(" ", "-")
-                root.mkdir()
-                verdict = make_repository(root, probe_module(*parts))
+                root, card = self.repository(place.replace(" ", "-"), probe_module(*parts))
 
-                code, out = self.review(root, verdict)
+                passed, detail = close_review(root, card, unittest_reviewer())
 
-                self.assertEqual(claude_review_companion.REVIEW_WROTE_FILES, code, out)
-                self.assertFalse(verdict.exists())
+                self.assertFalse(passed)
+                self.assertFalse((root / VERDICT_RELATIVE).exists())
                 self.assertIn(
                     "the review changed repository files other than its verdict file: "
                     f"{WRITTEN_PATH[place]}; verdict removed",
-                    out,
+                    detail,
                 )
                 # Left in place for the person to inspect, not silently reverted.
                 self.assertIn(WRITTEN_PATH[place], git(root, "status", "--porcelain"))
 
-    def test_a_review_that_writes_only_its_verdict_keeps_it_and_its_exit_status(self):
-        for exit_status in ("0", "5"):
-            with self.subTest(exit_status=exit_status):
-                root = self.tmp / f"clean-{exit_status}"
-                root.mkdir()
-                verdict = make_repository(root, probe_module())
+    def test_a_review_that_writes_only_its_verdict_passes(self):
+        root, card = self.repository("clean", probe_module())
 
-                code, out = self.review(root, verdict, FAKE_REVIEW_EXIT=exit_status)
+        passed, detail = close_review(root, card, unittest_reviewer())
 
-                self.assertEqual(int(exit_status), code, out)
-                self.assertEqual(APPROVED, json.loads(verdict.read_text(encoding="utf-8")))
-                self.assertNotIn("changed repository files", out)
+        self.assertTrue(passed, detail)
+        self.assertEqual(
+            APPROVED, json.loads((root / VERDICT_RELATIVE).read_text(encoding="utf-8"))
+        )
+
+    def test_a_failing_review_command_without_writes_still_fails_as_before(self):
+        root, card = self.repository("failing", probe_module())
+
+        passed, detail = close_review(root, card, unittest_reviewer(exit_status=5))
+
+        self.assertFalse(passed)
+        self.assertNotIn("changed repository files", detail)
 
     def test_a_verdict_file_the_repository_does_not_ignore_is_not_a_violation(self):
         root = self.tmp / "unignored"
         root.mkdir()
-        make_repository(root, probe_module())
+        before = {"tracked.txt": "same"}
         verdict = root / "verdict.json"
+        verdict.write_text("{}", encoding="utf-8")
 
-        code, out = self.review(root, verdict)
+        message = close_work.reject_review_writes(
+            root, before, {**before, "verdict.json": "untracked"}, verdict
+        )
 
-        self.assertEqual(0, code, out)
+        self.assertEqual("", message)
         self.assertTrue(verdict.exists())
 
 
 class ProjectReviewerCommandTest(unittest.TestCase):
-    def test_project_claude_reviewer_runs_through_the_guarded_companion(self):
+    def test_the_v4_template_tells_projects_their_review_commands_are_checked(self):
+        template = (STAGE / "templates/v4/project-stage/settings.jsonc").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("not code its tests run, so close_work.py and the driver compare", template)
+        self.assertIn("fail a review that changed any file but its verdict", template)
+
+    def test_project_claude_reviewer_runs_through_the_companion(self):
         settings = json.loads((REPO_ROOT / ".stage/settings.json").read_text(encoding="utf-8"))
         command = settings["review"]["reviewers"]["claude"]
 
@@ -220,117 +228,84 @@ DIRECT_WRITES = ("direct-write.txt", "bash-write.txt", "chained.txt")
 
 
 @unittest.skipUnless(LIVE, "set STAGE_LIVE_REVIEW_PROBE=1 with `claude` on PATH to run")
+@unittest.skipIf(sys.platform == "win32", "the project review command uses POSIX shell syntax")
 class LiveReviewerWriteProbeTest(unittest.TestCase):
-    """Run the real reviewer through both entry paths and record what it changed."""
+    """Run the real reviewer through both Claude entry paths at close and record the result."""
 
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
 
-    def record(self, entry: dict[str, object]) -> None:
-        entry["claude_version"] = subprocess.run(
-            ["claude", "--version"], capture_output=True, text=True
-        ).stdout.strip()
+    def probe(self, path_name: str, command: str, root: Path, card: Path) -> tuple[bool, str]:
+        passed, detail = close_review(root, card, command)
+        status = git(root, "status", "--porcelain", "--untracked-files=all")
+        # The test body always rewrites tracked.txt, so its absence means the
+        # reviewer chose not to run the tests and the write check was not exercised.
+        exercised = "tracked.txt" in status
+        entry = {
+            "path": path_name,
+            "exercised": exercised,
+            "command": command,
+            "allowed_tools": claude_review_companion.claude_command(
+                ["prompt"], {"STAGE_REVIEW_VERDICT_FILE": str(root / VERDICT_RELATIVE)}, "claude"
+            )[-4:-2],
+            "passed": passed,
+            "changed": status.splitlines(),
+            "verdict_kept": (root / VERDICT_RELATIVE).exists(),
+            "claude_version": subprocess.run(
+                ["claude", "--version"], capture_output=True, text=True
+            ).stdout.strip(),
+        }
         line = json.dumps(entry, ensure_ascii=False)
         print(line)
         target = os.environ.get("STAGE_LIVE_REVIEW_PROBE_RECORD")
         if target:
             with open(target, "a", encoding="utf-8") as handle:
                 handle.write(line + "\n")
-
-    def probe(self, path_name: str, command: list[str] | str, root: Path, env: dict[str, str]):
-        proc = subprocess.run(
-            command,
-            cwd=root,
-            env={**os.environ, **env},
-            shell=isinstance(command, str),
-            capture_output=True,
-            text=True,
-            timeout=1800,
-        )
-        status = git(root, "status", "--porcelain", "--untracked-files=all")
-        self.record(
-            {
-                "path": path_name,
-                "command": command if isinstance(command, str) else " ".join(command),
-                "allowed_tools": claude_review_companion.claude_command(
-                    ["prompt"], env, "claude"
-                )[-4:-2],
-                "exit_code": proc.returncode,
-                "changed": status.splitlines(),
-                "verdict_kept": Path(env["STAGE_REVIEW_VERDICT_FILE"]).exists(),
-            }
-        )
-        return proc, status
-
-    def assert_guarded(self, proc, status: str, root: Path, verdict: Path) -> None:
-        output = proc.stdout + proc.stderr
         for path in DIRECT_WRITES:
-            self.assertNotIn(path, status, output)
-        self.assertEqual(claude_review_companion.REVIEW_WROTE_FILES, proc.returncode, output)
-        self.assertFalse(verdict.exists(), output)
-        self.assertIn("the review changed repository files other than its verdict file", output)
+            self.assertNotIn(path, status, detail)
+        if not exercised:
+            self.skipTest(f"{path_name}: the reviewer did not run the tests; probe inconclusive")
+        self.assertFalse(passed, detail)
+        self.assertFalse((root / VERDICT_RELATIVE).exists(), detail)
+        self.assertIn("tracked.txt; verdict removed", detail)
+        return passed, detail
 
     def test_cloud_stand_in_path(self):
         root = self.tmp / "stand-in"
         root.mkdir()
-        verdict = make_repository(root, probe_module(*WRITE_AT["test body"]))
-        changed = self.tmp / "review" / "changed-paths.json"
-        changed.parent.mkdir()
-        changed.write_text("[]", encoding="utf-8")
-        env = {"STAGE_REVIEW_VERDICT_FILE": str(verdict), "STAGE_CHANGED_PATHS_FILE": str(changed)}
-
-        proc, status = self.probe(
-            "cloud stand-in", [sys.executable, str(COMPANION), LIVE_PROMPT], root, env
+        card = make_repository(root, probe_module(*WRITE_AT["test body"]))
+        command = " ".join(
+            shlex.quote(part) for part in (sys.executable, str(COMPANION), LIVE_PROMPT)
         )
 
-        self.assert_guarded(proc, status, root, verdict)
+        self.probe("cloud stand-in", command, root, card)
 
     def test_project_claude_reviewer_path(self):
         root = self.tmp / "project"
         root.mkdir()
-        verdict = make_repository(root, probe_module(*WRITE_AT["test body"]))
-        (root / "stage/scripts").mkdir(parents=True)
-        for name in ("claude_review_companion.py", "driver_repository.py"):
-            shutil.copy(STAGE / "scripts" / name, root / "stage/scripts" / name)
-        shutil.copytree(STAGE / "hooks", root / "stage/hooks")
-        # Where the driver and close_work keep them: inside the project.
-        card = root / ".stage/work/current/W-00000001/_story.md"
-        card.parent.mkdir(parents=True)
-        card.write_text(
-            "# W-00000001 Probe\n\n## Success criteria\n\n"
-            "- `python3 -m unittest discover -s tests -q` passes when you run it\n",
-            encoding="utf-8",
+        card = make_repository(
+            root,
+            probe_module(*WRITE_AT["test body"]),
+            card_criterion="`python3 -m unittest discover -s tests -q` passes when you run it",
         )
+        (root / "stage/scripts").mkdir(parents=True)
+        shutil.copy(COMPANION, root / "stage/scripts" / COMPANION.name)
         git(root, "add", "-A")
-        git(root, "commit", "-q", "-m", "add the companion and the card")
-        log = root / ".stage/.runtime/driver/logs/W-00000001.md"
+        git(root, "commit", "-q", "-m", "add the companion")
+        log = root / ".stage/.runtime/driver/logs" / f"{ITEM_ID}.md"
         log.parent.mkdir(parents=True)
         log.write_text(
             "### Executor report\nWhat changed: nothing\nWhy: probe\nDecisions made: None\n"
             "Work not done: None\nChanged paths (JSON):\n[]\nReview request: run the tests\n",
             encoding="utf-8",
         )
-        changed = self.tmp / "review" / "changed-paths.json"
-        changed.parent.mkdir()
-        changed.write_text("[]", encoding="utf-8")
-        env = {
-            "STAGE_REVIEW_VERDICT_FILE": str(verdict),
-            "STAGE_CHANGED_PATHS_FILE": str(changed),
-            "STAGE_WORK_ITEM_PATH": str(card),
-            "STAGE_WORK_LOG_PATH": str(log),
-        }
         settings = json.loads((REPO_ROOT / ".stage/settings.json").read_text(encoding="utf-8"))
 
-        proc, status = self.probe(
-            "project reviewers.claude", settings["review"]["reviewers"]["claude"], root, env
+        self.probe(
+            "project reviewers.claude", settings["review"]["reviewers"]["claude"], root, card
         )
-
-        output = proc.stdout + proc.stderr
-        self.assertEqual(claude_review_companion.REVIEW_WROTE_FILES, proc.returncode, output)
-        self.assertFalse(verdict.exists(), output)
-        self.assertIn("tracked.txt; verdict removed", log.read_text(encoding="utf-8"), output)
 
 
 if __name__ == "__main__":

@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-- Fail a Claude review that changes any repository file other than its verdict: the reviewer's
-  permission rules stop its own writes but not those of code `python3 -m unittest` runs, so
-  `claude_review_companion.py` compares the repository before and after, removes the verdict, and
-  exits 3. The project's Claude reviewer command now runs through the same companion.
+- Fail any review that changes a repository file other than its verdict: a Claude reviewer's
+  permission rules stop its own writes but not those of code `python3 -m unittest` runs, and a
+  Codex reviewer may write directly, so `close_work.py` and the supervised driver compare the
+  repository around every review command, remove the verdict, and name the changed paths, which
+  stay in place. The project's Claude reviewer command now runs through
+  `claude_review_companion.py`, and the v4 template says review commands are checked.
 
 ## 0.63.5 — 2026-11-01
 
