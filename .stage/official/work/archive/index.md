@@ -228,3 +228,8 @@
 | W-00000294 | completed | [items/W-00000294/_story.md](items/W-00000294/_story.md) |
 | W-00000295 | completed | [items/W-00000295/_story.md](items/W-00000295/_story.md) |
 | W-00000296 | completed | [items/W-00000296/_story.md](items/W-00000296/_story.md) |
+| W-00000297 | completed | [items/W-00000297/_story.md](items/W-00000297/_story.md) |
+| W-00000300 | completed | [items/W-00000300/_story.md](items/W-00000300/_story.md) |
+| W-00000301 | completed | [items/W-00000301/_story.md](items/W-00000301/_story.md) |
+| W-00000302 | completed | [items/W-00000302/_story.md](items/W-00000302/_story.md) |
+| W-00000303 | completed | [items/W-00000303/_story.md](items/W-00000303/_story.md) |

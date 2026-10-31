@@ -36,6 +36,11 @@
   `verification`, `review`, `retrospective`, `retrospective_ref`), and say so in the executor contract.
 - Let unattended driver closes use close_work's longer review budget, capped by the remaining wall
   clock, and size the outer close bound to cover every check plus the review.
+- Refresh the pending-decision index after archiving, so a decision the archived card owns but does not
+  consume points at the archived card instead of failing the audit.
+- Validate review verdicts with one rule set shared by close_work.py and the driver.
+- Let `import_executor_report.py` take one `--commit` per attempt and check a cumulative report
+  against every path those commits changed.
 
 ## 0.63.4 — 2026-10-11
 

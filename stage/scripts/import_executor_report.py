@@ -10,7 +10,11 @@ contract order, validates it with the executor-report contract against the
 paths that commit changed, and appends it only when it passes.
 
 Usage:
-    python3 stage/scripts/import_executor_report.py --project-root . W-00000001 [--commit <rev>]
+    python3 stage/scripts/import_executor_report.py --project-root . W-00000001 [--commit <rev>]...
+
+Pass --commit once per attempt when a card took several: the report is read from the
+last commit and checked against every path those commits changed, because the
+contract's Changed paths (JSON) covers all attempts.
 """
 
 from __future__ import annotations
@@ -104,13 +108,14 @@ def render_report(fields: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def import_report(project_root: Path, item_id: str, revision: str) -> Path:
+def import_report(project_root: Path, item_id: str, revisions: list[str]) -> Path:
     stage_root = project_root / ".stage"
-    message = os.fsdecode(git(project_root, "log", "-1", "--format=%B", revision))
+    message = os.fsdecode(git(project_root, "log", "-1", "--format=%B", revisions[-1]))
     report = render_report(parse_report(message))
     observed = sorted(
         {
             os.fsdecode(path)
+            for revision in revisions
             for path in git(
                 project_root, "show", "--format=", "--name-only", "--no-renames", "-z", revision
             ).split(b"\0")
@@ -142,15 +147,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--project-root", default=".")
     parser.add_argument("item", help="Work item id, e.g. W-00000001.")
-    parser.add_argument("--commit", default="HEAD", help="Commit whose message holds the report.")
+    parser.add_argument(
+        "--commit",
+        action="append",
+        help="Commit of one attempt, repeatable; the last one holds the report (default: HEAD).",
+    )
     args = parser.parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
     try:
-        log_path = import_report(project_root, args.item, args.commit)
+        log_path = import_report(project_root, args.item, args.commit or ["HEAD"])
     except (RuntimeError, ValueError) as exc:
         print(f"{args.item}: {exc}; work log unchanged", file=sys.stderr)
         return 1
-    print(f"{args.item}: imported the executor report from {args.commit} into {log_path}")
+    revisions = ", ".join(args.commit or ["HEAD"])
+    print(f"{args.item}: imported the executor report from {revisions} into {log_path}")
     return 0
 
 
