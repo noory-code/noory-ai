@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Pin the project's six Codex driver commands to `gpt-6-sol` so they do not use the home default.
+- Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
+  kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
+- Carry every non-record file in an archived card folder, at any depth, into the archive byte for
+  byte instead of deleting it with the folder.
+
 ## 0.63.4 — 2026-10-11
 
 - Show one scope-boundary line to the user while sending the full work context to the agent through

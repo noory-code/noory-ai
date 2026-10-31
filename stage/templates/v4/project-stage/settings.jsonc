@@ -32,6 +32,9 @@
   // Use None when there is nothing to report for a field.
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
   // each exact criterion string in Review dispositions (JSON).
+  // When you accept a failed criterion that quotes example inputs, name the kind of input the
+  // examples belong to, fix every input of that kind, and test each variant; do not fix only the
+  // quoted examples (Dasina R-00000028, R-00000031).
   // Changed paths (JSON) must contain every repository-relative path changed for this card across all attempts.
   "executors": {
     "claude": "",
@@ -58,6 +61,8 @@
   // write only criteria judged in this round; the driver merges the prior verdict.
   // Without those prior-review inputs, review every success criterion.
   // Read the non-empty Decisions made: and Work not done: fields in the latest executor report and judge whether the purpose and scope-boundary reporting contract was followed.
+  // When a criterion fails on example inputs, name in its reason the kind of input those
+  // examples belong to, so the next executor round can fix the whole kind.
   // Each command must write
   // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
   // "approved":true|false}, with no other keys at either level. criteria must be
