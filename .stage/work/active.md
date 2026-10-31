@@ -15,3 +15,4 @@
 | W-00000280 | planning | claude | 사용자가 여러 AI에서 남긴 선택을 돌아보며 자신의 기준을 알아가고 직접 고칩니다 | active | Codex | [current/W-00000272/W-00000280/_story.md](current/W-00000272/W-00000280/_story.md) |
 | W-00000281 | development | codex | 사용자가 Avatar 기록에서 자신을 돌아보고 닮고 싶은 작업 방식을 AI 규칙으로 가져갑니다 | active | Codex | [current/W-00000272/W-00000280/W-00000281.md](current/W-00000272/W-00000280/W-00000281.md) |
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
+| W-00000296 | fix | claude | 리뷰 명령이 쓰이지 않는 권한 규칙 때문에 매번 경고를 남기지 않고, 권한 설명이 실제로 쓰기를 허락하는 규 | active | Claude | [current/W-00000296/_story.md](current/W-00000296/_story.md) |
