@@ -365,6 +365,16 @@ def archive_one(
         if source_unit.is_dir()
         else (source_item,)
     )
+    rewritten = set(records)
+    attachments = (
+        tuple(
+            path
+            for path in sorted(source_unit.rglob("*"), key=lambda path: path.parts)
+            if path.is_file() and path not in rewritten
+        )
+        if source_unit.is_dir()
+        else ()
+    )
     record_data: list[tuple[Path, str, str, str, Path | None]] = []
     dirty_paths: set[str] = set()
     for record in records:
@@ -470,6 +480,11 @@ def archive_one(
                 after="status",
             )
         target.write_text(archived_text, encoding="utf-8")
+    # The archive unit was checked absent above, so no attachment target collides.
+    for attachment in attachments:
+        target = archive_unit / attachment.relative_to(source_unit)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(attachment, target)
     for _record, _record_id, _status, ref, present_retro in record_data:
         if not ref or present_retro is None:
             continue
@@ -544,9 +559,12 @@ def archive_one(
     decision_detail = (
         f", {consumed_count} consumed decision(s)" if consumed_count else ""
     )
+    attachment_detail = (
+        f", {len(attachments)} attachment(s)" if attachments else ""
+    )
     return (
-        f"{item_id}: archived hierarchy ({len(record_data)} record(s), "
-        f"final status {root_status}{decision_detail})"
+        f"{item_id}: archived hierarchy ({len(record_data)} record(s)"
+        f"{attachment_detail}, final status {root_status}{decision_detail})"
     )
 
 

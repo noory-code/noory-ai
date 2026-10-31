@@ -550,6 +550,133 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
         self.assertIn("Summary: errors=0", audit_proc.stdout)
 
+    def make_v5_unit(self, root: Path, nested: bool = False) -> tuple[Path, Path]:
+        stage = root / ".stage"
+        shutil.copytree(TEMPLATE_ROOT, stage)
+        unit = stage / "work/current/W-00000001"
+        if nested:
+            records = (
+                (unit / "_epic.md", "W-00000001", "R-00000001"),
+                (unit / "W-00000002/_story.md", "W-00000002", "R-00000002"),
+                (unit / "W-00000002/W-00000003.md", "W-00000003", "R-00000003"),
+            )
+        else:
+            records = ((unit / "_story.md", "W-00000001", "R-00000001"),)
+        for path, item_id, retro_id in records:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(V5_ITEM.format(wid=item_id, ref=retro_id), encoding="utf-8")
+            (stage / "work/retrospectives" / f"{retro_id}.md").write_text(
+                RETRO.format(ref=retro_id, wid=item_id), encoding="utf-8"
+            )
+        return stage, unit
+
+    def write_attachments(self, unit: Path, relatives: list[str]) -> dict[str, bytes]:
+        contents = {}
+        for index, relative in enumerate(relatives):
+            data = b"\x89PNG\r\n\x1a\n\x00\xff" + bytes([index]) + b"\r\nraw\n"
+            path = unit / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            contents[relative] = data
+        return contents
+
+    def test_v5_archive_carries_non_markdown_files_beside_the_story_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage, unit = self.make_v5_unit(root)
+            contents = self.write_attachments(unit, ["evidence.json", "screen.png"])
+
+            proc = run_cli(root, "W-00000001")
+
+            archive_unit = stage / "official/work/archive/items/W-00000001"
+            archived = {
+                relative: (archive_unit / relative).read_bytes()
+                for relative in contents
+            }
+            story_text = (archive_unit / "_story.md").read_text(encoding="utf-8")
+            unit_exists = unit.exists()
+
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertEqual(contents, archived)
+        self.assertIn("status: archived", story_text)
+        self.assertIn("2 attachment(s)", proc.stdout)
+        self.assertFalse(unit_exists)
+
+    def test_v5_archive_carries_files_beside_nested_records_at_any_depth(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage, unit = self.make_v5_unit(root, nested=True)
+            (unit / "W-00000002/empty").mkdir()
+            contents = self.write_attachments(
+                unit,
+                [
+                    "W-00000002/run.log",
+                    "W-00000002/evidence/screens/before.png",
+                    "data/deep/er/result.csv",
+                ],
+            )
+
+            proc = run_cli(root, "W-00000001")
+
+            archive_unit = stage / "official/work/archive/items/W-00000001"
+            archived = {
+                relative: (archive_unit / relative).read_bytes()
+                for relative in contents
+            }
+            action_text = (archive_unit / "W-00000002/W-00000003.md").read_text(
+                encoding="utf-8"
+            )
+            unit_exists = unit.exists()
+
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertEqual(contents, archived)
+        self.assertIn("status: archived", action_text)
+        self.assertFalse(unit_exists)
+
+    def test_v5_refuses_existing_archive_unit_before_moving_any_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage, unit = self.make_v5_unit(root)
+            contents = self.write_attachments(unit, ["evidence.json"])
+            archive_unit = stage / "official/work/archive/items/W-00000001"
+            archive_unit.mkdir(parents=True)
+            (archive_unit / "evidence.json").write_bytes(b"older\n")
+
+            proc = run_cli(root, "W-00000001")
+
+            source_evidence = (unit / "evidence.json").read_bytes()
+            archived_evidence = (archive_unit / "evidence.json").read_bytes()
+            archived_names = sorted(path.name for path in archive_unit.rglob("*"))
+            story_exists = (unit / "_story.md").is_file()
+            retro_exists = (stage / "work/retrospectives/R-00000001.md").is_file()
+
+        self.assertEqual(1, proc.returncode, proc.stdout + proc.stderr)
+        self.assertIn("archive move unit already exists", proc.stdout)
+        self.assertEqual(contents["evidence.json"], source_evidence)
+        self.assertEqual(b"older\n", archived_evidence)
+        self.assertEqual(["evidence.json"], archived_names)
+        self.assertTrue(story_exists)
+        self.assertTrue(retro_exists)
+
+    def test_single_file_card_archive_leaves_sibling_files_alone(self):
+        tmp, root = self.make_stage()
+        with tmp:
+            items = root / ".stage/present/work/items"
+            sibling = items / "evidence.json"
+            sibling.write_bytes(b"{}\n")
+
+            proc = run_cli(root, "W-00000001")
+
+            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+            self.assertNotIn("attachment", proc.stdout)
+            self.assertEqual(b"{}\n", sibling.read_bytes())
+            self.assertFalse(
+                (root / ".stage/past/work/archive/items/evidence.json").exists()
+            )
+            self.assertTrue(
+                (root / ".stage/past/work/archive/items/W-00000001.md").is_file()
+            )
+
     def test_v5_archives_the_work_items_consumed_venue_exception(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
