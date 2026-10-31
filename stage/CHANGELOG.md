@@ -11,6 +11,9 @@
   `## Verification` at close, because the work log and verdict file are not committed.
 - Give close reviews their own `--review-timeout` (default 3600 seconds) so a high-effort review
   no longer fails at the 900-second per-check budget; the driver keeps its single bound.
+- Copy the latest executor report's decisions and undone work onto the card's `## Progress` at
+  close, require both fields in every report, and ask executors to restate decisions still in
+  effect, so executor choices outlive the uncommitted work log.
 
 ## 0.63.4 — 2026-10-11
 

@@ -1154,6 +1154,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: kept exactly one `### Executor report` section\n"
             "Why: the marker mention is ordinary report prose\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n"
             "[]\n"
             "Review request: verify the report shape\n"
@@ -1173,6 +1175,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: changed the implementation and reported the shared log\n"
             "Why: the driver owns and already knows the shared log path\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n"
             + json.dumps([work_log_path, "stage/scripts/drive.py"])
             + "\n"
@@ -1203,6 +1207,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: declined the finding\n"
             "Why: the reported situation does not occur\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n[]\n"
             "Review dispositions (JSON):\n"
             + json.dumps(
@@ -1225,6 +1231,124 @@ class CloseWorkTest(unittest.TestCase):
         )
 
         self.assertIn("requires a non-empty one-line reason", error)
+
+    def test_executor_report_requires_decisions_and_work_not_done(self):
+        close_work = load_close_module()
+        previous = "work log preamble\n"
+        complete = (
+            "\n### Executor report\n"
+            "What changed: changed one file\n"
+            "Why: satisfy the card\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
+            "Changed paths (JSON):\n[]\n"
+            "Review request: verify the report shape\n"
+        )
+        for label in ("Decisions made", "Work not done"):
+            for broken in (
+                complete.replace(f"{label}: None\n", ""),
+                complete.replace(f"{label}: None\n", f"{label}:\n"),
+            ):
+                with self.subTest(label=label, report=broken):
+                    self.assertEqual(
+                        f"executor work log report is missing non-empty `{label}:`",
+                        close_work.executor_report_error(previous, previous + broken, []),
+                    )
+
+    def write_progress_card_and_log(self, root: Path, log: str | None) -> Path:
+        item = root / ".stage/work/current/W-00000001/_story.md"
+        item.write_text(
+            item.read_text(encoding="utf-8").replace(
+                "## Verification\n", "## Progress\n\nOperator note.\n\n## Verification\n"
+            ),
+            encoding="utf-8",
+        )
+        if log is not None:
+            log_path = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            log_path.parent.mkdir(parents=True)
+            log_path.write_text(log, encoding="utf-8")
+        return item
+
+    def test_close_copies_the_last_executor_report_onto_the_card_progress(self):
+        tmp, root = self.make()
+        with tmp:
+            item = self.write_progress_card_and_log(
+                root,
+                "# Stage work log\n"
+                "\n### Executor report\n"
+                "What changed: first round output\n"
+                "Why: first round reason\n"
+                "Decisions made: chose a list over a table\n"
+                "Work not done: None\n"
+                "Changed paths (JSON):\n[\"a.txt\"]\n"
+                "Review request: review round one\n"
+                "\n### Reviewer report\n"
+                "Decisions made: reviewer prose must not be copied\n"
+                "\n### Executor report\n"
+                "What changed: second round fixed the failed criterion\n"
+                "Why: the reviewer found a missing ``` fence escape\n"
+                "Decisions made: kept the list format from round one; escaped fences\n"
+                "Work not done: None\n"
+                "Changed paths (JSON):\n[\"a.txt\"]\n"
+                "Review dispositions (JSON):\n[]\n"
+                "Review request: review round two\n"
+                "\n### Reviewer report\n"
+                "APPROVED\n",
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            text = item.read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        progress = text.split("## Progress\n", 1)[1].split("\n## Verification\n", 1)[0]
+        self.assertIn(
+            "Operator note.\n\n"
+            f"### Executor report at close — {date.today().isoformat()}\n\n"
+            "```\n"
+            "What changed: second round fixed the failed criterion\n"
+            "Why: the reviewer found a missing ``\u200b` fence escape\n"
+            "Decisions made: kept the list format from round one; escaped fences\n"
+            "Work not done: None\n"
+            "```\n",
+            progress,
+        )
+        for absent in ("first round", "reviewer prose", "Changed paths", "Review request"):
+            self.assertNotIn(absent, progress)
+        self.assertNotIn("Executor report at close", text.split("## Verification\n", 1)[1])
+
+    def test_close_without_an_executor_report_leaves_progress_alone(self):
+        for log in (None, "# Stage work log\n\nNo report yet.\n"):
+            with self.subTest(log=log):
+                tmp, root = self.make()
+                with tmp:
+                    item = self.write_progress_card_and_log(root, log)
+
+                    proc = run(root, "W-00000001", "--check", "true")
+                    text = item.read_text(encoding="utf-8")
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("## Progress\n\nOperator note.\n\n## Verification\n", text)
+                self.assertNotIn("Executor report at close", text)
+
+    def test_close_refuses_a_report_without_a_progress_section(self):
+        tmp, root = self.make()
+        with tmp:
+            log_path = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            log_path.parent.mkdir(parents=True)
+            log_path.write_text(
+                "\n### Executor report\nWhat changed: x\nWhy: y\n"
+                "Decisions made: None\nWork not done: None\n",
+                encoding="utf-8",
+            )
+            item = root / ".stage/work/current/W-00000001/_story.md"
+            before = item.read_text(encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", "true")
+            after = item.read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode, proc.stderr)
+        self.assertIn("no '## Progress' section", proc.stderr)
+        self.assertEqual(before, after)
 
     def review_committed_paths_command(self) -> str:
         return python_command(

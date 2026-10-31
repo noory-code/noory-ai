@@ -341,6 +341,8 @@ class DriveParallelTest(unittest.TestCase):
                     f"{os.environ['STAGE_WORK_ITEM_PATH']}; in-scope hook decision allow; "
                     f"out-of-scope hook decision {boundary_decision}\\n"
                     "Why: prove the driver and Stage hook use the isolated worktree\\n"
+                    "Decisions made: None\\n"
+                    "Work not done: None\\n"
                     "Changed paths (JSON):\\n"
                     + json.dumps([observed_path.name])
                     + "\\nReview request: verify every recorded root is this worktree\\n"

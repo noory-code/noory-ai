@@ -214,6 +214,8 @@ class TemplateV4Test(unittest.TestCase):
             "Decisions made:",
             "Work not done:",
             "Use None when there is nothing to report for a field.",
+            "Decisions made: in every attempt restates each earlier decision still in effect,",
+            "because close copies only the latest report onto the card.",
         )
 
         self.assertEqual({"claude", "codex"}, set(settings["executors"]))

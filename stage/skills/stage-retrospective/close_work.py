@@ -83,10 +83,14 @@ WORK_LOG_PREAMBLE = """\
 이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 시도별 판정을
 소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
 `## Retrospective`, `## Promotion decision`을 소유한다. 닫기를 통과시킨 리뷰의 성공 기준별
-판정과 까닭은 카드의 `## Verification`이 소유한다. 이 로그는 커밋되지 않는 `.stage/.runtime/`
-아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유 사실은 경로로 참조한다.
+판정과 까닭은 카드의 `## Verification`이, 승인된 마지막 판 실행 보고의 `What changed`·`Why`·
+`Decisions made`·`Work not done` 네 줄은 카드의 `## Progress`가 소유한다. 이 로그는 커밋되지 않는
+`.stage/.runtime/` 아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유
+사실은 경로로 참조한다.
 """
 EXECUTOR_REPORT_MARKER = "### Executor report"
+# The report lines close copies onto the card; the rest of a report is attempt-local.
+CARD_REPORT_LABELS = ("What changed", "Why", "Decisions made", "Work not done")
 REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
 
 
@@ -314,6 +318,24 @@ def review_criteria_evidence(path: Path) -> str:
     )
 
 
+def latest_executor_report_lines(log_text: str) -> list[str]:
+    """Return the card-owned lines of the last executor report, in contract order."""
+
+    starts = section_marker_starts(log_text, EXECUTOR_REPORT_MARKER)
+    if not starts:
+        return []
+    _marker, _newline, body = log_text[starts[-1] :].partition("\n")
+    next_heading = re.search(r"(?m)^#{1,6}[ \t]", body)
+    if next_heading:
+        body = body[: next_heading.start()]
+    lines = []
+    for label in CARD_REPORT_LABELS:
+        match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+?)[ \t]*\r?$", body)
+        if match and match.group(1).strip():
+            lines.append(f"{label}: {fence_safe(match.group(1).strip())}")
+    return lines
+
+
 def review_verdict_failures(path: Path) -> list[str]:
     verdict, error = load_review_verdict(path)
     if error or verdict is None:
@@ -354,7 +376,7 @@ def executor_report_error(
     addition = current_log[len(previous_log) :]
     if len(section_marker_starts(addition, EXECUTOR_REPORT_MARKER)) != 1:
         return "executor must append exactly one `### Executor report` per attempt"
-    for label in ("What changed", "Why", "Review request"):
+    for label in (*CARD_REPORT_LABELS, "Review request"):
         match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+)$", addition)
         if not match or not match.group(1).strip():
             return f"executor work log report is missing non-empty `{label}:`"
@@ -967,8 +989,33 @@ def main() -> int:
             f"Review report: {work_log_reference(work_item.item_id)}\n"
             f"Criteria:\n{criteria_evidence}\n```"
         )
+    log_path = work_log_path(stage_root, work_item.item_id)
+    try:
+        report_lines = (
+            latest_executor_report_lines(read_work_log(log_path))
+            if log_path.is_file()
+            else []
+        )
+    except RuntimeError as exc:
+        print(f"{args.item}: {exc}; work item unchanged", file=sys.stderr)
+        return 1
+    if report_lines and "## Progress\n" not in text:
+        print(
+            f"{args.item}: no '## Progress' section to record the executor report into; "
+            "work item unchanged",
+            file=sys.stderr,
+        )
+        return 1
     try:
         updated = append_to_section(text, "Verification", evidence)
+        if report_lines:
+            updated = append_to_section(
+                updated,
+                "Progress",
+                f"### Executor report at close — {close_date}\n\n```\n"
+                + "\n".join(report_lines)
+                + "\n```",
+            )
         updated = set_field(updated, "verification", "passed")
         updated = set_field(updated, "promotion", promotion)
         if review_passed:

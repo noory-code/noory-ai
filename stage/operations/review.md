@@ -78,6 +78,11 @@ has passed. Before that point the card is left unchanged.
 
 - Frontmatter: `verification: passed`, the final `promotion` value,
   `status: completed`, and `review: passed` when a review ran.
+- When the work log holds an executor report, `## Progress` gains
+  `### Executor report at close — <date>`: one fenced block with the latest
+  report's `What changed:`, `Why:`, `Decisions made:`, and `Work not done:`
+  lines, verbatim. A card closed without a driver run has no report and gains
+  nothing here.
 - `## Verification` gains `### Executed at close — <date>`: one fenced block with
   each `--check` command, its exit code, and its output clipped to the last 40
   lines and 4000 bytes.
@@ -90,9 +95,10 @@ has passed. Before that point the card is left unchanged.
     order, as `- <PASS|FAIL>: <criterion>` and an indented `Reason: <reason>`
     line, without clipping.
 
-The criteria live on the card because the work log and the verdict file sit
-under `.stage/.runtime/`, which is not committed. The card is the only durable
-record of what the passing review checked.
+The executor report lines and the criteria live on the card because the work
+log and the verdict file sit under `.stage/.runtime/`, which is not committed.
+The card is the only durable record of what the executor decided and what the
+passing review checked.
 
 ## Cross-venue review
 
