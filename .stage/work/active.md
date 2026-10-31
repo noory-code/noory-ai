@@ -18,3 +18,4 @@
 | W-00000288 | fix | codex | STATE001(audit_state_links)이 상태 기록의 work_items 를 진행 중·보관 카드에 | active | Claude | [current/W-00000288/_story.md](current/W-00000288/_story.md) |
 | W-00000300 | fix | claude | 실행자가 검사를 돌리지 않고 카드의 verification 같은 닫기 도구 몫의 칸을 손으로 바꿔 기록이 사 | active | Claude | [current/W-00000300/_story.md](current/W-00000300/_story.md) |
 | W-00000297 | fix | claude | 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다 | active | Claude | [current/W-00000297/_story.md](current/W-00000297/_story.md) |
+| W-00000298 | qa | codex | 실제 codex 플러그인으로 codex 명령 경로 찾기를 확인한다 | active | codex | [current/W-00000298/_story.md](current/W-00000298/_story.md) |

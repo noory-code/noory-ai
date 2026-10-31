@@ -2,14 +2,19 @@
 id: W-00000298
 title: 실제 codex 플러그인으로 codex 명령 경로 찾기를 확인한다
 kind: qa
-venue:
+venue: codex
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/scripts/codex_companion.py, .stage/settings.json
+promotes:
+decision_refs:
 ---
 
 # W-00000298 실제 codex 플러그인으로 codex 명령 경로 찾기를 확인한다
@@ -40,3 +45,13 @@ scope: stage/scripts/codex_companion.py, .stage/settings.json
 - 로컬에서 codex 리뷰 한 번과 codex 실행 한 판이 codex_companion.py 를 거쳐 끝나고 판정 파일과 실행 보고가 남는다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
