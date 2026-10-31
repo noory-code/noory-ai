@@ -71,6 +71,30 @@ W-00000299는 W-00000295의 argv 검사가 자식 프로세스의 쓰기까지 �
 
 ## Progress
 
+2026-11-01 클라우드 세션에서 실제 `claude` 로 쟀다. CLI `2.1.316 (Claude Code)`, 권한 설정은 두 경로 모두
+`Edit(//<판정 파일>)` 과 `Bash(python3 -m unittest:*)` 다.
+
+고치기 전(대역 경로, 임시 저장소). 직접 쓰기는 막히고, 시험 코드의 쓰기는 다 통과했다.
+
+| 시도 | 결과 |
+|---|---|
+| Write 도구로 새 파일 | 거부 |
+| `echo hi > bash-write.txt` | 거부 |
+| `python3 -m unittest ... && touch chained.txt` | 명령 전체 거부 |
+| `python3 -m unittest discover -s tests -q` | 허용. import·setUp·본문에서 파일 셋을 만들고 추적 파일 하나를 고쳤다 |
+| 판정 파일 쓰기 | 허용 |
+
+고친 뒤(`stage/scripts/tests/test_claude_review_guard.py` 의 `LiveReviewerWriteProbeTest`,
+`STAGE_LIVE_REVIEW_PROBE=1` 일 때만 돈다). 두 경로 모두 시험 본문이 `tracked.txt` 를 고쳤다.
+
+| 경로 | 명령 | 종료 코드 | 남은 변경 | 판정 파일 |
+|---|---|---:|---|---|
+| cloud 대역 | `python3 stage/scripts/claude_review_companion.py "<시도 프롬프트>"` | 3 | ` M tracked.txt` (직접 쓰기 셋은 없음) | 지워짐 |
+| 프로젝트 `review.reviewers.claude` | `OUT=$(STAGE_CLAUDE_REVIEW_MODEL='opus[1m]' python3 stage/scripts/claude_review_companion.py "<프로젝트 리뷰 프롬프트>" 2>&1); ...` | 3 | ` M tracked.txt` | 지워짐, 로그에 경로가 남음 |
+
+프로젝트 경로의 첫 두 판은 시험 준비가 잘못되어 무효다. 카드와 로그를 프로젝트 밖에 두어 리뷰어가 읽지 못했고,
+복사한 파일을 커밋하지 않았다. 실제 위치(`.stage/work/…`, `.stage/.runtime/driver/logs/…`)로 옮겨 다시 쟀다.
+
 ## Verification
 
 ## Retrospective
