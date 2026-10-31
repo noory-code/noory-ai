@@ -79,7 +79,13 @@ of a range so another card's commits in between are left out.
 
    The stand-in lets the reviewer write only its verdict file, read the
    changed-path folder, and run `python3 -m unittest`; it may not edit project
-   files. Never write a verdict file by hand.
+   files. Those rules cover only the reviewer's own tool calls, and code the
+   tests run can still write, so the stand-in compares the repository before and
+   after the review: when any file other than the verdict changed, it removes the
+   verdict, names the paths, and exits 3, which fails the close review. Inspect
+   and discard those changes before closing again. The project's own Claude
+   reviewer command runs through the same stand-in. Never write a verdict file by
+   hand.
 4. State on the card's `## Verification` that the close review was a same-model
    review, not a cross-venue one.
 5. Copy the closed card and retrospective back to the branch and run
