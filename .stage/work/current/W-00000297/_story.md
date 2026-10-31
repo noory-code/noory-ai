@@ -2,14 +2,20 @@
 id: W-00000297
 title: 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다
 kind: fix
-venue:
+venue: claude
+environment: cloud
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/scripts/driver_lifecycle.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000297 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다
@@ -44,3 +50,13 @@ scope: stage/scripts/driver_lifecycle.py, stage/scripts/tests/test_drive.py, sta
 - 드라이버가 close_work 를 부를 때 바깥 제한 시간이 검사 시간과 리뷰 제한 시간을 함께 덮는다는 것을 테스트가 확인한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
