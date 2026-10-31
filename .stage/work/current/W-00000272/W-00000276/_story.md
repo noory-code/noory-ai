@@ -9,12 +9,12 @@ acceptance:
   - "python3 -m unittest discover -s avatar/tests -q"
   - "python3 -m unittest tests.test_plugin_contracts -q"
   - "git diff --check"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000276
+promotion: not_applicable
+review: passed
 scope: avatar/
 promotes:
 decision_refs:
@@ -84,16 +84,46 @@ SSOT, AHA, KISS, TDD, Honesty를 적용합니다. 부모의 사용자 합의가 
 
 2026-10-06: Codex CLI의 사용량 오류 뒤 사용자가 이 세션에서 직접 구현하도록 허용했습니다. 감독이 전용 worktree에서 구현과 검사를 이어갔습니다. Claude CLI로 독립 리뷰를 받았으며, 반려된 항목은 실패 시험으로 재현하고 수정했습니다. 드라이버의 완료 판정으로 보고하지 않습니다. 제품 커밋·푸시는 아직 하지 않았습니다.
 
+2026-10-31: 원래 제품 커밋 `04a3e7e2`(`codex/criteria-integration`)과 같은 변경(`git patch-id --stable` 일치)이 배포용 커밋 `d279c191` 로 `main` 에 들어가 있습니다. 닫기는 `d279c191` 을 HEAD 로 둔 임시 작업 공간에서 했습니다. `.stage/` 는 `c692799e` 상태로, 리뷰 명령은 W-00000286 커밋 `1ab2fdf5` 상태로 커밋하지 않고 덮어 썼습니다.
+
 ## Verification
 
 독립 실행·변경 이력·범위 제한·중복 입력을 검사하고 두 호스트에서 명시적인 스킬 호출을 확인합니다.
 
 2026-10-06: 실행 위치, 제품별 검사 수, 리뷰 원본과 한계는 [구현·검증 기록](../../../../research/llm-work/integration/implementation-status.md)에 모았습니다. 실제 두 호스트 인계와 제품 소스 보존이 남아 있어 이 카드를 완료로 바꾸지 않습니다.
 
+### Executed at close — 2026-10-31
+
+```
+$ python3 -m unittest discover -s avatar/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 24 tests in 4.124s
+
+OK
+
+$ python3 -m unittest tests.test_plugin_contracts -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+
+$ git diff --check
+[exit 0]
+
+```
+
+### Review at close — 2026-10-31
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000276.md
+```
+
 ## Retrospective
 
-첫 독립 기능과 연결 확인 뒤 작성합니다.
+[R-00000276](../../../retrospectives/R-00000276.md).
 
 ## Promotion decision
 
-pending
+이 카드는 결정이나 승격 경로를 소유하지 않으므로 `not_applicable`이다.

@@ -13,7 +13,6 @@
 | W-00000273 | design | claude | 각 플러그인이 독립적으로 동작하면서 같은 기준의 출처와 변경 이력을 잃지 않도록 연결 방법을 정합니다 | active | Claude | [current/W-00000272/W-00000273/_story.md](current/W-00000272/W-00000273/_story.md) |
 | W-00000274 | development | codex | 새 선택에서 적용 범위에 맞는 현재 기준과 그 근거를 사용할 수 있게 합니다 | active | Codex | [current/W-00000272/W-00000274/_story.md](current/W-00000272/W-00000274/_story.md) |
 | W-00000275 | development | codex | AI 세션이 바뀌어도 프로젝트의 목적과 현재 기준을 따라 남은 작업을 이어갈 수 있게 합니다 | active | Codex | [current/W-00000272/W-00000275/_story.md](current/W-00000272/W-00000275/_story.md) |
-| W-00000276 | development | codex | 사용자가 여러 프로젝트의 선택을 근거와 함께 돌아보고 개인 기준을 직접 확인하거나 고칠 수 있게 합니다 | active | Codex | [current/W-00000272/W-00000276/_story.md](current/W-00000272/W-00000276/_story.md) |
 | W-00000277 | qa | codex | 세 플러그인이 실제 AI 작업에서 기준을 적용하고 변경을 반영하며 선택의 이유를 남기는지 확인합니다 | active | Codex | [current/W-00000272/W-00000277/_story.md](current/W-00000272/W-00000277/_story.md) |
 | W-00000280 | planning | claude | 사용자가 여러 AI에서 남긴 선택을 돌아보며 자신의 기준을 알아가고 직접 고칩니다 | active | Codex | [current/W-00000272/W-00000280/_story.md](current/W-00000272/W-00000280/_story.md) |
 | W-00000281 | development | codex | 사용자가 Avatar 기록에서 자신을 돌아보고 닮고 싶은 작업 방식을 AI 규칙으로 가져갑니다 | active | Codex | [current/W-00000272/W-00000280/W-00000281.md](current/W-00000272/W-00000280/W-00000281.md) |
