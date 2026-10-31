@@ -383,8 +383,7 @@ class RegisterWorkTest(unittest.TestCase):
 
                 self.assertEqual(1, proc.returncode, proc.stdout)
                 self.assertIn("W-00000005: refusing", proc.stderr)
-                if not planned:
-                    self.assertIn("origin/parallel", proc.stderr)
+                self.assertIn("on branch origin/parallel", proc.stderr)
                 self.assertFalse(created)
 
     def test_rerun_of_a_local_card_also_on_a_branch_still_reconciles(self):

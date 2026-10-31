@@ -26,6 +26,7 @@
 - Record where a card runs in a new `environment:` field and declare per-environment venues in
   `environment_venues`, so cloud-run cards no longer need one venue exception decision each; add
   `operations/cloud-execution.md` and `stage/scripts/claude_review_companion.py` for the procedure.
+- Name the branch that already uses an id when refusing a planned-card registration too.
 
 ## 0.63.4 — 2026-10-11
 

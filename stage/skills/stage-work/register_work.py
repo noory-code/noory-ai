@@ -418,7 +418,13 @@ def register_backlog_card(stage_root: Path, args) -> int:
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
             return 2
         if int(match.group(1)) in numbers:
-            print(f"{args.id}: refusing — id is already used", file=sys.stderr)
+            other_branches = branch_record_numbers(stage_root.parent, "W").get(
+                int(match.group(1)), set()
+            )
+            where = (
+                f" on branch {', '.join(sorted(other_branches))}" if other_branches else ""
+            )
+            print(f"{args.id}: refusing — id is already used{where}", file=sys.stderr)
             return 1
         item_id = args.id
         item_path = (
