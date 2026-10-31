@@ -27,6 +27,8 @@
   `environment_venues`, so cloud-run cards no longer need one venue exception decision each; add
   `operations/cloud-execution.md` and `stage/scripts/claude_review_companion.py` for the procedure.
 - Name the branch that already uses an id when refusing a planned-card registration too.
+- Refuse to close with a promotion record the audit would reject (WORK027): close_work.py and the
+  audit now share one check, so `approved` or a `promoted` without existing paths cannot close.
 
 ## 0.63.4 — 2026-10-11
 
