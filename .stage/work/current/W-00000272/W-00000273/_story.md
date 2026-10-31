@@ -9,12 +9,12 @@ acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000273
 promotion: pending
 review: pending
 scope: .stage/research/llm-work/implementation-design.md, .stage/decisions/pending/
-promotes:
+promotes: .stage/official/decisions/records/DE-00000074.md
 decision_refs: DE-00000074
 ---
 
@@ -134,8 +134,8 @@ Stage 감사는 구조 검사입니다. 설계의 타당성과 소유자 승인�
 
 ## Retrospective
 
-설계 검토 뒤 작성합니다.
+[R-00000273](../../../retrospectives/R-00000273.md).
 
 ## Promotion decision
 
-pending — DE-00000074는 소유자 검토 뒤 `decided`로 바뀌었습니다. 구현과 실제 연결 검증 전이므로 공식 승격과 카드 종료는 아직 하지 않았습니다.
+2026-10-31 사용자 결정에 따라 DE-00000074 를 공식 기록으로 올린다. 닫은 뒤 `.stage/official/decisions/records/DE-00000074.md` 로 옮긴다.
