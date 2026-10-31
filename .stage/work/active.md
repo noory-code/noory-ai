@@ -18,3 +18,4 @@
 | W-00000288 | fix | codex | STATE001(audit_state_links)이 상태 기록의 work_items 를 진행 중·보관 카드에 | active | Claude | [current/W-00000288/_story.md](current/W-00000288/_story.md) |
 | W-00000300 | fix | claude | 실행자가 검사를 돌리지 않고 카드의 verification 같은 닫기 도구 몫의 칸을 손으로 바꿔 기록이 사 | active | Claude | [current/W-00000300/_story.md](current/W-00000300/_story.md) |
 | W-00000301 | fix | claude | 결정을 소유한 카드를 보관해도 대기 결정 목록이 옮겨진 카드를 가리켜 보관 직후 감사가 깨지지 않게 한다. | active | Claude | [current/W-00000301/_story.md](current/W-00000301/_story.md) |
+| W-00000302 | chore | claude | 리뷰 판정 JSON 의 기준별 검증 규칙이 두 곳에 따로 있어 한쪽만 고쳐지면 닫기와 드라이버가 같은 판정을 | active | Claude | [current/W-00000302/_story.md](current/W-00000302/_story.md) |
