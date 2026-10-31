@@ -11,7 +11,7 @@ status: completed
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000292
-promotion: approved
+promotion: deferred
 review: passed
 scope: stage/hooks/stage_paths.py, stage/hooks/stage_work.py, stage/skills/stage-work/register_work.py, stage/scripts/start_work.py, stage/scripts/audit_stage.py, stage/scripts/claude_review_companion.py, stage/scripts/tests/test_environment_venues.py, stage/operations/cloud-execution.md, stage/docs/SCHEMA_V4.md, stage/templates/v4/project-stage/settings.jsonc, .stage/settings.json, stage/CHANGELOG.md
 promotes:
@@ -160,4 +160,6 @@ Criteria:
 
 ## Promotion decision
 
-DE-00000082 는 정책 결정이므로 `approved`(승격 후보 승인)다. DE-00000083 은 일회성 venue 예외다.
+DE-00000082 는 정책 결정이지만 정착한 뒤 `official/canon` 으로 승격하므로 지금은 `deferred` 다.
+닫을 때 `approved` 로 닫았으나 승격 경로(`promotes:`)가 없어 감사가 WORK027 을 냈고, 실제 상태인
+`deferred` 로 바로잡았다. DE-00000083 은 일회성 venue 예외다.
