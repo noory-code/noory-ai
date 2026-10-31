@@ -16,3 +16,4 @@
 | W-00000281 | development | codex | 사용자가 Avatar 기록에서 자신을 돌아보고 닮고 싶은 작업 방식을 AI 규칙으로 가져갑니다 | active | Codex | [current/W-00000272/W-00000280/W-00000281.md](current/W-00000272/W-00000280/W-00000281.md) |
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
 | W-00000290 | fix | claude | 작업 로그가 없는 자리에서 커밋 본문에 쓴 실행 보고를 손으로 옮기다 칸이 잘리거나 틀리는 일을 막는다. | active | Claude | [current/W-00000290/_story.md](current/W-00000290/_story.md) |
+| W-00000291 | fix | claude | 여러 세션이 다른 브랜치에서 동시에 일해도 새 카드와 결정이 이미 쓰인 번호를 다시 쓰지 않게 한다. | active | Claude | [current/W-00000291/_story.md](current/W-00000291/_story.md) |
