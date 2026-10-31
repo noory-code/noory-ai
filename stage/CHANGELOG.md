@@ -29,6 +29,8 @@
 - Name the branch that already uses an id when refusing a planned-card registration too.
 - Refuse to close with a promotion record the audit would reject (WORK027): close_work.py and the
   audit now share one check, so `approved` or a `promoted` without existing paths cannot close.
+- Give the project's claude reviewer and the cloud stand-in only the permissions a review needs: write
+  the verdict file, read the changed-path folder, and run unittest, without project-file edits.
 
 ## 0.63.4 — 2026-10-11
 

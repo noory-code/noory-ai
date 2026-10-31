@@ -4,11 +4,11 @@
 A session without Codex (a cloud session) can still run the project's configured
 Codex review commands unchanged: point `STAGE_CODEX_COMPANION` at this script and
 `codex_companion.py` hands it the companion's arguments. The prompt is the last
-argument; the Codex-only flags before it are ignored. The reviewer gets
-`--permission-mode acceptEdits` so it can write `$STAGE_REVIEW_VERDICT_FILE`, and
-`--add-dir` for the folder of `$STAGE_CHANGED_PATHS_FILE`, which lives outside the
-project. The result is a same-model review, never a cross-venue one; the
-cloud-execution procedure requires the card to say so.
+argument; the Codex-only flags before it are ignored. The reviewer may write only
+`$STAGE_REVIEW_VERDICT_FILE` and run `python3 -m unittest`, and gets `--add-dir` for
+the folder of `$STAGE_CHANGED_PATHS_FILE`, which lives outside the project; it may
+not edit project files. The result is a same-model review, never a cross-venue one;
+the cloud-execution procedure requires the card to say so.
 
 Usage (from the project root):
     STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py \\
@@ -30,16 +30,24 @@ DEFAULT_MODEL = "opus[1m]"
 def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> list[str]:
     if not argv:
         raise ValueError("expected the review prompt as the last argument")
+    verdict_file = environ.get("STAGE_REVIEW_VERDICT_FILE", "")
+    if not verdict_file:
+        raise ValueError("STAGE_REVIEW_VERDICT_FILE is required")
     command = [claude, "-p"]
     changed_paths = environ.get("STAGE_CHANGED_PATHS_FILE", "")
     if changed_paths:
-        # --add-dir takes several values, so it must not sit right before the prompt.
         command += ["--add-dir", str(Path(changed_paths).parent)]
+    # A leading `//` makes a permission rule path absolute.
+    verdict_rule = "/" + Path(verdict_file).resolve().as_posix()
     command += [
         "--model",
         environ.get(MODEL_ENV) or DEFAULT_MODEL,
-        "--permission-mode",
-        "acceptEdits",
+        "--allowedTools",
+        f"Write({verdict_rule})",
+        f"Edit({verdict_rule})",
+        "Bash(python3 -m unittest:*)",
+        # --add-dir and --allowedTools take several values; `--` ends them before the prompt.
+        "--",
         argv[-1],
     ]
     return command

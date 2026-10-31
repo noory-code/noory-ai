@@ -73,8 +73,9 @@ paths, and appends it to the work log only when it passes.
      --check "<suite>" --promotion <final-choice>
    ```
 
-   The stand-in gives the reviewer write access for its verdict file and read
-   access for the changed-path file. Never write a verdict file by hand.
+   The stand-in lets the reviewer write only its verdict file, read the
+   changed-path folder, and run `python3 -m unittest`; it may not edit project
+   files. Never write a verdict file by hand.
 4. State on the card's `## Verification` that the close review was a same-model
    review, not a cross-venue one.
 5. Copy the closed card and retrospective back to the branch and run

@@ -66,6 +66,10 @@
   // criteria plus previously passing criteria affected by the changed paths, and
   // write only criteria judged in this round; the driver merges the prior verdict.
   // Without those prior-review inputs, review every success criterion.
+  // A non-interactive claude -p reviewer needs explicit permissions: put --add-dir with the folder of
+  // $STAGE_CHANGED_PATHS_FILE and --allowedTools with Write and Edit rules for the absolute path
+  // /$STAGE_REVIEW_VERDICT_FILE plus Bash(python3 -m unittest:*), then -- before the prompt.
+  // Do not grant edits to project files.
   // Read the non-empty Decisions made: and Work not done: fields in the latest executor report and judge whether the purpose and scope-boundary reporting contract was followed.
   // When a criterion fails on example inputs, name in its reason the kind of input those
   // examples belong to, so the next executor round can fix the whole kind.

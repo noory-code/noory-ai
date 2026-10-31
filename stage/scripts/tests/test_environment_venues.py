@@ -147,37 +147,50 @@ class EnvironmentVenuePolicyTest(unittest.TestCase):
 
 
 class ClaudeReviewCompanionTest(unittest.TestCase):
-    def test_builds_a_permitted_claude_review_with_the_prompt_last(self):
-        command = claude_review_companion.claude_command(
-            ["task", "--model", "gpt-6-astra", "--write", "Review the card."],
-            {"STAGE_CHANGED_PATHS_FILE": "/tmp/review-x/changed-paths.json"},
-            "claude",
-        )
+    def test_allows_only_the_verdict_file_and_unittest_with_the_prompt_last(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            verdict = Path(tmp) / "verdict.json"
+            command = claude_review_companion.claude_command(
+                ["task", "--model", "gpt-6-astra", "--write", "Review the card."],
+                {
+                    "STAGE_CHANGED_PATHS_FILE": str(Path(tmp) / "review-x/changed-paths.json"),
+                    "STAGE_REVIEW_VERDICT_FILE": str(verdict),
+                },
+                "claude",
+            )
+            rule = "/" + verdict.resolve().as_posix()
 
         self.assertEqual(
             [
                 "claude",
                 "-p",
                 "--add-dir",
-                str(Path("/tmp/review-x")),
+                str(Path(tmp) / "review-x"),
                 "--model",
                 "opus[1m]",
-                "--permission-mode",
-                "acceptEdits",
+                "--allowedTools",
+                f"Write({rule})",
+                f"Edit({rule})",
+                "Bash(python3 -m unittest:*)",
+                "--",
                 "Review the card.",
             ],
             command,
         )
+        self.assertNotIn("acceptEdits", command)
+        self.assertNotIn("--permission-mode", command)
 
-    def test_model_override_and_no_changed_path_file(self):
+    def test_model_override_and_missing_inputs(self):
         command = claude_review_companion.claude_command(
-            ["Review."], {"STAGE_CLAUDE_REVIEW_MODEL": "sonnet"}, "claude"
+            ["Review."],
+            {"STAGE_CLAUDE_REVIEW_MODEL": "sonnet", "STAGE_REVIEW_VERDICT_FILE": "/v.json"},
+            "claude",
         )
 
-        self.assertEqual(
-            ["claude", "-p", "--model", "sonnet", "--permission-mode", "acceptEdits", "Review."],
-            command,
-        )
+        self.assertEqual("sonnet", command[command.index("--model") + 1])
+        self.assertNotIn("--add-dir", command)
+        with self.assertRaisesRegex(ValueError, "STAGE_REVIEW_VERDICT_FILE"):
+            claude_review_companion.claude_command(["Review."], {}, "claude")
 
     def test_codex_companion_runs_a_python_stand_in_without_node(self):
         with tempfile.TemporaryDirectory() as tmp:

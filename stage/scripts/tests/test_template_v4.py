@@ -2,6 +2,10 @@
 
 import importlib.util
 import json
+import os
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -139,6 +143,57 @@ class TemplateV4Test(unittest.TestCase):
                 else:
                     self.assertIn("--model gpt-6-astra --effort high", command)
                     self.assertNotIn("--model gpt-6-sol", command)
+
+    @unittest.skipIf(sys.platform == "win32", "the project review commands use POSIX shell syntax")
+    def test_project_claude_reviewer_may_write_only_its_verdict_file(self):
+        command = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))["review"]["reviewers"][
+            "claude"
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            fake = bin_dir / "claude"
+            fake.write_text(
+                f"#!{sys.executable}\n"
+                "import json, os, sys\n"
+                "open(os.environ['FAKE_ARGV'], 'w').write(json.dumps(sys.argv[1:]))\n",
+                encoding="utf-8",
+            )
+            fake.chmod(0o755)
+            review_tmp = root / "review-tmp"
+            review_tmp.mkdir()
+            verdict = root / "verdicts" / "W-1.json"
+            env = {
+                **os.environ,
+                "PATH": f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}",
+                "FAKE_ARGV": str(root / "argv.json"),
+                "STAGE_CHANGED_PATHS_FILE": str(review_tmp / "changed-paths.json"),
+                "STAGE_REVIEW_VERDICT_FILE": str(verdict),
+                "STAGE_WORK_LOG_PATH": str(root / "log.md"),
+                "STAGE_WORK_ITEM_PATH": str(root / "card.md"),
+            }
+
+            subprocess.run(command, shell=True, env=env, capture_output=True, text=True)
+            argv = json.loads((root / "argv.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            [
+                "-p",
+                "--add-dir",
+                str(review_tmp),
+                "--model",
+                "opus[1m]",
+                "--allowedTools",
+                f"Write(/{verdict})",
+                f"Edit(/{verdict})",
+                "Bash(python3 -m unittest:*)",
+                "--",
+            ],
+            argv[:-1],
+        )
+        self.assertTrue(argv[-1].startswith("You are an independent code reviewer."))
+        self.assertNotIn("acceptEdits", command)
 
     def test_project_review_strengths_can_write_verdict_files(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
