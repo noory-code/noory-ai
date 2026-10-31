@@ -818,6 +818,148 @@ class CloseWorkTest(unittest.TestCase):
                 ).read_text(encoding="utf-8"),
             )
 
+    def test_passing_review_records_each_criterion_verdict_and_reason_on_card(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            reviewer = python_command(
+                "import json, os\n"
+                "from pathlib import Path\n"
+                "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps({"
+                "'criteria': ["
+                "{'criterion': 'Archive keeps evidence files', 'verdict': 'PASS', "
+                "'reason': 'test_archive_work covers each file kind'}, "
+                "{'criterion': 'Docs match the code', 'verdict': 'PASS', "
+                "'reason': 'review.md names the ``` fenced block'}"
+                "], 'approved': True}), encoding='utf-8')"
+            )
+            self._write_review(
+                root,
+                {"strengths": {"standard": reviewer}, "stages": {"implementation": "standard"}},
+                add_verdict=False,
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        review_block = item.split(f"### Review at close — {date.today().isoformat()}", 1)[1]
+        self.assertIn(
+            "Criteria:\n"
+            "- PASS: Archive keeps evidence files\n"
+            "  Reason: test_archive_work covers each file kind\n"
+            "- PASS: Docs match the code\n"
+            "  Reason: review.md names the ``\u200b` fenced block\n"
+            "```",
+            review_block,
+        )
+        self.assertEqual(2, review_block.count("```"))
+
+    def review_path_cases(self, command: str) -> tuple[tuple[str, dict, dict], ...]:
+        return (
+            (
+                "review pending",
+                {"review": "pending"},
+                {"strengths": {"standard": command}, "stages": {"implementation": "standard"}},
+            ),
+            ("autonomous independent review", {"autonomous": "true"}, {"reviewers": {"claude": command}}),
+        )
+
+    def test_review_gets_its_own_timeout_longer_than_the_check_timeout(self):
+        command = python_command("import time; time.sleep(2); print('slow review done')")
+        for label, item_fields, review in self.review_path_cases(command):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review)
+
+                    proc = run(root, "W-00000001", "--check", "true", "--timeout", "1")
+                    item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                        encoding="utf-8"
+                    )
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("review: passed", item)
+                self.assertIn("status: completed", item)
+
+    def test_review_timeout_argument_bounds_the_review_command(self):
+        command = python_command("import time; time.sleep(5)")
+        for label, item_fields, review in self.review_path_cases(command):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review, add_verdict=False)
+
+                    proc = run(
+                        root, "W-00000001", "--check", "true", "--review-timeout", "1"
+                    )
+                    item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                        encoding="utf-8"
+                    )
+
+                self.assertEqual(1, proc.returncode, proc.stderr)
+                self.assertIn("review did not pass", proc.stderr)
+                self.assertIn("[TIMED OUT after 1s] (--review-timeout)", proc.stderr)
+                self.assertIn("status: active", item)
+
+    def test_check_timeout_argument_bounds_checks_not_reviews(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {"standard": python_command("print('review not reached')")},
+                    "stages": {"implementation": "standard"},
+                },
+            )
+
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                python_command("import time; time.sleep(5)"),
+                "--timeout",
+                "1",
+                "--review-timeout",
+                "3600",
+            )
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode, proc.stderr)
+        self.assertIn("check failed", proc.stderr)
+        self.assertIn("[TIMED OUT after 1s] (--timeout)", proc.stderr)
+        self.assertIn("status: active", item)
+
+    def test_timeouts_default_to_900_for_checks_and_3600_for_reviews(self):
+        for label, item_fields, review in self.review_path_cases(python_command("print(1)")):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review)
+                    close_work = load_close_module()
+                    real_run_check = close_work.run_check
+                    calls: list[tuple[str, int]] = []
+
+                    def recording_run_check(command, timeout, cwd, env=None, timeout_source=""):
+                        calls.append(("review" if env is not None else "check", timeout))
+                        return real_run_check(
+                            command, timeout, cwd, env=env, timeout_source=timeout_source
+                        )
+
+                    argv = ["close_work.py", "--project-root", str(root), "W-00000001"]
+                    with mock.patch.object(
+                        close_work, "run_check", recording_run_check
+                    ), mock.patch.object(
+                        sys, "argv", [*argv, "--check", "true"]
+                    ), mock.patch("sys.stdout"), mock.patch("sys.stderr"):
+                        exit_code = close_work.main()
+
+                self.assertEqual(0, exit_code)
+                self.assertEqual([("check", 900), ("review", 3600)], calls)
+
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (
             (
@@ -1065,6 +1207,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: kept exactly one `### Executor report` section\n"
             "Why: the marker mention is ordinary report prose\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n"
             "[]\n"
             "Review request: verify the report shape\n"
@@ -1084,6 +1228,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: changed the implementation and reported the shared log\n"
             "Why: the driver owns and already knows the shared log path\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n"
             + json.dumps([work_log_path, "stage/scripts/drive.py"])
             + "\n"
@@ -1114,6 +1260,8 @@ class CloseWorkTest(unittest.TestCase):
             + "\n### Executor report\n"
             "What changed: declined the finding\n"
             "Why: the reported situation does not occur\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
             "Changed paths (JSON):\n[]\n"
             "Review dispositions (JSON):\n"
             + json.dumps(
@@ -1136,6 +1284,124 @@ class CloseWorkTest(unittest.TestCase):
         )
 
         self.assertIn("requires a non-empty one-line reason", error)
+
+    def test_executor_report_requires_decisions_and_work_not_done(self):
+        close_work = load_close_module()
+        previous = "work log preamble\n"
+        complete = (
+            "\n### Executor report\n"
+            "What changed: changed one file\n"
+            "Why: satisfy the card\n"
+            "Decisions made: None\n"
+            "Work not done: None\n"
+            "Changed paths (JSON):\n[]\n"
+            "Review request: verify the report shape\n"
+        )
+        for label in ("Decisions made", "Work not done"):
+            for broken in (
+                complete.replace(f"{label}: None\n", ""),
+                complete.replace(f"{label}: None\n", f"{label}:\n"),
+            ):
+                with self.subTest(label=label, report=broken):
+                    self.assertEqual(
+                        f"executor work log report is missing non-empty `{label}:`",
+                        close_work.executor_report_error(previous, previous + broken, []),
+                    )
+
+    def write_progress_card_and_log(self, root: Path, log: str | None) -> Path:
+        item = root / ".stage/work/current/W-00000001/_story.md"
+        item.write_text(
+            item.read_text(encoding="utf-8").replace(
+                "## Verification\n", "## Progress\n\nOperator note.\n\n## Verification\n"
+            ),
+            encoding="utf-8",
+        )
+        if log is not None:
+            log_path = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            log_path.parent.mkdir(parents=True)
+            log_path.write_text(log, encoding="utf-8")
+        return item
+
+    def test_close_copies_the_last_executor_report_onto_the_card_progress(self):
+        tmp, root = self.make()
+        with tmp:
+            item = self.write_progress_card_and_log(
+                root,
+                "# Stage work log\n"
+                "\n### Executor report\n"
+                "What changed: first round output\n"
+                "Why: first round reason\n"
+                "Decisions made: chose a list over a table\n"
+                "Work not done: None\n"
+                "Changed paths (JSON):\n[\"a.txt\"]\n"
+                "Review request: review round one\n"
+                "\n### Reviewer report\n"
+                "Decisions made: reviewer prose must not be copied\n"
+                "\n### Executor report\n"
+                "What changed: second round fixed the failed criterion\n"
+                "Why: the reviewer found a missing ``` fence escape\n"
+                "Decisions made: kept the list format from round one; escaped fences\n"
+                "Work not done: None\n"
+                "Changed paths (JSON):\n[\"a.txt\"]\n"
+                "Review dispositions (JSON):\n[]\n"
+                "Review request: review round two\n"
+                "\n### Reviewer report\n"
+                "APPROVED\n",
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            text = item.read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        progress = text.split("## Progress\n", 1)[1].split("\n## Verification\n", 1)[0]
+        self.assertIn(
+            "Operator note.\n\n"
+            f"### Executor report at close — {date.today().isoformat()}\n\n"
+            "```\n"
+            "What changed: second round fixed the failed criterion\n"
+            "Why: the reviewer found a missing ``\u200b` fence escape\n"
+            "Decisions made: kept the list format from round one; escaped fences\n"
+            "Work not done: None\n"
+            "```\n",
+            progress,
+        )
+        for absent in ("first round", "reviewer prose", "Changed paths", "Review request"):
+            self.assertNotIn(absent, progress)
+        self.assertNotIn("Executor report at close", text.split("## Verification\n", 1)[1])
+
+    def test_close_without_an_executor_report_leaves_progress_alone(self):
+        for log in (None, "# Stage work log\n\nNo report yet.\n"):
+            with self.subTest(log=log):
+                tmp, root = self.make()
+                with tmp:
+                    item = self.write_progress_card_and_log(root, log)
+
+                    proc = run(root, "W-00000001", "--check", "true")
+                    text = item.read_text(encoding="utf-8")
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("## Progress\n\nOperator note.\n\n## Verification\n", text)
+                self.assertNotIn("Executor report at close", text)
+
+    def test_close_refuses_a_report_without_a_progress_section(self):
+        tmp, root = self.make()
+        with tmp:
+            log_path = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            log_path.parent.mkdir(parents=True)
+            log_path.write_text(
+                "\n### Executor report\nWhat changed: x\nWhy: y\n"
+                "Decisions made: None\nWork not done: None\n",
+                encoding="utf-8",
+            )
+            item = root / ".stage/work/current/W-00000001/_story.md"
+            before = item.read_text(encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", "true")
+            after = item.read_text(encoding="utf-8")
+
+        self.assertEqual(1, proc.returncode, proc.stderr)
+        self.assertIn("no '## Progress' section", proc.stderr)
+        self.assertEqual(before, after)
 
     def review_committed_paths_command(self) -> str:
         return python_command(
@@ -1351,6 +1617,9 @@ class CloseWorkTest(unittest.TestCase):
             item,
         )
         self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn(
+            "- PASS: criterion\n  Reason: test reviewer inspected the inputs", item
+        )
         self.assertIn("independent verdict retained", log)
         self.assertNotIn("same venue should not run", item)
 

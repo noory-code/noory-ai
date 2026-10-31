@@ -8,12 +8,12 @@ autonomous: false
 acceptance:
   - "python3 .stage/research/llm-work/integration/verify_integration.py --require-real-hosts"
   - "git diff --check"
-status: active
-verification: pending
-retrospective: pending
+status: completed
+verification: passed
+retrospective: completed
 retrospective_ref: R-00000277
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: .stage/research/llm-work/integration/, .stage/research/llm-work/findings/
 promotes:
 decision_refs:
@@ -180,11 +180,29 @@ Stage 구조 검사는 오류 0개와 기존 보관 카드의 경고 32개입니
 
 2026-10-06: [구현·검증 기록](../../../../research/llm-work/integration/implementation-status.md)에서 실행한 검사와 남은 검증을 구별합니다. --require-real-hosts는 실제 실행 기록이 없을 때 실패해야 합니다.
 
+### Executed at close — 2026-10-31
+
+```
+$ python3 .stage/research/llm-work/integration/verify_integration.py --require-real-hosts
+[exit 0]
+{"cli_contract": "passed", "commands": 27, "real_hosts": "required evidence checked"}
+
+$ git diff --check
+[exit 0]
+
+```
+
+### Review at close — 2026-10-31
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000277.md
+```
+
 ## Retrospective
 
 [R-00000277](../../../retrospectives/R-00000277.md)에 원본 보존, 검사기 누락, 후속 시험과 시간 제한을 적었습니다.
-새 시험의 전체 검사와 독립 리뷰, 검사기 보완 확인을 마쳤습니다. 제품 소스를 커밋했으며 카드의 완료 절차가 남았습니다.
+2026-10-31 회고의 승격 판단을 마무리하고 닫았습니다. 닫기 리뷰는 커밋 `cad886eb` 를 대상으로 했고, `.stage/` 는 `c692799e` 상태로, 리뷰 명령은 W-00000286 커밋 `1ab2fdf5` 상태로 커밋하지 않고 덮어 썼습니다.
 
 ## Promotion decision
 
-pending
+이 카드는 결정이나 승격 경로를 소유하지 않으므로 `not_applicable`이다.

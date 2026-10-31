@@ -30,6 +30,8 @@
   // After every declared promotion path has been written, use 'promoted' so the audit can distinguish choosing promotion from completing it.
   // Add non-empty single-line Decisions made: and Work not done: fields to the executor report.
   // Use None when there is nothing to report for a field.
+  // Decisions made: in every attempt restates each earlier decision still in effect,
+  // because close copies only the latest report onto the card.
   // Read failed criteria from the JSON object at $STAGE_REVIEW_VERDICT_FILE and use
   // each exact criterion string in Review dispositions (JSON).
   // When you accept a failed criterion that quotes example inputs, name the kind of input the

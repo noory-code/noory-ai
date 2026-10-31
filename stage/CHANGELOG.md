@@ -2,11 +2,19 @@
 
 ## Unreleased
 
-- Pin the project's six Codex driver commands to `gpt-6-sol` so they do not use the home default.
+- Pin the project's six Codex driver commands to `gpt-6-astra` at high effort so they do not use
+  the home default, and let the close-time review profiles write their verdict files.
 - Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
   kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
 - Carry every non-record file in an archived card folder, at any depth, into the archive byte for
   byte instead of deleting it with the folder.
+- Record every criterion of the passing review verdict, with its reason, in the card's
+  `## Verification` at close, because the work log and verdict file are not committed.
+- Give close reviews their own `--review-timeout` (default 3600 seconds) so a high-effort review
+  no longer fails at the 900-second per-check budget; the driver keeps its single bound.
+- Copy the latest executor report's decisions and undone work onto the card's `## Progress` at
+  close, require both fields in every report, and ask executors to restate decisions still in
+  effect, so executor choices outlive the uncommitted work log.
 
 ## 0.63.4 — 2026-10-11
 

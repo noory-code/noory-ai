@@ -7,7 +7,8 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest stage.scripts.tests.test_template_v4 -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000285

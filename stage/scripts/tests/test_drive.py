@@ -30,6 +30,8 @@ def reporting_python_command(code: str, changed_paths: list[str]) -> str:
         "'\\n### Executor report\\n"
         "What changed: test executor changed its declared paths\\n"
         "Why: exercise the driver contract\\n"
+        "Decisions made: None\\n"
+        "Work not done: None\\n"
         "Changed paths (JSON):\\n' + "
         f"json.dumps({changed_paths!r}) + "
         "'\\nReview request: review every success criterion\\n', encoding='utf-8')"
@@ -74,6 +76,8 @@ def cumulative_retry_executor_command(marker: Path) -> str:
         "report = ('\\n### Executor report\\n"
         "What changed: completed round ' + str(round_number) + '\\n"
         "Why: exercise cumulative card reporting\\n"
+        "Decisions made: None\\n"
+        "Work not done: None\\n"
         "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n"
         "Review request: review the cumulative card output\\n')\n"
         "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
@@ -116,6 +120,8 @@ def narrowing_executor_command(marker: Path) -> str:
         "report = ('\\n### Executor report\\n"
         "What changed: completed review round ' + str(round_number) + '\\n"
         "Why: exercise narrowed re-review inputs\\n"
+        "Decisions made: None\\n"
+        "Work not done: None\\n"
         "Changed paths (JSON):\\n' + json.dumps(changed_paths) + '\\n')\n"
         "if round_number > 1:\n"
         "    report += ('Review dispositions (JSON):\\n' + json.dumps([{\n"
@@ -462,6 +468,22 @@ class DriveTest(unittest.TestCase):
         command = run.call_args.args[0]
         promotion_index = command.index("--promotion") + 1
         self.assertEqual("not_applicable", command[promotion_index])
+
+    def test_close_bounds_the_review_by_the_driver_command_timeout(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        write_card(root / ".stage", "W-00000001", promotion="deferred")
+        drive = self.load_module()
+        completed = subprocess.CompletedProcess([], 0, "closed\n", "")
+
+        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+            closed, output = drive.close_via_close_work(root, "W-00000001", [], 30)
+
+        self.assertTrue(closed, output)
+        command = run.call_args.args[0]
+        self.assertEqual("30", command[command.index("--timeout") + 1])
+        self.assertEqual("30", command[command.index("--review-timeout") + 1])
+        self.assertEqual(90, run.call_args.kwargs["timeout"])
 
     def test_driver_retrospective_ids_follow_work_items_across_isolated_projects(self):
         drive = self.load_module()
@@ -2983,6 +3005,8 @@ class DriveTest(unittest.TestCase):
             "report = ('\\n### Executor report\\n"
             "What changed: declined the pending fictional-host finding\\n"
             "Why: that host cannot run this project\\n"
+            "Decisions made: None\\n"
+            "Work not done: None\\n"
             "Changed paths (JSON):\\n[]\\n"
             "Review dispositions (JSON):\\n' + "
             f"json.dumps([{{'finding': {finding!r}, 'disposition': 'decline', "

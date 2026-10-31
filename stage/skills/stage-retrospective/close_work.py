@@ -20,7 +20,7 @@ Usage:
     close_work.py --project-root . W-00000008 \
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
-        [--promotion <final-choice>] [--timeout 900]
+        [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600]
 """
 
 from __future__ import annotations
@@ -70,6 +70,9 @@ PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "reject
 _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 MAX_LINES = 40
 MAX_BYTES = 4000
+# A reviewer reads the card, the log, and every changed path at high reasoning
+# effort, so it gets its own budget instead of the per-check one.
+DEFAULT_REVIEW_TIMEOUT = 3600
 WORK_LOG_RELATIVE_DIR = Path(".stage/.runtime/driver/logs")
 REVIEW_VERDICT_RELATIVE_DIR = Path(".stage/.runtime/driver/verdicts")
 WORK_LOG_PREAMBLE = """\
@@ -77,12 +80,17 @@ WORK_LOG_PREAMBLE = """\
 
 ## 책임 경계
 
-이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 성공 기준별 판정을
+이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 시도별 판정을
 소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
-`## Retrospective`, `## Promotion decision`을 소유한다. 같은 사실을 두 파일에 복제하지 않고
-서로의 소유 사실은 경로로 참조한다.
+`## Retrospective`, `## Promotion decision`을 소유한다. 닫기를 통과시킨 리뷰의 성공 기준별
+판정과 까닭은 카드의 `## Verification`이, 승인된 마지막 판 실행 보고의 `What changed`·`Why`·
+`Decisions made`·`Work not done` 네 줄은 카드의 `## Progress`가 소유한다. 이 로그는 커밋되지 않는
+`.stage/.runtime/` 아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유
+사실은 경로로 참조한다.
 """
 EXECUTOR_REPORT_MARKER = "### Executor report"
+# The report lines close copies onto the card; the rest of a report is attempt-local.
+CARD_REPORT_LABELS = ("What changed", "Why", "Decisions made", "Work not done")
 REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
 
 
@@ -295,6 +303,39 @@ def review_verdict_error(path: Path) -> str:
     return ""
 
 
+def review_criteria_evidence(path: Path) -> str:
+    """Render each criterion of the passing verdict for the card's committed record."""
+
+    verdict, error = load_review_verdict(path)
+    if error or verdict is None:
+        raise RuntimeError(error or "review verdict is missing")
+    criteria = verdict["criteria"]
+    assert isinstance(criteria, list)
+    return "\n".join(
+        f"- {entry['verdict']}: {fence_safe(entry['criterion'])}\n"
+        f"  Reason: {fence_safe(entry['reason'])}"
+        for entry in criteria
+    )
+
+
+def latest_executor_report_lines(log_text: str) -> list[str]:
+    """Return the card-owned lines of the last executor report, in contract order."""
+
+    starts = section_marker_starts(log_text, EXECUTOR_REPORT_MARKER)
+    if not starts:
+        return []
+    _marker, _newline, body = log_text[starts[-1] :].partition("\n")
+    next_heading = re.search(r"(?m)^#{1,6}[ \t]", body)
+    if next_heading:
+        body = body[: next_heading.start()]
+    lines = []
+    for label in CARD_REPORT_LABELS:
+        match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+?)[ \t]*\r?$", body)
+        if match and match.group(1).strip():
+            lines.append(f"{label}: {fence_safe(match.group(1).strip())}")
+    return lines
+
+
 def review_verdict_failures(path: Path) -> list[str]:
     verdict, error = load_review_verdict(path)
     if error or verdict is None:
@@ -335,7 +376,7 @@ def executor_report_error(
     addition = current_log[len(previous_log) :]
     if len(section_marker_starts(addition, EXECUTOR_REPORT_MARKER)) != 1:
         return "executor must append exactly one `### Executor report` per attempt"
-    for label in ("What changed", "Why", "Review request"):
+    for label in (*CARD_REPORT_LABELS, "Review request"):
         match = re.search(rf"(?m)^{re.escape(label)}:[ \t]*(.+)$", addition)
         if not match or not match.group(1).strip():
             return f"executor work log report is missing non-empty `{label}:`"
@@ -458,8 +499,12 @@ def executor_review_dispositions(
     return dispositions, ""
 
 
+def fence_safe(text: str) -> str:
+    return _CTRL_RE.sub("", text).replace("```", "``​`")  # don't break the evidence fence
+
+
 def clip(output: str) -> str:
-    cleaned = _CTRL_RE.sub("", output).replace("```", "``​`")  # don't break the evidence fence
+    cleaned = fence_safe(output)
     lines = cleaned.splitlines()
     clipped = lines[-MAX_LINES:]
     text = "\n".join(clipped)
@@ -507,6 +552,7 @@ def run_check(
     timeout: int,
     cwd: Path,
     env: dict[str, str] | None = None,
+    timeout_source: str = "",
 ) -> tuple[bool, str, str]:
     # Returns (ok, evidence_block, raw_output). cwd is the project root so a
     # check's relative paths resolve the same way whatever directory close_work
@@ -522,7 +568,8 @@ def run_check(
             env=env,
         )
     except subprocess.TimeoutExpired:
-        msg = f"$ {command}\n[TIMED OUT after {timeout}s]"
+        source = f" ({timeout_source})" if timeout_source else ""
+        msg = f"$ {command}\n[TIMED OUT after {timeout}s]{source}"
         return False, msg, msg
     output = (proc.stdout or "") + (proc.stderr or "")
     header = f"$ {command}\n[exit {proc.returncode}]"
@@ -592,6 +639,12 @@ def main() -> int:
         help="Reserve a retrospective file from the project template, print its id, and exit.",
     )
     parser.add_argument("--timeout", type=int, default=900, help="Per-check timeout in seconds.")
+    parser.add_argument(
+        "--review-timeout",
+        type=int,
+        default=DEFAULT_REVIEW_TIMEOUT,
+        help=f"Review command timeout in seconds (default: {DEFAULT_REVIEW_TIMEOUT}).",
+    )
     parser.add_argument("--review-stage", default="implementation", help="settings.json review stage whose command runs at close.")
     args = parser.parse_args()
 
@@ -807,7 +860,9 @@ def main() -> int:
     project_root = stage_root.parent
     verification_blocks: list[str] = []
     for command in checks:
-        ok, block, _raw = run_check(command, args.timeout, project_root)
+        ok, block, _raw = run_check(
+            command, args.timeout, project_root, timeout_source="--timeout"
+        )
         verification_blocks.append(block)
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
@@ -850,9 +905,10 @@ def main() -> int:
                 )
                 ok, block, _raw = run_check(
                     review_command,
-                    args.timeout,
+                    args.review_timeout,
                     project_root,
                     env=review_environment,
+                    timeout_source="--review-timeout",
                 )
         except RuntimeError as exc:
             print(
@@ -892,9 +948,10 @@ def main() -> int:
                 )
                 ok, block, _raw = run_check(
                     review_command,
-                    args.timeout,
+                    args.review_timeout,
                     project_root,
                     env=review_environment,
+                    timeout_source="--review-timeout",
                 )
         except RuntimeError as exc:
             print(
@@ -923,12 +980,48 @@ def main() -> int:
         + "\n```"
     )
     if review_passed:
+        try:
+            criteria_evidence = review_criteria_evidence(
+                review_verdict_path(stage_root, work_item.item_id)
+            )
+        except RuntimeError as exc:
+            print(
+                f"{args.item}: cannot record review criteria: {exc}; work item unchanged",
+                file=sys.stderr,
+            )
+            return 1
         evidence += (
             f"\n\n### {review_heading} — {close_date}\n\n```\n"
-            f"Review report: {work_log_reference(work_item.item_id)}\n```"
+            f"Review report: {work_log_reference(work_item.item_id)}\n"
+            f"Criteria:\n{criteria_evidence}\n```"
         )
+    log_path = work_log_path(stage_root, work_item.item_id)
+    try:
+        report_lines = (
+            latest_executor_report_lines(read_work_log(log_path))
+            if log_path.is_file()
+            else []
+        )
+    except RuntimeError as exc:
+        print(f"{args.item}: {exc}; work item unchanged", file=sys.stderr)
+        return 1
+    if report_lines and "## Progress\n" not in text:
+        print(
+            f"{args.item}: no '## Progress' section to record the executor report into; "
+            "work item unchanged",
+            file=sys.stderr,
+        )
+        return 1
     try:
         updated = append_to_section(text, "Verification", evidence)
+        if report_lines:
+            updated = append_to_section(
+                updated,
+                "Progress",
+                f"### Executor report at close — {close_date}\n\n```\n"
+                + "\n".join(report_lines)
+                + "\n```",
+            )
         updated = set_field(updated, "verification", "passed")
         updated = set_field(updated, "promotion", promotion)
         if review_passed:
