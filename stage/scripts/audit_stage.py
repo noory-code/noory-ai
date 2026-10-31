@@ -1709,6 +1709,23 @@ class Audit:
                 continue
             venue = (audited_item.fields.get("venue") or "").strip()
             routed = routing.get(item.kind, "")
+            environment = (audited_item.fields.get("environment") or "").strip()
+            environment_error = (
+                stage_work.environment_venue_error(
+                    self.stage_root,
+                    environment,
+                    venue,
+                    audited_item.fields.get("review") or "",
+                )
+                if environment
+                else ""
+            )
+            if environment_error:
+                self.error(
+                    "VENUE006",
+                    f"Environment does not permit this card's venue: {environment_error}.",
+                    item.path,
+                )
 
             if routed == split_token and not self.valid_venue_exception(audited_item):
                 self.error(
@@ -1739,6 +1756,7 @@ class Audit:
                 routed
                 and routed != split_token
                 and venue != routed
+                and not (environment and not environment_error)
                 and not self.valid_venue_exception(audited_item)
             ):
                 self.error(

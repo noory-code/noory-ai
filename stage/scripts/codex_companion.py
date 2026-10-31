@@ -100,6 +100,9 @@ def main(argv: list[str]) -> int:
             file=sys.stderr,
         )
         return 127
+    if script.suffix == ".py":
+        # A Python stand-in such as claude_review_companion.py runs without node.
+        return subprocess.run([sys.executable, str(script), *argv]).returncode
     node = shutil.which("node")
     if node is None:
         print("codex_companion: `node` is not on PATH", file=sys.stderr)

@@ -23,6 +23,9 @@
 - Count record ids on every local and remote-tracking branch: `register_work.py` no longer allocates
   or accepts a W id another branch already uses, and `stage/scripts/stage_record_ids.py` names the
   next free DE, O, or other id the same way.
+- Record where a card runs in a new `environment:` field and declare per-environment venues in
+  `environment_venues`, so cloud-run cards no longer need one venue exception decision each; add
+  `operations/cloud-execution.md` and `stage/scripts/claude_review_companion.py` for the procedure.
 
 ## 0.63.4 — 2026-10-11
 

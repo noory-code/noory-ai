@@ -9,6 +9,10 @@
   "operations_overrides": [],
   // Maps each work kind to its required execution venue.
   "venue_routing": {},
+  // Maps an execution environment to the venue that runs there, e.g. {"cloud": "claude"} when a
+  // cloud session has no Codex. A card with environment: cloud, that venue, and review: pending
+  // may contradict venue_routing without a venue exception decision (operations/cloud-execution.md).
+  "environment_venues": {},
   // Excludes project paths or extensions from Stage write governance.
   "governance": {
     "exclude_paths": [],

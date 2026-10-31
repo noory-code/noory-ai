@@ -20,6 +20,7 @@ if _HOOKS_DIR not in sys.path:
 from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     ACTIVE_TOPOLOGY_V4,
     active_topology,
+    load_environment_venues,
     clean_path_text,
     entry_relative_to_workspace,
     is_outside_workspace,
@@ -513,6 +514,37 @@ def venue_exception_error(stage_root: Path, ref: str) -> str:
     if (fields.get("authorizes") or "").strip() != VENUE_EXCEPTION_AUTHORIZATION:
         return (
             f"decision {ref} does not declare `authorizes: {VENUE_EXCEPTION_AUTHORIZATION}`"
+        )
+    return ""
+
+
+ENVIRONMENT_REVIEW_VALUES = {"pending", "passed"}
+
+
+def environment_venue_error(
+    stage_root: Path, environment: str, venue: str, review: str
+) -> str:
+    """'' when a card's execution environment permits its venue by policy
+    (DE-00000082): the environment is declared in `environment_venues`, the
+    card's venue is the one declared for it, and the card requires an
+    independent close review. Otherwise the human-readable reason. Register,
+    start, and the audit share this contract."""
+    name = environment.strip().lower()
+    declared = load_environment_venues(stage_root)
+    if name not in declared:
+        return (
+            f"environment `{environment}` is not declared in environment_venues "
+            f"(declared: {sorted(declared)})"
+        )
+    if venue.strip() != declared[name]:
+        return (
+            f"environment `{name}` runs venue `{declared[name]}`, but the card names "
+            f"venue `{venue.strip() or 'none'}`"
+        )
+    if review.strip().lower() not in ENVIRONMENT_REVIEW_VALUES:
+        return (
+            f"environment `{name}` requires an independent close review "
+            "(`review: pending`; register or start with --review)"
         )
     return ""
 

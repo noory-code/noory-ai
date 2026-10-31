@@ -48,6 +48,9 @@
     "max_wall_clock_seconds": 5400
   },
   "operations_overrides": [],
+  "environment_venues": {
+    "cloud": "claude"
+  },
   "venue_routing": {
     "planning": "claude",
     "design": "claude",
