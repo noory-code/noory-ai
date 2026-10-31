@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.63.5 — 2026-11-01
+
 - Accept planned work cards in state records' `work_items` links while still reporting missing
   cards as `STATE001`.
 - Judge a Claude Code session that entered a linked worktree of the same repository by that
