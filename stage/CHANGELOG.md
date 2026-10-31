@@ -20,6 +20,9 @@
   directory and plugin version.
 - Add `stage/scripts/import_executor_report.py`, which moves an executor report from a commit body
   into the work log, joins fields the body wrapped, and refuses reports that fail the contract.
+- Count record ids on every local and remote-tracking branch: `register_work.py` no longer allocates
+  or accepts a W id another branch already uses, and `stage/scripts/stage_record_ids.py` names the
+  next free DE, O, or other id the same way.
 
 ## 0.63.4 — 2026-10-11
 

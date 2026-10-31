@@ -49,6 +49,7 @@ from stage_work import (  # noqa: E402
     venue_exception_error,
 )
 import stage_roadmap  # noqa: E402
+from stage_record_ids import branch_record_numbers  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 MILESTONE_RE = re.compile(r"^M-\d{8}$")
@@ -117,7 +118,9 @@ def fill_list_section(text: str, heading: str, values: list[str]) -> str:
 
 
 def existing_numbers(stage_root: Path) -> set[int]:
-    numbers: set[int] = set()
+    # Other branches count too: a number free in this checkout can already be a
+    # card on a parallel branch, and both would collide when merged.
+    numbers: set[int] = set(branch_record_numbers(stage_root.parent, "W"))
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         bases = (paths.planned_cards, paths.current_cards, paths.archive_cards)
@@ -790,6 +793,16 @@ def main() -> int:
             )
             print(f"{args.id}: already exists; index reconciled")
             return 0
+        other_branches = branch_record_numbers(stage_root.parent, "W").get(
+            int(args.id[2:]), set()
+        )
+        if other_branches:
+            print(
+                f"{args.id}: refusing — id already used on branch "
+                f"{', '.join(sorted(other_branches))}",
+                file=sys.stderr,
+            )
+            return 1
         desired_path = item_path_for(args.id)
         desired_path.parent.mkdir(parents=True, exist_ok=True)
         try:
