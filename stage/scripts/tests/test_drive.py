@@ -463,6 +463,22 @@ class DriveTest(unittest.TestCase):
         promotion_index = command.index("--promotion") + 1
         self.assertEqual("not_applicable", command[promotion_index])
 
+    def test_close_bounds_the_review_by_the_driver_command_timeout(self):
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        write_card(root / ".stage", "W-00000001", promotion="deferred")
+        drive = self.load_module()
+        completed = subprocess.CompletedProcess([], 0, "closed\n", "")
+
+        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+            closed, output = drive.close_via_close_work(root, "W-00000001", [], 30)
+
+        self.assertTrue(closed, output)
+        command = run.call_args.args[0]
+        self.assertEqual("30", command[command.index("--timeout") + 1])
+        self.assertEqual("30", command[command.index("--review-timeout") + 1])
+        self.assertEqual(90, run.call_args.kwargs["timeout"])
+
     def test_driver_retrospective_ids_follow_work_items_across_isolated_projects(self):
         drive = self.load_module()
         results: list[tuple[str, str, Path]] = []

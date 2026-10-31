@@ -856,6 +856,57 @@ class CloseWorkTest(unittest.TestCase):
         )
         self.assertEqual(2, review_block.count("```"))
 
+    def test_review_gets_its_own_timeout_longer_than_the_check_timeout(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {
+                        "standard": python_command(
+                            "import time; time.sleep(2); print('slow review done')"
+                        )
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+            )
+
+            proc = run(root, "W-00000001", "--check", "true", "--timeout", "1")
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("review: passed", item)
+        self.assertIn("status: completed", item)
+
+    def test_review_timeout_argument_bounds_the_review_command(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            self._write_review(
+                root,
+                {
+                    "strengths": {
+                        "standard": python_command("import time; time.sleep(5)")
+                    },
+                    "stages": {"implementation": "standard"},
+                },
+                add_verdict=False,
+            )
+
+            proc = run(
+                root, "W-00000001", "--check", "true", "--review-timeout", "1"
+            )
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(1, proc.returncode, proc.stderr)
+        self.assertIn("review did not pass", proc.stderr)
+        self.assertIn("[TIMED OUT after 1s]", proc.stderr)
+        self.assertIn("status: active", item)
+        self.assertIn("review: pending", item)
+
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (
             (

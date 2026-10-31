@@ -53,7 +53,12 @@ Review is OPTIONAL and driven by the work item's own `review` field
 `close_work.py` runs the `implementation`-stage review only when the item is
 `review: pending`: it deletes any prior verdict file, exports
 `STAGE_REVIEW_VERDICT_FILE`, executes the resolved command, and records its
-output as evidence. The review passes only when the command exits zero **and**
+output as evidence. The review command, and an autonomous item's independent
+review alike, runs under `--review-timeout` (default 3600 seconds), separate
+from the per-check `--timeout` (default 900 seconds), so a high-effort review is
+not cut off at the check budget. A review that exceeds it fails the close. The
+driver passes its per-command timeout as both values, because it bounds the
+whole `close_work.py` run by that timeout. The review passes only when the command exits zero **and**
 that file holds a valid verdict with `approved: true`. A missing, malformed, or
 non-approving verdict fails the close even on a zero exit, and a zero exit with
 an approving verdict passes it whatever the command printed — reviewer prose is

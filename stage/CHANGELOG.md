@@ -9,6 +9,8 @@
   byte instead of deleting it with the folder.
 - Record every criterion of the passing review verdict, with its reason, in the card's
   `## Verification` at close, because the work log and verdict file are not committed.
+- Give close reviews their own `--review-timeout` (default 3600 seconds) so a high-effort review
+  no longer fails at the 900-second per-check budget; the driver keeps its single bound.
 
 ## 0.63.4 — 2026-10-11
 

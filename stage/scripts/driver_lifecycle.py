@@ -140,6 +140,10 @@ def close_via_close_work(
         promotion,
         "--timeout",
         str(timeout),
+        # The outer kill below is sized from `timeout`; a longer review budget
+        # would let it kill close_work and orphan the reviewer process.
+        "--review-timeout",
+        str(timeout),
     ]
     for check in extra_checks:
         command += ["--check", check]

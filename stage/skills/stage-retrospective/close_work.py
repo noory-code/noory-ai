@@ -20,7 +20,7 @@ Usage:
     close_work.py --project-root . W-00000008 \
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
-        [--promotion <final-choice>] [--timeout 900]
+        [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600]
 """
 
 from __future__ import annotations
@@ -70,6 +70,9 @@ PROMOTION_FINAL = {"approved", "promoted", "deferred", "not_applicable", "reject
 _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 MAX_LINES = 40
 MAX_BYTES = 4000
+# A reviewer reads the card, the log, and every changed path at high reasoning
+# effort, so it gets its own budget instead of the per-check one.
+DEFAULT_REVIEW_TIMEOUT = 3600
 WORK_LOG_RELATIVE_DIR = Path(".stage/.runtime/driver/logs")
 REVIEW_VERDICT_RELATIVE_DIR = Path(".stage/.runtime/driver/verdicts")
 WORK_LOG_PREAMBLE = """\
@@ -612,6 +615,12 @@ def main() -> int:
         help="Reserve a retrospective file from the project template, print its id, and exit.",
     )
     parser.add_argument("--timeout", type=int, default=900, help="Per-check timeout in seconds.")
+    parser.add_argument(
+        "--review-timeout",
+        type=int,
+        default=DEFAULT_REVIEW_TIMEOUT,
+        help=f"Review command timeout in seconds (default: {DEFAULT_REVIEW_TIMEOUT}).",
+    )
     parser.add_argument("--review-stage", default="implementation", help="settings.json review stage whose command runs at close.")
     args = parser.parse_args()
 
@@ -870,7 +879,7 @@ def main() -> int:
                 )
                 ok, block, _raw = run_check(
                     review_command,
-                    args.timeout,
+                    args.review_timeout,
                     project_root,
                     env=review_environment,
                 )
@@ -912,7 +921,7 @@ def main() -> int:
                 )
                 ok, block, _raw = run_check(
                     review_command,
-                    args.timeout,
+                    args.review_timeout,
                     project_root,
                     env=review_environment,
                 )
