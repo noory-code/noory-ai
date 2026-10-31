@@ -17,3 +17,4 @@
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
 | W-00000288 | fix | codex | STATE001(audit_state_links)이 상태 기록의 work_items 를 진행 중·보관 카드에 | active | Claude | [current/W-00000288/_story.md](current/W-00000288/_story.md) |
 | W-00000300 | fix | claude | 실행자가 검사를 돌리지 않고 카드의 verification 같은 닫기 도구 몫의 칸을 손으로 바꿔 기록이 사 | active | Claude | [current/W-00000300/_story.md](current/W-00000300/_story.md) |
+| W-00000301 | fix | claude | 결정을 소유한 카드를 보관해도 대기 결정 목록이 옮겨진 카드를 가리켜 보관 직후 감사가 깨지지 않게 한다. | active | Claude | [current/W-00000301/_story.md](current/W-00000301/_story.md) |
