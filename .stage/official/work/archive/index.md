@@ -233,3 +233,6 @@
 | W-00000301 | completed | [items/W-00000301/_story.md](items/W-00000301/_story.md) |
 | W-00000302 | completed | [items/W-00000302/_story.md](items/W-00000302/_story.md) |
 | W-00000303 | completed | [items/W-00000303/_story.md](items/W-00000303/_story.md) |
+| W-00000305 | completed | [items/W-00000305/_story.md](items/W-00000305/_story.md) |
+| W-00000306 | completed | [items/W-00000306/_story.md](items/W-00000306/_story.md) |
+| W-00000307 | completed | [items/W-00000307/_story.md](items/W-00000307/_story.md) |
