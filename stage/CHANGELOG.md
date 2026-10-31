@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Accept planned work cards in state records' `work_items` links while still reporting missing
+  cards as `STATE001`.
 - Pin the project's six Codex driver commands to `gpt-6-astra` at high effort so they do not use
   the home default, and let the close-time review profiles write their verdict files.
 - Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
