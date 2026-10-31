@@ -49,6 +49,8 @@
   against every path those commits changed.
 - Treat service usage-limit messages as infrastructure failures, so a reviewer or executor that stops
   on a usage limit without doing the work does not spend a driver attempt.
+- Run a full review instead of a narrow re-review when the card's success criteria changed since the
+  last verdict, so an added criterion is neither rejected nor left unjudged.
 
 ## 0.63.4 — 2026-10-11
 

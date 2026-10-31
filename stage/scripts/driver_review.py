@@ -10,6 +10,7 @@ it saw.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -52,6 +53,40 @@ def load_driver_review_verdict(
     ):
         return None, error
     return normalize_review_verdict(raw, merged=True)
+
+
+def success_criteria_digest(card_path: Path) -> str:
+    """Fingerprint a card's `## Success criteria` section, ignoring trailing spaces."""
+
+    text = card_path.read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^## Success criteria[ \t]*\n(.*?)(?=^## |\Z)", text)
+    body = match.group(1) if match else ""
+    normalized = "\n".join(line.rstrip() for line in body.strip().splitlines())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def criteria_digest_path(verdict_file: Path) -> Path:
+    return verdict_file.with_name(f"{verdict_file.stem}.criteria-digest")
+
+
+def record_review_criteria(verdict_file: Path, card_path: Path) -> None:
+    """Remember which success criteria the verdict now in `verdict_file` judged."""
+
+    criteria_digest_path(verdict_file).write_text(
+        success_criteria_digest(card_path) + "\n", encoding="utf-8"
+    )
+
+
+def success_criteria_changed(verdict_file: Path, card_path: Path) -> bool:
+    """Whether the card's success criteria differ from those the last verdict judged.
+
+    A verdict recorded before this check existed has no digest and counts as
+    unchanged, so older runs keep their narrow re-review (O-00000052).
+    """
+    digest_path = criteria_digest_path(verdict_file)
+    if not digest_path.is_file():
+        return False
+    return digest_path.read_text(encoding="utf-8").strip() != success_criteria_digest(card_path)
 
 
 def review_verdict_error(path: Path) -> str:
