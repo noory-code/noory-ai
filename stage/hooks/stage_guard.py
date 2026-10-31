@@ -601,6 +601,9 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
     """
 
     path = Path(target)
+    if not path.is_absolute():
+        # Relative targets name workspace paths, whatever the hook process's cwd is.
+        path = workspace_root / path
     try:
         resolved = path.resolve()
     except (OSError, RuntimeError):
