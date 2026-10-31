@@ -1514,6 +1514,62 @@ class CloseWorkTest(unittest.TestCase):
 
             self.assertEqual("", close_work.close_owned_fields_error(card, before))
 
+    def test_close_and_driver_share_one_verdict_validation(self):
+        close_work = load_close_module()
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import driver_review
+
+        def entry(criterion="c", verdict="PASS", reason="r", **extra):
+            return {"criterion": criterion, "verdict": verdict, "reason": reason, **extra}
+
+        first_round = {
+            "valid": ({"criteria": [entry()], "approved": True}, ""),
+            "extra key": (
+                {"criteria": [entry(note="x")], "approved": True},
+                "each review criterion must contain exactly `criterion`, `verdict`, and `reason`",
+            ),
+            "duplicate": (
+                {"criteria": [entry(), entry()], "approved": True},
+                "review verdict criteria must be unique",
+            ),
+            "approved mismatch": (
+                {"criteria": [entry(verdict="FAIL")], "approved": True},
+                "review verdict approved must be true exactly when every criterion passes",
+            ),
+        }
+        for label, (raw, expected) in first_round.items():
+            with self.subTest(round="first", case=label):
+                verdict, error = close_work.normalize_review_verdict(raw)
+                self.assertEqual(expected, error)
+                self.assertEqual(expected == "", verdict is not None)
+
+        merged = {
+            "valid": ({"criteria": [entry(reviewed_in_round=2)], "approved": True}, ""),
+            "round zero": (
+                {"criteria": [entry(reviewed_in_round=0)], "approved": True},
+                "reviewed_in_round must be a positive integer",
+            ),
+            "one-line reason": (
+                {"criteria": [entry(reason="a\nb", reviewed_in_round=1)], "approved": True},
+                "review criterion and reason must be non-empty one-line strings",
+            ),
+        }
+        for label, (raw, expected) in merged.items():
+            with self.subTest(round="merged", case=label), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "verdict.json"
+                path.write_text(json.dumps(raw), encoding="utf-8")
+                verdict, error = driver_review.load_driver_review_verdict(path)
+                self.assertEqual(expected, error)
+                if not expected:
+                    self.assertEqual(2, verdict["criteria"][0]["reviewed_in_round"])
+
+        shared = driver_review.normalize_review_verdict.__code__
+        own = close_work.normalize_review_verdict.__code__
+        self.assertEqual(
+            (Path(own.co_filename).resolve(), own.co_firstlineno),
+            (Path(shared.co_filename).resolve(), shared.co_firstlineno),
+        )
+
     def review_committed_paths_command(self) -> str:
         return python_command(
             "import json, os; from pathlib import Path; "
