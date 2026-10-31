@@ -189,6 +189,32 @@ def narrowing_reviewer_command(marker: Path, capture: Path) -> str:
     )
 
 
+def criteria_change_reviewer_command(marker: Path, capture: Path) -> str:
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"marker = Path({str(marker)!r})\n"
+        f"capture = Path({str(capture)!r})\n"
+        "round_number = int(marker.read_text(encoding='utf-8'))\n"
+        "if round_number == 1:\n"
+        "    verdict = {'criteria': [\n"
+        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'reason': 'ok'},\n"
+        "        {'criterion': 'failing criterion', 'verdict': 'FAIL', 'reason': 'defect'},\n"
+        "    ], 'approved': False}\n"
+        "else:\n"
+        "    capture.write_text(json.dumps({\n"
+        "        'mode': os.environ['STAGE_REVIEW_MODE'],\n"
+        "        'has_previous': 'STAGE_PREVIOUS_REVIEW_VERDICT_FILE' in os.environ,\n"
+        "    }), encoding='utf-8')\n"
+        "    verdict = {'criteria': [\n"
+        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'reason': 'ok'},\n"
+        "        {'criterion': 'failing criterion', 'verdict': 'PASS', 'reason': 'fixed'},\n"
+        "        {'criterion': 'added criterion', 'verdict': 'PASS', 'reason': 'met'},\n"
+        "    ], 'approved': True}\n"
+        "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps(verdict), encoding='utf-8')\n"
+    )
+
+
 def missing_verdict_then_full_reviewer_command(marker: Path, capture: Path) -> str:
     return python_command(
         "import json, os\n"
@@ -2291,6 +2317,50 @@ class DriveTest(unittest.TestCase):
             )
             self.assertTrue(verdict["approved"])
 
+    def test_changed_success_criteria_get_a_full_review_whose_approval_counts(self):
+        with tempfile.TemporaryDirectory() as marker_tmp:
+            marker = Path(marker_tmp) / "round"
+            capture = Path(marker_tmp) / "reviewer-input.json"
+            tmp, root = self.make_project(
+                executor=narrowing_executor_command(marker),
+                reviewer=criteria_change_reviewer_command(marker, capture),
+            )
+            with tmp:
+                write_card(
+                    root / ".stage",
+                    "W-00000002",
+                    parent="W-00000001",
+                    acceptance=(PASS_COMMAND,),
+                    success_criteria=("passing criterion", "failing criterion"),
+                )
+                initialize_git(root)
+
+                first = self.run_cli(root, "--execute")
+                card = card_path(root / ".stage", "W-00000002")
+                card.write_text(
+                    card.read_text(encoding="utf-8") + "- added criterion\n", encoding="utf-8"
+                )
+                second = self.run_cli(root, "--execute")
+                verdict = json.loads(
+                    (root / ".stage/.runtime/driver/verdicts/W-00000002.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+
+            self.assertNotEqual(0, first.returncode)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            self.assertIn("Review mode: full", second.stdout)
+            self.assertNotIn("absent from the previous verdict", second.stdout)
+            self.assertEqual(
+                {"mode": "full", "has_previous": False},
+                json.loads(capture.read_text(encoding="utf-8")),
+            )
+            self.assertEqual(
+                ["passing criterion", "failing criterion", "added criterion"],
+                [entry["criterion"] for entry in verdict["criteria"]],
+            )
+            self.assertTrue(verdict["approved"])
+
     def test_missing_previous_verdict_falls_back_to_full_review(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
             marker = Path(marker_tmp) / "round"
@@ -3888,6 +3958,27 @@ class DriveTest(unittest.TestCase):
 
         self.assertFalse(drive.infrastructure_failure("[exit 2]\nsubstantive failure"))
 
+    def test_infrastructure_failure_recognizes_service_usage_limits_only(self):
+        drive = self.load_module()
+
+        for output in (
+            "You've hit your session limit · resets 5:10pm",
+            "You've hit your usage limit. Upgrade to Pro or try again later.",
+            "Error: usage limit reached for this model",
+            '{"type": "error", "error": {"type": "rate_limit_error"}}',
+            "HTTP/1.1 429 Too Many Requests",
+        ):
+            with self.subTest(output=output):
+                self.assertTrue(drive.infrastructure_failure(f"[exit 1]\n{output}"))
+
+        for output in (
+            "FAIL: test_rate_limit_resets_after_window (test_api.RateLimitTest)",
+            "AssertionError: expected a rate limit of 10 requests, got 12",
+            "the usage limits section of the card is still empty",
+        ):
+            with self.subTest(output=output):
+                self.assertFalse(drive.infrastructure_failure(f"[exit 1]\n{output}"))
+
     def test_supervised_infrastructure_failures_do_not_spend_attempt(self):
         cases = (
             {
@@ -3921,6 +4012,26 @@ class DriveTest(unittest.TestCase):
                 "reviewer": python_command(
                     "print('killed by signal'); raise SystemExit(2)"
                 ),
+            },
+            {
+                "name": "usage-limited reviewer",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": python_command(
+                    "print(\"You've hit your session limit · resets 5:10pm\"); raise SystemExit(1)"
+                ),
+            },
+            {
+                "name": "usage-limited executor",
+                "executor": python_command(
+                    "print(\"You've hit your usage limit. Try again later.\"); raise SystemExit(1)"
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": APPROVING_REVIEWER,
             },
         )
 

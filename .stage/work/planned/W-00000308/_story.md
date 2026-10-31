@@ -1,5 +1,5 @@
 ---
-id: W-00000305
+id: W-00000308
 title: worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다
 kind: release
 venue:
@@ -12,7 +12,7 @@ review: not_required
 scope: stage/CHANGELOG.md, stage/.claude-plugin/, stage/.codex-plugin/, .stage/
 ---
 
-# W-00000305 worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다
+# W-00000308 worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다
 
 ## Purpose
 

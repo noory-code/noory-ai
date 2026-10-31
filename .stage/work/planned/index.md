@@ -10,8 +10,7 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000298 | 실제 codex 플러그인으로 codex 명령 경로 찾기를 확인한다 | qa | captured |  |  | [W-00000298/_story.md](W-00000298/_story.md) |
-| W-00000305 | worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다 | release | captured |  |  | [W-00000305/_story.md](W-00000305/_story.md) |
+| W-00000308 | worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다 | release | captured |  |  | [W-00000308/_story.md](W-00000308/_story.md) |
 
 ## 상태 값
 

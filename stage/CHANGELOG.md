@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Accept planned work cards in state records' `work_items` links while still reporting missing
+  cards as `STATE001`.
 - Judge a Claude Code session that entered a linked worktree of the same repository by that
   worktree: the hook payload `cwd` follows the session while `CLAUDE_PROJECT_DIR` stays on the
   starting checkout, so the worktree's `.stage/` stays ungoverned and its own open work opens the
@@ -47,6 +49,10 @@
 - Validate review verdicts with one rule set shared by close_work.py and the driver.
 - Let `import_executor_report.py` take one `--commit` per attempt and check a cumulative report
   against every path those commits changed.
+- Treat service usage-limit messages as infrastructure failures, so a reviewer or executor that stops
+  on a usage limit without doing the work does not spend a driver attempt.
+- Run a full review instead of a narrow re-review when the card's success criteria changed since the
+  last verdict, so an added criterion is neither rejected nor left unjudged.
 
 ## 0.63.4 — 2026-10-11
 
