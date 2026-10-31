@@ -1497,6 +1497,32 @@ class CloseWorkTest(unittest.TestCase):
                 self.assertEqual(before, close_work.close_owned_fields(card))
                 self.assertIn("# Body\nverification: prose\n", card.read_text(encoding="utf-8"))
 
+    def test_every_named_close_owned_field_is_named_and_restored(self):
+        close_work = load_close_module()
+        # A literal list, not CLOSE_OWNED_FIELDS: dropping a field from the code must fail here.
+        fields = {
+            "status": ("active", "completed"),
+            "verification": ("pending", "passed"),
+            "review": ("pending", "passed"),
+            "retrospective": ("pending", "completed"),
+            "retrospective_ref": ("", "R-00000001"),
+        }
+        original = "---\nid: W-00000001\n" + "".join(
+            f"{name}: {before}\n".replace(": \n", ":\n") for name, (before, _after) in fields.items()
+        ) + "promotion: pending\n---\n\n# Body\n"
+        for name, (before, after) in fields.items():
+            with self.subTest(field=name), tempfile.TemporaryDirectory() as tmp:
+                card = Path(tmp) / "_story.md"
+                card.write_text(original, encoding="utf-8")
+                snapshot = close_work.close_owned_fields(card)
+                old_line = f"{name}: {before}".rstrip()
+                card.write_text(original.replace(f"{old_line}\n", f"{name}: {after}\n", 1), encoding="utf-8")
+
+                error = close_work.close_owned_fields_error(card, snapshot)
+
+                self.assertIn(f"{name}: `{before}` -> `{after}`", error)
+                self.assertEqual(original, card.read_text(encoding="utf-8"))
+
     def test_promotion_and_body_edits_are_not_close_owned_changes(self):
         close_work = load_close_module()
         with tempfile.TemporaryDirectory() as tmp:
