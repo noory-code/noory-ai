@@ -536,6 +536,42 @@ class UnattendedTest(unittest.TestCase):
         )
         self.assertEqual([], [call for call in calls if call[0] == "escalate"])
 
+    def test_unattended_restores_close_owned_fields_even_when_the_report_also_fails(self):
+        executor = reporting_python_command(
+            "import os, re; from pathlib import Path; "
+            "Path('driver-work.txt').write_text('done', encoding='utf-8'); "
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH']); "
+            "card.write_text(card.read_text(encoding='utf-8').replace("
+            "'verification: pending', 'verification: passed'), encoding='utf-8')",
+            ["driver-work.txt"],
+        )
+        limits = {
+            "max_attempts_per_item": 1,
+            "max_iterations": 5,
+            "max_wall_clock_seconds": 300,
+        }
+        root, stage_root = self.make(limits=limits, executor=executor)
+        self.card(stage_root, "W-00000001")
+        self.commit_all(root)
+        drive = load_module()
+        calls: list = []
+        self.install_stubs(drive, calls)
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            drive.run_unattended(self.args(root, "W-00000001"), root, stage_root, time.time())
+        card = self.card_path(stage_root, "W-00000001").read_text(encoding="utf-8")
+        log = (stage_root / ".runtime/driver/logs/W-00000001.md").read_text(encoding="utf-8")
+
+        self.assertIn("executor claimed changed paths do not match", log)
+        self.assertIn(
+            "executor changed close-owned work card field(s) verification: `pending` -> `passed`",
+            log,
+        )
+        self.assertIn("verification: pending", card)
+        self.assertNotIn("verification: passed", card)
+        self.assertEqual([], [call for call in calls if call[0] == "close"])
+
     def test_unattended_close_gets_the_longer_review_budget_within_the_wall_clock(self):
         for wall_clock, expected_low, expected_high in ((300, 31, 300), (7200, 3600, 3600)):
             with self.subTest(wall_clock=wall_clock):

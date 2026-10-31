@@ -3035,6 +3035,56 @@ class DriveTest(unittest.TestCase):
         )
         self.assertNotIn("Acceptance result:", result.stdout)
 
+    def test_close_owned_fields_are_restored_when_the_attempt_fails_for_another_reason(self):
+        edit = (
+            "import json, os, re, sys\n"
+            "from pathlib import Path\n"
+            "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')\n"
+            "card = Path(os.environ['STAGE_WORK_ITEM_PATH'])\n"
+            "card.write_text(re.sub(r'(?m)^status: active$', 'status: active\\nverification: passed', "
+            "card.read_text(encoding='utf-8'), count=1), encoding='utf-8')\n"
+            "log = Path(os.environ['STAGE_WORK_LOG_PATH'])\n"
+            "report = ('\\n### Executor report\\n"
+            "What changed: did the work\\n"
+            "Why: exercise the restore boundary\\n"
+            "Decisions made: None\\n"
+            "Work not done: None\\n"
+            "Changed paths (JSON):\\n' + json.dumps(['executor-work.txt']) + '\\n"
+            "Review request: reject\\n')\n"
+            "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
+        )
+        cases = {
+            "report claims the wrong paths": (
+                edit,
+                "executor claimed changed paths do not match driver observation",
+            ),
+            "executor command fails": (edit + "sys.exit(1)\n", "executor command failed"),
+        }
+        for label, (code, first_failure) in cases.items():
+            with self.subTest(case=label):
+                tmp, root = self.make_project(executor=python_command(code))
+                with tmp:
+                    write_card(
+                        root / ".stage",
+                        "W-00000002",
+                        parent="W-00000001",
+                        acceptance=(PASS_COMMAND,),
+                    )
+                    initialize_git(root)
+
+                    result = self.run_cli(root, "--execute")
+                    card = (
+                        root / ".stage/work/current/W-00000001/W-00000002/_story.md"
+                    ).read_text(encoding="utf-8")
+
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn(first_failure, result.stdout)
+                self.assertIn(
+                    "executor changed close-owned work card field(s) verification: `` -> `passed`",
+                    result.stdout,
+                )
+                self.assertNotIn("verification:", card)
+
     def test_executor_claim_must_match_driver_observed_paths_before_review(self):
         executor = reporting_python_command(
             "from pathlib import Path; "

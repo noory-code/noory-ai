@@ -233,7 +233,18 @@ def load_review_verdict(path: Path) -> tuple[dict[str, object] | None, str]:
         return None, "review verdict file is invalid JSON"
     except OSError as exc:
         return None, f"cannot read review verdict file: {exc}"
+    return normalize_review_verdict(raw)
 
+
+def normalize_review_verdict(
+    raw: object, *, merged: bool = False
+) -> tuple[dict[str, object] | None, str]:
+    """Validate a reviewer verdict object and return its normalized form.
+
+    A driver-merged re-review verdict (`merged`) also carries a positive
+    `reviewed_in_round` on every criterion. close_work.py and the driver share
+    this one rule set so they never accept the same verdict differently.
+    """
     if not isinstance(raw, dict) or set(raw) != {"criteria", "approved"}:
         return None, (
             "review verdict must contain exactly `criteria` and `approved`"
@@ -245,16 +256,18 @@ def load_review_verdict(path: Path) -> tuple[dict[str, object] | None, str]:
     if type(approved) is not bool:
         return None, "review verdict approved must be a boolean"
 
-    normalized: list[dict[str, str]] = []
+    keys = {"criterion", "verdict", "reason"}
+    if merged:
+        keys.add("reviewed_in_round")
+    normalized: list[dict[str, object]] = []
     seen_criteria: set[str] = set()
     for entry in criteria:
-        if not isinstance(entry, dict) or set(entry) != {
-            "criterion",
-            "verdict",
-            "reason",
-        }:
+        if not isinstance(entry, dict) or set(entry) != keys:
             return None, (
-                "each review criterion must contain exactly `criterion`, "
+                "each merged review criterion must contain exactly `criterion`, "
+                "`verdict`, `reason`, and `reviewed_in_round`"
+                if merged
+                else "each review criterion must contain exactly `criterion`, "
                 "`verdict`, and `reason`"
             )
         criterion = entry["criterion"]
@@ -280,14 +293,18 @@ def load_review_verdict(path: Path) -> tuple[dict[str, object] | None, str]:
             return None, "review verdict criteria must be unique"
         if verdict not in {"PASS", "FAIL"}:
             return None, "review criterion verdict must be `PASS` or `FAIL`"
+        normalized_entry: dict[str, object] = {
+            "criterion": criterion,
+            "verdict": verdict,
+            "reason": reason,
+        }
+        if merged:
+            reviewed_in_round = entry["reviewed_in_round"]
+            if type(reviewed_in_round) is not int or reviewed_in_round < 1:
+                return None, "reviewed_in_round must be a positive integer"
+            normalized_entry["reviewed_in_round"] = reviewed_in_round
         seen_criteria.add(criterion)
-        normalized.append(
-            {
-                "criterion": criterion,
-                "verdict": verdict,
-                "reason": reason,
-            }
-        )
+        normalized.append(normalized_entry)
 
     all_passed = all(entry["verdict"] == "PASS" for entry in normalized)
     if approved != all_passed:

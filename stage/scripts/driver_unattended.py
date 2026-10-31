@@ -398,7 +398,10 @@ def run_unattended(
             changed_paths,
             pending_findings,
             ignored_paths=[log_path.relative_to(project_root).as_posix()],
-        ) or close_owned_fields_error(item.path, card_fields_before)
+        )
+        # Always check and restore, whatever else failed this attempt, so a
+        # hand-set value never becomes the next attempt's starting point.
+        card_field_error = close_owned_fields_error(item.path, card_fields_before)
         reasoned_no_change = (
             bool(pending_findings)
             and not disposition_error
@@ -439,6 +442,13 @@ def run_unattended(
             except RuntimeError as exc:
                 executor_ok = False
                 executor_failure = str(exc)
+        if card_field_error:
+            executor_failure = (
+                card_field_error if executor_ok else f"{executor_failure}; {card_field_error}"
+            )
+            executor_ok = False
+            executor_rejected = False
+            unchanged_repository = False
         if scope_widened:
             before_scope = json.dumps(list(item.scope), ensure_ascii=False)
             after_scope = json.dumps(

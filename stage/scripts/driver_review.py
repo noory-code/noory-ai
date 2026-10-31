@@ -24,7 +24,7 @@ for import_dir in (
     if str(import_dir) not in sys.path:
         sys.path.insert(0, str(import_dir))
 
-from close_work import load_review_verdict  # noqa: E402
+from close_work import load_review_verdict, normalize_review_verdict  # noqa: E402
 
 
 def load_driver_review_verdict(
@@ -51,69 +51,7 @@ def load_driver_review_verdict(
         for entry in criteria
     ):
         return None, error
-
-    normalized: list[dict[str, object]] = []
-    seen_criteria: set[str] = set()
-    for entry in criteria:
-        if not isinstance(entry, dict) or set(entry) != {
-            "criterion",
-            "verdict",
-            "reason",
-            "reviewed_in_round",
-        }:
-            return None, (
-                "each merged review criterion must contain exactly `criterion`, "
-                "`verdict`, `reason`, and `reviewed_in_round`"
-            )
-        criterion = entry["criterion"]
-        criterion_verdict = entry["verdict"]
-        reason = entry["reason"]
-        reviewed_in_round = entry["reviewed_in_round"]
-        if not all(
-            isinstance(value, str)
-            for value in (criterion, criterion_verdict, reason)
-        ):
-            return None, "review criterion values must be strings"
-        if (
-            not criterion.strip()
-            or not reason.strip()
-            or "\n" in criterion
-            or "\r" in criterion
-            or "\n" in reason
-            or "\r" in reason
-        ):
-            return None, (
-                "review criterion and reason must be non-empty one-line strings"
-            )
-        if criterion in seen_criteria:
-            return None, "review verdict criteria must be unique"
-        if criterion_verdict not in {"PASS", "FAIL"}:
-            return None, "review criterion verdict must be `PASS` or `FAIL`"
-        if (
-            type(reviewed_in_round) is not int
-            or reviewed_in_round < 1
-        ):
-            return None, (
-                "reviewed_in_round must be a positive integer"
-            )
-        seen_criteria.add(criterion)
-        normalized.append(
-            {
-                "criterion": criterion,
-                "verdict": criterion_verdict,
-                "reason": reason,
-                "reviewed_in_round": reviewed_in_round,
-            }
-        )
-
-    all_passed = all(
-        entry["verdict"] == "PASS" for entry in normalized
-    )
-    if approved != all_passed:
-        return None, (
-            "review verdict approved must be true exactly when every criterion passes"
-        )
-    return {"criteria": normalized, "approved": approved}, ""
+    return normalize_review_verdict(raw, merged=True)
 
 
 def review_verdict_error(path: Path) -> str:

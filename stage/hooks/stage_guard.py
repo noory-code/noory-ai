@@ -208,13 +208,85 @@ def load_payload() -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
+def _linked_git_dir(dot_git_file: Path) -> Path | None:
+    """The private git dir a linked worktree's `.git` file points at."""
+
+    try:
+        first_line = dot_git_file.read_text(encoding="utf-8").splitlines()[0]
+    except (OSError, UnicodeDecodeError, IndexError):
+        return None
+    prefix = "gitdir:"
+    if not first_line.startswith(prefix):
+        return None
+    target = Path(first_line[len(prefix):].strip()).expanduser()
+    if not target.is_absolute():
+        target = dot_git_file.parent / target
+    return target.resolve()
+
+
+def _git_common_dir(root: Path) -> Path | None:
+    """The repository's shared git dir, for a main checkout or a linked worktree."""
+
+    dot_git = root / ".git"
+    if dot_git.is_dir():
+        return dot_git.resolve()
+    if not dot_git.is_file():
+        return None
+    git_dir = _linked_git_dir(dot_git)
+    if git_dir is None:
+        return None
+    commondir = git_dir / "commondir"
+    try:
+        shared = commondir.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError):
+        return git_dir
+    return (git_dir / shared).resolve() if shared else git_dir
+
+
+PINNED_ROOT_VARIABLES = ("PROJECT_ROOT", "STAGE_PROJECT_ROOT")
+
+
+def _entered_worktree(cwd: Path, project_root: Path) -> Path | None:
+    """The linked worktree of `project_root`'s repository that holds `cwd`.
+
+    Claude Code keeps CLAUDE_PROJECT_DIR on the main checkout where the session
+    started, while the hook payload `cwd` follows the session into a worktree.
+    Only that shape qualifies: the project root is a main checkout (a `.git`
+    directory) and `cwd` sits in a linked worktree (a `.git` file) of the same
+    repository. A root the driver pinned (it also sets PROJECT_ROOT, and
+    STAGE_PROJECT_ROOT for executors), a session started in a worktree, another
+    repository, or a directory outside any checkout keeps the project root."""
+
+    if any(os.environ.get(name) for name in PINNED_ROOT_VARIABLES):
+        return None
+    if not (project_root / ".git").is_dir():
+        return None
+    for candidate in (cwd, *cwd.parents):
+        dot_git = candidate / ".git"
+        if not dot_git.exists():
+            continue
+        if candidate == project_root or not dot_git.is_file():
+            return None
+        shared = _git_common_dir(project_root)
+        if shared is not None and _git_common_dir(candidate) == shared:
+            return candidate
+        return None
+    return None
+
+
 def resolve_workspace_root(payload: dict[str, Any]) -> Path:
     # Claude Code sets CLAUDE_PROJECT_DIR; Codex sets no workspace env var and
     # instead runs hooks with cwd = workspace plus a `cwd` payload field.
     for key in ("CLAUDE_PROJECT_DIR", "PROJECT_ROOT"):
         value = os.environ.get(key)
         if value:
-            return Path(value).expanduser().resolve()
+            project_root = Path(value).expanduser().resolve()
+            cwd = payload.get("cwd")
+            if isinstance(cwd, str) and cwd:
+                entered = _entered_worktree(Path(cwd).expanduser().resolve(), project_root)
+                if entered is not None:
+                    return entered
+            return project_root
 
     for key in ("cwd", "workspace_root", "workspaceRoot", "project_root", "projectRoot"):
         value = payload.get(key)

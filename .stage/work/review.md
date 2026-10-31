@@ -6,6 +6,7 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
+| W-00000299 | passed | completed | not_applicable | [current/W-00000299/_story.md](current/W-00000299/_story.md) |
 | W-00000265 | passed | completed | approved | [current/W-00000263/W-00000265/_story.md](current/W-00000263/W-00000265/_story.md) |
 | W-00000264 | passed | completed | not_applicable | [current/W-00000263/W-00000264/_story.md](current/W-00000263/W-00000264/_story.md) |
 | W-00000266 | passed | completed | not_applicable | [current/W-00000263/W-00000266/_story.md](current/W-00000263/W-00000266/_story.md) |
@@ -16,3 +17,4 @@
 | W-00000275 | passed | completed | not_applicable | [current/W-00000272/W-00000275/_story.md](current/W-00000272/W-00000275/_story.md) |
 | W-00000288 | passed | completed | not_applicable | [current/W-00000288/_story.md](current/W-00000288/_story.md) |
 | W-00000298 | passed | completed | not_applicable | [current/W-00000298/_story.md](current/W-00000298/_story.md) |
+| W-00000304 | passed | completed | not_applicable | [current/W-00000304/_story.md](current/W-00000304/_story.md) |
