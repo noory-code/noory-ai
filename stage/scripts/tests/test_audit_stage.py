@@ -1534,16 +1534,49 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK022", finding_codes(findings))
 
+    def test_state_record_work_items_accept_all_work_locations(self):
+        for prefix, folder in (
+            ("Q", "questions"), ("O", "observations"),
+            ("A", "assumptions"), ("K", "risks"),
+        ):
+            for archived in (False, True):
+                with self.subTest(prefix=prefix, archived=archived), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    self.init_stage(root)
+                    self.write_work_item(root, item_id="W-00000001")
+                    self.write_work_item(root, item_id="W-00000002", location="archive")
+                    self.write_backlog_item(root, item_id="W-00000003")
+                    self.write_backlog_item(root, item_id="W-00000004", parent="W-00000003")
+                    self.write_backlog_item(root, item_id="W-00000005", parent="W-00000004")
+                    state_folder = "official/state/archive" if archived else f"state/{folder}"
+                    self.write_record(
+                        root, f"{state_folder}/{prefix}-00000001.md", f"{prefix}-00000001",
+                        "work_items: W-00000001, W-00000002, W-00000003, W-00000004, W-00000005\n",
+                    )
+
+                    findings = audit_stage.Audit(root).run()
+
+                    self.assertNotIn("STATE001", finding_codes(findings))
+
     def test_state_record_work_items_must_exist(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
+            self.write_work_item(root, item_id="W-00000001")
+            self.write_backlog_item(root, item_id="W-00000002")
             question = root / ".stage" / "state" / "questions" / "Q-0001.md"
-            question.write_text("---\nid: Q-0001\ntitle: Q\nwork_items: W-9999\n---\n# Q-0001\n", encoding="utf-8")
+            question.write_text(
+                "---\nid: Q-0001\ntitle: Q\n"
+                "work_items: W-00000001, W-00000002, W-9999\n---\n# Q-0001\n",
+                encoding="utf-8",
+            )
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertIn("STATE001", finding_codes(findings))
+        missing = [finding for finding in findings if finding.code == "STATE001"]
+        self.assertEqual(len(missing), 1)
+        self.assertEqual(missing[0].message, "work_items references a missing work item: W-9999")
+        self.assertEqual(missing[0].path, ".stage/state/questions/Q-0001.md")
 
     def test_governance_allowlist_is_reported_as_narrowing(self):
         with tempfile.TemporaryDirectory() as tmp:
