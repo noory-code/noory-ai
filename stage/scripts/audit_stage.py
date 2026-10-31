@@ -965,7 +965,7 @@ class Audit:
 
     def audit_state_links(self, graph: RecordGraph) -> None:
         for edge in graph.edges("state", "work_items", multi=True):
-            if edge.ref not in graph.work_ids:
+            if edge.ref not in graph.work_ids and edge.ref not in graph.backlog_by_id:
                 self.error(
                     "STATE001",
                     f"work_items references a missing work item: {edge.ref}",
