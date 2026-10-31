@@ -53,6 +53,9 @@
   on a usage limit without doing the work does not spend a driver attempt.
 - Run a full review instead of a narrow re-review when the card's success criteria changed since the
   last verdict, so an added criterion is neither rejected nor left unjudged.
+- Make `drive.py --reset-attempts` remove the previous review verdict and its criteria digest, so the
+  redesigned card's next round gets a full review, and drop executor changed paths the person
+  reverted while keeping those still changed from the item base, which the item commit includes.
 
 ## 0.63.4 — 2026-10-11
 

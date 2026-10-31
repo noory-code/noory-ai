@@ -18,6 +18,5 @@
 | W-00000288 | passed | completed | not_applicable | [current/W-00000288/_story.md](current/W-00000288/_story.md) |
 | W-00000298 | passed | completed | not_applicable | [current/W-00000298/_story.md](current/W-00000298/_story.md) |
 | W-00000304 | passed | completed | not_applicable | [current/W-00000304/_story.md](current/W-00000304/_story.md) |
-| W-00000306 | passed | completed | not_applicable | [current/W-00000306/_story.md](current/W-00000306/_story.md) |
 | W-00000273 | passed | completed | promoted | [current/W-00000272/W-00000273/_story.md](current/W-00000272/W-00000273/_story.md) |
 | W-00000274 | passed | completed | deferred | [current/W-00000272/W-00000274/_story.md](current/W-00000272/W-00000274/_story.md) |

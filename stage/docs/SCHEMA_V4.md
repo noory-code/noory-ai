@@ -424,7 +424,10 @@ next command before it runs. `started_at_unix` records when the run state began 
 one item carrying a stale `running_role`; when none exists, it uses the next ready item. Multiple
 recorded roles fail closed. The reset clears that item's attempt count, progress fingerprints,
 resume checkpoint, and stale role, while another simultaneously recorded role still blocks a
-direct reset of one item.
+direct reset of one item. It also removes the item's previous review verdict and criteria digest,
+so the next round is a full review, and keeps in `executor_changed_paths` only the paths that
+still differ from `base_head`: the item commit squashes everything since that base, so review must
+still see output the person kept, but not paths they reverted.
 
 Immediately before an executor turn, `running_role` is written as `executor` without a resume
 fingerprint. After the executor exits successfully, the driver validates its report and changed

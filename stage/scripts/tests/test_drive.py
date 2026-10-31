@@ -1400,13 +1400,14 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
             drive = self.load_module()
             state_path = stage_root / ".runtime/driver/W-00000001.json"
             state = drive.new_run_state("W-00000001", 1.0)
             state["items"]["W-00000002"] = {
                 "attempt_count": 3,
                 "last_fingerprint": "old-fingerprint",
-                "base_head": "base-head",
+                "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
                 "executor_changed_paths": ["changed.txt"],
                 "running_role": "executor",
             }
@@ -1500,20 +1501,22 @@ class DriveTest(unittest.TestCase):
                 parent="W-00000001",
                 acceptance=(PASS_COMMAND,),
             )
+            initialize_git(root)
+            base_head = git(root, "rev-parse", "HEAD").stdout.strip()
             drive = self.load_module()
             state_path = stage_root / ".runtime/driver/W-00000001.json"
             state = drive.new_run_state("W-00000001", 1.0)
             state["items"]["W-00000002"] = {
                 "attempt_count": 1,
                 "last_fingerprint": "next-ready-fingerprint",
-                "base_head": "base-head",
+                "base_head": base_head,
                 "executor_changed_paths": ["next-ready.txt"],
                 "running_role": None,
             }
             state["items"]["W-00000003"] = {
                 "attempt_count": 3,
                 "last_fingerprint": "interrupted-fingerprint",
-                "base_head": "base-head",
+                "base_head": base_head,
                 "executor_changed_paths": ["interrupted.txt"],
                 "running_role": "executor",
             }
@@ -1537,29 +1540,56 @@ class DriveTest(unittest.TestCase):
         self.assertEqual("", updated["items"]["W-00000003"]["last_fingerprint"])
         self.assertIsNone(updated["items"]["W-00000003"]["running_role"])
 
+    def write_reset_fixture(self, root: Path) -> tuple[Path, Path, Path]:
+        """Leave a rejected round behind: a verdict, its digest, and executor paths.
+
+        tracked.txt was changed and is still changed, untracked.txt is new and still
+        present, reverted.txt was changed and then restored, and removed.txt was
+        created and then deleted by the person who redesigned the card.
+        """
+
+        stage_root = root / ".stage"
+        write_card(
+            stage_root,
+            "W-00000002",
+            parent="W-00000001",
+            acceptance=(PASS_COMMAND,),
+        )
+        (root / "tracked.txt").write_text("base\n", encoding="utf-8")
+        (root / "reverted.txt").write_text("base\n", encoding="utf-8")
+        initialize_git(root)
+        (root / "tracked.txt").write_text("kept change\n", encoding="utf-8")
+        (root / "untracked.txt").write_text("kept new file\n", encoding="utf-8")
+        drive = self.load_module()
+        state_path = stage_root / ".runtime/driver/W-00000001.json"
+        state = drive.new_run_state("W-00000001", 1.0)
+        state["iteration_count"] = 2
+        state["execution_seconds"] = 123.0
+        state["items"]["W-00000002"] = {
+            "attempt_count": 3,
+            "last_fingerprint": "old-fingerprint",
+            "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
+            "executor_changed_paths": [
+                "removed.txt",
+                "reverted.txt",
+                "tracked.txt",
+                "untracked.txt",
+            ],
+            "running_role": None,
+        }
+        drive.write_run_state(state_path, state)
+        verdict = stage_root / ".runtime/driver/verdicts/W-00000002.json"
+        verdict.parent.mkdir(parents=True, exist_ok=True)
+        verdict.write_text('{"approved": false, "criteria": []}', encoding="utf-8")
+        digest = verdict.with_name("W-00000002.criteria-digest")
+        digest.write_text("old-digest\n", encoding="utf-8")
+        return state_path, verdict, digest
+
     def test_reset_attempts_resets_limit_state_and_logs_reason(self):
         tmp, root = self.make_project()
         with tmp:
             stage_root = root / ".stage"
-            write_card(
-                stage_root,
-                "W-00000002",
-                parent="W-00000001",
-                acceptance=(PASS_COMMAND,),
-            )
-            drive = self.load_module()
-            state_path = stage_root / ".runtime/driver/W-00000001.json"
-            state = drive.new_run_state("W-00000001", 1.0)
-            state["iteration_count"] = 2
-            state["execution_seconds"] = 123.0
-            state["items"]["W-00000002"] = {
-                "attempt_count": 3,
-                "last_fingerprint": "old-fingerprint",
-                "base_head": "base-head",
-                "executor_changed_paths": ["changed.txt"],
-                "running_role": None,
-            }
-            drive.write_run_state(state_path, state)
+            state_path, verdict, digest = self.write_reset_fixture(root)
 
             result = self.run_cli(
                 root,
@@ -1572,19 +1602,70 @@ class DriveTest(unittest.TestCase):
             log = (
                 stage_root / ".runtime/driver/logs/W-00000002.md"
             ).read_text(encoding="utf-8")
+            verdict_exists = verdict.exists()
+            digest_exists = digest.exists()
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("Reset attempts for W-00000002", result.stdout)
         self.assertEqual(0, item_state["attempt_count"])
         self.assertEqual("", item_state["last_fingerprint"])
-        self.assertEqual("base-head", item_state["base_head"])
-        self.assertEqual(["changed.txt"], item_state["executor_changed_paths"])
         self.assertIsNone(item_state["running_role"])
         self.assertGreater(updated["started_at_unix"], 1.0)
         self.assertEqual(0.0, updated["execution_seconds"])
         self.assertEqual(2, updated["iteration_count"])
         self.assertIn("### Attempt limit reset", log)
         self.assertIn("Reason: The card was corrected.", log)
+        # The previous design's judgment is gone, so the next round is a full review.
+        self.assertFalse(verdict_exists)
+        self.assertFalse(digest_exists)
+        self.assertIn("Cleared: review verdict, success-criteria digest", log)
+        # Paths the person reverted leave the executor's record; output still in the
+        # tree stays, because the item commit squashes it and review must see it.
+        self.assertEqual(["tracked.txt", "untracked.txt"], item_state["executor_changed_paths"])
+        self.assertIn(
+            'Executor changed paths dropped (no longer changed): ["removed.txt", "reverted.txt"]',
+            log,
+        )
+        self.assertIn(
+            'Executor changed paths kept (still changed): ["tracked.txt", "untracked.txt"]',
+            log,
+        )
+
+    def test_reset_attempts_restores_the_review_when_the_state_cannot_be_written(self):
+        tmp, root = self.make_project()
+        with tmp:
+            state_path, verdict, digest = self.write_reset_fixture(root)
+            before = state_path.read_text(encoding="utf-8")
+            verdict_before = verdict.read_text(encoding="utf-8")
+            drive = self.load_module()
+            runstate = sys.modules["driver_runstate"]
+            real_write = runstate.write_run_state
+            calls = []
+
+            def failing_first_write(path, state):
+                calls.append(path)
+                if len(calls) == 1:
+                    raise OSError("disk full")
+                real_write(path, state)
+
+            with mock.patch.object(runstate, "write_run_state", failing_first_write):
+                ok, error = drive.reset_attempts(
+                    state_path=state_path,
+                    stage_root=root / ".stage",
+                    target_id="W-00000001",
+                    item_id="W-00000002",
+                    now=5.0,
+                    reason="The card was corrected.",
+                )
+            after = state_path.read_text(encoding="utf-8")
+            verdict_after = verdict.read_text(encoding="utf-8")
+            digest_after = digest.read_text(encoding="utf-8")
+
+        self.assertFalse(ok)
+        self.assertIn("cannot record attempt reset: disk full", error)
+        self.assertEqual(json.loads(before), json.loads(after))
+        self.assertEqual(verdict_before, verdict_after)
+        self.assertEqual("old-digest\n", digest_after)
 
     def test_execute_runs_fakes_and_reports_pass(self):
         with tempfile.TemporaryDirectory() as marker_tmp:
