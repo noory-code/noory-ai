@@ -59,9 +59,11 @@ from driver_review import (  # noqa: E402
     infrastructure_failure,
     load_driver_review_verdict,
     merge_narrow_review_verdict,
+    record_review_criteria,
     retryable_review_infrastructure_failure,
     review_verdict_error,
     review_verdict_failures,
+    success_criteria_changed,
 )
 from driver_runstate import write_run_state, write_running_role  # noqa: E402
 from driver_venues import reap_turn, run_preflight  # noqa: E402
@@ -196,6 +198,14 @@ def run_supervised_round(
             if previous_verdict is not None
             else []
         )
+        # The executor still answers every previously failed criterion, but a
+        # changed criteria list needs a full review: a narrow merge would reject
+        # new criteria or let them pass unjudged (O-00000052).
+        narrow_review = previous_verdict is not None and not success_criteria_changed(
+            verdict_file, item.path
+        )
+        if previous_verdict is not None and not narrow_review:
+            print("Review mode: full (the card's success criteria changed since the last verdict)")
         if not args.resume:
             repository_before = repository_fingerprint(project_root)
             repository_paths_before = repository_path_snapshot(project_root)
@@ -402,7 +412,7 @@ def run_supervised_round(
                     json.dumps(
                         (
                             review_changed_paths
-                            if previous_verdict is not None
+                            if narrow_review
                             else changed_paths
                         ),
                         indent=2,
@@ -495,7 +505,7 @@ def run_supervised_round(
         if step_ok and not executor_rejected:
             try:
                 clear_review_verdict(verdict_file)
-                if previous_verdict is not None:
+                if narrow_review:
                     previous_verdict_file.write_text(
                         json.dumps(previous_verdict, indent=2) + "\n",
                         encoding="utf-8",
@@ -516,7 +526,7 @@ def run_supervised_round(
             reviewer_env.pop("GIT_INDEX_FILE", None)
             reviewer_verdict_file = (
                 current_verdict_file
-                if previous_verdict is not None
+                if narrow_review
                 else verdict_file
             )
             reviewer_env.update(
@@ -525,7 +535,7 @@ def run_supervised_round(
                     "STAGE_CHANGED_PATHS_FILE": str(changed_paths_file.resolve()),
                     "STAGE_REVIEW_MODE": (
                         "narrow"
-                        if previous_verdict is not None
+                        if narrow_review
                         else "full"
                     ),
                     "STAGE_REVIEW_VERDICT_FILE": str(
@@ -534,7 +544,7 @@ def run_supervised_round(
                     "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
             )
-            if previous_verdict is not None:
+            if narrow_review:
                 reviewer_env.update(
                     {
                         "STAGE_PREVIOUS_REVIEW_VERDICT_FILE": str(
@@ -591,7 +601,7 @@ def run_supervised_round(
                 return 1
             narrow_merge_error = ""
             current_verdict_error = ""
-            if previous_verdict is not None:
+            if narrow_review:
                 current_verdict, current_verdict_error = (
                     load_driver_review_verdict(current_verdict_file)
                 )
@@ -609,12 +619,19 @@ def run_supervised_round(
             verdict_error = (
                 narrow_merge_error or review_verdict_error(verdict_file)
             )
+            # Record for every valid verdict, approving or not: a rejection is
+            # exactly what the next round re-reviews.
+            if not narrow_merge_error and load_driver_review_verdict(verdict_file)[0] is not None:
+                try:
+                    record_review_criteria(verdict_file, item.path)
+                except OSError as exc:
+                    print(f"WARNING: cannot record the reviewed success criteria: {exc}")
             reviewer_blocked = bool(
                 review_verdict_failures(verdict_file)
             )
             if not reviewed or verdict_error:
                 if (
-                    previous_verdict is not None
+                    narrow_review
                     and current_verdict_error
                     == "review verdict file is missing"
                 ):
