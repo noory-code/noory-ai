@@ -169,7 +169,6 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
                 "--model",
                 "opus[1m]",
                 "--allowedTools",
-                f"Write({rule})",
                 f"Edit({rule})",
                 "Bash(python3 -m unittest:*)",
                 "--",
@@ -179,6 +178,7 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
         )
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("--permission-mode", command)
+        self.assertFalse(any(part.startswith("Write(") for part in command))
 
     def test_model_override_and_missing_inputs(self):
         command = claude_review_companion.claude_command(

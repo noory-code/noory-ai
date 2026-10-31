@@ -185,7 +185,6 @@ class TemplateV4Test(unittest.TestCase):
                 "--model",
                 "opus[1m]",
                 "--allowedTools",
-                f"Write(/{verdict})",
                 f"Edit(/{verdict})",
                 "Bash(python3 -m unittest:*)",
                 "--",
@@ -194,6 +193,7 @@ class TemplateV4Test(unittest.TestCase):
         )
         self.assertTrue(argv[-1].startswith("You are an independent code reviewer."))
         self.assertNotIn("acceptEdits", command)
+        self.assertNotIn("Write(", command)
 
     def test_project_review_strengths_can_write_verdict_files(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))

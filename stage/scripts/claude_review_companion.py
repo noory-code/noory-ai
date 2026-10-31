@@ -37,13 +37,13 @@ def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> lis
     changed_paths = environ.get("STAGE_CHANGED_PATHS_FILE", "")
     if changed_paths:
         command += ["--add-dir", str(Path(changed_paths).parent)]
-    # A leading `//` makes a permission rule path absolute.
+    # A leading `//` makes a permission rule path absolute. Only Edit(path) rules
+    # govern file writes; a Write(path) rule is ignored with a warning.
     verdict_rule = "/" + Path(verdict_file).resolve().as_posix()
     command += [
         "--model",
         environ.get(MODEL_ENV) or DEFAULT_MODEL,
         "--allowedTools",
-        f"Write({verdict_rule})",
         f"Edit({verdict_rule})",
         "Bash(python3 -m unittest:*)",
         # --add-dir and --allowedTools take several values; `--` ends them before the prompt.

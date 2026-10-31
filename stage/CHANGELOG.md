@@ -31,6 +31,7 @@
   audit now share one check, so `approved` or a `promoted` without existing paths cannot close.
 - Give the project's claude reviewer and the cloud stand-in only the permissions a review needs: write
   the verdict file, read the changed-path folder, and run unittest, without project-file edits.
+- Drop the reviewer's inert `Write(path)` rule; Claude Code governs file writes through `Edit(path)` rules.
 
 ## 0.63.4 — 2026-10-11
 
