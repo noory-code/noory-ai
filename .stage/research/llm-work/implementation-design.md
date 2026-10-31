@@ -335,7 +335,7 @@ packet은 이 증거를 다음과 같이 다시 확인합니다.
 | `--producers`가 없거나 생산자 항목이 빠짐 | 그 생산자에 대해 2절에 "기준을 조회하지 않았습니다"라고 씁니다. 기준이 없다는 뜻과 구별합니다. | 0 |
 | `producers.json`이 깨졌거나, `argv`가 문자열 배열이 아니거나, 첫 원소가 절대 경로가 아님 | 출력하지 않고 `E_PRODUCERS_INVALID`를 냅니다. | 2 |
 | 생산자 명령이 실패함(종료 코드 ≠ 0), 시간이 넘음, JSON이 깨짐 | 2절에 "<생산자> 기준을 확인하지 못했습니다. 어떤 이전 기준도 현재로 쓰지 마십시오"라고 쓰고, 그 생산자의 기준은 싣지 않습니다. | 0 |
-| snapshot의 `scope.key`가 `--project-key`와 다름 | 출력하지 않고 `E_SCOPE_MISMATCH`를 냅니다. | 2 |
+| Distill snapshot의 `scope`가 `{"kind":"project","key":"<--project-key 값>"}`와 다르거나, Avatar snapshot의 `scope`가 `{"kind":"personal","key":"personal"}`과 다름 | 출력하지 않고 `E_SCOPE_MISMATCH`를 냅니다. Avatar의 개인 범위 키를 프로젝트 키와 비교하지 않습니다. | 2 |
 | snapshot 안에 같은 `id`가 두 번 있음 | 출력하지 않고 `E_VERSION_CONFLICT`를 냅니다. | 2 |
 
 받은 AI가 실제로 기준을 읽고 적용했는지는 세 가지로 봅니다. 결과에 남은 `Applied criteria:` 참조, 미리 정해 둔 파일 검사, 대조 실행입니다(10절).
