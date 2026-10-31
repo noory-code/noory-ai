@@ -39,6 +39,8 @@
 - Refresh the pending-decision index after archiving, so a decision the archived card owns but does not
   consume points at the archived card instead of failing the audit.
 - Validate review verdicts with one rule set shared by close_work.py and the driver.
+- Let `import_executor_report.py` take one `--commit` per attempt and check a cumulative report
+  against every path those commits changed.
 
 ## 0.63.4 — 2026-10-11
 

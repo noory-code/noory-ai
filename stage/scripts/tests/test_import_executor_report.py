@@ -129,6 +129,38 @@ class ImportExecutorReportTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertTrue(log.startswith("# existing log\n\nearlier attempt\n\n### Executor report\n"))
 
+    def head(self) -> str:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=self.root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+    def test_multi_attempt_report_is_checked_against_every_listed_commit(self):
+        cumulative = (
+            "fix(app): second attempt\n\n### Executor report\n"
+            "What changed: second attempt fixed b\n"
+            "Why: W-00000001 - finish the card\n"
+            "Decisions made: kept attempt one's change to a\n"
+            "Work not done: None\n"
+            'Changed paths (JSON): ["src/a.py", "src/b.py"]\n'
+            "Review request: judge both attempts\n"
+        )
+        self.commit("fix(app): first attempt", "src/a.py")
+        first = self.head()
+        self.commit("chore(other): another card's commit in between", "other/card.txt")
+        self.commit(cumulative, "src/b.py")
+        second = self.head()
+
+        last_only = self.run_cli("--commit", second)
+        both = self.run_cli("--commit", first, "--commit", second)
+        log = (self.root / LOG).read_text(encoding="utf-8")
+
+        self.assertEqual(1, last_only.returncode, last_only.stdout)
+        self.assertIn("do not match", last_only.stderr)
+        self.assertEqual(0, both.returncode, both.stderr)
+        self.assertIn(f"from {first}, {second}", both.stdout)
+        self.assertIn('Changed paths (JSON):\n["src/a.py", "src/b.py"]\n', log)
+        self.assertEqual(1, log.count("### Executor report"))
+
     def test_refuses_reports_that_fail_the_contract_and_leaves_the_log_alone(self):
         cases = {
             "missing judgment field": (
