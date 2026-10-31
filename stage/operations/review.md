@@ -56,7 +56,9 @@ Review is OPTIONAL and driven by the work item's own `review` field
 output as evidence. The review command, and an autonomous item's independent
 review alike, runs under `--review-timeout` (default 3600 seconds), separate
 from the per-check `--timeout` (default 900 seconds), so a high-effort review is
-not cut off at the check budget. A review that exceeds it fails the close. The
+not cut off at the check budget. A review that exceeds it fails the close with
+`[TIMED OUT after <n>s] (--review-timeout)`; a check that exceeds its budget
+reads `(--timeout)` instead, so the evidence names the budget that ran out. The
 driver passes its per-command timeout as both values, because it bounds the
 whole `close_work.py` run by that timeout. The review passes only when the command exits zero **and**
 that file holds a valid verdict with `approved: true`. A missing, malformed, or

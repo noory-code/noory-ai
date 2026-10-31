@@ -856,56 +856,109 @@ class CloseWorkTest(unittest.TestCase):
         )
         self.assertEqual(2, review_block.count("```"))
 
+    def review_path_cases(self, command: str) -> tuple[tuple[str, dict, dict], ...]:
+        return (
+            (
+                "review pending",
+                {"review": "pending"},
+                {"strengths": {"standard": command}, "stages": {"implementation": "standard"}},
+            ),
+            ("autonomous independent review", {"autonomous": "true"}, {"reviewers": {"claude": command}}),
+        )
+
     def test_review_gets_its_own_timeout_longer_than_the_check_timeout(self):
-        tmp, root = self.make(review="pending")
-        with tmp:
-            self._write_review(
-                root,
-                {
-                    "strengths": {
-                        "standard": python_command(
-                            "import time; time.sleep(2); print('slow review done')"
-                        )
-                    },
-                    "stages": {"implementation": "standard"},
-                },
-            )
+        command = python_command("import time; time.sleep(2); print('slow review done')")
+        for label, item_fields, review in self.review_path_cases(command):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review)
 
-            proc = run(root, "W-00000001", "--check", "true", "--timeout", "1")
-            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
-                encoding="utf-8"
-            )
+                    proc = run(root, "W-00000001", "--check", "true", "--timeout", "1")
+                    item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                        encoding="utf-8"
+                    )
 
-        self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn("review: passed", item)
-        self.assertIn("status: completed", item)
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertIn("review: passed", item)
+                self.assertIn("status: completed", item)
 
     def test_review_timeout_argument_bounds_the_review_command(self):
+        command = python_command("import time; time.sleep(5)")
+        for label, item_fields, review in self.review_path_cases(command):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review, add_verdict=False)
+
+                    proc = run(
+                        root, "W-00000001", "--check", "true", "--review-timeout", "1"
+                    )
+                    item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                        encoding="utf-8"
+                    )
+
+                self.assertEqual(1, proc.returncode, proc.stderr)
+                self.assertIn("review did not pass", proc.stderr)
+                self.assertIn("[TIMED OUT after 1s] (--review-timeout)", proc.stderr)
+                self.assertIn("status: active", item)
+
+    def test_check_timeout_argument_bounds_checks_not_reviews(self):
         tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(
                 root,
                 {
-                    "strengths": {
-                        "standard": python_command("import time; time.sleep(5)")
-                    },
+                    "strengths": {"standard": python_command("print('review not reached')")},
                     "stages": {"implementation": "standard"},
                 },
-                add_verdict=False,
             )
 
             proc = run(
-                root, "W-00000001", "--check", "true", "--review-timeout", "1"
+                root,
+                "W-00000001",
+                "--check",
+                python_command("import time; time.sleep(5)"),
+                "--timeout",
+                "1",
+                "--review-timeout",
+                "3600",
             )
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
 
         self.assertEqual(1, proc.returncode, proc.stderr)
-        self.assertIn("review did not pass", proc.stderr)
-        self.assertIn("[TIMED OUT after 1s]", proc.stderr)
+        self.assertIn("check failed", proc.stderr)
+        self.assertIn("[TIMED OUT after 1s] (--timeout)", proc.stderr)
         self.assertIn("status: active", item)
-        self.assertIn("review: pending", item)
+
+    def test_timeouts_default_to_900_for_checks_and_3600_for_reviews(self):
+        for label, item_fields, review in self.review_path_cases(python_command("print(1)")):
+            with self.subTest(path=label):
+                tmp, root = self.make(**item_fields)
+                with tmp:
+                    self._write_review(root, review)
+                    close_work = load_close_module()
+                    real_run_check = close_work.run_check
+                    calls: list[tuple[str, int]] = []
+
+                    def recording_run_check(command, timeout, cwd, env=None, timeout_source=""):
+                        calls.append(("review" if env is not None else "check", timeout))
+                        return real_run_check(
+                            command, timeout, cwd, env=env, timeout_source=timeout_source
+                        )
+
+                    argv = ["close_work.py", "--project-root", str(root), "W-00000001"]
+                    with mock.patch.object(
+                        close_work, "run_check", recording_run_check
+                    ), mock.patch.object(
+                        sys, "argv", [*argv, "--check", "true"]
+                    ), mock.patch("sys.stdout"), mock.patch("sys.stderr"):
+                        exit_code = close_work.main()
+
+                self.assertEqual(0, exit_code)
+                self.assertEqual([("check", 900), ("review", 3600)], calls)
 
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (

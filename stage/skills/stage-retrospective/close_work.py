@@ -552,6 +552,7 @@ def run_check(
     timeout: int,
     cwd: Path,
     env: dict[str, str] | None = None,
+    timeout_source: str = "",
 ) -> tuple[bool, str, str]:
     # Returns (ok, evidence_block, raw_output). cwd is the project root so a
     # check's relative paths resolve the same way whatever directory close_work
@@ -567,7 +568,8 @@ def run_check(
             env=env,
         )
     except subprocess.TimeoutExpired:
-        msg = f"$ {command}\n[TIMED OUT after {timeout}s]"
+        source = f" ({timeout_source})" if timeout_source else ""
+        msg = f"$ {command}\n[TIMED OUT after {timeout}s]{source}"
         return False, msg, msg
     output = (proc.stdout or "") + (proc.stderr or "")
     header = f"$ {command}\n[exit {proc.returncode}]"
@@ -858,7 +860,9 @@ def main() -> int:
     project_root = stage_root.parent
     verification_blocks: list[str] = []
     for command in checks:
-        ok, block, _raw = run_check(command, args.timeout, project_root)
+        ok, block, _raw = run_check(
+            command, args.timeout, project_root, timeout_source="--timeout"
+        )
         verification_blocks.append(block)
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
@@ -904,6 +908,7 @@ def main() -> int:
                     args.review_timeout,
                     project_root,
                     env=review_environment,
+                    timeout_source="--review-timeout",
                 )
         except RuntimeError as exc:
             print(
@@ -946,6 +951,7 @@ def main() -> int:
                     args.review_timeout,
                     project_root,
                     env=review_environment,
+                    timeout_source="--review-timeout",
                 )
         except RuntimeError as exc:
             print(
