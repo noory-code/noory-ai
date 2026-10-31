@@ -14,8 +14,3 @@
 | W-00000276 | passed | completed | not_applicable | [current/W-00000272/W-00000276/_story.md](current/W-00000272/W-00000276/_story.md) |
 | W-00000277 | passed | completed | not_applicable | [current/W-00000272/W-00000277/_story.md](current/W-00000272/W-00000277/_story.md) |
 | W-00000275 | passed | completed | not_applicable | [current/W-00000272/W-00000275/_story.md](current/W-00000272/W-00000275/_story.md) |
-| W-00000297 | passed | completed | not_applicable | [current/W-00000297/_story.md](current/W-00000297/_story.md) |
-| W-00000301 | passed | completed | not_applicable | [current/W-00000301/_story.md](current/W-00000301/_story.md) |
-| W-00000302 | passed | completed | not_applicable | [current/W-00000302/_story.md](current/W-00000302/_story.md) |
-| W-00000303 | passed | completed | not_applicable | [current/W-00000303/_story.md](current/W-00000303/_story.md) |
-| W-00000300 | passed | completed | not_applicable | [current/W-00000300/_story.md](current/W-00000300/_story.md) |
