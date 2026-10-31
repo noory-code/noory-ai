@@ -15,5 +15,4 @@
 | W-00000280 | planning | claude | 사용자가 여러 AI에서 남긴 선택을 돌아보며 자신의 기준을 알아가고 직접 고칩니다 | active | Codex | [current/W-00000272/W-00000280/_story.md](current/W-00000272/W-00000280/_story.md) |
 | W-00000281 | development | codex | 사용자가 Avatar 기록에서 자신을 돌아보고 닮고 싶은 작업 방식을 AI 규칙으로 가져갑니다 | active | Codex | [current/W-00000272/W-00000280/W-00000281.md](current/W-00000272/W-00000280/W-00000281.md) |
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
-| W-00000305 | fix | claude | 사람이 리뷰 사이에 카드의 완료 기준을 바꿔도 드라이버가 승인된 판정을 버리거나 새 기준을 판정 없이 지나가 | active | Claude | [current/W-00000305/_story.md](current/W-00000305/_story.md) |
 | W-00000307 | fix | claude | 카드를 다시 설계하고 시도 횟수를 되돌린 뒤의 다음 판이 버린 설계의 판정과 변경 경로 때문에 카드와 무관한 | active | Claude | [current/W-00000307/_story.md](current/W-00000307/_story.md) |
