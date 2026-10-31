@@ -19,3 +19,4 @@
 | W-00000290 | passed | completed | not_applicable | [current/W-00000290/_story.md](current/W-00000290/_story.md) |
 | W-00000291 | passed | completed | not_applicable | [current/W-00000291/_story.md](current/W-00000291/_story.md) |
 | W-00000292 | passed | completed | deferred | [current/W-00000292/_story.md](current/W-00000292/_story.md) |
+| W-00000293 | passed | completed | not_applicable | [current/W-00000293/_story.md](current/W-00000293/_story.md) |
