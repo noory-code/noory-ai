@@ -236,3 +236,5 @@
 | W-00000305 | completed | [items/W-00000305/_story.md](items/W-00000305/_story.md) |
 | W-00000306 | completed | [items/W-00000306/_story.md](items/W-00000306/_story.md) |
 | W-00000307 | completed | [items/W-00000307/_story.md](items/W-00000307/_story.md) |
+| W-00000309 | completed | [items/W-00000309/_story.md](items/W-00000309/_story.md) |
+| W-00000310 | completed | [items/W-00000310/_story.md](items/W-00000310/_story.md) |

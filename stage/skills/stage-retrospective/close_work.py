@@ -62,6 +62,7 @@ from stage_work import (  # noqa: E402
     split_scope,
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
+from driver_repository import changed_repository_paths, repository_path_snapshot  # noqa: E402
 import audit_stage  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
@@ -210,6 +211,37 @@ def read_work_log(path: Path) -> str:
 
 def review_verdict_path(stage_root: Path, item_id: str) -> Path:
     return stage_root.parent / REVIEW_VERDICT_RELATIVE_DIR / f"{item_id}.json"
+
+
+def reject_review_writes(
+    project_root: Path,
+    before: dict[str, str],
+    after: dict[str, str],
+    verdict_file: Path,
+) -> str:
+    """Fail a review that changed repository files other than its verdict file.
+
+    A reviewer's permission rules govern its own tool calls, not the code its test
+    commands run, so the repository is compared around the review command. On a
+    change the verdict is removed so no approval survives, the changed files are
+    left in place (reverting could discard a person's edits), and the returned
+    message names them. Returns "" when only the verdict file changed.
+    """
+
+    try:
+        verdict = verdict_file.resolve().relative_to(project_root.resolve()).as_posix()
+    except ValueError:
+        verdict = ""
+    written = [path for path in changed_repository_paths(before, after) if path != verdict]
+    if not written:
+        return ""
+    verdict_file.unlink(missing_ok=True)
+    return (
+        "the review changed repository files other than its verdict file: "
+        + ", ".join(written)
+        + "; verdict removed and files left in place: inspect and discard them before the "
+        "next review (edits someone made in this checkout during the review count too)"
+    )
 
 
 def clear_review_verdict(path: Path) -> None:
@@ -699,6 +731,51 @@ def close_review_environment(
     return environment
 
 
+def run_close_review(
+    project_root: Path,
+    item_path: Path,
+    item_id: str,
+    command: str,
+    timeout: int,
+    review_timeout: int,
+) -> tuple[bool, str]:
+    """Run one review at close and return whether it passed and, if not, why.
+
+    Raises RuntimeError when the review material or the repository snapshots
+    cannot be prepared; a failed snapshot after the review removes the verdict.
+    """
+
+    with tempfile.TemporaryDirectory(prefix="stage-close-review-") as review_tmp:
+        environment = close_review_environment(
+            project_root,
+            item_path,
+            item_id,
+            Path(review_tmp) / "changed-paths.json",
+            timeout,
+        )
+        verdict_file = Path(environment["STAGE_REVIEW_VERDICT_FILE"])
+        before = repository_path_snapshot(project_root)
+        ok, block, _raw = run_check(
+            command,
+            review_timeout,
+            project_root,
+            env=environment,
+            timeout_source="--review-timeout",
+        )
+        try:
+            after = repository_path_snapshot(project_root)
+        except RuntimeError as exc:
+            verdict_file.unlink(missing_ok=True)
+            raise RuntimeError(f"cannot inspect the repository after review: {exc}") from exc
+    verdict_error = reject_review_writes(
+        project_root, before, after, verdict_file
+    ) or review_verdict_error(verdict_file)
+    if not ok or verdict_error:
+        detail = f"\n{verdict_error}" if verdict_error else ""
+        return False, f"{block}{detail}"
+    return True, ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Close a Stage work item by running its checks.")
     parser.add_argument("--project-root", default=".")
@@ -979,35 +1056,23 @@ def main() -> int:
             )
             return 1
         try:
-            with tempfile.TemporaryDirectory(prefix="stage-close-review-") as review_tmp:
-                review_environment = close_review_environment(
-                    project_root,
-                    item_path,
-                    work_item.item_id,
-                    Path(review_tmp) / "changed-paths.json",
-                    args.timeout,
-                )
-                ok, block, _raw = run_check(
-                    review_command,
-                    args.review_timeout,
-                    project_root,
-                    env=review_environment,
-                    timeout_source="--review-timeout",
-                )
+            passed, detail = run_close_review(
+                project_root,
+                item_path,
+                work_item.item_id,
+                review_command,
+                args.timeout,
+                args.review_timeout,
+            )
         except RuntimeError as exc:
             print(
-                f"{args.item}: cannot prepare independent review material: {exc}",
+                f"{args.item}: independent review could not run: {exc}; work item unchanged",
                 file=sys.stderr,
             )
             return 1
-        verdict_error = review_verdict_error(
-            Path(review_environment["STAGE_REVIEW_VERDICT_FILE"])
-        )
-        if not ok or verdict_error:
-            detail = f"\n{verdict_error}" if verdict_error else ""
+        if not passed:
             print(
-                f"{args.item}: independent review did not pass; work item unchanged:"
-                f"\n{block}{detail}",
+                f"{args.item}: independent review did not pass; work item unchanged:\n{detail}",
                 file=sys.stderr,
             )
             return 1
@@ -1022,35 +1087,23 @@ def main() -> int:
             print(f"{args.item}: review is pending but stage `{args.review_stage}` configures no review command in settings.json", file=sys.stderr)
             return 1
         try:
-            with tempfile.TemporaryDirectory(prefix="stage-close-review-") as review_tmp:
-                review_environment = close_review_environment(
-                    project_root,
-                    item_path,
-                    work_item.item_id,
-                    Path(review_tmp) / "changed-paths.json",
-                    args.timeout,
-                )
-                ok, block, _raw = run_check(
-                    review_command,
-                    args.review_timeout,
-                    project_root,
-                    env=review_environment,
-                    timeout_source="--review-timeout",
-                )
+            passed, detail = run_close_review(
+                project_root,
+                item_path,
+                work_item.item_id,
+                review_command,
+                args.timeout,
+                args.review_timeout,
+            )
         except RuntimeError as exc:
             print(
-                f"{args.item}: cannot prepare review material: {exc}",
+                f"{args.item}: review could not run: {exc}; work item unchanged",
                 file=sys.stderr,
             )
             return 1
-        verdict_error = review_verdict_error(
-            Path(review_environment["STAGE_REVIEW_VERDICT_FILE"])
-        )
-        if not ok or verdict_error:
-            detail = f"\n{verdict_error}" if verdict_error else ""
+        if not passed:
             print(
-                f"{args.item}: review did not pass; work item unchanged:\n"
-                f"{block}{detail}",
+                f"{args.item}: review did not pass; work item unchanged:\n{detail}",
                 file=sys.stderr,
             )
             return 1

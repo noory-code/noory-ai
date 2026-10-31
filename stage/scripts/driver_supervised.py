@@ -37,6 +37,7 @@ from close_work import (  # noqa: E402
     executor_report_error,
     executor_review_dispositions,
     read_work_log,
+    reject_review_writes,
     run_check,
     review_verdict_path,
 )
@@ -521,6 +522,14 @@ def run_supervised_round(
                 step_ok = False
                 failure = f"cannot prepare narrow review inputs: {exc}"
 
+        review_paths_before: dict[str, str] = {}
+        if step_ok and not executor_rejected:
+            try:
+                review_paths_before = repository_path_snapshot(project_root)
+            except RuntimeError as exc:
+                step_ok = False
+                failure = f"cannot inspect repository before reviewer: {exc}"
+
         if step_ok and not executor_rejected:
             reviewer_env = project_environment(project_root)
             reviewer_env.pop("GIT_INDEX_FILE", None)
@@ -566,6 +575,16 @@ def run_supervised_round(
                 project_root,
                 env=reviewer_env,
             )
+            try:
+                review_write_failure = reject_review_writes(
+                    project_root,
+                    review_paths_before,
+                    repository_path_snapshot(project_root),
+                    reviewer_verdict_file,
+                )
+            except RuntimeError as exc:
+                reviewer_verdict_file.unlink(missing_ok=True)
+                review_write_failure = f"cannot inspect repository after reviewer: {exc}"
             execution_seconds += reviewer_seconds
             state["execution_seconds"] = execution_seconds
             try:
@@ -601,7 +620,7 @@ def run_supervised_round(
                 return 1
             narrow_merge_error = ""
             current_verdict_error = ""
-            if narrow_review:
+            if narrow_review and not review_write_failure:
                 current_verdict, current_verdict_error = (
                     load_driver_review_verdict(current_verdict_file)
                 )
@@ -617,7 +636,9 @@ def run_supervised_round(
                         verdict_file,
                     )
             verdict_error = (
-                narrow_merge_error or review_verdict_error(verdict_file)
+                review_write_failure
+                or narrow_merge_error
+                or review_verdict_error(verdict_file)
             )
             # Record for every valid verdict, approving or not: a rejection is
             # exactly what the next round re-reviews.
@@ -630,7 +651,11 @@ def run_supervised_round(
                 review_verdict_failures(verdict_file)
             )
             if not reviewed or verdict_error:
-                if (
+                if review_write_failure:
+                    # The reviewer's own run changed the tree: a real failure, not a
+                    # service outage to retry for free.
+                    infrastructure_failed = False
+                elif (
                     narrow_review
                     and current_verdict_error
                     == "review verdict file is missing"

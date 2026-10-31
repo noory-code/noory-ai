@@ -138,8 +138,11 @@ class TemplateV4Test(unittest.TestCase):
         self.assertEqual(8, len(commands))
         for name, command in commands.items():
             with self.subTest(name=name):
-                if name in {"executor.claude", "reviewer.claude"}:
+                if name == "executor.claude":
                     self.assertIn("--model 'opus[1m]'", command)
+                elif name == "reviewer.claude":
+                    # The guarded companion builds the claude command from this pin.
+                    self.assertIn("STAGE_CLAUDE_REVIEW_MODEL='opus[1m]' python3 ", command)
                 else:
                     self.assertIn("--model gpt-6-astra --effort high", command)
                     self.assertNotIn("--model gpt-6-sol", command)
@@ -185,7 +188,7 @@ class TemplateV4Test(unittest.TestCase):
                 "--model",
                 "opus[1m]",
                 "--allowedTools",
-                f"Edit(/{verdict})",
+                f"Edit(/{verdict.resolve().as_posix()})",
                 "Bash(python3 -m unittest:*)",
                 "--",
             ],

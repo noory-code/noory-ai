@@ -10,6 +10,15 @@ the folder of `$STAGE_CHANGED_PATHS_FILE`, which lives outside the project; it m
 not edit project files. The result is a same-model review, never a cross-venue one;
 the cloud-execution procedure requires the card to say so.
 
+Permission rules govern only the reviewer's own tool calls: code that `python3 -m
+unittest` imports and runs can still write anywhere. `close_work.py` and the
+supervised driver therefore compare the repository around every review command,
+this one included, and fail a review that changed anything but its verdict
+(`close_work.reject_review_writes`).
+
+The project's own Claude reviewer command runs through this script as well, so both
+review paths share these permissions.
+
 Usage (from the project root):
     STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py \\
         python3 stage/skills/stage-retrospective/close_work.py ...
