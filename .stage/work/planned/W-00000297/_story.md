@@ -1,5 +1,5 @@
 ---
-id: W-00000288
+id: W-00000297
 title: 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다
 kind: fix
 venue:
@@ -12,7 +12,7 @@ review: not_required
 scope: stage/scripts/driver_lifecycle.py, stage/scripts/tests/test_drive.py, stage/CHANGELOG.md
 ---
 
-# W-00000288 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다
+# W-00000297 드라이버가 닫을 때도 긴 리뷰 제한 시간을 쓰게 한다
 
 ## Purpose
 
