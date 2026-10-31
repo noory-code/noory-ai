@@ -743,6 +743,60 @@ class ArchiveWorkCliTest(unittest.TestCase):
             0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr
         )
 
+    def test_v5_archive_points_the_pending_index_at_the_archived_owner(self):
+        for with_exception in (False, True):
+            with self.subTest(with_exception=with_exception), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                stage = root / ".stage"
+                shutil.copytree(TEMPLATE_ROOT, stage)
+                refs = "DE-00000001, DE-00000002" if with_exception else "DE-00000001"
+                current = stage / "work/current/W-00000001"
+                current.mkdir(parents=True)
+                (current / "_story.md").write_text(
+                    V5_ITEM.format(wid="W-00000001", ref="R-00000001")
+                    .replace("decision_refs:\n", f"decision_refs: {refs}\n")
+                    .replace("promotion: not_applicable", "promotion: deferred"),
+                    encoding="utf-8",
+                )
+                (stage / "work/retrospectives/R-00000001.md").write_text(
+                    RETRO.format(ref="R-00000001", wid="W-00000001"), encoding="utf-8"
+                )
+                decisions = [("DE-00000001", "")]
+                if with_exception:
+                    decisions.append(("DE-00000002", "authorizes: venue_exception\n"))
+                for decision_id, authorizes in decisions:
+                    (stage / f"decisions/pending/{decision_id}.md").write_text(
+                        "---\n"
+                        f"id: {decision_id}\nwork_item: W-00000001\nstatus: decided\n{authorizes}"
+                        "---\n\n"
+                        f"# {decision_id} Decision\n\n## Question\n\nQ?\n\n"
+                        "## Principles applied\n\n- **SSOT** — one owner.\n\n"
+                        "## Chosen direction\n\nYes.\n",
+                        encoding="utf-8",
+                    )
+                subprocess.run(
+                    [sys.executable, str(AUDIT_CLI_PATH.parent / "refresh_decision_index.py"),
+                     "--project-root", str(root)],
+                    check=True,
+                    capture_output=True,
+                )
+
+                proc = run_cli(root, "W-00000001")
+                pending_index = (stage / "decisions/index.md").read_text(encoding="utf-8")
+                audit = subprocess.run(
+                    [sys.executable, str(AUDIT_CLI_PATH), "--project-root", str(root)],
+                    capture_output=True,
+                    text=True,
+                )
+
+                self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+                row = next(line for line in pending_index.splitlines() if "DE-00000001" in line)
+                self.assertIn("official/work/archive/items/W-00000001/_story.md", row)
+                self.assertIn("| archived |", row)
+                self.assertNotIn("DE-00000002", pending_index)
+                self.assertNotIn("DECISION004", audit.stdout)
+                self.assertIn("Summary: errors=0", audit.stdout)
+
     def test_v5_can_archive_consumed_decisions_for_already_archived_work(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

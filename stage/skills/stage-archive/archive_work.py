@@ -556,6 +556,18 @@ def archive_one(
         )
     except OSError as exc:
         return f"{item_id}: ERROR cannot archive consumed decisions: {exc}"
+    # Re-render the pending-decision index now that the cards have moved: a
+    # decision this hierarchy owns but does not consume (a policy decision) must
+    # point at the archived card, and the consumed-decision plan rendered before
+    # the move.
+    if (stage_root / refresh_decision_index.INDEX_RELATIVE).is_file():
+        try:
+            refresh_decision_index.refresh_index(stage_root.parent)
+        except (refresh_decision_index.IndexFormatError, OSError) as exc:
+            return (
+                f"{item_id}: ERROR archived, but cannot refresh the pending-decision index: "
+                f"{exc}; run refresh_decision_index.py"
+            )
     decision_detail = (
         f", {consumed_count} consumed decision(s)" if consumed_count else ""
     )

@@ -32,6 +32,8 @@ for import_dir in (
 from close_work import (  # noqa: E402
     clear_review_verdict,
     ensure_work_log,
+    close_owned_fields,
+    close_owned_fields_error,
     executor_report_error,
     executor_review_dispositions,
     read_work_log,
@@ -179,6 +181,7 @@ def run_supervised_round(
                 reviewer_command=reviewer_command,
             )
         log_before = read_work_log(log_path)
+        card_fields_before = close_owned_fields(item.path)
         previous_verdict = (
             item_state.get("resume_previous_verdict")
             if args.resume
@@ -314,6 +317,9 @@ def run_supervised_round(
             except RuntimeError as exc:
                 step_ok = False
                 failure = f"cannot inspect repository after executor: {exc}"
+            # Always check and restore, whatever else failed this attempt, so a
+            # hand-set value never becomes the next attempt's starting point.
+            card_field_error = close_owned_fields_error(item.path, card_fields_before)
 
             if step_ok:
                 if executor_log_error:
@@ -340,6 +346,10 @@ def run_supervised_round(
                         and not reasoned_no_change
                     ):
                         unchanged_repository = True
+            if card_field_error:
+                failure = card_field_error if step_ok else f"{failure}; {card_field_error}"
+                step_ok = False
+                unchanged_repository = False
 
             if step_ok:
                 executor_checkpoint = {

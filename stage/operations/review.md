@@ -59,8 +59,10 @@ from the per-check `--timeout` (default 900 seconds), so a high-effort review is
 not cut off at the check budget. A review that exceeds it fails the close with
 `[TIMED OUT after <n>s] (--review-timeout)`; a check that exceeds its budget
 reads `(--timeout)` instead, so the evidence names the budget that ran out. The
-driver passes its per-command timeout as both values, because it bounds the
-whole `close_work.py` run by that timeout. The review passes only when the command exits zero **and**
+unattended driver passes the larger of 3600 seconds and its per-command timeout
+as `--review-timeout`, capped by the run's remaining wall clock, and bounds the
+whole `close_work.py` run by every check's budget plus that review budget. The
+review passes only when the command exits zero **and**
 that file holds a valid verdict with `approved: true`. A missing, malformed, or
 non-approving verdict fails the close even on a zero exit, and a zero exit with
 an approving verdict passes it whatever the command printed — reviewer prose is

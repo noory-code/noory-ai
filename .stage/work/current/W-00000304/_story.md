@@ -1,5 +1,5 @@
 ---
-id: W-00000301
+id: W-00000304
 title: worktree에 들어간 Claude 세션에서 훅이 그 worktree를 작업 루트로 판정하게 한다
 kind: fix
 venue: claude
@@ -10,7 +10,7 @@ acceptance:
 status: completed
 verification: passed
 retrospective: completed
-retrospective_ref: R-00000301
+retrospective_ref: R-00000304
 promotion: not_applicable
 review: passed
 scope: stage/hooks/, stage/CHANGELOG.md, .stage/
@@ -18,7 +18,7 @@ promotes:
 decision_refs: DE-00000084
 ---
 
-# W-00000301 worktree에 들어간 Claude 세션에서 훅이 그 worktree를 작업 루트로 판정하게 한다
+# W-00000304 worktree에 들어간 Claude 세션에서 훅이 그 worktree를 작업 루트로 판정하게 한다
 
 ## Purpose
 
@@ -54,6 +54,7 @@ Claude Code 세션이 같은 저장소의 linked worktree로 들어가도 훅이
 
 ## Progress
 
+PR #10의 충돌을 풀면서 W-00000301에서 W-00000304로 번호를 바꿨습니다. `main`이 같은 번호로 다른 작업을 이미 보관했기 때문입니다. 회고와 결정 기록의 연결도 함께 바꿨습니다. 아래 실행·리뷰 기록은 당시 번호를 그대로 보존합니다.
 
 ### Executor report at close — 2026-10-31
 
