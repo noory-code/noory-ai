@@ -2,14 +2,21 @@
 id: W-00000309
 title: Claude 리뷰어의 파일 쓰기 제한을 실제 리뷰 경로에서 검증합니다
 kind: qa
-venue:
+venue: claude
+environment: cloud
 milestone:
-status: captured
-priority:
 autonomous: false
-acceptance: []
-review: not_required
-scope: stage/scripts/claude_review_companion.py, stage/scripts/tests/, .stage/settings.json, stage/CHANGELOG.md
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/scripts/claude_review_companion.py, stage/scripts/tests/, .stage/settings.json, stage/operations/cloud-execution.md, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000309 Claude 리뷰어의 파일 쓰기 제한을 실제 리뷰 경로에서 검증합니다
@@ -59,3 +66,13 @@ W-00000299는 W-00000295의 argv 검사가 자식 프로세스의 쓰기까지 �
 ## Next action
 
 사용자가 요청한 계획 카드입니다. milestone은 연결하지 않았습니다. 실행 세션은 W-00000299의 후속 항목과 W-00000295의 기존 테스트를 읽고, 실제 리뷰 경로에서 재현하는 실패 검사부터 작성합니다. Included의 경로별 실행·쓰기 시도는 성공 기준 1·2가, 정상 동작과 실패 표시는 성공 기준 3이 검증합니다.
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
