@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fail a Claude review that changes any repository file other than its verdict: the reviewer's
+  permission rules stop its own writes but not those of code `python3 -m unittest` runs, so
+  `claude_review_companion.py` compares the repository before and after, removes the verdict, and
+  exits 3. The project's Claude reviewer command now runs through the same companion.
+
+## 0.63.5 — 2026-11-01
+
 - Accept planned work cards in state records' `work_items` links while still reporting missing
   cards as `STATE001`.
 - Judge a Claude Code session that entered a linked worktree of the same repository by that
@@ -56,10 +63,6 @@
 - Make `drive.py --reset-attempts` remove the previous review verdict and its criteria digest, so the
   redesigned card's next round gets a full review, and drop executor changed paths the person
   reverted while keeping those still changed from the item base, which the item commit includes.
-- Fail a Claude review that changes any repository file other than its verdict: the reviewer's
-  permission rules stop its own writes but not those of code `python3 -m unittest` runs, so
-  `claude_review_companion.py` compares the repository before and after, removes the verdict, and
-  exits 3. The project's Claude reviewer command now runs through the same companion.
 
 ## 0.63.4 — 2026-10-11
 
