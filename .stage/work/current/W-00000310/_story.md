@@ -61,6 +61,23 @@ Codex 리뷰어나 다른 프로젝트의 Claude 리뷰어가 돌린 시험 코�
 
 ## Progress
 
+2026-11-01 클라우드 세션. 검사를 대역(`claude_review_companion.py`)에서 `close_work.run_close_review` /
+`reject_review_writes` 와 감독 드라이버로 옮겼다. 무인 드라이버는 리뷰를 `close_work` 로 돌리므로 따로 고칠 것이 없다.
+v4 템플릿의 `reviewers.claude` 는 빈 값이고 프로젝트가 직접 채운다. 검사가 명령 바깥에 있으니 어떤 명령이든
+걸리며, 템플릿에는 그 사실을 안내 주석으로 적었다.
+
+실측(`LiveReviewerWriteProbeTest`, CLI `2.1.316 (Claude Code)`, 권한은 두 경로 모두 `Edit(//<판정 파일>)` 과
+`Bash(python3 -m unittest:*)`)으로 `close_work.run_close_review` 를 거쳐 확인했다.
+
+| 경로 | 시험 실행 | 통과 | 남은 변경 | 판정 파일 |
+|---|---|---|---|---|
+| cloud 대역 | 했다 | 아니오 | ` M tracked.txt` (직접 쓰기 셋은 없음) | 지워짐 |
+| 프로젝트 `reviewers.claude` 1판 | 안 했다 | 예 | 없음 | 남음 — 검사가 걸릴 일이 없던 판 |
+| 프로젝트 `reviewers.claude` 2판 | 했다 | 아니오 | ` M tracked.txt` | 지워짐 |
+
+프로젝트 경로 1판에서 리뷰어는 "직접 돌려서 통과한다"는 기준을 시험을 돌리지 않고 통과시켰다. 시험을 돌릴지는
+모델이 고르므로, 실측 시험은 시험이 돌지 않은 판을 미완료로 기록하고 건너뛰게 했다.
+
 ## Verification
 
 ## Retrospective
