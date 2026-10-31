@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Judge a Claude Code session that entered a linked worktree of the same repository by that
+  worktree: the hook payload `cwd` follows the session while `CLAUDE_PROJECT_DIR` stays on the
+  starting checkout, so the worktree's `.stage/` stays ungoverned and its own open work opens the
+  registration gate. Only a session started in the main checkout moves: a root the driver pinned
+  (`PROJECT_ROOT` or `STAGE_PROJECT_ROOT` set), a session started in a worktree, Codex hooks, and
+  other repositories keep their root.
 - Pin the project's six Codex driver commands to `gpt-6-astra` at high effort so they do not use
   the home default, and let the close-time review profiles write their verdict files.
 - Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
