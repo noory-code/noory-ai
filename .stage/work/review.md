@@ -22,3 +22,4 @@
 | W-00000293 | passed | completed | not_applicable | [current/W-00000293/_story.md](current/W-00000293/_story.md) |
 | W-00000294 | passed | completed | not_applicable | [current/W-00000294/_story.md](current/W-00000294/_story.md) |
 | W-00000295 | passed | completed | not_applicable | [current/W-00000295/_story.md](current/W-00000295/_story.md) |
+| W-00000296 | passed | completed | not_applicable | [current/W-00000296/_story.md](current/W-00000296/_story.md) |
