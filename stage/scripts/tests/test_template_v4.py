@@ -134,12 +134,21 @@ class TemplateV4Test(unittest.TestCase):
         self.assertEqual(8, len(commands))
         for name, command in commands.items():
             with self.subTest(name=name):
-                expected_model = (
-                    "--model 'opus[1m]'"
-                    if name in {"executor.claude", "reviewer.claude"}
-                    else "--model gpt-6-sol"
-                )
-                self.assertIn(expected_model, command)
+                if name in {"executor.claude", "reviewer.claude"}:
+                    self.assertIn("--model 'opus[1m]'", command)
+                else:
+                    self.assertIn("--model gpt-6-astra --effort high", command)
+                    self.assertNotIn("--model gpt-6-sol", command)
+
+    def test_project_review_strengths_can_write_verdict_files(self):
+        settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
+        strengths = settings["review"]["strengths"]
+
+        self.assertEqual({"off", "light", "standard", "deep", "red-team"}, set(strengths))
+        self.assertIsNone(strengths["off"])
+        for name in ("light", "standard", "deep", "red-team"):
+            with self.subTest(name=name):
+                self.assertIn("--fresh --write ", strengths[name])
 
     def test_project_driver_commands_do_not_run_backtick_command_substitution(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))

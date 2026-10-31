@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Pin the project's six Codex driver commands to `gpt-6-sol` so they do not use the home default.
+- Pin the project's six Codex driver commands to `gpt-6-astra` at high effort so they do not use
+  the home default, and let the close-time review profiles write their verdict files.
 - Ask reviewers to name the kind of input behind a failed criterion and executors to fix that whole
   kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
 - Carry every non-record file in an archived card folder, at any depth, into the archive byte for

@@ -16,3 +16,4 @@
 | W-00000270 | passed | completed | not_applicable | [current/W-00000270/_story.md](current/W-00000270/_story.md) |
 | W-00000276 | passed | completed | not_applicable | [current/W-00000272/W-00000276/_story.md](current/W-00000272/W-00000276/_story.md) |
 | W-00000277 | passed | completed | not_applicable | [current/W-00000272/W-00000277/_story.md](current/W-00000272/W-00000277/_story.md) |
+| W-00000286 | passed | completed | not_applicable | [current/W-00000286/_story.md](current/W-00000286/_story.md) |
