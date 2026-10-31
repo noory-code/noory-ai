@@ -10,6 +10,5 @@
 | 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |
 |---|---|---|---|---|
 | DE-00000073 | decided | [W-00000265](../work/current/W-00000263/W-00000265/_story.md) | completed | [pending/DE-00000073.md](pending/DE-00000073.md) |
-| DE-00000074 | decided | [W-00000273](../work/current/W-00000272/W-00000273/_story.md) | active | [pending/DE-00000074.md](pending/DE-00000074.md) |
 | DE-00000082 | decided | [W-00000292](../official/work/archive/items/W-00000292/_story.md) | archived | [pending/DE-00000082.md](pending/DE-00000082.md) |
 | DE-00000084 | decided | [W-00000304](../work/current/W-00000304/_story.md) | completed | [pending/DE-00000084.md](pending/DE-00000084.md) |
