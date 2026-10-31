@@ -2,14 +2,21 @@
 id: W-00000310
 title: 모든 리뷰어에 판정 파일 밖 쓰기 검사를 건다
 kind: fix
-venue:
+venue: claude
+environment: cloud
 milestone:
-status: captured
-priority:
 autonomous: false
-acceptance: []
-review: not_required
-scope: stage/scripts/driver_supervised.py, stage/scripts/driver_unattended.py, stage/scripts/driver_review.py, stage/skills/stage-retrospective/close_work.py, stage/templates/v4/project-stage/settings.jsonc, stage/scripts/tests/, stage/CHANGELOG.md
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_claude_review_guard.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/scripts/driver_supervised.py, stage/scripts/driver_unattended.py, stage/scripts/driver_review.py, stage/skills/stage-retrospective/close_work.py, stage/scripts/claude_review_companion.py, stage/templates/v4/project-stage/settings.jsonc, stage/scripts/tests/, stage/operations/cloud-execution.md, stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000310 모든 리뷰어에 판정 파일 밖 쓰기 검사를 건다
@@ -49,3 +56,13 @@ Codex 리뷰어나 다른 프로젝트의 Claude 리뷰어가 돌린 시험 코�
 - v4 템플릿의 Claude 리뷰 명령이 같은 검사를 받는다는 것을 테스트가 확인한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
