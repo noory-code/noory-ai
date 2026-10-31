@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Accept planned work cards in state records' `work_items` links while still reporting missing
+  cards as `STATE001`.
 - Judge a Claude Code session that entered a linked worktree of the same repository by that
   worktree: the hook payload `cwd` follows the session while `CLAUDE_PROJECT_DIR` stays on the
   starting checkout, so the worktree's `.stage/` stays ungoverned and its own open work opens the
