@@ -23,7 +23,9 @@ for import_dir in (
     if str(import_dir) not in sys.path:
         sys.path.insert(0, str(import_dir))
 
-from close_work import ensure_work_log  # noqa: E402
+from close_work import ensure_work_log, review_verdict_path  # noqa: E402
+from driver_git import run_git  # noqa: E402
+from driver_review import criteria_digest_path  # noqa: E402
 from stage_work import WorkItem  # noqa: E402
 
 
@@ -185,6 +187,66 @@ def write_run_state(path: Path, state: dict[str, Any]) -> None:
             pass
 
 
+def paths_still_changed(
+    project_root: Path, base_head: str, paths: list[str]
+) -> tuple[list[str], str]:
+    """Return the given paths that still differ from the item's base commit.
+
+    Uses the same view as the driver's snapshots: tracked files plus untracked,
+    non-ignored ones. Without a base commit, a path counts while it still exists.
+    """
+
+    if not paths:
+        return [], ""
+    if base_head:
+        ok, tracked = run_git(
+            project_root,
+            ["--literal-pathspecs", "diff", "--name-only", "-z", "--no-renames", base_head,
+             "--", *paths],
+        )
+    else:
+        ok, tracked = run_git(
+            project_root, ["--literal-pathspecs", "ls-files", "-z", "--cached", "--", *paths]
+        )
+    if not ok:
+        return [], f"cannot compare executor changed paths with the item base: {tracked.strip()}"
+    ok, untracked = run_git(
+        project_root,
+        ["--literal-pathspecs", "ls-files", "-z", "--others", "--exclude-standard", "--", *paths],
+    )
+    if not ok:
+        return [], f"cannot list untracked executor changed paths: {untracked.strip()}"
+    changed = {path for path in (tracked + "\0" + untracked).split("\0") if path}
+    return [path for path in paths if path in changed], ""
+
+
+def _remove_files(paths: list[Path]) -> tuple[dict[Path, bytes], str]:
+    """Remove existing files, returning their bytes; on failure restore what was removed."""
+
+    removed: dict[Path, bytes] = {}
+    for path in paths:
+        try:
+            if not path.is_file():
+                continue
+            removed[path] = path.read_bytes()
+            path.unlink()
+        except OSError as exc:
+            restore_error = _restore_files(removed)
+            detail = f"; cannot restore it: {restore_error}" if restore_error else ""
+            return {}, f"cannot remove {path}: {exc}{detail}"
+    return removed, ""
+
+
+def _restore_files(removed: dict[Path, bytes]) -> str:
+    errors = []
+    for path, content in removed.items():
+        try:
+            path.write_bytes(content)
+        except OSError as exc:
+            errors.append(f"{path}: {exc}")
+    return "; ".join(errors)
+
+
 def reset_attempts(
     *,
     state_path: Path,
@@ -217,11 +279,61 @@ def reset_attempts(
     if item_state["attempt_count"] == 0:
         return False, f"no recorded attempts exist for {item_id}"
 
+    previous_paths = list(item_state.get("executor_changed_paths", []))
+    kept_paths, paths_error = paths_still_changed(
+        stage_root.parent, item_state.get("base_head", ""), previous_paths
+    )
+    if paths_error:
+        return False, paths_error
+    dropped_paths = [path for path in previous_paths if path not in kept_paths]
+
     try:
         log_path = ensure_work_log(stage_root, item_id)
         log_stream = log_path.open("a", encoding="utf-8")
     except (OSError, RuntimeError) as exc:
         return False, str(exc)
+
+    # A reset discards the previous design's judgment: the next round gets a full review.
+    verdict_file = review_verdict_path(stage_root, item_id)
+    review_files = {
+        verdict_file: "review verdict",
+        criteria_digest_path(verdict_file): "success-criteria digest",
+    }
+    with log_stream:
+        removed_files, remove_error = _remove_files(list(review_files))
+        if remove_error:
+            return False, f"cannot clear the previous review: {remove_error}"
+        cleared = [review_files[path] for path in review_files if path in removed_files]
+        return _record_reset(
+            state_path=state_path,
+            state=state,
+            item_id=item_id,
+            item_state=item_state,
+            now=now,
+            reason=reason,
+            log_stream=log_stream,
+            removed_files=removed_files,
+            cleared=cleared,
+            kept_paths=kept_paths,
+            dropped_paths=dropped_paths,
+        )
+
+
+def _record_reset(
+    *,
+    state_path: Path,
+    state: dict[str, Any],
+    item_id: str,
+    item_state: dict[str, Any],
+    now: float,
+    reason: str,
+    log_stream: Any,
+    removed_files: dict[Path, bytes],
+    cleared: list[str],
+    kept_paths: list[str],
+    dropped_paths: list[str],
+) -> tuple[bool, str]:
+    """Write the reset state and its log entry, undoing both on failure."""
 
     previous_started_at = state["started_at_unix"]
     previous_execution_seconds = state["execution_seconds"]
@@ -234,6 +346,7 @@ def reset_attempts(
         "last_fingerprint": "",
         "last_no_change_fingerprint": "",
         "running_role": None,
+        "executor_changed_paths": kept_paths,
     }
     for field in (
         "resume_repository_fingerprint",
@@ -243,27 +356,30 @@ def reset_attempts(
         "resume_reasoned_no_change",
     ):
         state["items"][item_id].pop(field, None)
-    with log_stream:
+    try:
+        write_run_state(state_path, state)
+        log_stream.write(
+            "\n### Attempt limit reset\n"
+            f"Reason: {reason}\n"
+            f"Cleared: {', '.join(cleared) or 'no previous review'}\n"
+            f"Executor changed paths dropped (no longer changed): {json.dumps(dropped_paths)}\n"
+            f"Executor changed paths kept (still changed): {json.dumps(kept_paths)}\n"
+        )
+        log_stream.flush()
+    except OSError as exc:
+        state["started_at_unix"] = previous_started_at
+        state["execution_seconds"] = previous_execution_seconds
+        state["items"][item_id] = previous_item_state
+        problems = []
         try:
             write_run_state(state_path, state)
-            log_stream.write(
-                "\n### Attempt limit reset\n"
-                f"Reason: {reason}\n"
-            )
-            log_stream.flush()
-        except OSError as exc:
-            state["started_at_unix"] = previous_started_at
-            state["execution_seconds"] = previous_execution_seconds
-            state["items"][item_id] = previous_item_state
-            try:
-                write_run_state(state_path, state)
-            except OSError as restore_exc:
-                return (
-                    False,
-                    f"cannot record attempt reset: {exc}; cannot restore run state: "
-                    f"{restore_exc}",
-                )
-            return False, f"cannot record attempt reset: {exc}"
+        except OSError as restore_exc:
+            problems.append(f"cannot restore run state: {restore_exc}")
+        restore_error = _restore_files(removed_files)
+        if restore_error:
+            problems.append(f"cannot restore the previous review: {restore_error}")
+        detail = "".join(f"; {problem}" for problem in problems)
+        return False, f"cannot record attempt reset: {exc}{detail}"
     return True, ""
 
 
