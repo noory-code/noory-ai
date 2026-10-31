@@ -15,6 +15,9 @@
 - Copy the latest executor report's decisions and undone work onto the card's `## Progress` at
   close, require both fields in every report, and ask executors to restate decisions still in
   effect, so executor choices outlive the uncommitted work log.
+- Add `stage/scripts/codex_companion.py`, which finds the installed Codex companion script at run time,
+  and route this project's seven Codex commands through it instead of a path fixed to one home
+  directory and plugin version.
 
 ## 0.63.4 — 2026-10-11
 
