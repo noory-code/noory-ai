@@ -143,6 +143,30 @@ def is_direct_planned_rejection_archive(audited_item: AuditedItem) -> bool:
     )
 
 
+def completed_promotion_errors(
+    promotion: str, promotes: tuple[str, ...], project_root: Path
+) -> list[str]:
+    """Why a completed item's promotion record is not truthful (WORK027).
+
+    close_work.py refuses with the same messages before it writes the card, so a
+    close never produces a card the audit then rejects.
+    """
+    if promotion not in {"approved", "promoted"}:
+        return []
+    errors = []
+    if not promotes:
+        errors.append("Completed item declared promotion without any promotion paths.")
+    if promotion == "approved":
+        errors.append("Completed item approved promotion but has not recorded it as promoted.")
+    else:
+        errors.extend(
+            f"Completed item recorded promotion before this path existed: {promoted}"
+            for promoted in promotes
+            if not (project_root / promoted).is_file()
+        )
+    return errors
+
+
 @dataclass(frozen=True)
 class Finding:
     severity: str
@@ -468,31 +492,11 @@ class Audit:
         for blocker in stage_guard.item_completion_blockers(item):
             self.error("WORK008", f"Completion gate is not closed: {blocker}", path)
 
-        if audited_item.location == "present" and item.status == "completed" and item.promotion in {
-            "approved",
-            "promoted",
-        }:
-            if not item.promotes:
-                self.error(
-                    "WORK027",
-                    "Completed item declared promotion without any promotion paths.",
-                    path,
-                )
-            if item.promotion == "approved":
-                self.error(
-                    "WORK027",
-                    "Completed item approved promotion but has not recorded it as promoted.",
-                    path,
-                )
-            else:
-                for promoted in item.promotes:
-                    promoted_path = self.project_root / promoted
-                    if not promoted_path.is_file():
-                        self.error(
-                            "WORK027",
-                            f"Completed item recorded promotion before this path existed: {promoted}",
-                            path,
-                        )
+        if audited_item.location == "present" and item.status == "completed":
+            for message in completed_promotion_errors(
+                item.promotion, item.promotes, self.project_root
+            ):
+                self.error("WORK027", message, path)
 
         if item.retrospective == "completed":
             self.audit_retrospective_ref(audited_item)
@@ -1709,6 +1713,23 @@ class Audit:
                 continue
             venue = (audited_item.fields.get("venue") or "").strip()
             routed = routing.get(item.kind, "")
+            environment = (audited_item.fields.get("environment") or "").strip()
+            environment_error = (
+                stage_work.environment_venue_error(
+                    self.stage_root,
+                    environment,
+                    venue,
+                    audited_item.fields.get("review") or "",
+                )
+                if environment
+                else ""
+            )
+            if environment_error:
+                self.error(
+                    "VENUE006",
+                    f"Environment does not permit this card's venue: {environment_error}.",
+                    item.path,
+                )
 
             if routed == split_token and not self.valid_venue_exception(audited_item):
                 self.error(
@@ -1739,6 +1760,7 @@ class Audit:
                 routed
                 and routed != split_token
                 and venue != routed
+                and not (environment and not environment_error)
                 and not self.valid_venue_exception(audited_item)
             ):
                 self.error(

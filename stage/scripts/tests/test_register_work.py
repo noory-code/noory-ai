@@ -317,6 +317,98 @@ class RegisterWorkTest(unittest.TestCase):
                 active,
             )
 
+    def commit_card_on_other_branch(self, root: Path, card_id: str, ref: str) -> None:
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", "-c", "user.name=Stage Test", "-c", "user.email=stage@example.invalid",
+                 *args],
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+
+        git("init", "-q", "-b", "main")
+        git("add", "-A")
+        git("commit", "-q", "-m", "base")
+        git("checkout", "-q", "-b", "parallel")
+        card = root / f".stage/work/current/{card_id}/_story.md"
+        card.parent.mkdir(parents=True)
+        card.write_text(f"---\nid: {card_id}\nstatus: active\n---\n", encoding="utf-8")
+        git("add", "-A")
+        git("commit", "-q", "-m", "parallel card")
+        git("update-ref", ref, "HEAD")
+        git("checkout", "-q", "main")
+        if ref != "refs/heads/parallel":
+            git("branch", "-q", "-D", "parallel")
+        # Git does not track empty directories; restore the lifecycle roots make() created.
+        for zone in ("work/current", "work/planned", "official/work/archive/items"):
+            (root / ".stage" / zone).mkdir(parents=True, exist_ok=True)
+
+    def test_auto_id_skips_numbers_used_on_other_branches(self):
+        for ref, label in (
+            ("refs/heads/parallel", "parallel"),
+            ("refs/remotes/origin/parallel", "origin/parallel"),
+        ):
+            with self.subTest(branch=label):
+                tmp, root = self.make()
+                with tmp:
+                    self.commit_card_on_other_branch(root, "W-00000005", ref)
+
+                    proc = run(root, "--title", "T", "--kind", "design", "--scope", "src")
+                    allocated = story_path(root, "current", "W-00000006").exists()
+                    reused = story_path(root, "current", "W-00000005").exists()
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertTrue(allocated)
+                self.assertFalse(reused)
+
+    def test_explicit_id_used_on_another_branch_is_refused(self):
+        for planned in (False, True):
+            with self.subTest(planned=planned):
+                tmp, root = self.make()
+                with tmp:
+                    self.commit_card_on_other_branch(
+                        root, "W-00000005", "refs/remotes/origin/parallel"
+                    )
+                    extra = ("--backlog",) if planned else ()
+
+                    proc = run(
+                        root, "--id", "W-00000005", "--title", "T", "--kind", "design",
+                        "--scope", "src", *extra,
+                    )
+                    created = any(
+                        (root / ".stage/work" / zone / "W-00000005").exists()
+                        for zone in ("current", "planned")
+                    )
+
+                self.assertEqual(1, proc.returncode, proc.stdout)
+                self.assertIn("W-00000005: refusing", proc.stderr)
+                self.assertIn("on branch origin/parallel", proc.stderr)
+                self.assertFalse(created)
+
+    def test_rerun_of_a_local_card_also_on_a_branch_still_reconciles(self):
+        tmp, root = self.make()
+        with tmp:
+            first = run(root, "--id", "W-00000003", "--title", "T", "--kind", "design",
+                        "--scope", "src")
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            subprocess.run(
+                ["git", "-c", "user.name=T", "-c", "user.email=t@example.invalid",
+                 "commit", "-q", "-m", "card"],
+                cwd=root,
+                check=True,
+            )
+            subprocess.run(["git", "update-ref", "refs/remotes/origin/main", "HEAD"],
+                           cwd=root, check=True)
+
+            again = run(root, "--id", "W-00000003", "--title", "T", "--kind", "design",
+                        "--scope", "src")
+
+        self.assertEqual(0, first.returncode, first.stderr)
+        self.assertEqual(0, again.returncode, again.stderr)
+        self.assertIn("already exists; index reconciled", again.stdout)
+
     def test_top_level_action_is_refused_with_story_first_guidance(self):
         tmp, root = self.make()
         with tmp:

@@ -138,6 +138,13 @@ W frontmatter includes these execution fields:
   Keeping this one-to-one is what lets a venue exception identify the single item it authorized;
   if several items could claim one record, an exception granted to one would be claimable by
   another.
+- `environment:` — optional execution environment, absent for local work. A value must be declared
+  in settings.json `environment_venues`, which maps each environment to the venue that runs there.
+  When the card's `venue` is that venue and `review` is `pending` or `passed`, the venue may
+  contradict `venue_routing` without a venue exception decision (DE-00000082). `register_work.py`
+  and `start_work.py` take `--environment` and refuse a card that breaks those conditions; the
+  audit reports such an open card as VENUE006. `venue` keeps naming who executed; `environment`
+  names where. The procedure lives in `operations/cloud-execution.md`.
 - `autonomous:` — boolean eligibility signal. It defaults to `false` when absent. An item with
   `autonomous: true` must carry at least one `acceptance` command; `register_work.py` and
   `start_work.py` refuse the transition otherwise.

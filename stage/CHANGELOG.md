@@ -15,6 +15,23 @@
 - Copy the latest executor report's decisions and undone work onto the card's `## Progress` at
   close, require both fields in every report, and ask executors to restate decisions still in
   effect, so executor choices outlive the uncommitted work log.
+- Add `stage/scripts/codex_companion.py`, which finds the installed Codex companion script at run time,
+  and route this project's seven Codex commands through it instead of a path fixed to one home
+  directory and plugin version.
+- Add `stage/scripts/import_executor_report.py`, which moves an executor report from a commit body
+  into the work log, joins fields the body wrapped, and refuses reports that fail the contract.
+- Count record ids on every local and remote-tracking branch: `register_work.py` no longer allocates
+  or accepts a W id another branch already uses, and `stage/scripts/stage_record_ids.py` names the
+  next free DE, O, or other id the same way.
+- Record where a card runs in a new `environment:` field and declare per-environment venues in
+  `environment_venues`, so cloud-run cards no longer need one venue exception decision each; add
+  `operations/cloud-execution.md` and `stage/scripts/claude_review_companion.py` for the procedure.
+- Name the branch that already uses an id when refusing a planned-card registration too.
+- Refuse to close with a promotion record the audit would reject (WORK027): close_work.py and the
+  audit now share one check, so `approved` or a `promoted` without existing paths cannot close.
+- Give the project's claude reviewer and the cloud stand-in only the permissions a review needs: write
+  the verdict file, read the changed-path folder, and run unittest, without project-file edits.
+- Drop the reviewer's inert `Write(path)` rule; Claude Code governs file writes through `Edit(path)` rules.
 
 ## 0.63.4 — 2026-10-11
 

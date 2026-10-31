@@ -487,6 +487,29 @@ def load_venue_routing(stage_root: Path) -> dict[str, str]:
     }
 
 
+def load_environment_venues(stage_root: Path) -> dict[str, str]:
+    """The project's declared `environment -> venue` policy (DE-00000082), or {}.
+
+    A card that names one of these environments is executed by that venue there,
+    whatever `venue_routing` would pick: the environment lacks the routed venue.
+    Malformed entries are skipped, like `load_venue_routing`.
+    """
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
+        return {}
+    mapping = data.get("environment_venues") if isinstance(data, dict) else None
+    if not isinstance(mapping, dict):
+        return {}
+    return {
+        environment.strip().lower(): venue.strip()
+        for environment, venue in mapping.items()
+        if isinstance(environment, str)
+        and isinstance(venue, str)
+        and environment.strip()
+        and venue.strip()
+    }
+
+
 # Review strength is a named level the PROJECT binds to a real, verdict-emitting
 # command (in settings.json `review.strengths`). The harness fixes no command —
 # like `venue`, it ships the vocabulary and the project declares the behavior.

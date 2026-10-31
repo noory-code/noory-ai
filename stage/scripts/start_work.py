@@ -32,6 +32,7 @@ from stage_record_paths import (  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
+    load_environment_venues,
     load_venue_routing,
     schema_migration_banner,
 )
@@ -42,6 +43,7 @@ from stage_work import (  # noqa: E402
     parse_bool_field,
     parse_frontmatter,
     parse_string_list,
+    environment_venue_error,
     venue_exception_error,
 )
 
@@ -100,6 +102,16 @@ def parse_args() -> argparse.Namespace:
         help="Decision record id authorizing a venue-policy exception "
         "(decided/promoted with `authorizes: venue_exception`).",
     )
+    parser.add_argument(
+        "--environment",
+        default="",
+        help="Execution environment declared in settings.json environment_venues (e.g. cloud).",
+    )
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Require a review (review: pending) before this item can complete.",
+    )
     parser.add_argument("--owner", default="", help="Owner shown in the active.md row.")
     parser.add_argument(
         "--autonomous",
@@ -132,6 +144,8 @@ def build_frontmatter(fields: dict[str, Any]) -> str:
     if "milestone" in fields:
         anchor = "parent" if "parent" in order else "venue"
         order.insert(order.index(anchor) + 1, "milestone")
+    if (fields.get("environment") or "").strip():
+        order.insert(order.index("venue") + 1, "environment")
     for key in order:
         if key == "acceptance":
             values = parse_string_list(fields.get(key))
@@ -259,6 +273,20 @@ def main() -> int:
     routing = load_venue_routing(stage_root)
     routed = routing.get(kind, "")
     exception_reason = ""
+    if args.review:
+        fields["review"] = "pending"
+    environment = (args.environment or fields.get("environment") or "").strip().lower()
+    # Execution environment policy (DE-00000082), the same contract register uses.
+    if environment:
+        if not venue:
+            venue = load_environment_venues(stage_root).get(environment, "")
+        environment_error = environment_venue_error(
+            stage_root, environment, venue, fields.get("review") or ""
+        )
+        if environment_error:
+            print(f"refusing: {environment_error}", file=sys.stderr)
+            return 1
+        fields["environment"] = environment
     if routed == VENUE_SPLIT_TOKEN:
         exception_reason = (
             f"kind `{kind}` is declared mixed (`{VENUE_SPLIT_TOKEN}`): split this card into "
@@ -268,6 +296,11 @@ def main() -> int:
     elif not venue and routed:
         venue = routed
         print(f"venue derived from venue_routing: {kind} -> {routed}")
+    elif venue and routed and venue != routed and environment:
+        print(
+            f"venue `{venue}` permitted by environment `{environment}` "
+            f"(environment_venues; venue_routing {kind} -> {routed})"
+        )
     elif venue and routed and venue != routed:
         exception_reason = (
             f"venue `{venue}` contradicts venue_routing ({kind} -> {routed}); pass "

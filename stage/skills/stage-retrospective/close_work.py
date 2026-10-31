@@ -823,6 +823,18 @@ def main() -> int:
     if promotion not in PROMOTION_FINAL:
         print(f"{args.item}: promotion `{promotion}` is not final {sorted(PROMOTION_FINAL)} — pass --promotion", file=sys.stderr)
         return 1
+    promotion_errors = audit_stage.completed_promotion_errors(
+        promotion, work_item.promotes, stage_root.parent
+    )
+    if promotion_errors:
+        print(
+            f"{args.item}: promotion `{promotion}` would fail the audit (WORK027): "
+            + " ".join(promotion_errors)
+            + " Close with `deferred` until the promotion is written, then record `promoted` "
+            "with its `promotes:` paths; work item unchanged",
+            file=sys.stderr,
+        )
+        return 1
     if promotion == "not_applicable":
         promotion_decisions = decisions_requiring_promotion_choice(
             stage_root, decision_refs

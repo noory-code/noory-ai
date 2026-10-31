@@ -39,6 +39,7 @@ from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
     load_review_config,
+    load_environment_venues,
     load_venue_routing,
     resolve_review_command,
     schema_migration_banner,
@@ -46,9 +47,11 @@ from stage_paths import (  # noqa: E402
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     format_yaml_string_list,
+    environment_venue_error,
     venue_exception_error,
 )
 import stage_roadmap  # noqa: E402
+from stage_record_ids import branch_record_numbers  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 MILESTONE_RE = re.compile(r"^M-\d{8}$")
@@ -117,7 +120,9 @@ def fill_list_section(text: str, heading: str, values: list[str]) -> str:
 
 
 def existing_numbers(stage_root: Path) -> set[int]:
-    numbers: set[int] = set()
+    # Other branches count too: a number free in this checkout can already be a
+    # card on a parallel branch, and both would collide when merged.
+    numbers: set[int] = set(branch_record_numbers(stage_root.parent, "W"))
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         bases = (paths.planned_cards, paths.current_cards, paths.archive_cards)
@@ -213,12 +218,14 @@ def fill_item(
     acceptance: list[str],
     decision: str = "",
     milestone: str = "",
+    environment: str = "",
 ) -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
     text = set_field(text, "title", title)
     text = set_field(text, "kind", kind)
     text = set_field(text, "venue", venue)
+    text = set_optional_field(text, "environment", environment, after="venue")
     text = set_optional_field(text, "milestone", milestone, after="parent")
     text = set_optional_field(
         text, "autonomous", "true" if autonomous else "false", after="parent"
@@ -411,7 +418,13 @@ def register_backlog_card(stage_root: Path, args) -> int:
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
             return 2
         if int(match.group(1)) in numbers:
-            print(f"{args.id}: refusing — id is already used", file=sys.stderr)
+            other_branches = branch_record_numbers(stage_root.parent, "W").get(
+                int(match.group(1)), set()
+            )
+            where = (
+                f" on branch {', '.join(sorted(other_branches))}" if other_branches else ""
+            )
+            print(f"{args.id}: refusing — id is already used{where}", file=sys.stderr)
             return 1
         item_id = args.id
         item_path = (
@@ -567,6 +580,12 @@ def main() -> int:
         "(decided/promoted with `authorizes: venue_exception`); stamped into decision_refs.",
     )
     parser.add_argument(
+        "--environment",
+        default="",
+        help="Execution environment declared in settings.json environment_venues (e.g. cloud); "
+        "its venue may differ from venue_routing without an exception when --review is set.",
+    )
+    parser.add_argument(
         "--backlog",
         action="store_true",
         help="Capture a planned card in work/planned (status captured) instead of "
@@ -669,6 +688,12 @@ def main() -> int:
     # work/planned and the venue/split contract applies when
     # scripts/start_work.py moves it to present.
     if args.backlog:
+        if args.environment:
+            print(
+                "refusing: a planned card takes no --environment; pass it to start_work.py",
+                file=sys.stderr,
+            )
+            return 1
         return register_backlog_card(stage_root, args)
 
     # Role policy (DE-00000004/DE-00000005): derive an omitted venue from the
@@ -679,6 +704,22 @@ def main() -> int:
     routing = load_venue_routing(stage_root)
     routed = routing.get(args.kind.strip().lower(), "")
     exception_reason = ""
+    # Execution environment policy (DE-00000082): a declared environment fixes the
+    # venue that runs there, and permits a routing mismatch without an exception.
+    if args.environment:
+        if not args.venue:
+            args.venue = load_environment_venues(stage_root).get(
+                args.environment.strip().lower(), ""
+            )
+        environment_error = environment_venue_error(
+            stage_root,
+            args.environment,
+            args.venue,
+            "pending" if args.review else "not_required",
+        )
+        if environment_error:
+            print(f"refusing: {environment_error}", file=sys.stderr)
+            return 1
     if routed == VENUE_SPLIT_TOKEN:
         exception_reason = (
             f"kind `{args.kind}` is declared mixed (`{VENUE_SPLIT_TOKEN}`): register separate "
@@ -689,6 +730,11 @@ def main() -> int:
     elif not args.venue and routed:
         args.venue = routed
         print(f"venue derived from venue_routing: {args.kind} -> {routed}")
+    elif args.venue and routed and args.venue != routed and args.environment:
+        print(
+            f"venue `{args.venue}` permitted by environment `{args.environment}` "
+            f"(environment_venues; venue_routing {args.kind} -> {routed})"
+        )
     elif args.venue and routed and args.venue != routed:
         exception_reason = (
             f"venue `{args.venue}` contradicts venue_routing ({args.kind} -> {routed}); pass "
@@ -742,6 +788,7 @@ def main() -> int:
             acceptance=args.acceptance,
             decision=args.decision,
             milestone=args.milestone,
+            environment=args.environment.strip().lower(),
         )
 
     def item_path_for(item_id: str) -> Path:
@@ -790,6 +837,16 @@ def main() -> int:
             )
             print(f"{args.id}: already exists; index reconciled")
             return 0
+        other_branches = branch_record_numbers(stage_root.parent, "W").get(
+            int(args.id[2:]), set()
+        )
+        if other_branches:
+            print(
+                f"{args.id}: refusing — id already used on branch "
+                f"{', '.join(sorted(other_branches))}",
+                file=sys.stderr,
+            )
+            return 1
         desired_path = item_path_for(args.id)
         desired_path.parent.mkdir(parents=True, exist_ok=True)
         try:

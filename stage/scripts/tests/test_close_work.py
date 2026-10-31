@@ -346,7 +346,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertIn("status: active", body)
 
-    def test_closes_with_approved_promotion_for_linked_governing_decision(self):
+    def test_closes_with_a_final_promotion_for_linked_governing_decision(self):
         tmp, root = self.make()
         with tmp:
             self.write_decision(root, status="decided")
@@ -355,7 +355,7 @@ class CloseWorkTest(unittest.TestCase):
                 root,
                 "W-00000001",
                 "--promotion",
-                "approved",
+                "deferred",
                 "--check",
                 f"{sys.executable} -c 'print(1)'",
             )
@@ -364,6 +364,66 @@ class CloseWorkTest(unittest.TestCase):
             )
 
         self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("status: completed", body)
+        self.assertIn("promotion: deferred", body)
+
+    def test_refuses_promotion_records_the_audit_rejects(self):
+        cases = {
+            "approved without paths": ("approved", "", "has not recorded it as promoted"),
+            "approved with an existing path": (
+                "approved",
+                "docs/canon.md",
+                "has not recorded it as promoted",
+            ),
+            "promoted without paths": ("promoted", "", "without any promotion paths"),
+            "promoted before the path exists": (
+                "promoted",
+                "docs/missing.md",
+                "before this path existed: docs/missing.md",
+            ),
+        }
+        for label, (promotion, promotes, expected) in cases.items():
+            with self.subTest(case=label):
+                tmp, root = self.make()
+                with tmp:
+                    (root / "docs").mkdir()
+                    (root / "docs/canon.md").write_text("canon\n", encoding="utf-8")
+                    item = root / ".stage/work/current/W-00000001/_story.md"
+                    item.write_text(
+                        item.read_text(encoding="utf-8").replace(
+                            "review: not_required\n", f"review: not_required\npromotes: {promotes}\n"
+                        ),
+                        encoding="utf-8",
+                    )
+                    before = item.read_text(encoding="utf-8")
+
+                    proc = run(root, "W-00000001", "--promotion", promotion, "--check", "true")
+                    after = item.read_text(encoding="utf-8")
+
+                self.assertEqual(1, proc.returncode, proc.stdout)
+                self.assertIn("would fail the audit (WORK027)", proc.stderr)
+                self.assertIn(expected, proc.stderr)
+                self.assertIn("work item unchanged", proc.stderr)
+                self.assertEqual(before, after)
+
+    def test_closes_as_promoted_once_every_promotion_path_exists(self):
+        tmp, root = self.make()
+        with tmp:
+            (root / "docs").mkdir()
+            (root / "docs/canon.md").write_text("canon\n", encoding="utf-8")
+            item = root / ".stage/work/current/W-00000001/_story.md"
+            item.write_text(
+                item.read_text(encoding="utf-8").replace(
+                    "review: not_required\n", "review: not_required\npromotes: docs/canon.md\n"
+                ),
+                encoding="utf-8",
+            )
+
+            proc = run(root, "W-00000001", "--promotion", "promoted", "--check", "true")
+            body = item.read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("promotion: promoted", body)
         self.assertIn("status: completed", body)
 
     def test_allows_not_applicable_for_linked_venue_exception(self):

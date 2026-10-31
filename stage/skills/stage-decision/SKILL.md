@@ -153,7 +153,10 @@ A decision that shapes the work is recorded, not just made.
 
 - Create a decision record from `decisions/pending/_template.md` (`DE-NNNNNNNN`), including the
   question, options, principles applied, chosen direction, and the counted sites under
-  `## Where this applies`.
+  `## Where this applies`. Take the number from
+  `python3 stage/scripts/stage_record_ids.py --project-root <project-root> DE`, never from the
+  current checkout alone: it also counts every local and remote-tracking branch, so a parallel
+  session's decision cannot share the id. Fetch first when other sessions push.
 - Set the record's `work_item` to the current work item and add the record to the work item's
   `decision_refs`.
 - Record a decision when ANY of these holds; otherwise skip the record:

@@ -215,3 +215,7 @@
 | W-00000283 | completed | [items/W-00000283/_story.md](items/W-00000283/_story.md) |
 | W-00000284 | completed | [items/W-00000284/_story.md](items/W-00000284/_story.md) |
 | W-00000285 | completed | [items/W-00000285/_story.md](items/W-00000285/_story.md) |
+| W-00000268 | completed | [items/W-00000268/_story.md](items/W-00000268/_story.md) |
+| W-00000269 | completed | [items/W-00000269/_story.md](items/W-00000269/_story.md) |
+| W-00000270 | completed | [items/W-00000270/_story.md](items/W-00000270/_story.md) |
+| W-00000286 | completed | [items/W-00000286/_story.md](items/W-00000286/_story.md) |
