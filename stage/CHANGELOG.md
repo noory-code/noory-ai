@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Stop reporting paths a call does not change as scope crossings: the hook envelope's
+  `transcript_path`, discarded output such as `/dev/null`, and files in the OS temporary folder,
+  including shell targets like `"$TMPDIR/x"` once the hook expands the variable. Project files and
+  other paths outside scope are still reported, and the `.stage` gates are unchanged.
 - Fail any review that changes a repository file other than its verdict: a Claude reviewer's
   permission rules stop its own writes but not those of code `python3 -m unittest` runs, and a
   Codex reviewer may write directly, so `close_work.py` and the supervised driver compare the

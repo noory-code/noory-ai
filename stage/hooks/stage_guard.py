@@ -11,6 +11,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -353,7 +354,9 @@ def collect_explicit_paths(payload: dict[str, Any]) -> list[str]:
         if "path" in lowered_key or "file" in lowered_key:
             add(value)
 
-    visit(payload)
+    # Only the tool's own input names targets; the hook envelope carries paths the
+    # tool never touches, such as `transcript_path`.
+    visit(tool_input(payload))
     return found
 
 
@@ -571,6 +574,62 @@ def purpose_context_targets(
     return targets, follows_symlinks
 
 
+LEADING_SHELL_VARIABLE_RE = re.compile(r"^\$(?:\{(?P<braced>\w+)\}|(?P<bare>\w+))(?P<rest>.*)$")
+
+
+def expand_leading_shell_variable(target: str, workspace_root: Path) -> str:
+    """Expand a shell variable the parser left at the start of a write target.
+
+    `cp a "$TMPDIR/x"` reaches the hook as `<workspace>/$TMPDIR/x`. When the hook's
+    environment knows the variable, return the expanded path; otherwise keep the
+    target so the report still names it.
+    """
+
+    relative = entry_relative_to_workspace(target, workspace_root)
+    match = LEADING_SHELL_VARIABLE_RE.match(relative)
+    if not match:
+        return target
+    value = os.environ.get(match.group("braced") or match.group("bare") or "")
+    return value + match.group("rest") if value else target
+
+
+def scratch_target(target: str, workspace_root: Path) -> bool:
+    """Return whether a target outside the workspace is a device or temporary file.
+
+    Writes there are discarded output or scratch copies, never project changes, so a
+    scope report leaves them out. Other paths outside the workspace are still reported.
+    """
+
+    path = Path(target)
+    try:
+        resolved = path.resolve()
+    except (OSError, RuntimeError):
+        return False
+    if is_relative_to(resolved, workspace_root.resolve()):
+        return False
+    if sys.platform == "win32" and path.name.lower() == "nul":
+        return True
+    if resolved.as_posix().startswith("/dev/"):
+        return True
+    for base in {tempfile.gettempdir(), os.environ.get("TMPDIR", ""), "/tmp"}:
+        if not base:
+            continue
+        try:
+            if is_relative_to(resolved, Path(base).resolve()):
+                return True
+        except (OSError, RuntimeError):
+            continue
+    return False
+
+
+def is_relative_to(path: Path, base: Path) -> bool:
+    try:
+        path.relative_to(base)
+    except ValueError:
+        return False
+    return True
+
+
 def purpose_tool_context(
     workspace_root: Path, payload: dict[str, Any]
 ) -> tuple[str, str]:
@@ -589,7 +648,10 @@ def purpose_tool_context(
     targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
     leaves = tuple(chain[-1] for chain in chains)
     crossed: list[str] = []
-    for target in targets:
+    for raw_target in targets:
+        target = expand_leading_shell_variable(raw_target, workspace_root)
+        if scratch_target(target, workspace_root):
+            continue
         if any(
             item_matches_path(item, target, workspace_root, follows_symlinks)
             for item in leaves

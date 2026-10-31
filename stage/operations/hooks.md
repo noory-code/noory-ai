@@ -71,7 +71,11 @@ driver-provided item when `STAGE_WORK_ITEM_PATH` names an active card; otherwise
 active leaf and its ancestors.
 
 For an allowed scope crossing, `systemMessage` contains only `Scope boundary crossed: <paths>.` and
-is shown to the user. If another check already supplied a `systemMessage`, the boundary line follows
+is shown to the user. Targets come from the tool input only, never from the hook envelope (such as
+`transcript_path`). A shell target that starts with a variable is expanded when the hook's
+environment defines it. The report leaves out targets outside the workspace that are devices
+(`/dev/…`, `NUL` on Windows) or inside the OS temporary folder; other paths outside the workspace
+are still reported. These exclusions apply to the report only; the `.stage` gates see every target. If another check already supplied a `systemMessage`, the boundary line follows
 it. The full context is returned as `hookSpecificOutput.additionalContext`, with
 `hookEventName: PreToolUse`, so the agent receives the scopes, report instruction, crossed paths,
 and purpose chain. A denied call keeps the full context in `permissionDecisionReason` after the
