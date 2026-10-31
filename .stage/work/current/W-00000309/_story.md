@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000309
+promotion: not_applicable
+review: passed
 scope: stage/scripts/claude_review_companion.py, stage/scripts/tests/, .stage/settings.json, stage/operations/cloud-execution.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -95,7 +95,89 @@ W-00000299는 W-00000295의 argv 검사가 자식 프로세스의 쓰기까지 �
 프로젝트 경로의 첫 두 판은 시험 준비가 잘못되어 무효다. 카드와 로그를 프로젝트 밖에 두어 리뷰어가 읽지 못했고,
 복사한 파일을 커밋하지 않았다. 실제 위치(`.stage/work/…`, `.stage/.runtime/driver/logs/…`)로 옮겨 다시 쟀다.
 
+### Executor report at close — 2026-10-31
+
+```
+What changed: claude_review_companion.py snapshots the repository (tracked files plus untracked non-ignored ones, via driver_repository) before and after the claude run, and when anything other than the verdict file changed it removes the verdict, reports the paths on stdout and stderr, leaves the files in place, and exits 3 (REVIEW_WROTE_FILES); a failed snapshot before the run refuses to review and one after it removes the verdict; the project's review.reviewers.claude command now runs through the companion with STAGE_CLAUDE_REVIEW_MODEL='opus[1m]' instead of its own claude -p arguments; test_claude_review_guard.py drives main() with a stand-in reviewer that runs a real unittest process writing at import, setUp, or test-body time, checks a clean review keeps its verdict and exit status and that an unignored verdict file is not a violation, pins the project command, and has a live probe of both paths that runs only with STAGE_LIVE_REVIEW_PROBE=1; test_template_v4 pins the reviewer model through the environment variable and compares the verdict rule with the resolved path; cloud-execution.md and the CHANGELOG describe the check.
+Why: W-00000309 - prove by real runs whether the Claude reviewer can write outside its verdict file, and make such writes fail the review instead of passing an argv-only check.
+Decisions made: Detect writes by comparing repository snapshots rather than sandboxing the process, because a sandbox is not available on every host Stage supports (Windows) and the permission rules already stop the reviewer's direct writes; remove the verdict and exit non-zero so both close_work and the driver see a failed review; leave changed files in place rather than reverting them, because a revert could discard a person's edits; route the project Claude reviewer through the companion so both review paths share one permission set and one check (SSOT), keeping the model pin explicit in the command through STAGE_CLAUDE_REVIEW_MODEL; ignored paths such as __pycache__ and .stage/.runtime are outside the check, matching the driver's snapshot view; out-of-scope paths changed: none.
+Work not done: The Codex reviewer and the review strengths are not covered by this check, and the v4 template's Claude reviewer command in stage/templates still calls claude -p directly, so other projects stay unguarded until a follow-up card; a review killed before the companion's second snapshot leaves no check.
+```
+
 ## Verification
+
+2026-11-01 클라우드 세션에서 코드 커밋 `6a5b050d` 의 worktree 로 `stage/operations/cloud-execution.md` 절차대로
+닫았다. 리뷰는 `stage/scripts/claude_review_companion.py` 대역으로 이 프로젝트의 `implementation` 리뷰 명령을
+설정 변경 없이 돌렸다. 같은 모델 계열의 판정이므로 교차 venue 판정이 아니다. 이 카드가 넣은 쓰기 검사가 이
+리뷰에도 걸렸다.
+
+### Executed at close — 2026-10-31
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 7 tests in 1.683s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1793461138
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1793461138. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /tmp/tmpjagi0rh0/unattended/W-00000001-1793461138
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 725 tests in 154.374s
+
+OK (skipped=2)
+```
+
+### Review at close — 2026-10-31
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000309.md
+Criteria:
+- PASS: 프로젝트 Claude 리뷰 명령과 cloud 대역 리뷰 경로를 각각 실행해 판정 파일 이외의 파일 쓰기를 검사하고 재현 가능한 결과를 남깁니다
+  Reason: Progress records real claude 2.1.316 runs of both paths with permission rules, commands, exit codes (3), residual changes, and verdict state; LiveReviewerWriteProbeTest reproduces both paths under STAGE_LIVE_REVIEW_PROBE=1, and the two invalid project-path attempts are disclosed.
+- PASS: unittest 모듈의 import·setUp·테스트 본문에서 쓰는 경우까지 검사하여 argv 검사만으로 쓰기 제한을 통과시키지 않습니다
+  Reason: test_claude_review_guard.py runs a real unittest subprocess that writes at import, setUp, and test-body time and asserts exit 3, verdict removal, and the named path; the companion now checks repository snapshots instead of relying on argv rules; tests pass locally.
+- PASS: 허용한 판정 파일 쓰기와 정상 리뷰·테스트는 동작하며 다른 파일의 생성·수정 시도는 차단되거나 명확한 검증 실패로 드러납니다
+  Reason: Clean reviews keep the verdict and exit status (0 and 5) and an unignored verdict file is not flagged, while non-verdict writes fail with exit 3 and a stdout/stderr report; ignored-path and Codex/template gaps are disclosed in Decisions made and Work not done, and all changed paths are within the card scope.
+```
 
 ## Retrospective
 
