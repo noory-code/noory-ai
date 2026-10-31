@@ -41,6 +41,8 @@
 - Validate review verdicts with one rule set shared by close_work.py and the driver.
 - Let `import_executor_report.py` take one `--commit` per attempt and check a cumulative report
   against every path those commits changed.
+- Treat service usage-limit messages as infrastructure failures, so a reviewer or executor that stops
+  on a usage limit without doing the work does not spend a driver attempt.
 
 ## 0.63.4 — 2026-10-11
 

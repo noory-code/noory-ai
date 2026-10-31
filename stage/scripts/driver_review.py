@@ -214,5 +214,13 @@ def infrastructure_failure(output: str) -> bool:
             "[exit 127]",
             "terminated by signal",
             "killed by signal",
+            # Service usage limits (O-00000053): the turn did no work, so it must
+            # not spend an attempt. Kept to the services' own phrasing; a broad
+            # "rate limit" would also match ordinary test names and prose.
+            "hit your session limit",
+            "hit your usage limit",
+            "usage limit reached",
+            "rate_limit_error",
+            "429 too many requests",
         )
     )

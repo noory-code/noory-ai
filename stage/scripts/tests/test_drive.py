@@ -3888,6 +3888,27 @@ class DriveTest(unittest.TestCase):
 
         self.assertFalse(drive.infrastructure_failure("[exit 2]\nsubstantive failure"))
 
+    def test_infrastructure_failure_recognizes_service_usage_limits_only(self):
+        drive = self.load_module()
+
+        for output in (
+            "You've hit your session limit · resets 5:10pm",
+            "You've hit your usage limit. Upgrade to Pro or try again later.",
+            "Error: usage limit reached for this model",
+            '{"type": "error", "error": {"type": "rate_limit_error"}}',
+            "HTTP/1.1 429 Too Many Requests",
+        ):
+            with self.subTest(output=output):
+                self.assertTrue(drive.infrastructure_failure(f"[exit 1]\n{output}"))
+
+        for output in (
+            "FAIL: test_rate_limit_resets_after_window (test_api.RateLimitTest)",
+            "AssertionError: expected a rate limit of 10 requests, got 12",
+            "the usage limits section of the card is still empty",
+        ):
+            with self.subTest(output=output):
+                self.assertFalse(drive.infrastructure_failure(f"[exit 1]\n{output}"))
+
     def test_supervised_infrastructure_failures_do_not_spend_attempt(self):
         cases = (
             {
@@ -3921,6 +3942,26 @@ class DriveTest(unittest.TestCase):
                 "reviewer": python_command(
                     "print('killed by signal'); raise SystemExit(2)"
                 ),
+            },
+            {
+                "name": "usage-limited reviewer",
+                "executor": reporting_python_command(
+                    "from pathlib import Path; "
+                    "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                    ["executor-work.txt"],
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": python_command(
+                    "print(\"You've hit your session limit · resets 5:10pm\"); raise SystemExit(1)"
+                ),
+            },
+            {
+                "name": "usage-limited executor",
+                "executor": python_command(
+                    "print(\"You've hit your usage limit. Try again later.\"); raise SystemExit(1)"
+                ),
+                "acceptance": PASS_COMMAND,
+                "reviewer": APPROVING_REVIEWER,
             },
         )
 
