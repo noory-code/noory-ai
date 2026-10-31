@@ -13,5 +13,5 @@
 | DE-00000074 | decided | [W-00000273](../work/current/W-00000272/W-00000273/_story.md) | active | [pending/DE-00000074.md](pending/DE-00000074.md) |
 | DE-00000078 | decided | [W-00000287](../work/current/W-00000287/_story.md) | completed | [pending/DE-00000078.md](pending/DE-00000078.md) |
 | DE-00000079 | decided | [W-00000289](../work/current/W-00000289/_story.md) | completed | [pending/DE-00000079.md](pending/DE-00000079.md) |
-| DE-00000080 | decided | [W-00000290](../work/current/W-00000290/_story.md) | active | [pending/DE-00000080.md](pending/DE-00000080.md) |
+| DE-00000080 | decided | [W-00000290](../work/current/W-00000290/_story.md) | completed | [pending/DE-00000080.md](pending/DE-00000080.md) |
 | DE-00000081 | decided | [W-00000291](../work/current/W-00000291/_story.md) | active | [pending/DE-00000081.md](pending/DE-00000081.md) |
