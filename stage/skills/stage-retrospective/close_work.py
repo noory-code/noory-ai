@@ -77,10 +77,11 @@ WORK_LOG_PREAMBLE = """\
 
 ## 책임 경계
 
-이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 성공 기준별 판정을
+이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 시도별 판정을
 소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
-`## Retrospective`, `## Promotion decision`을 소유한다. 같은 사실을 두 파일에 복제하지 않고
-서로의 소유 사실은 경로로 참조한다.
+`## Retrospective`, `## Promotion decision`을 소유한다. 닫기를 통과시킨 리뷰의 성공 기준별
+판정과 까닭은 카드의 `## Verification`이 소유한다. 이 로그는 커밋되지 않는 `.stage/.runtime/`
+아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유 사실은 경로로 참조한다.
 """
 EXECUTOR_REPORT_MARKER = "### Executor report"
 REVIEW_DISPOSITIONS_LABEL = "Review dispositions (JSON):"
@@ -295,6 +296,21 @@ def review_verdict_error(path: Path) -> str:
     return ""
 
 
+def review_criteria_evidence(path: Path) -> str:
+    """Render each criterion of the passing verdict for the card's committed record."""
+
+    verdict, error = load_review_verdict(path)
+    if error or verdict is None:
+        raise RuntimeError(error or "review verdict is missing")
+    criteria = verdict["criteria"]
+    assert isinstance(criteria, list)
+    return "\n".join(
+        f"- {entry['verdict']}: {fence_safe(entry['criterion'])}\n"
+        f"  Reason: {fence_safe(entry['reason'])}"
+        for entry in criteria
+    )
+
+
 def review_verdict_failures(path: Path) -> list[str]:
     verdict, error = load_review_verdict(path)
     if error or verdict is None:
@@ -458,8 +474,12 @@ def executor_review_dispositions(
     return dispositions, ""
 
 
+def fence_safe(text: str) -> str:
+    return _CTRL_RE.sub("", text).replace("```", "``​`")  # don't break the evidence fence
+
+
 def clip(output: str) -> str:
-    cleaned = _CTRL_RE.sub("", output).replace("```", "``​`")  # don't break the evidence fence
+    cleaned = fence_safe(output)
     lines = cleaned.splitlines()
     clipped = lines[-MAX_LINES:]
     text = "\n".join(clipped)
@@ -923,9 +943,20 @@ def main() -> int:
         + "\n```"
     )
     if review_passed:
+        try:
+            criteria_evidence = review_criteria_evidence(
+                review_verdict_path(stage_root, work_item.item_id)
+            )
+        except RuntimeError as exc:
+            print(
+                f"{args.item}: cannot record review criteria: {exc}; work item unchanged",
+                file=sys.stderr,
+            )
+            return 1
         evidence += (
             f"\n\n### {review_heading} — {close_date}\n\n```\n"
-            f"Review report: {work_log_reference(work_item.item_id)}\n```"
+            f"Review report: {work_log_reference(work_item.item_id)}\n"
+            f"Criteria:\n{criteria_evidence}\n```"
         )
     try:
         updated = append_to_section(text, "Verification", evidence)

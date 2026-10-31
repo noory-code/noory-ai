@@ -7,6 +7,8 @@
   kind, so driver rounds stop spending the attempt cap on one quoted example at a time.
 - Carry every non-record file in an archived card folder, at any depth, into the archive byte for
   byte instead of deleting it with the folder.
+- Record every criterion of the passing review verdict, with its reason, in the card's
+  `## Verification` at close, because the work log and verdict file are not committed.
 
 ## 0.63.4 — 2026-10-11
 

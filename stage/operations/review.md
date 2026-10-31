@@ -58,12 +58,36 @@ that file holds a valid verdict with `approved: true`. A missing, malformed, or
 non-approving verdict fails the close even on a zero exit, and a zero exit with
 an approving verdict passes it whatever the command printed — reviewer prose is
 human-readable context, and no label inside it decides the machine result. On a
-pass it sets `review: passed`. Fail-closed: a pending item whose
+pass it sets `review: passed` and records the verdict on the card (see below).
+Fail-closed: a pending item whose
 stage has a typo'd strength or no bound command is refused until `settings.json`
 is fixed (the audit reports `REVIEW001`). This keeps `review: passed` bound to an
 executed verdict, never a hand-typed claim. Set the requirement with
 `register_work.py --review`, and close with `close_work.py` (not by editing
 frontmatter).
+
+## What close writes on the card
+
+`close_work.py` changes the card only after every check and any required review
+has passed. Before that point the card is left unchanged.
+
+- Frontmatter: `verification: passed`, the final `promotion` value,
+  `status: completed`, and `review: passed` when a review ran.
+- `## Verification` gains `### Executed at close — <date>`: one fenced block with
+  each `--check` command, its exit code, and its output clipped to the last 40
+  lines and 4000 bytes.
+- When a review passed, `## Verification` also gains
+  `### Review at close — <date>` (or `### Independent review at close — <date>`
+  for an autonomous item). It is one fenced block holding:
+  - `Review report:` with the work-log path
+    (`.stage/.runtime/driver/logs/<work-id>.md`);
+  - `Criteria:` followed by every criterion of the approving verdict, in verdict
+    order, as `- <PASS|FAIL>: <criterion>` and an indented `Reason: <reason>`
+    line, without clipping.
+
+The criteria live on the card because the work log and the verdict file sit
+under `.stage/.runtime/`, which is not committed. The card is the only durable
+record of what the passing review checked.
 
 ## Cross-venue review
 

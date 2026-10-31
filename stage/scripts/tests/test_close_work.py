@@ -818,6 +818,44 @@ class CloseWorkTest(unittest.TestCase):
                 ).read_text(encoding="utf-8"),
             )
 
+    def test_passing_review_records_each_criterion_verdict_and_reason_on_card(self):
+        tmp, root = self.make(review="pending")
+        with tmp:
+            reviewer = python_command(
+                "import json, os\n"
+                "from pathlib import Path\n"
+                "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps({"
+                "'criteria': ["
+                "{'criterion': 'Archive keeps evidence files', 'verdict': 'PASS', "
+                "'reason': 'test_archive_work covers each file kind'}, "
+                "{'criterion': 'Docs match the code', 'verdict': 'PASS', "
+                "'reason': 'review.md names the ``` fenced block'}"
+                "], 'approved': True}), encoding='utf-8')"
+            )
+            self._write_review(
+                root,
+                {"strengths": {"standard": reviewer}, "stages": {"implementation": "standard"}},
+                add_verdict=False,
+            )
+
+            proc = run(root, "W-00000001", "--check", "true")
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        review_block = item.split(f"### Review at close — {date.today().isoformat()}", 1)[1]
+        self.assertIn(
+            "Criteria:\n"
+            "- PASS: Archive keeps evidence files\n"
+            "  Reason: test_archive_work covers each file kind\n"
+            "- PASS: Docs match the code\n"
+            "  Reason: review.md names the ``\u200b` fenced block\n"
+            "```",
+            review_block,
+        )
+        self.assertEqual(2, review_block.count("```"))
+
     def test_review_commands_receive_absolute_work_item_path(self):
         cases = (
             (
@@ -1351,6 +1389,9 @@ class CloseWorkTest(unittest.TestCase):
             item,
         )
         self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn(
+            "- PASS: criterion\n  Reason: test reviewer inspected the inputs", item
+        )
         self.assertIn("independent verdict retained", log)
         self.assertNotIn("same venue should not run", item)
 
