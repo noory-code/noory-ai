@@ -39,6 +39,7 @@ W-00000304의 훅 수정이 설치된 Claude Code 세션에 적용되도록 stag
 
 - stage 매니페스트 두 개의 버전이 0.63.4보다 높고, CHANGELOG의 그 버전 절에 worktree 진입 판정 수정 항목이 있다
 - claude plugin update stage@noory-ai 와 재시작 뒤, 원래 checkout에서 시작해 worktree로 들어간 Claude 세션이 그 worktree의 .stage 카드를 등록 게이트에 막히지 않고 고친다(다시나에서 확인)
+- 같은 세션에서 그 worktree에 만든 승격 intent가 그 worktree의 `.stage/official/` 편집을 허락한다. 다시나 DE-00000005 승격으로 확인한다. 0.62.0에서는 훅이 원래 checkout에서 intent를 찾아 막혔다(2026-11-01).
 - 출시 뒤 W-00000304를 리뷰 대기 목록에서 보관한다
 
 ## Next action
