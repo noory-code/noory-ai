@@ -112,6 +112,17 @@ matter what the command printed.
 For hierarchical records, `close_work` resolves the record by frontmatter ID and writes the exact
 nested link into `work/review.md`; do not substitute a flat `<id>.md` path.
 
+When the work ran where the shared work log does not exist (for example a cloud session that wrote its
+`### Executor report` in the commit body), import the report before closing, so `close_work` can copy
+it onto the card's `## Progress`:
+
+```bash
+python3 stage/scripts/import_executor_report.py --project-root <project-root> W-00000001 --commit <rev>
+```
+
+It joins fields that the commit body wrapped across lines, validates the report against the executor
+contract and the paths that commit changed, and leaves the work log unchanged when validation fails.
+
 ## Completion rule
 
 Never mark work complete without a retrospective file linked through `retrospective_ref`.

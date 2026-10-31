@@ -18,6 +18,8 @@
 - Add `stage/scripts/codex_companion.py`, which finds the installed Codex companion script at run time,
   and route this project's seven Codex commands through it instead of a path fixed to one home
   directory and plugin version.
+- Add `stage/scripts/import_executor_report.py`, which moves an executor report from a commit body
+  into the work log, joins fields the body wrapped, and refuses reports that fail the contract.
 
 ## 0.63.4 — 2026-10-11
 
