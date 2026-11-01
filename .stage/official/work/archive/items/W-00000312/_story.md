@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000312
+promotion: not_applicable
 review: not_required
 scope: stage/CHANGELOG.md, stage/.claude-plugin/, stage/.codex-plugin/
 promotes:
@@ -58,8 +59,35 @@ decision_refs:
 ## Progress
 
 
+### Executor report at close — 2026-11-01
+
+```
+What changed: release_plugin.py titled the queued Unreleased entries as 0.64.0 — 2026-11-01, opened a new empty Unreleased section, and moved both Stage manifests from 0.63.5 to 0.64.0.
+Why: W-00000312 - let users install the review write check and the scope-report cleanup.
+Decisions made: Bump minor, not patch, because failing reviews that change repository files alters review outcomes for existing projects; leave updating installs to the person on their machine, which this cloud session cannot reach; out-of-scope paths changed: none.
+Work not done: Installs are not updated (claude plugin update stage@noory-ai and a restart on the person's machine).
+```
+
 ## Verification
 
+
+### Executed at close — 2026-11-01
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 0.360s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 0.376s
+
+OK
+```
 
 ## Retrospective
 

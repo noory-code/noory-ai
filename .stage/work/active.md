@@ -14,4 +14,3 @@
 | W-00000281 | development | codex | 사용자가 Avatar 기록에서 자신을 돌아보고 닮고 싶은 작업 방식을 AI 규칙으로 가져갑니다 | active | Codex | [current/W-00000272/W-00000280/W-00000281.md](current/W-00000272/W-00000280/W-00000281.md) |
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
 | W-00000308 | release | claude | worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다 | active | claude | [current/W-00000308/_story.md](current/W-00000308/_story.md) |
-| W-00000312 | release | claude | 리뷰가 바꾼 트리를 승인하지 못하게 하는 검사와 거짓 범위 넘음 알림 정리를 사용자가 설치본으로 받을 수 있 | active | Claude | [current/W-00000312/_story.md](current/W-00000312/_story.md) |
