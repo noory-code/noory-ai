@@ -8,7 +8,8 @@ milestone:
 autonomous: false
 acceptance:
   - "cd rag/server && uv run pytest -q -m 'not slow'"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000313

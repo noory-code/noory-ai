@@ -20,4 +20,3 @@
 | W-00000304 | passed | completed | not_applicable | [current/W-00000304/_story.md](current/W-00000304/_story.md) |
 | W-00000273 | passed | completed | promoted | [current/W-00000272/W-00000273/_story.md](current/W-00000272/W-00000273/_story.md) |
 | W-00000274 | passed | completed | deferred | [current/W-00000272/W-00000274/_story.md](current/W-00000272/W-00000274/_story.md) |
-| W-00000313 | passed | completed | not_applicable | [current/W-00000313/_story.md](current/W-00000313/_story.md) |

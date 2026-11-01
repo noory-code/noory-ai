@@ -240,3 +240,4 @@
 | W-00000310 | completed | [items/W-00000310/_story.md](items/W-00000310/_story.md) |
 | W-00000311 | completed | [items/W-00000311/_story.md](items/W-00000311/_story.md) |
 | W-00000312 | completed | [items/W-00000312/_story.md](items/W-00000312/_story.md) |
+| W-00000313 | completed | [items/W-00000313/_story.md](items/W-00000313/_story.md) |
