@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from ..domain.models import EntityRow, SearchHit, Subgraph
 from ..domain.ports import EmbedderPort, GraphIndexPort, VectorIndexPort

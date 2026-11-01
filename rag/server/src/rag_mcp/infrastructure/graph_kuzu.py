@@ -264,12 +264,10 @@ class KuzuGraphIndex:
             return Subgraph()  # 0 = no graph expansion (honor the schema minimum)
         depth = min(depth, 4)
         nodes_result = self._q(
-            (
-                "MATCH (e:Entity)-[r:RELATED*1..%d]-(n:Entity) "
-                "WHERE e.id IN $ids "
-                "RETURN DISTINCT n.id, n.name, n.type, n.community_id, n.summary"
-            )
-            % depth,
+            # Cypher cannot parameterize a path length; depth is an int clamped to 1..4.
+            f"MATCH (e:Entity)-[r:RELATED*1..{depth}]-(n:Entity) "
+            "WHERE e.id IN $ids "
+            "RETURN DISTINCT n.id, n.name, n.type, n.community_id, n.summary",
             {"ids": entity_ids},
         )
         neighbors = self._collect_entities(nodes_result)

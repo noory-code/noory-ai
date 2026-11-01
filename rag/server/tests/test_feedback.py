@@ -21,7 +21,6 @@ from rag_mcp.infrastructure.manifest_json import JsonManifest
 from rag_mcp.infrastructure.sources_fs import FilesystemSources
 from rag_mcp.infrastructure.vector_sqlitevec import SqliteVecIndex
 
-
 # ------------------------------------------------------------------- store
 
 def test_feedback_roundtrip_and_aggregate(tmp_path: Path) -> None:

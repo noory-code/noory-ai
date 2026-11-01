@@ -38,7 +38,7 @@ class SentenceTransformersEmbedder:
                 getattr(model, "get_embedding_dimension", None)
                 or getattr(model, "get_sentence_embedding_dimension", None)
             )
-            self._dim = int(getter() or 0) if getter else 0  # type: ignore[misc]
+            self._dim = int(getter() or 0) if getter else 0
         return self._model
 
     @property
@@ -66,4 +66,5 @@ class SentenceTransformersEmbedder:
 
     def encode_query(self, text: str) -> np.ndarray:
         payload = [f"query: {text}"] if _is_e5(self.model_name) else [text]
-        return self._encode(payload)[0]
+        vectors: np.ndarray = self._encode(payload)
+        return np.asarray(vectors[0], dtype=np.float32)

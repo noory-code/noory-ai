@@ -53,7 +53,7 @@ def test_import_rejects_dim_mismatch(tmp_path, tmp_state) -> None:
         embedding_dim=384,
         plugin_version="0.1.0",
     )
-    with pytest.raises(snap.IncompatibleSnapshot):
+    with pytest.raises(snap.IncompatibleSnapshotError):
         snap.import_snapshot(
             out,
             tmp_state.state_dir,
@@ -72,7 +72,7 @@ def test_import_rejects_model_mismatch(tmp_path, tmp_state) -> None:
         embedding_dim=384,
         plugin_version="0.1.0",
     )
-    with pytest.raises(snap.IncompatibleSnapshot):
+    with pytest.raises(snap.IncompatibleSnapshotError):
         snap.import_snapshot(
             out,
             tmp_state.state_dir,
@@ -91,7 +91,7 @@ def test_import_rejects_major_mismatch(tmp_path, tmp_state) -> None:
         embedding_dim=384,
         plugin_version="0.1.0",
     )
-    with pytest.raises(snap.IncompatibleSnapshot):
+    with pytest.raises(snap.IncompatibleSnapshotError):
         snap.import_snapshot(
             out,
             tmp_state.state_dir,

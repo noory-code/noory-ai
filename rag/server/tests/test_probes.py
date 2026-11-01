@@ -18,7 +18,9 @@ def test_load_returns_empty_when_file_missing(tmp_path: Path) -> None:
 def test_save_then_load_roundtrip(tmp_path: Path) -> None:
     probes_file = tmp_path / "probes.json"
     payload = [
-        Probe(id="auth-flow", query="What is the project's authentication flow?", note="onboarding"),
+        Probe(
+            id="auth-flow", query="What is the project's authentication flow?", note="onboarding"
+        ),
         Probe(id="payment_state", query="payment status diagram", note=""),
     ]
     probes_json.save(probes_file, payload)
