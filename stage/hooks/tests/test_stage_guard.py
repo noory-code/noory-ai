@@ -866,6 +866,25 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("promotion intent", reason(result))
 
+    def test_stage_gate_still_reads_the_tool_input_beside_a_transcript_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_work_item(root, status="completed", verification="passed", retrospective="completed", promotion="approved")
+            payload = {
+                "tool_name": "Write",
+                "cwd": str(root),
+                "transcript_path": "/home/someone/.claude/projects/p/session.jsonl",
+                "tool_input": {
+                    "file_path": ".stage/past/canon/principles.md",
+                    "content": "# Principles\n",
+                },
+            }
+
+            result = stage_guard.handle_event("pre-tool-use", payload)
+
+        self.assertEqual(decision(result), "deny")
+        self.assertIn("promotion intent", reason(result))
+
     def test_allows_work_item_write_that_declares_promotes_path(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -2440,6 +2459,107 @@ class StageGuardTest(unittest.TestCase):
                 "Action W-0003: Show the current action before every tool call."
             )
         )
+
+    def scope_message(self, root: Path, payload: dict) -> str:
+        payload = {"cwd": str(root), "session_id": "sess-scope", **payload}
+        result = stage_guard.handle_event("pre-tool-use", payload)
+        self.assertEqual(decision(result), "allow")
+        return message(result)
+
+    def test_scope_report_leaves_out_paths_the_call_does_not_change(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            cases = {
+                "transcript path of an Edit": {
+                    "transcript_path": str(Path(scratch) / "session.jsonl"),
+                    "tool_name": "Edit",
+                    "tool_input": {
+                        "file_path": "stage/hooks/x.py",
+                        "old_string": "a",
+                        "new_string": "b",
+                    },
+                },
+                "transcript path of a Write": {
+                    "transcript_path": "/home/someone/.claude/projects/p/session.jsonl",
+                    "tool_name": "Write",
+                    "tool_input": {"file_path": "stage/hooks/x.py", "content": "x\n"},
+                },
+                "discarded output": {
+                    "tool_name": "Bash",
+                    "tool_input": {"command": "python3 -m unittest -q > /dev/null 2>&1"},
+                },
+                "file in the OS temporary folder": {
+                    "tool_name": "Bash",
+                    "tool_input": {"command": f"cp stage/hooks/x.py {scratch}/copy.py"},
+                },
+                "variable naming a temporary folder": {
+                    "tool_name": "Bash",
+                    "tool_input": {"command": 'cp stage/hooks/x.py "$STAGE_TEST_SCRATCH/copy.py"'},
+                },
+            }
+            with patch.dict(os.environ, {"STAGE_TEST_SCRATCH": scratch}):
+                for label, payload in cases.items():
+                    with self.subTest(case=label):
+                        self.assertEqual("", self.scope_message(root, payload))
+
+    def test_scope_report_still_names_real_crossings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            # Outside the workspace, but neither a device nor a temporary folder.
+            outside = Path(Path(tmp).resolve().anchor) / "stage-test-not-scratch" / "out.txt"
+            cases = {
+                "project file outside scope beside a transcript": (
+                    {
+                        "transcript_path": "/home/someone/.claude/projects/p/session.jsonl",
+                        "tool_name": "Write",
+                        "tool_input": {"file_path": "src/app.py", "content": "x\n"},
+                    },
+                    "Scope boundary crossed: src/app.py.",
+                ),
+                "variable that expands into the project": (
+                    {
+                        "tool_name": "Bash",
+                        "tool_input": {"command": 'echo x > "$STAGE_TEST_ROOT/src/app.py"'},
+                    },
+                    "Scope boundary crossed: src/app.py.",
+                ),
+                "variable the hook cannot expand": (
+                    {
+                        "tool_name": "Bash",
+                        "tool_input": {"command": 'echo x > "$STAGE_TEST_UNSET/out.txt"'},
+                    },
+                    "Scope boundary crossed: $STAGE_TEST_UNSET/out.txt.",
+                ),
+            }
+            environment = {"STAGE_TEST_ROOT": str(root)}
+            with patch.dict(os.environ, environment):
+                os.environ.pop("STAGE_TEST_UNSET", None)
+                for label, (payload, expected) in cases.items():
+                    with self.subTest(case=label):
+                        self.assertEqual(expected, self.scope_message(root, payload))
+            outside_message = self.scope_message(
+                root,
+                {"tool_name": "Write", "tool_input": {"file_path": str(outside), "content": "x"}},
+            )
+            self.assertTrue(outside_message.startswith("Scope boundary crossed: "))
+            self.assertIn("stage-test-not-scratch", outside_message)
+
+    def test_scope_report_resolves_relative_targets_in_the_workspace_not_the_cwd(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            previous = os.getcwd()
+            os.chdir(elsewhere)
+            self.addCleanup(os.chdir, previous)
+
+            reported = self.scope_message(
+                root,
+                {"tool_name": "Write", "tool_input": {"file_path": "src/app.py", "content": "x"}},
+            )
+
+        self.assertEqual("Scope boundary crossed: src/app.py.", reported)
 
     def test_purpose_context_appends_boundary_to_existing_user_message(self):
         with tempfile.TemporaryDirectory() as tmp:
