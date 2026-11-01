@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.64.0 — 2026-11-01
+
 - Stop reporting paths a call does not change as scope crossings: the hook envelope's
   `transcript_path`, discarded output such as `/dev/null`, and files in the OS temporary folder,
   including shell targets like `"$TMPDIR/x"` once the hook expands the variable. Project files and
