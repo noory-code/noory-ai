@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one
+  combination on `ubuntu-24.04`, since `ubuntu-latest` (26.04) no longer ships 3.9, with a test
+  that pins every workflow's os and Python combinations.
 - Leave POSIX device paths such as `/dev/null` out of scope-crossing reports on Windows too, where
   they have no drive and were resolved to `<drive>:/dev/null`.
 - Ask every project review command, and the v4 template's review guidance, to say in a criterion's
