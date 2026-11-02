@@ -244,3 +244,5 @@
 | W-00000314 | completed | [items/W-00000314/_story.md](items/W-00000314/_story.md) |
 | W-00000315 | completed | [items/W-00000315/_story.md](items/W-00000315/_story.md) |
 | W-00000316 | completed | [items/W-00000316/_story.md](items/W-00000316/_story.md) |
+| W-00000317 | completed | [items/W-00000317/_story.md](items/W-00000317/_story.md) |
+| W-00000318 | completed | [items/W-00000318/_story.md](items/W-00000318/_story.md) |
