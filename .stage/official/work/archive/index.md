@@ -246,3 +246,5 @@
 | W-00000316 | completed | [items/W-00000316/_story.md](items/W-00000316/_story.md) |
 | W-00000317 | completed | [items/W-00000317/_story.md](items/W-00000317/_story.md) |
 | W-00000318 | completed | [items/W-00000318/_story.md](items/W-00000318/_story.md) |
+| W-00000319 | completed | [items/W-00000319/_story.md](items/W-00000319/_story.md) |
+| W-00000320 | completed | [items/W-00000320/_story.md](items/W-00000320/_story.md) |
