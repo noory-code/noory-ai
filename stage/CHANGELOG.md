@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Drop one leading list marker (`- `, `* `, `+ `) from each `--completion-criteria` value when
+  creating a milestone, so a criterion passed as a list item is not recorded as `- - …`.
 - Run the interrupted role's venue reaper before `drive.py --reset-attempts` resets an item, so a
   job left running by a stopped driver cannot append its report to the next round.
 - Count records that name their id only in the title heading, such as proposals, in

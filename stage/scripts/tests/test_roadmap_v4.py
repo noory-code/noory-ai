@@ -196,6 +196,52 @@ class RoadmapCliTest(RoadmapFixture):
             milestone_text,
         )
 
+    def test_completion_criteria_passed_as_list_items_keep_one_marker(self):
+        tmp, root = self.make_fixture()
+        with tmp:
+            run_cli(
+                ROADMAP,
+                root,
+                "create-theme",
+                "--title",
+                "Delivery reliability",
+                "--intent",
+                "Make delivery predictable",
+            )
+            milestone = run_cli(
+                ROADMAP,
+                root,
+                "create-milestone",
+                "--theme",
+                "TH-00000001",
+                "--title",
+                "Stable release",
+                "--completion-criteria",
+                "- Every check passes",
+                "--completion-criteria",
+                "* Every artifact is published",
+                "--completion-criteria",
+                "+ Users can install the release",
+                "--completion-criteria",
+                "Plain criterion",
+                "--completion-criteria",
+                "-5% latency on the slowest route",
+            )
+            milestone_text = (
+                root / ".stage/roadmap/milestones/M-00000001.md"
+            ).read_text(encoding="utf-8")
+
+        self.assertEqual(0, milestone.returncode, milestone.stderr)
+        self.assertIn(
+            "## Completion criteria\n\n"
+            "- Every check passes\n"
+            "- Every artifact is published\n"
+            "- Users can install the release\n"
+            "- Plain criterion\n"
+            "- -5% latency on the slowest route\n",
+            milestone_text,
+        )
+
     def test_creation_uses_per_type_counters_and_syncs_indexes(self):
         tmp, root = self.make_fixture()
         with tmp:
