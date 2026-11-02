@@ -2549,10 +2549,21 @@ class StageGuardTest(unittest.TestCase):
     def test_posix_device_paths_are_scratch_even_without_a_drive(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for target in ("/dev/null", "\\dev\\null", "/dev/stderr"):
+            # The bare forms, and the forms the Windows shell parser produces after
+            # anchoring a drive-less /dev/null to the workspace drive.
+            for target in (
+                "/dev/null",
+                "\\dev\\null",
+                "/dev/stderr",
+                "C:\\dev\\null",
+                "C:/dev/stderr",
+                "d:\\dev\\fd\\2",
+            ):
                 with self.subTest(target=target):
                     self.assertTrue(stage_guard.scratch_target(target, root))
-            self.assertFalse(stage_guard.scratch_target("dev/null", root))
+            for target in ("dev/null", "C:\\dev\\proj\\app.py", "C:/dev/nullify.txt"):
+                with self.subTest(target=target):
+                    self.assertFalse(stage_guard.scratch_target(target, root))
 
     def test_scope_report_resolves_relative_targets_in_the_workspace_not_the_cwd(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:
