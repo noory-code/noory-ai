@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Leave POSIX device paths such as `/dev/null` out of scope-crossing reports on Windows too, where
+  they have no drive and were resolved to `<drive>:/dev/null`.
 - Ask every project review command, and the v4 template's review guidance, to say in a criterion's
   reason which command the reviewer ran and what it showed, or that it did not run it, when the
   criterion asks for a run or an observed behavior.

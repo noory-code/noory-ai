@@ -600,6 +600,10 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
     scope report leaves them out. Other paths outside the workspace are still reported.
     """
 
+    # A POSIX device path such as /dev/null has no drive on Windows, so path math there
+    # would turn it into <drive>:/dev/null; judge it from the text first.
+    if str(target).replace("\\", "/").startswith("/dev/"):
+        return True
     path = Path(target)
     if not path.is_absolute():
         # Relative targets name workspace paths, whatever the hook process's cwd is.
@@ -611,8 +615,6 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
     if is_relative_to(resolved, workspace_root.resolve()):
         return False
     if sys.platform == "win32" and path.name.lower() == "nul":
-        return True
-    if resolved.as_posix().startswith("/dev/"):
         return True
     for base in {tempfile.gettempdir(), os.environ.get("TMPDIR", ""), "/tmp"}:
         if not base:

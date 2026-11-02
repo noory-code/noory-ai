@@ -177,7 +177,15 @@ class TemplateV4Test(unittest.TestCase):
                 "STAGE_WORK_ITEM_PATH": str(root / "card.md"),
             }
 
-            subprocess.run(command, shell=True, env=env, capture_output=True, text=True)
+            # Drivers and close_work run review commands from the project root.
+            subprocess.run(
+                command,
+                shell=True,
+                env=env,
+                capture_output=True,
+                text=True,
+                cwd=PROJECT_SETTINGS.parent.parent,
+            )
             argv = json.loads((root / "argv.json").read_text(encoding="utf-8"))
 
         self.assertEqual(
