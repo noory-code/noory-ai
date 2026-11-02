@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Ask every project review command, and the v4 template's review guidance, to say in a criterion's
+  reason which command the reviewer ran and what it showed, or that it did not run it, when the
+  criterion asks for a run or an observed behavior.
 - Refuse to start the next supervised round while files a failed review wrote are still changed,
   so the item commit cannot take them in unreviewed; restoring them, or accepting them with
   `--reset-attempts`, lets the round run.
