@@ -1433,6 +1433,63 @@ class DriveTest(unittest.TestCase):
         self.assertIsNone(item_state["running_role"])
         self.assertIn("### Attempt limit reset", log)
 
+    def test_reset_attempts_reaps_the_interrupted_roles_venue_first(self):
+        for role, venue in (("executor", "codex"), ("reviewer", "claude"), (None, None)):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as marker_tmp:
+                markers = {name: Path(marker_tmp) / f"{name}-reaped" for name in ("codex", "claude")}
+                tmp, root = self.make_project(
+                    reapers={
+                        name: python_command(
+                            "import json, os; from pathlib import Path; "
+                            "state = json.loads((Path(os.environ['STAGE_PROJECT_ROOT']) / "
+                            "'.stage/.runtime/driver/W-00000001.json').read_text("
+                            "encoding='utf-8')); "
+                            "attempts = state['items']['W-00000002']['attempt_count']; "
+                            f"Path({str(marker)!r}).write_text("
+                            "os.environ['STAGE_TURN_ROLE'] + '\\n' + "
+                            "os.environ['STAGE_WORK_ITEM_PATH'] + '\\n' + str(attempts), "
+                            "encoding='utf-8')"
+                        )
+                        for name, marker in markers.items()
+                    }
+                )
+                with tmp:
+                    stage_root = root / ".stage"
+                    write_card(
+                        stage_root,
+                        "W-00000002",
+                        parent="W-00000001",
+                        acceptance=(PASS_COMMAND,),
+                    )
+                    initialize_git(root)
+                    drive = self.load_module()
+                    state_path = stage_root / ".runtime/driver/W-00000001.json"
+                    state = drive.new_run_state("W-00000001", 1.0)
+                    state["items"]["W-00000002"] = {
+                        "attempt_count": 3,
+                        "last_fingerprint": "old-fingerprint",
+                        "base_head": git(root, "rev-parse", "HEAD").stdout.strip(),
+                        "executor_changed_paths": [],
+                        "running_role": role,
+                    }
+                    drive.write_run_state(state_path, state)
+
+                    result = self.run_cli(
+                        root, "--reset-attempts", "--reason", "The stopped round was redesigned."
+                    )
+                    expected_path = str(card_path(stage_root, "W-00000002").resolve())
+                    reaped = {
+                        name: marker.read_text(encoding="utf-8") if marker.exists() else None
+                        for name, marker in markers.items()
+                    }
+
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                expected = {"codex": None, "claude": None}
+                if venue is not None:
+                    # Reaped before the reset: the attempt count was still 3.
+                    expected[venue] = f"{role}\n{expected_path}\n3"
+                self.assertEqual(expected, reaped)
+
     def test_reset_attempts_refuses_a_running_sibling_item(self):
         tmp, root = self.make_project()
         with tmp:

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Run the interrupted role's venue reaper before `drive.py --reset-attempts` resets an item, so a
+  job left running by a stopped driver cannot append its report to the next round.
 - Count records that name their id only in the title heading, such as proposals, in
   `stage_record_ids.py`, both in the checkout and on other branches, so it no longer offers an id
   that an archived proposal already uses.
