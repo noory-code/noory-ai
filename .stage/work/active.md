@@ -15,3 +15,4 @@
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
 | W-00000308 | release | claude | worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다 | active | claude | [current/W-00000308/_story.md](current/W-00000308/_story.md) |
 | W-00000319 | fix | claude | Stage 시험과 범위 넘음 알림이 Windows 와 다른 작업 폴더에서도 로컬과 같게 동작해 CI 가 다시 | active | Claude | [current/W-00000319/_story.md](current/W-00000319/_story.md) |
+| W-00000320 | fix | claude | Python 3.9 를 받치겠다는 Stage·Avatar·Plainly 의 약속을 Ubuntu 에서도 CI  | active | Claude | [current/W-00000320/_story.md](current/W-00000320/_story.md) |
