@@ -14,7 +14,7 @@ retrospective: pending
 retrospective_ref:
 promotion: pending
 review: pending
-scope: .github/workflows/stage.yml, .github/workflows/avatar.yml, .github/workflows/plainly.yml, stage/scripts/tests/test_ci_workflows.py
+scope: .github/workflows/stage.yml, .github/workflows/avatar.yml, .github/workflows/plainly.yml, stage/scripts/tests/test_ci_workflows.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
 ---
