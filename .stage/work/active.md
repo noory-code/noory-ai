@@ -15,3 +15,4 @@
 | W-00000282 | development | codex | 다시나가 독립된 제품 레포에서 로컬 기록을 읽고 일기와 주간 화면을 제공하면서 Avatar 플러그인은 선택과 | active | Claude | [current/W-00000272/W-00000280/W-00000282.md](current/W-00000272/W-00000280/W-00000282.md) |
 | W-00000308 | release | claude | worktree 진입 판정 수정(W-00000304)을 담은 stage 패치를 출시하고 설치본을 업데이트한다 | active | claude | [current/W-00000308/_story.md](current/W-00000308/_story.md) |
 | W-00000317 | fix | claude | 리뷰가 판정 파일 밖에 쓴 변경이, 사람이 치우지 않은 채 다음 판의 항목 커밋에 리뷰 없이 섞여 들어가지  | active | Claude | [current/W-00000317/_story.md](current/W-00000317/_story.md) |
+| W-00000318 | fix | claude | 리뷰어가 실행을 요구하는 기준을 돌리지 않고 통과시켜도, 판정 사유만 보고 그 사실을 알 수 있게 한다 | active | Claude | [current/W-00000318/_story.md](current/W-00000318/_story.md) |
