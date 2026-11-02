@@ -248,3 +248,4 @@
 | W-00000318 | completed | [items/W-00000318/_story.md](items/W-00000318/_story.md) |
 | W-00000319 | completed | [items/W-00000319/_story.md](items/W-00000319/_story.md) |
 | W-00000320 | completed | [items/W-00000320/_story.md](items/W-00000320/_story.md) |
+| W-00000321 | completed | [items/W-00000321/_story.md](items/W-00000321/_story.md) |
