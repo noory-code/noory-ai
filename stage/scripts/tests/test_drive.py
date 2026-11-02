@@ -1802,6 +1802,84 @@ class DriveTest(unittest.TestCase):
         # A real failed attempt, not an infrastructure retry.
         self.assertEqual(1, state["items"]["W-00000002"]["attempt_count"])
 
+    def test_files_a_failed_review_left_block_the_next_round_until_restored_or_accepted(self):
+        for resolution in ("left", "restored", "accepted"):
+            with self.subTest(resolution=resolution), tempfile.TemporaryDirectory() as marker_tmp:
+                marker = Path(marker_tmp) / "executor-runs"
+                tmp, root = self.make_project(
+                    executor=reporting_python_command(
+                        "from pathlib import Path; "
+                        f"m = Path({str(marker)!r}); "
+                        "m.write_text((m.read_text(encoding='utf-8') if m.exists() else '') + 'x', "
+                        "encoding='utf-8'); "
+                        "Path('executor-work.txt').write_text('done\\n', encoding='utf-8')",
+                        ["executor-work.txt"],
+                    ),
+                    reviewer=approving_reviewer_command(
+                        "from pathlib import Path\n"
+                        "if not Path('reviewer-wrote.txt').exists():\n"
+                        "    Path('reviewer-wrote.txt').write_text('x', encoding='utf-8')"
+                    ),
+                )
+                with tmp:
+                    write_card(
+                        root / ".stage",
+                        "W-00000002",
+                        parent="W-00000001",
+                        acceptance=(PASS_COMMAND,),
+                    )
+                    initialize_git(root)
+
+                    first = self.run_cli(root, "--execute")
+                    state_path = root / ".stage/.runtime/driver/W-00000001.json"
+                    recorded = json.loads(state_path.read_text(encoding="utf-8"))["items"][
+                        "W-00000002"
+                    ].get("review_written_paths")
+                    if resolution == "restored":
+                        (root / "reviewer-wrote.txt").unlink()
+                    if resolution == "accepted":
+                        accepted = self.run_cli(
+                            root, "--reset-attempts", "--reason", "Keep the reviewer's file."
+                        )
+                        self.assertEqual(0, accepted.returncode, accepted.stdout)
+                    second = self.run_cli(root, "--execute")
+                    runs = marker.read_text(encoding="utf-8")
+
+                self.assertNotEqual(0, first.returncode)
+                self.assertEqual({"reviewer-wrote.txt": ""}, recorded)
+                if resolution == "left":
+                    self.assertNotEqual(0, second.returncode)
+                    self.assertIn(
+                        "the last review changed files that are still changed: "
+                        "reviewer-wrote.txt",
+                        second.stdout,
+                    )
+                    self.assertEqual("x", runs)  # the executor did not run again
+                else:
+                    self.assertNotIn("still changed", second.stdout)
+                    self.assertEqual("xx", runs)
+
+    def test_review_written_paths_in_run_state_must_map_paths_to_strings(self):
+        tmp, root = self.make_project()
+        with tmp:
+            drive = self.load_module()
+            state_path = root / ".stage/.runtime/driver/W-00000001.json"
+            state = drive.new_run_state("W-00000001", 1.0)
+            state["items"]["W-00000002"] = {
+                "attempt_count": 1,
+                "last_fingerprint": "",
+                "base_head": "",
+                "executor_changed_paths": [],
+                "running_role": None,
+                "review_written_paths": ["not-a-mapping"],
+            }
+            drive.write_run_state(state_path, state)
+
+            loaded, error = drive.load_run_state(state_path, "W-00000001", 2.0)
+
+        self.assertIsNone(loaded)
+        self.assertIn("review_written_paths must map non-empty paths to strings", error)
+
     def test_execute_records_the_exact_executor_and_reviewer_commands_in_the_work_log(self):
         executor = reporting_python_command(
             "from pathlib import Path; "

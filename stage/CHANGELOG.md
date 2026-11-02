@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Refuse to start the next supervised round while files a failed review wrote are still changed,
+  so the item commit cannot take them in unreviewed; restoring them, or accepting them with
+  `--reset-attempts`, lets the round run.
 - Drop one leading list marker (`- `, `* `, `+ `) from each `--completion-criteria` value when
   creating a milestone, so a criterion passed as a list item is not recorded as `- - …`.
 - Run the interrupted role's venue reaper before `drive.py --reset-attempts` resets an item, so a
