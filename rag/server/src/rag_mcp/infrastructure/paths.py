@@ -64,7 +64,7 @@ class RagPaths:
     cache_dir: Path
 
     @classmethod
-    def from_cwd(cls, cwd: Path | str | None = None) -> "RagPaths":
+    def from_cwd(cls, cwd: Path | str | None = None) -> RagPaths:
         root = _resolve_project_root(cwd)
         state = root / STATE_DIR_NAME
         return cls(

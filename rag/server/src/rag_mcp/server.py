@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import tarfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from . import __version__
 from .application.rebalancer import MergeDecision, SummaryDecision
@@ -20,8 +20,9 @@ from .infrastructure import probes_json as probes_io
 from .infrastructure import settings_json as settings_io
 from .infrastructure import snapshot as snap
 from .infrastructure.paths import RagPaths, RagPathsConfigError
-from .infrastructure.settings_json import Settings
 
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
 
 # -------------------------------------------------------------- Tool registry
 
@@ -550,7 +551,7 @@ def tool_import(in_path: str, mode: str = "replace") -> dict[str, Any]:
             plugin_major=__version__.split(".")[0],
             mode=mode,
         )
-    except snap.IncompatibleSnapshot as e:
+    except snap.IncompatibleSnapshotError as e:
         return _err(str(e))
     except settings_io.SettingsError as e:
         return _err(str(e))
@@ -811,7 +812,7 @@ REGISTRY.add(
 # ---------------------------------------------------------------- MCP wiring
 
 
-def build_fastmcp():
+def build_fastmcp() -> FastMCP:
     from mcp.server.fastmcp import FastMCP
 
     app = FastMCP("rag")

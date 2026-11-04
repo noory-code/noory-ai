@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Adopt ruff and strict mypy in the server's dev dependencies with the repository's conventions
+  (`E`, `F`, `I`, `N`, `W`, `UP` rules, 100-character lines, the pydantic mypy plugin), and fix
+  what they found without changing behavior: imports and `collections.abc` types, `datetime.UTC`,
+  an f-string for the clamped Cypher path length, `IncompatibleSnapshotError` for the snapshot
+  exception, an explicit error when SQLite reports no inserted chunk id, and a typed
+  `build_fastmcp()`.
+
 All notable changes to this plugin are documented here.
 
 ## [0.3.0] — 2026-07-12

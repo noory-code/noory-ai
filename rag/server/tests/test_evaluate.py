@@ -9,7 +9,6 @@ then assert that rag_evaluate's response shape and aggregates are sane.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -81,7 +80,12 @@ def _init_settings_and_index(project: Path) -> None:
     srv.tool_upsert_chunks(
         file="auth.md",
         chunks=[
-            {"text": "The project's authentication flow proceeds via OAuth-based session token issuance."}
+            {
+                "text": (
+                    "The project's authentication flow proceeds via "
+                    "OAuth-based session token issuance."
+                )
+            }
         ],
         entities=[],
         relations=[],

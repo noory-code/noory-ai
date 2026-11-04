@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one
+  combination on `ubuntu-24.04`, since `ubuntu-latest` (26.04) no longer ships 3.9, with a test
+  that pins every workflow's os and Python combinations.
+- Leave POSIX device paths such as `/dev/null` out of scope-crossing reports on Windows too, where
+  they have no drive and the shell parser anchors them as `<drive>:\dev\null`; only known device
+  names count, so a workspace under `C:\dev\` is unaffected.
+- Ask every project review command, and the v4 template's review guidance, to say in a criterion's
+  reason which command the reviewer ran and what it showed, or that it did not run it, when the
+  criterion asks for a run or an observed behavior.
+- Refuse to start the next supervised round while files a failed review wrote are still changed,
+  so the item commit cannot take them in unreviewed; restoring them, or accepting them with
+  `--reset-attempts`, lets the round run.
+- Drop one leading list marker (`- `, `* `, `+ `) from each `--completion-criteria` value when
+  creating a milestone, so a criterion passed as a list item is not recorded as `- - …`.
+- Run the interrupted role's venue reaper before `drive.py --reset-attempts` resets an item, so a
+  job left running by a stopped driver cannot append its report to the next round.
+- Count records that name their id only in the title heading, such as proposals, in
+  `stage_record_ids.py`, both in the checkout and on other branches, so it no longer offers an id
+  that an archived proposal already uses.
 ## 0.64.0 — 2026-11-01
 
 - Stop reporting paths a call does not change as scope crossings: the hook envelope's

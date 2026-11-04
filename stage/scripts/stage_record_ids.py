@@ -29,11 +29,20 @@ RUNTIME_PART = ".runtime"
 
 
 def id_line_re(prefix: str) -> re.Pattern[str]:
-    return re.compile(rf"^id:[ \t]*{re.escape(prefix)}-(\d{{8}})[ \t]*\r?$", re.MULTILINE)
+    """Match a record's id, whether in a frontmatter `id:` line or its title heading.
+
+    Proposals and other body-only records name their id only in the heading
+    (`# P-00000004 Title`), as `stage_records.py` accepts; counting `id:` lines
+    alone offered their numbers as free.
+    """
+
+    return re.compile(
+        rf"^(?:id:[ \t]*|#[ \t]+){re.escape(prefix)}-(\d{{8}})(?![\d])", re.MULTILINE
+    )
 
 
 def local_record_numbers(stage_root: Path, prefix: str) -> set[int]:
-    """Numbers named by `id:` lines in the working tree's `.stage/` records."""
+    """Numbers named by ids in the working tree's `.stage/` records."""
 
     pattern = id_line_re(prefix)
     numbers: set[int] = set()
@@ -79,7 +88,7 @@ def branch_record_numbers(project_root: Path, prefix: str) -> dict[int, set[str]
             "-h",
             "-I",
             "-E",
-            rf"^id:[[:space:]]*{prefix}-[0-9]{{8}}",
+            rf"^(id:[[:space:]]*|#[[:space:]]+){prefix}-[0-9]{{8}}",
             ref,
             "--",
             ".stage",

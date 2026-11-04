@@ -213,6 +213,21 @@ def review_verdict_path(stage_root: Path, item_id: str) -> Path:
     return stage_root.parent / REVIEW_VERDICT_RELATIVE_DIR / f"{item_id}.json"
 
 
+def review_written_paths(
+    project_root: Path,
+    before: dict[str, str],
+    after: dict[str, str],
+    verdict_file: Path,
+) -> list[str]:
+    """Repository paths that changed between two snapshots, other than the verdict file."""
+
+    try:
+        verdict = verdict_file.resolve().relative_to(project_root.resolve()).as_posix()
+    except ValueError:
+        verdict = ""
+    return [path for path in changed_repository_paths(before, after) if path != verdict]
+
+
 def reject_review_writes(
     project_root: Path,
     before: dict[str, str],
@@ -228,11 +243,7 @@ def reject_review_writes(
     message names them. Returns "" when only the verdict file changed.
     """
 
-    try:
-        verdict = verdict_file.resolve().relative_to(project_root.resolve()).as_posix()
-    except ValueError:
-        verdict = ""
-    written = [path for path in changed_repository_paths(before, after) if path != verdict]
+    written = review_written_paths(project_root, before, after, verdict_file)
     if not written:
         return ""
     verdict_file.unlink(missing_ok=True)

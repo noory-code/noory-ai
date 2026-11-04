@@ -9,7 +9,6 @@ keyword arguments.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 from .application.indexer import Indexer
 from .application.rebalancer import Rebalancer
@@ -48,7 +47,7 @@ class Container:
     rebalancer: Rebalancer
 
     @classmethod
-    def wire(cls, paths: RagPaths, settings: Settings) -> "Container":
+    def wire(cls, paths: RagPaths, settings: Settings) -> Container:
         embedder: EmbedderPort = SentenceTransformersEmbedder(settings.embedding.model)
         vector: VectorIndexPort = SqliteVecIndex(paths.vec_db, dim=settings.embedding.dim)
         graph: GraphIndexPort = KuzuGraphIndex(paths.graph_dir)

@@ -574,6 +574,10 @@ def purpose_context_targets(
     return targets, follows_symlinks
 
 
+# Only known device names, so a workspace such as C:/dev/proj is never taken for one.
+WINDOWS_ANCHORED_DEVICE_RE = re.compile(
+    r"^[A-Za-z]:/dev/(?:null|zero|full|random|urandom|tty|stdin|stdout|stderr|fd/\d+)$"
+)
 LEADING_SHELL_VARIABLE_RE = re.compile(r"^\$(?:\{(?P<braced>\w+)\}|(?P<bare>\w+))(?P<rest>.*)$")
 
 
@@ -600,6 +604,12 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
     scope report leaves them out. Other paths outside the workspace are still reported.
     """
 
+    # A POSIX device path such as /dev/null has no drive on Windows, so path math there
+    # turns it into <drive>:/dev/null, and the shell parser already anchors it so;
+    # judge it from the text first.
+    text = str(target).replace("\\", "/")
+    if text.startswith("/dev/") or WINDOWS_ANCHORED_DEVICE_RE.match(text):
+        return True
     path = Path(target)
     if not path.is_absolute():
         # Relative targets name workspace paths, whatever the hook process's cwd is.
@@ -611,8 +621,6 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
     if is_relative_to(resolved, workspace_root.resolve()):
         return False
     if sys.platform == "win32" and path.name.lower() == "nul":
-        return True
-    if resolved.as_posix().startswith("/dev/"):
         return True
     for base in {tempfile.gettempdir(), os.environ.get("TMPDIR", ""), "/tmp"}:
         if not base:

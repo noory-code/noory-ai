@@ -2546,18 +2546,39 @@ class StageGuardTest(unittest.TestCase):
             self.assertTrue(outside_message.startswith("Scope boundary crossed: "))
             self.assertIn("stage-test-not-scratch", outside_message)
 
+    def test_posix_device_paths_are_scratch_even_without_a_drive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # The bare forms, and the forms the Windows shell parser produces after
+            # anchoring a drive-less /dev/null to the workspace drive.
+            for target in (
+                "/dev/null",
+                "\\dev\\null",
+                "/dev/stderr",
+                "C:\\dev\\null",
+                "C:/dev/stderr",
+                "d:\\dev\\fd\\2",
+            ):
+                with self.subTest(target=target):
+                    self.assertTrue(stage_guard.scratch_target(target, root))
+            for target in ("dev/null", "C:\\dev\\proj\\app.py", "C:/dev/nullify.txt"):
+                with self.subTest(target=target):
+                    self.assertFalse(stage_guard.scratch_target(target, root))
+
     def test_scope_report_resolves_relative_targets_in_the_workspace_not_the_cwd(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
             previous = os.getcwd()
             os.chdir(elsewhere)
-            self.addCleanup(os.chdir, previous)
-
-            reported = self.scope_message(
-                root,
-                {"tool_name": "Write", "tool_input": {"file_path": "src/app.py", "content": "x"}},
-            )
+            try:
+                reported = self.scope_message(
+                    root,
+                    {"tool_name": "Write", "tool_input": {"file_path": "src/app.py", "content": "x"}},
+                )
+            finally:
+                # Leave the folder before it is deleted; Windows cannot remove the cwd.
+                os.chdir(previous)
 
         self.assertEqual("Scope boundary crossed: src/app.py.", reported)
 

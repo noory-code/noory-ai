@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 import numpy as np
 
@@ -125,6 +125,8 @@ class SqliteVecIndex:
                         json.dumps(chunk.meta, ensure_ascii=False),
                     ),
                 )
+                if cur.lastrowid is None:
+                    raise RuntimeError("sqlite did not report the inserted chunk id")
                 chunk_id = int(cur.lastrowid)
                 conn.execute(
                     "INSERT INTO vec_chunks(rowid, embedding) VALUES (?, ?)",

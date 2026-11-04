@@ -75,6 +75,37 @@ class StageRecordIdsTest(unittest.TestCase):
         )
         self.assertEqual("O-00000012", stage_record_ids.next_record_id(self.root, "O"))
 
+    def write_heading_only(self, relative: str, record_id: str) -> None:
+        path = self.stage / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"# {record_id} Title\n\n## Proposal\n", encoding="utf-8")
+
+    def test_counts_records_that_name_their_id_only_in_the_heading(self):
+        self.git("init", "-q", "-b", "main")
+        self.write_heading_only("official/proposals/archive/P-00000004.md", "P-00000004")
+        self.write("proposals/_template.md", "P-00000000")
+        self.commit_all("base")
+        self.git("checkout", "-q", "-b", "side")
+        self.write_heading_only("proposals/P-00000006.md", "P-00000006")
+        self.commit_all("side proposal")
+        self.git("checkout", "-q", "main")
+
+        self.assertEqual({4}, stage_record_ids.local_record_numbers(self.stage, "P"))
+        self.assertEqual({"side"}, stage_record_ids.branch_record_numbers(self.root, "P")[6])
+        self.assertEqual("P-00000007", stage_record_ids.next_record_id(self.root, "P"))
+
+    def test_heading_mentions_of_other_prefixes_and_longer_ids_are_ignored(self):
+        path = self.stage / "proposals/P-00000002.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "# P-00000002 Title\n\n## W-00000099 is a level-two heading\n"
+            "# PX-00000050 another prefix\n# P-000000123 nine digits\n",
+            encoding="utf-8",
+        )
+
+        self.assertEqual({2}, stage_record_ids.local_record_numbers(self.stage, "P"))
+        self.assertEqual(set(), stage_record_ids.local_record_numbers(self.stage, "W"))
+
     def test_outside_git_only_the_checkout_counts(self):
         self.write("work/current/W-00000004/_story.md", "W-00000004")
 

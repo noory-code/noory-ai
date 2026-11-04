@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Callable
 
 
+# A caller may pass a criterion already written as a list item; the record adds its own marker.
+LIST_MARKER_RE = re.compile(r"^\s*[-*+]\s+")
+
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 SCRIPT_ROOT = PLUGIN_ROOT / "scripts"
@@ -237,7 +240,8 @@ def create_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         text = _replace_section(text, "Scope", args.scope)
         text = _replace_section(text, "Theme", args.theme)
         completion_criteria = "\n".join(
-            f"- {criterion}" for criterion in args.completion_criteria
+            f"- {LIST_MARKER_RE.sub('', criterion, count=1)}"
+            for criterion in args.completion_criteria
         )
         text = _replace_section(text, "Completion criteria", completion_criteria)
         return text

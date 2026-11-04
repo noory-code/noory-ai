@@ -388,6 +388,33 @@ def main() -> int:
                 "target has no active or review leaf with non-empty acceptance"
             )
             return 1
+        # A stopped driver does not stop the venue's job: cancel what the
+        # interrupted role left running before the next round can collide with it.
+        running_role = state["items"].get(item.item_id, {}).get("running_role")
+        reap_venue = (
+            item.venue
+            if running_role == "executor"
+            else resolve_independent_reviewer_venue(load_review_config(stage_root), item.venue)
+            if running_role == "reviewer"
+            else None
+        )
+        if running_role is not None and reap_venue is not None:
+            try:
+                reset_log_path = ensure_work_log(stage_root, item.item_id)
+            except RuntimeError as exc:
+                print_escalation(f"cannot prepare the work log before reaping: {exc}")
+                return 1
+            reap_turn(
+                stage_root=stage_root,
+                project_root=project_root,
+                log_path=reset_log_path,
+                item_path=item.path,
+                venue=reap_venue,
+                role=str(running_role),
+                timeout=(
+                    args.timeout if args.timeout is not None else MIN_COMMAND_TIMEOUT_SECONDS
+                ),
+            )
         reset_ok, reset_error = reset_attempts(
             state_path=state_path,
             stage_root=stage_root,

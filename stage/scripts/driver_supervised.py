@@ -38,6 +38,7 @@ from close_work import (  # noqa: E402
     executor_review_dispositions,
     read_work_log,
     reject_review_writes,
+    review_written_paths,
     run_check,
     review_verdict_path,
 )
@@ -109,6 +110,29 @@ def run_supervised_round(
     its return value is the driver's exit code.
     """
 
+    # Files a failed review wrote stay for the person to inspect; the item commit
+    # would otherwise take them in unreviewed, so wait until they are restored.
+    left_by_review = item_state.get("review_written_paths") or {}
+    if left_by_review:
+        try:
+            current_paths = repository_path_snapshot(project_root)
+        except RuntimeError as exc:
+            print_escalation(f"cannot inspect the files the last review wrote: {exc}")
+            return 1
+        still_changed = sorted(
+            path
+            for path, before in left_by_review.items()
+            if current_paths.get(path, "") != before
+        )
+        if still_changed:
+            print_escalation(
+                "the last review changed files that are still changed: "
+                + ", ".join(still_changed)
+                + "; restore them to their state before that review, or accept them with "
+                "--reset-attempts and a reason, before another round"
+            )
+            return 1
+
     if not args.resume and not run_preflight(
         stage_root=stage_root,
         project_root=project_root,
@@ -167,6 +191,7 @@ def run_supervised_round(
         item_state.get("executor_changed_paths", [])
     )
 
+    review_written: dict[str, str] = {}
     index_path, index_error = git_index_path(project_root)
     if index_error:
         print_escalation(f"cannot resolve Git index before execution: {index_error}")
@@ -576,10 +601,20 @@ def run_supervised_round(
                 env=reviewer_env,
             )
             try:
+                review_paths_after = repository_path_snapshot(project_root)
+                review_written = {
+                    path: review_paths_before.get(path, "")
+                    for path in review_written_paths(
+                        project_root,
+                        review_paths_before,
+                        review_paths_after,
+                        reviewer_verdict_file,
+                    )
+                }
                 review_write_failure = reject_review_writes(
                     project_root,
                     review_paths_before,
-                    repository_path_snapshot(project_root),
+                    review_paths_after,
                     reviewer_verdict_file,
                 )
             except RuntimeError as exc:
@@ -745,6 +780,9 @@ def run_supervised_round(
         "executor_changed_paths": changed_paths,
         "running_role": None,
     }
+    if review_written:
+        # Each path's state before the review, "" when it did not exist.
+        state["items"][item.item_id]["review_written_paths"] = review_written
     try:
         write_run_state(state_path, state)
     except OSError as exc:

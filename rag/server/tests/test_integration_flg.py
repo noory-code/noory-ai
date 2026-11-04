@@ -11,6 +11,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from _helpers.surrogate import chunk_and_extract
 
 from rag_mcp.application.indexer import Indexer
 from rag_mcp.application.rebalancer import Rebalancer
@@ -23,8 +24,6 @@ from rag_mcp.infrastructure.manifest_json import JsonManifest
 from rag_mcp.infrastructure.paths import RagPaths
 from rag_mcp.infrastructure.sources_fs import FilesystemSources
 from rag_mcp.infrastructure.vector_sqlitevec import SqliteVecIndex
-
-from _helpers.surrogate import chunk_and_extract
 
 pytestmark = pytest.mark.slow
 

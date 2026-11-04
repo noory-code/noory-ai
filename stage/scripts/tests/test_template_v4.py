@@ -177,7 +177,15 @@ class TemplateV4Test(unittest.TestCase):
                 "STAGE_WORK_ITEM_PATH": str(root / "card.md"),
             }
 
-            subprocess.run(command, shell=True, env=env, capture_output=True, text=True)
+            # Drivers and close_work run review commands from the project root.
+            subprocess.run(
+                command,
+                shell=True,
+                env=env,
+                capture_output=True,
+                text=True,
+                cwd=PROJECT_SETTINGS.parent.parent,
+            )
             argv = json.loads((root / "argv.json").read_text(encoding="utf-8"))
 
         self.assertEqual(
@@ -197,6 +205,32 @@ class TemplateV4Test(unittest.TestCase):
         self.assertTrue(argv[-1].startswith("You are an independent code reviewer."))
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("Write(", command)
+
+    def test_reviewers_must_say_whether_they_ran_a_criterion_that_asks_for_a_run(self):
+        rule = (
+            "For a criterion that asks for a command to be run or behavior to be observed, "
+            "say in its reason which command you ran and what it showed, or that you did not run it."
+        )
+        review = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))["review"]
+        commands = {
+            "reviewer.claude": review["reviewers"]["claude"],
+            "reviewer.codex": review["reviewers"]["codex"],
+            **{
+                f"strength.{name}": command
+                for name, command in review["strengths"].items()
+                if command is not None
+            },
+        }
+        template = " ".join(
+            line.strip().removeprefix("//").strip()
+            for line in (V4_ROOT / "settings.jsonc").read_text(encoding="utf-8").splitlines()
+        )
+
+        self.assertEqual(6, len(commands))
+        for name, command in commands.items():
+            with self.subTest(name=name):
+                self.assertIn(rule, command)
+        self.assertIn(rule, template)
 
     def test_project_review_strengths_can_write_verdict_files(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))

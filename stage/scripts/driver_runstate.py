@@ -137,6 +137,15 @@ def load_run_state(
                 f"driver run state {item_id}.running_role must be "
                 "executor, reviewer, or null"
             )
+        review_written_paths = item_state.get("review_written_paths", {})
+        if not isinstance(review_written_paths, dict) or any(
+            not isinstance(path, str) or not path or not isinstance(before, str)
+            for path, before in review_written_paths.items()
+        ):
+            return None, (
+                f"driver run state {item_id}.review_written_paths must map "
+                "non-empty paths to strings"
+            )
         if not isinstance(resume_repository_fingerprint, str):
             return None, (
                 f"driver run state {item_id}.resume_repository_fingerprint "
@@ -354,6 +363,8 @@ def _record_reset(
         "resume_acceptance_output",
         "resume_previous_verdict",
         "resume_reasoned_no_change",
+        # Resetting is the person's explicit acceptance of what a failed review left.
+        "review_written_paths",
     ):
         state["items"][item_id].pop(field, None)
     try:

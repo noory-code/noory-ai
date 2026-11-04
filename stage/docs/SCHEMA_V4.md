@@ -427,7 +427,16 @@ resume checkpoint, and stale role, while another simultaneously recorded role st
 direct reset of one item. It also removes the item's previous review verdict and criteria digest,
 so the next round is a full review, and keeps in `executor_changed_paths` only the paths that
 still differ from `base_head`: the item commit squashes everything since that base, so review must
-still see output the person kept, but not paths they reverted.
+still see output the person kept, but not paths they reverted. When the item still records an
+interrupted role, the reset first runs that role's venue reaper (`reapers.<venue>`, with
+`STAGE_TURN_ROLE` set to the role), because stopping the driver does not stop a job the venue is
+still running, and its late report would otherwise land in the next round.
+
+When a review fails because it changed repository files other than its verdict, the item's state
+keeps `review_written_paths`: each such path mapped to its state before the review (an empty string
+when it did not exist). The next supervised round refuses to start while any of them still differs
+from that state, because the item commit would otherwise include them unreviewed. Restoring them
+lets the round run; `--reset-attempts` clears the record as the person's explicit acceptance.
 
 Immediately before an executor turn, `running_role` is written as `executor` without a resume
 fingerprint. After the executor exits successfully, the driver validates its report and changed

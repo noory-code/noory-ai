@@ -58,7 +58,7 @@ class _ChunkingJSON(BaseModel):
     min_tokens: int = Field(100, ge=1)
 
     @model_validator(mode="after")
-    def _ordered_bounds(self) -> "_ChunkingJSON":
+    def _ordered_bounds(self) -> _ChunkingJSON:
         if self.min_tokens > self.target_tokens:
             raise ValueError("min_tokens must be <= target_tokens")
         if self.max_tokens < self.target_tokens:

@@ -12,7 +12,7 @@ import json
 import shutil
 import tarfile
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +41,7 @@ class SnapshotHeader:
         }
 
 
-class IncompatibleSnapshot(Exception):
+class IncompatibleSnapshotError(Exception):
     pass
 
 
@@ -59,7 +59,7 @@ def export_snapshot(
 
     header = SnapshotHeader(
         format_version=SNAPSHOT_FORMAT_VERSION,
-        created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        created_at=datetime.now(UTC).isoformat(timespec="seconds"),
         embedding_model=embedding_model,
         embedding_dim=embedding_dim,
         plugin_version=plugin_version,
@@ -71,7 +71,7 @@ def export_snapshot(
         header_bytes = json.dumps(header.to_json(), indent=2).encode("utf-8")
         info = tarfile.TarInfo(name=HEADER_NAME)
         info.size = len(header_bytes)
-        info.mtime = int(datetime.now(timezone.utc).timestamp())
+        info.mtime = int(datetime.now(UTC).timestamp())
         import io
 
         tar.addfile(info, io.BytesIO(header_bytes))
@@ -87,7 +87,7 @@ def read_header(in_path: Path) -> SnapshotHeader:
         member = tar.getmember(HEADER_NAME)
         f = tar.extractfile(member)
         if f is None:
-            raise IncompatibleSnapshot("snapshot.json unreadable")
+            raise IncompatibleSnapshotError("snapshot.json unreadable")
         data = json.loads(f.read().decode("utf-8"))
     return SnapshotHeader(
         format_version=int(data.get("format_version", 0)),
@@ -113,31 +113,31 @@ def import_snapshot(
 
     header = read_header(in_path)
     if header.format_version != SNAPSHOT_FORMAT_VERSION:
-        raise IncompatibleSnapshot(
+        raise IncompatibleSnapshotError(
             f"unsupported snapshot format_version={header.format_version}"
         )
     if header.embedding_model != expected_model:
-        raise IncompatibleSnapshot(
+        raise IncompatibleSnapshotError(
             f"embedding.model mismatch: snapshot={header.embedding_model!r}, "
             f"expected={expected_model!r}"
         )
     if header.embedding_dim != expected_dim:
-        raise IncompatibleSnapshot(
+        raise IncompatibleSnapshotError(
             f"embedding.dim mismatch: snapshot={header.embedding_dim}, "
             f"expected={expected_dim}"
         )
     snapshot_major = (header.plugin_version or "0").split(".")[0]
     if snapshot_major != plugin_major:
-        raise IncompatibleSnapshot(
+        raise IncompatibleSnapshotError(
             f"plugin major mismatch: snapshot={snapshot_major}, expected={plugin_major}"
         )
     if mode == "merge":
-        raise IncompatibleSnapshot("merge mode not yet supported in v0.1")
+        raise IncompatibleSnapshotError("merge mode not yet supported in v0.1")
 
     backup: Path | None = None
     if state_dir.exists():
         backup = state_dir.with_suffix(
-            state_dir.suffix + ".bak-" + datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+            state_dir.suffix + ".bak-" + datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         )
         shutil.move(str(state_dir), str(backup))
 
