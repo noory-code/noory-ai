@@ -7,11 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000322
+promotion: not_applicable
 review: not_required
 scope: stage/CHANGELOG.md, stage/.claude-plugin/, stage/.codex-plugin/
 promotes:
@@ -57,8 +58,35 @@ decision_refs:
 ## Progress
 
 
+### Executor report at close — 2026-11-04
+
+```
+What changed: release_plugin.py titled the seven queued Unreleased entries as 0.65.0 — 2026-11-04, opened a new empty Unreleased section, and moved both Stage manifests from 0.64.0 to 0.65.0.
+Why: W-00000322 - let users install this round's Stage fixes.
+Decisions made: Bump minor, not patch, because a supervised round can now be refused until a failed review's files are restored and every review command asks for run disclosure; leave updating installs to the person on their machine, which this cloud session cannot reach; out-of-scope paths changed: none.
+Work not done: Installs are not updated (claude plugin update stage@noory-ai and a restart on the person's machine).
+```
+
 ## Verification
 
+
+### Executed at close — 2026-11-04
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 0.673s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 0.743s
+
+OK
+```
 
 ## Retrospective
 
