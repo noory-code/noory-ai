@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.65.0 — 2026-11-04
+
 - Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one
   combination on `ubuntu-24.04`, since `ubuntu-latest` (26.04) no longer ships 3.9, with a test
   that pins every workflow's os and Python combinations.
