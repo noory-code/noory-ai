@@ -6,17 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `avatar/`, `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack is maintained in the separate public [`noory-code/novel-ai`](https://github.com/noory-code/novel-ai) repository.
 
-```
-noory-ai/
-├── avatar/             — Local choice and personal-criterion history
-├── evonest/            — Autonomous code evolution engine
-├── rag/                — Project-scoped GraphRAG plugin (uv project in server/)
-├── stage/              — Durable execution harness (plain stdlib — no uv; hooks run on any host python3 ≥3.9)
-├── plainly/            — Selectable Claude Code output styles (no runtime code — no uv)
-├── flutter-cask/       — Flutter package guide skills
-└── pencil_m3_flutter/  — Flutter M3 design system automation
-```
-
 Six local plugins ship both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, and the
 repository lists them in both the Claude Code and Codex marketplace files. `plainly/` targets
 Claude Code only — it ships output styles, which Codex has no equivalent for — so it carries the
@@ -45,22 +34,6 @@ root (no uv/mypy/ruff targets).
 
 All commands run from inside the package directory (`cd evonest` here, or
 `cd ../novel-ai/plugins/distill` in a sibling checkout).
-
-```bash
-uv sync                         # install deps
-uv run pytest                   # run all tests
-uv run pytest tests/test_foo.py # run single test file
-uv run pytest -k "test_name"    # run single test by name
-uv run mypy src/                # type check
-uv run ruff check src/ tests/   # lint
-uv run ruff format src/ tests/  # format
-```
-
-**Evonest only:**
-```bash
-uv run evonest                        # run MCP server
-uv run mcp dev src/evonest/server.py  # MCP inspector
-```
 
 ## Language
 
@@ -176,26 +149,8 @@ Hook commands in `hooks.json` must use `python3` (not `bash`). `${CLAUDE_PLUGIN_
 - Type hints on all functions; mypy strict mode
 - Line length: 100 chars (ruff)
 - Commit format: `type(scope): description` — types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-- Evonest uses dataclasses
 
 ## Architecture
-
-### Evonest
-
-**Tool/Core separation**: `tools/` are thin MCP wrappers. All logic lives in `core/`.
-
-Key files:
-- `core/orchestrator.py` — main evolution loop
-- `core/phases.py` — Observe → Plan → Execute → Verify phases
-- `core/state.py` — all `.noory/evonest/` directory access goes through here (single entry point)
-- `core/mutations.py` — persona & adversarial challenge selection
-- `core/claude_runner.py` — all `claude -p` subprocess calls (turn limits, error handling)
-- `mutations/personas.json` — 20 built-in personas (read-only at runtime)
-- `mutations/adversarial.json` — 8 adversarial challenges
-
-Runtime-generated personas/adversarials go to `.noory/evonest/dynamic-*.json` in the target project, never to `mutations/`.
-
-3-tier config: engine defaults < `.noory/evonest/config.json` < runtime args.
 
 ### Novel AI
 
