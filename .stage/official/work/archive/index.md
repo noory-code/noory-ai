@@ -256,3 +256,4 @@
 | W-00000272 | completed | [items/W-00000272/_epic.md](items/W-00000272/_epic.md) |
 | W-00000323 | completed | [items/W-00000323/_story.md](items/W-00000323/_story.md) |
 | W-00000324 | completed | [items/W-00000324/_story.md](items/W-00000324/_story.md) |
+| W-00000325 | completed | [items/W-00000325/_story.md](items/W-00000325/_story.md) |
