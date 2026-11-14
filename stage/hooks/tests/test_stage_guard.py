@@ -2633,9 +2633,14 @@ class StageGuardTest(unittest.TestCase):
             ):
                 with self.subTest(target=target):
                     self.assertTrue(stage_guard.outside_report_target(target, root))
-            for target in ("dev/null", "C:\\dev\\proj\\app.py", "C:/dev/nullify.txt"):
+            with self.subTest(target="dev/null"):
+                self.assertFalse(stage_guard.outside_report_target("dev/null", root))
+            # A drive-anchored path that only starts like a device is not a device. On
+            # Windows it is still an absolute path outside the workspace, so check the
+            # device pattern itself rather than the platform-dependent final answer.
+            for target in ("C:/dev/proj/app.py", "C:/dev/nullify.txt"):
                 with self.subTest(target=target):
-                    self.assertFalse(stage_guard.outside_report_target(target, root))
+                    self.assertIsNone(stage_guard.WINDOWS_ANCHORED_DEVICE_RE.match(target))
 
     def test_scope_report_resolves_relative_targets_in_the_workspace_not_the_cwd(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:
