@@ -2470,6 +2470,8 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
+            # Outside the workspace, but neither a device nor a temporary folder.
+            outside = Path(root.resolve().anchor) / "stage-test-not-scratch" / "notes.md"
             cases = {
                 "transcript path of an Edit": {
                     "transcript_path": str(Path(scratch) / "session.jsonl"),
@@ -2497,6 +2499,39 @@ class StageGuardTest(unittest.TestCase):
                     "tool_name": "Bash",
                     "tool_input": {"command": 'cp stage/hooks/x.py "$STAGE_TEST_SCRATCH/copy.py"'},
                 },
+                "Write to a file outside the workspace": {
+                    "tool_name": "Write",
+                    "tool_input": {"file_path": str(outside), "content": "x\n"},
+                },
+                "redirect into a file outside the workspace": {
+                    "tool_name": "Bash",
+                    "tool_input": {"command": f"echo x > {outside}"},
+                },
+                "variable assigned earlier in the same command": {
+                    "tool_name": "Bash",
+                    "tool_input": {
+                        "command": f"NOTE={outside} && sed -i '' s/a/b/ \"$NOTE\"",
+                    },
+                },
+                "commit in another repository after cd": {
+                    "tool_name": "Bash",
+                    "tool_input": {
+                        "command": f"cd {outside.parent} && git add README.md web "
+                        "&& git commit -qm x",
+                    },
+                },
+                "commit in another repository through git -C": {
+                    "tool_name": "Bash",
+                    "tool_input": {
+                        "command": f"git -C {outside.parent} commit -m x -- README.md",
+                    },
+                },
+                "braced variable assigned earlier in the same command": {
+                    "tool_name": "Bash",
+                    "tool_input": {
+                        "command": f"export DIR='{scratch}'; cp stage/hooks/x.py \"${{DIR}}/c.py\"",
+                    },
+                },
             }
             with patch.dict(os.environ, {"STAGE_TEST_SCRATCH": scratch}):
                 for label, payload in cases.items():
@@ -2507,8 +2542,6 @@ class StageGuardTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.write_purpose_reminder_fixture(root)
-            # Outside the workspace, but neither a device nor a temporary folder.
-            outside = Path(Path(tmp).resolve().anchor) / "stage-test-not-scratch" / "out.txt"
             cases = {
                 "project file outside scope beside a transcript": (
                     {
@@ -2532,21 +2565,60 @@ class StageGuardTest(unittest.TestCase):
                     },
                     "Scope boundary crossed: $STAGE_TEST_UNSET/out.txt.",
                 ),
+                "variable assigned in the same command that points into the project": (
+                    {
+                        "tool_name": "Bash",
+                        "tool_input": {
+                            "command": f'PROJECT="{root}"; echo x > "$PROJECT/src/app.py"',
+                        },
+                    },
+                    "Scope boundary crossed: src/app.py.",
+                ),
+                "commit in the workspace after a cd that stays inside": (
+                    {
+                        "tool_name": "Bash",
+                        "tool_input": {
+                            "command": "cd src && cd .. && git add src/app.py && git commit -qm x",
+                        },
+                    },
+                    "Scope boundary crossed: src/app.py.",
+                ),
+                "same-command assignment wins over the hook environment": (
+                    {
+                        "tool_name": "Bash",
+                        "tool_input": {
+                            "command": f'STAGE_TEST_ELSEWHERE={root} && echo x > '
+                            '"$STAGE_TEST_ELSEWHERE/src/app.py"',
+                        },
+                    },
+                    "Scope boundary crossed: src/app.py.",
+                ),
             }
-            environment = {"STAGE_TEST_ROOT": str(root)}
+            environment = {
+                "STAGE_TEST_ROOT": str(root),
+                "STAGE_TEST_ELSEWHERE": str(Path(root.resolve().anchor) / "elsewhere"),
+            }
             with patch.dict(os.environ, environment):
                 os.environ.pop("STAGE_TEST_UNSET", None)
                 for label, (payload, expected) in cases.items():
                     with self.subTest(case=label):
                         self.assertEqual(expected, self.scope_message(root, payload))
-            outside_message = self.scope_message(
-                root,
-                {"tool_name": "Write", "tool_input": {"file_path": str(outside), "content": "x"}},
-            )
-            self.assertTrue(outside_message.startswith("Scope boundary crossed: "))
-            self.assertIn("stage-test-not-scratch", outside_message)
 
-    def test_posix_device_paths_are_scratch_even_without_a_drive(self):
+    def test_assignment_text_inside_an_argument_does_not_expand_a_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            # `X=/elsewhere` is an argument to echo here, not an assignment.
+            message = self.scope_message(
+                root,
+                {
+                    "tool_name": "Bash",
+                    "tool_input": {"command": 'echo X=/elsewhere > "$X/out.txt"'},
+                },
+            )
+            self.assertEqual("Scope boundary crossed: $X/out.txt.", message)
+
+    def test_posix_device_paths_are_outside_the_report_even_without_a_drive(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             # The bare forms, and the forms the Windows shell parser produces after
@@ -2560,10 +2632,10 @@ class StageGuardTest(unittest.TestCase):
                 "d:\\dev\\fd\\2",
             ):
                 with self.subTest(target=target):
-                    self.assertTrue(stage_guard.scratch_target(target, root))
+                    self.assertTrue(stage_guard.outside_report_target(target, root))
             for target in ("dev/null", "C:\\dev\\proj\\app.py", "C:/dev/nullify.txt"):
                 with self.subTest(target=target):
-                    self.assertFalse(stage_guard.scratch_target(target, root))
+                    self.assertFalse(stage_guard.outside_report_target(target, root))
 
     def test_scope_report_resolves_relative_targets_in_the_workspace_not_the_cwd(self):
         with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as elsewhere:

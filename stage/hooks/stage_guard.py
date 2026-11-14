@@ -11,7 +11,6 @@ import json
 import os
 import re
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -62,6 +61,7 @@ from stage_roadmap_gate import (  # noqa: E402
     reattribution_blocker,
 )
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
+    _command_groups,
     _restore_sentinels,
     command_deletes_stage,
     interpreter_inline_stage_write,
@@ -565,7 +565,12 @@ def purpose_context_targets(
         and isinstance(tool_input(payload).get("content"), str)
     )
     targets = list(explicit_paths if name in write_tools else shell_write_targets)
-    if name in SHELL_TOOLS and command and command_has_git_commit(command):
+    if (
+        name in SHELL_TOOLS
+        and command
+        and command_has_git_commit(command)
+        and not git_runs_outside_workspace(command, workspace_root)
+    ):
         targets.extend(
             path
             for path in commit_target_files(workspace_root, command)
@@ -579,29 +584,125 @@ WINDOWS_ANCHORED_DEVICE_RE = re.compile(
     r"^[A-Za-z]:/dev/(?:null|zero|full|random|urandom|tty|stdin|stdout|stderr|fd/\d+)$"
 )
 LEADING_SHELL_VARIABLE_RE = re.compile(r"^\$(?:\{(?P<braced>\w+)\}|(?P<bare>\w+))(?P<rest>.*)$")
+SHELL_ASSIGNMENT_RE = re.compile(r"^(?P<name>[A-Za-z_]\w*)=(?P<value>.*)$", re.DOTALL)
+# Words that keep the next word in command position: `export NAME=value`.
+ASSIGNMENT_PREFIX_WORDS = {"export", "declare", "readonly", "local", "typeset"}
 
 
-def expand_leading_shell_variable(target: str, workspace_root: Path) -> str:
+def same_command_assignments(command: str) -> dict[str, str]:
+    """`NAME=value` words a command assigns in command-word position.
+
+    `S=/tmp/x && sed -i '' s/a/b/ "$S"` names its target through a variable the hook's
+    environment never sees. An assignment counts only where a command word may stand —
+    at the start of a command, after a separator, after another assignment, or after
+    `export` and its kin — so `echo X=/y` assigns nothing. A later assignment of the
+    same name wins. A value that itself names a variable is left out: the hook cannot
+    tell what it holds.
+    """
+
+    values: dict[str, str] = {}
+    at_command_word = True
+    for token in shell_tokens(command):
+        if token and set(token) <= {";", "&", "|", "\n"}:
+            at_command_word = True
+            continue
+        if not at_command_word:
+            continue
+        if token in ASSIGNMENT_PREFIX_WORDS:
+            continue
+        match = SHELL_ASSIGNMENT_RE.match(_restore_sentinels(token))
+        if not match:
+            at_command_word = False
+            continue
+        value = match.group("value")
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]  # non-POSIX shlex keeps the quotes
+        if "$" in value or "`" in value:
+            values.pop(match.group("name"), None)
+            continue
+        values[match.group("name")] = os.path.expanduser(value) if value else value
+    return values
+
+
+def expand_leading_shell_variable(
+    target: str, workspace_root: Path, assignments: dict[str, str] | None = None
+) -> str:
     """Expand a shell variable the parser left at the start of a write target.
 
-    `cp a "$TMPDIR/x"` reaches the hook as `<workspace>/$TMPDIR/x`. When the hook's
-    environment knows the variable, return the expanded path; otherwise keep the
-    target so the report still names it.
+    `cp a "$TMPDIR/x"` reaches the hook as `<workspace>/$TMPDIR/x`. An assignment
+    earlier in the same command wins; otherwise the hook's environment supplies the
+    value. A variable neither knows keeps the target so the report still names it.
     """
 
     relative = entry_relative_to_workspace(target, workspace_root)
     match = LEADING_SHELL_VARIABLE_RE.match(relative)
     if not match:
         return target
-    value = os.environ.get(match.group("braced") or match.group("bare") or "")
+    name = match.group("braced") or match.group("bare") or ""
+    value = (assignments or {}).get(name) or os.environ.get(name, "")
     return value + match.group("rest") if value else target
 
 
-def scratch_target(target: str, workspace_root: Path) -> bool:
-    """Return whether a target outside the workspace is a device or temporary file.
+def git_runs_outside_workspace(command: str, workspace_root: Path) -> bool:
+    """Return whether every `git` in a command runs in a directory outside the workspace.
 
-    Writes there are discarded output or scratch copies, never project changes, so a
-    scope report leaves them out. Other paths outside the workspace are still reported.
+    `cd ../other-repo && git add README.md && git commit` stages and commits another
+    repository's files, yet the commit-target paths read as workspace-relative. The scope
+    report follows each `cd` as taken and honors `git -C <dir>`; a `cd` it cannot place
+    leaves the directory unknown, which counts as inside. Only the report uses this —
+    the commit gate keeps its fail-closed view of every possible directory.
+    """
+
+    try:
+        root = workspace_root.resolve()
+    except (OSError, RuntimeError):
+        return False
+    assignments = same_command_assignments(command)
+
+    def enter(current: Path | None, operand: str) -> Path | None:
+        if current is None:
+            return None
+        text = expand_leading_shell_variable(operand, Path(""), assignments)
+        if "$" in text or "`" in text:
+            return None
+        try:
+            path = Path(text).expanduser()
+            return (path if path.is_absolute() else current / path).resolve()
+        except (OSError, RuntimeError):
+            return None
+
+    current: Path | None = root
+    git_dirs: list[Path | None] = []
+    for _anchors, name, group in _command_groups(command, None):
+        tokens = [_restore_sentinels(token) for token in group]
+        operands = [token for token in tokens[1:] if token != "--" and not token.startswith("-")]
+        if name == "cd":
+            if "-" in tokens[1:]:
+                current = None  # `cd -` returns to a directory the report cannot see
+            elif len(operands) == 1:
+                current = enter(current, operands[0])
+            elif not operands:
+                current = enter(current, "~")
+            continue
+        if name != "git":
+            continue
+        directory = current
+        for index, token in enumerate(tokens[1:-1], start=1):
+            if token == "-C":
+                directory = enter(directory, tokens[index + 1])
+        git_dirs.append(directory)
+    return bool(git_dirs) and all(
+        directory is not None and not is_relative_to(directory, root) for directory in git_dirs
+    )
+
+
+def outside_report_target(target: str, workspace_root: Path) -> bool:
+    """Return whether a write target lands outside the workspace.
+
+    Scope is a plan for project files, so a scope report leaves out devices, temporary
+    copies, notes, and every other path outside the workspace; the registration gate
+    does not govern them either. Only the report uses this: the `.stage` gates still
+    see every target.
     """
 
     # A POSIX device path such as /dev/null has no drive on Windows, so path math there
@@ -618,19 +719,12 @@ def scratch_target(target: str, workspace_root: Path) -> bool:
         resolved = path.resolve()
     except (OSError, RuntimeError):
         return False
-    if is_relative_to(resolved, workspace_root.resolve()):
-        return False
     if sys.platform == "win32" and path.name.lower() == "nul":
         return True
-    for base in {tempfile.gettempdir(), os.environ.get("TMPDIR", ""), "/tmp"}:
-        if not base:
-            continue
-        try:
-            if is_relative_to(resolved, Path(base).resolve()):
-                return True
-        except (OSError, RuntimeError):
-            continue
-    return False
+    try:
+        return not is_relative_to(resolved, workspace_root.resolve())
+    except (OSError, RuntimeError):
+        return False
 
 
 def is_relative_to(path: Path, base: Path) -> bool:
@@ -657,11 +751,16 @@ def purpose_tool_context(
         return "", ""
 
     targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
+    assignments = (
+        same_command_assignments(command_text(payload))
+        if tool_name(payload) in SHELL_TOOLS
+        else {}
+    )
     leaves = tuple(chain[-1] for chain in chains)
     crossed: list[str] = []
     for raw_target in targets:
-        target = expand_leading_shell_variable(raw_target, workspace_root)
-        if scratch_target(target, workspace_root):
+        target = expand_leading_shell_variable(raw_target, workspace_root, assignments)
+        if outside_report_target(target, workspace_root):
             continue
         if any(
             item_matches_path(item, target, workspace_root, follows_symlinks)

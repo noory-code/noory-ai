@@ -72,10 +72,16 @@ active leaf and its ancestors.
 
 For an allowed scope crossing, `systemMessage` contains only `Scope boundary crossed: <paths>.` and
 is shown to the user. Targets come from the tool input only, never from the hook envelope (such as
-`transcript_path`). A shell target that starts with a variable is expanded when the hook's
-environment defines it. The report leaves out targets outside the workspace that are devices
-(`/dev/…`, `NUL` on Windows) or inside the OS temporary folder; other paths outside the workspace
-are still reported. These exclusions apply to the report only; the `.stage` gates see every target. If another check already supplied a `systemMessage`, the boundary line follows
+`transcript_path`). A shell target that starts with a variable is expanded from a `NAME=value`
+assignment earlier in the same command (in command-word position, optionally after `export`), or
+else from the hook's environment; a variable neither defines stays in the report as written. The
+report leaves out every target that lands outside the workspace — devices (`/dev/…`, `NUL` on
+Windows), temporary files, notes, and other folders — because scope plans project files and the
+registration gate does not govern those paths either. Commit targets are left out the same way when
+every `git` in the command runs outside the workspace, following each `cd` as taken and `git -C
+<dir>`; a `cd -` or a directory named through an unknown variable counts as inside. These
+exclusions apply to the report only;
+the `.stage` gates see every target. If another check already supplied a `systemMessage`, the boundary line follows
 it. The full context is returned as `hookSpecificOutput.additionalContext`, with
 `hookEventName: PreToolUse`, so the agent receives the scopes, report instruction, crossed paths,
 and purpose chain. A denied call keeps the full context in `permissionDecisionReason` after the

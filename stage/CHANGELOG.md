@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Report a scope crossing only when a write lands inside the workspace: writes to notes, home
+  files, and other folders outside the project no longer trigger the crossing line and the full
+  work context. A shell target such as `"$S"` now expands from `S=…` assigned earlier in the same
+  command, so a scratch copy named through a variable is no longer reported as a project path.
+  `cd ../other-repo && git add … && git commit` (or `git -C <dir>`) no longer reports the other
+  repository's files as project files. The commit and `.stage` gates are unchanged.
+
 ## 0.65.0 — 2026-11-04
 
 - Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one
