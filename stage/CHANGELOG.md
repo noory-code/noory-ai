@@ -12,6 +12,12 @@
   close review get the reviewer venue's values, so a command can write `--model "$STAGE_MODEL"`
   instead of a fixed model. Each round's work log records what each role received and whether its
   command reads the variables.
+- Keep Claude Code `Agent` calls on the current card's tier: the hook fills a missing `model` or
+  `effort` from the tier, denies a costlier model unless the description gives
+  `[over-tier: <reason>]`, and records what each call requested and, through a new `SubagentStop`
+  hook, the model and effort every subagent actually ran with, foreground or background, under
+  `.stage/.runtime/model-usage/`. Subagents no longer silently inherit the parent session's model
+  when a project declares `model_tiers`.
 
 ## 0.65.0 — 2026-11-04
 

@@ -114,6 +114,31 @@ Model tier (JSON): {"tier": "standard", "executor": {"venue": "codex", "model": 
 `command_uses_*_env` records whether the command text names the variable; false means the round
 ran without the tier's value.
 
+In Claude Code, the PreToolUse hook applies the tier to `Agent` calls (Codex has no such tool).
+The current cards are the driver's `STAGE_WORK_ITEM_PATH` card, or else every open leaf; only
+cards with a declared `tier:` count, and nothing happens when none does. The ceiling is the
+costliest of their tiers.
+
+- A missing `model` or `effort` is filled from the tier's `claude` values through
+  `hookSpecificOutput.updatedInput`, which carries every original input key. When the current
+  cards have different tiers the call is denied instead, naming the tiers, because there is no
+  single value to fill.
+- A `model` that belongs to a costlier tier than the ceiling, or to no declared tier, is denied
+  unless the `description` contains `[over-tier: <non-empty reason>]`. Effort never triggers a
+  denial.
+- `.stage/.runtime/model-usage/<session_id>.jsonl` holds one JSON object per line, each with
+  `event`, `session_id`, `cards`, `tier` (the shared tier, or empty), and `ceiling`:
+  - PreToolUse writes `over_tier_allowed` (`model`, `reason`) for an allowed over-tier call.
+  - PostToolUse writes `agent_requested` for every Agent call that returns a subagent id,
+    finished or launched in the background: `agent_id`, `status`, `requested_model`,
+    `requested_effort`, `over_tier_reason`.
+  - SubagentStop writes `agent_finished` when any subagent stops: `agent_id`, `agent_type`, and the
+    `model` and `effort` it actually ran with. Effort comes from the event's `effort.level`; model
+    comes from the last model request in `agent_transcript_path` (`api-request` `params.model`,
+    or an assistant line's `message.model` when one is already written), and stays empty when
+    that file is unreadable.
+  The audit joins `agent_finished` with `agent_requested` on `agent_id` to find a stated reason.
+
 ## Finished record locations
 
 A record's directory owns whether it is still live. Live drawers hold only records that still
