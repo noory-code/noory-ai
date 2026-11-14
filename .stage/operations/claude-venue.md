@@ -88,6 +88,67 @@ DE-00000062.
 
 팀 기능이 없는 세션에서는 사람 창 넘김(stage-handoff)으로 돌아간다.
 
+## codex 가 없는 로컬 세션 — `local-no-codex`
+
+근거 결정: DE-00000086. codex 구독이 없는 동안 로컬 세션에서 codex 로 라우팅되는 종류
+(`development`, `fix`, `qa`, `ops`, `chore`)의 카드는 이 환경을 붙여 claude venue 로 실행한다.
+`venue_routing` 과 `review` 설정은 고치지 않는다. 클라우드 세션은 `cloud` 를 쓴다.
+
+등록하거나 시작한다. `--environment` 가 venue 를 claude 로 채우고, `--review` 가 없으면 거절된다.
+
+```bash
+python3 stage/skills/stage-work/register_work.py --project-root . --title "..." \
+  --kind fix --scale story --environment local-no-codex --review --scope "..." \
+  --purpose "..." --success-criterion "..."
+python3 stage/scripts/start_work.py --project-root . W-00000001 --scope "..." \
+  --environment local-no-codex --review
+```
+
+실행은 위 감독 모드 절차 그대로다. 달라지는 것은 세 가지다.
+
+- **7번 걸음의 codex 판정을 Claude 대역이 맡는다.** 닫기와 드라이버가 부르는 리뷰 명령 앞에
+  `STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py` 를 둔다. 이 변수를 빠뜨리면
+  리뷰 명령이 codex 를 찾지 못해 닫기가 막힌다. 대역의 제약과 닫기 순서는
+  `stage/operations/cloud-execution.md` 의 Close 절이 소유한다.
+- **카드의 `## Verification` 에 같은 모델의 리뷰였다고 적는다.** 교차 venue 리뷰가 아니다.
+- **팀원 모델 표의 "해당 없음" 행이 이 환경에서는 팀원에게 온다.** 표가 그 종류의 모델을 정하지
+  않았으므로 모델 인자를 주지 않고 띄운다(부모 세션 모델을 물려받는다). 값은 사례가 쌓이면
+  표에 더한다.
+
+무인 모드는 codex 전용이므로 이 환경에서는 쓸 수 없다.
+
+codex 구독을 되살리면 새 카드에 이 환경을 쓰지 않는다. `environment_venues` 의 선언은 이
+환경으로 닫힌 카드가 모두 보관된 뒤에 지운다.
+
+## 관문을 바꾸는 카드는 사용자 확인 뒤에 닫는다
+
+근거 결정: DE-00000087. codex 가 없는 동안 다른 모델 계열의 검토를 사용자의 확인이 대신한다.
+
+대상은 두 조건을 모두 만족하는 카드다.
+
+- `environment:` 가 `cloud` 또는 `local-no-codex` 다.
+- 실행 보고의 `Changed paths (JSON)` 에 아래 경로 가운데 하나가 있다.
+  - `stage/hooks/`
+  - `stage/scripts/claude_review_companion.py`, `stage/scripts/codex_companion.py`
+  - `stage/skills/stage-retrospective/close_work.py`
+  - `stage/scripts/audit_stage.py`
+  - `stage/scripts/drive.py`, `stage/scripts/driver_*.py`
+  - `.stage/settings.json`, `stage/templates/v4/project-stage/settings.jsonc`
+  - `.stage/operations/`, `stage/operations/`
+
+닫는 순서:
+
+1. 인수 검사와 닫기 리뷰 판정까지 받는다. 리뷰가 통과한 닫기 워크트리의 결과를 본 가지로 옮기지
+   않고 둔다.
+2. 사용자에게 세 가지를 보여 준다: 바뀐 경로와 한 줄씩의 요약, 기준별 리뷰 판정, 리뷰어가 직접
+   실행하지 못하고 기록이나 코드 읽기로 판정한 기준.
+3. 사용자가 확인하면 카드의 `## Verification` 에 `사용자 확인 — <날짜>` 한 줄과 사용자가 본 것을
+   적고, 닫힌 카드를 본 가지로 옮겨 커밋한다.
+4. 사용자가 반려하면 그 이유를 실패한 기준으로 다뤄 실행자에게 돌려보낸다.
+
+도구는 이 순서를 강제하지 않는다. 대상인지는 감독이 닫기 전에 변경 경로를 이 목록과 대조해
+정한다.
+
 ## 무인 모드 — codex 전용
 
 무인 실행은 codex venue 카드만 받는다. 팀은 세션 없이 돌지 않고, 비대화형 `claude -p` 는
