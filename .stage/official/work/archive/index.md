@@ -250,3 +250,6 @@
 | W-00000320 | completed | [items/W-00000320/_story.md](items/W-00000320/_story.md) |
 | W-00000321 | completed | [items/W-00000321/_story.md](items/W-00000321/_story.md) |
 | W-00000322 | completed | [items/W-00000322/_story.md](items/W-00000322/_story.md) |
+| W-00000288 | completed | [items/W-00000288/_story.md](items/W-00000288/_story.md) |
+| W-00000298 | completed | [items/W-00000298/_story.md](items/W-00000298/_story.md) |
+| W-00000299 | completed | [items/W-00000299/_story.md](items/W-00000299/_story.md) |
