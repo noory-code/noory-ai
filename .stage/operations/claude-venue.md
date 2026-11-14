@@ -120,6 +120,35 @@ python3 stage/scripts/start_work.py --project-root . W-00000001 --scope "..." \
 codex 구독을 되살리면 새 카드에 이 환경을 쓰지 않는다. `environment_venues` 의 선언은 이
 환경으로 닫힌 카드가 모두 보관된 뒤에 지운다.
 
+## 관문을 바꾸는 카드는 사용자 확인 뒤에 닫는다
+
+근거 결정: DE-00000087. codex 가 없는 동안 다른 모델 계열의 검토를 사용자의 확인이 대신한다.
+
+대상은 두 조건을 모두 만족하는 카드다.
+
+- `environment:` 가 `cloud` 또는 `local-no-codex` 다.
+- 실행 보고의 `Changed paths (JSON)` 에 아래 경로 가운데 하나가 있다.
+  - `stage/hooks/`
+  - `stage/scripts/claude_review_companion.py`, `stage/scripts/codex_companion.py`
+  - `stage/skills/stage-retrospective/close_work.py`
+  - `stage/scripts/audit_stage.py`
+  - `stage/scripts/drive.py`, `stage/scripts/driver_*.py`
+  - `.stage/settings.json`, `stage/templates/v4/project-stage/settings.jsonc`
+  - `.stage/operations/`, `stage/operations/`
+
+닫는 순서:
+
+1. 인수 검사와 닫기 리뷰 판정까지 받는다. 리뷰가 통과한 닫기 워크트리의 결과를 본 가지로 옮기지
+   않고 둔다.
+2. 사용자에게 세 가지를 보여 준다: 바뀐 경로와 한 줄씩의 요약, 기준별 리뷰 판정, 리뷰어가 직접
+   실행하지 못하고 기록이나 코드 읽기로 판정한 기준.
+3. 사용자가 확인하면 카드의 `## Verification` 에 `사용자 확인 — <날짜>` 한 줄과 사용자가 본 것을
+   적고, 닫힌 카드를 본 가지로 옮겨 커밋한다.
+4. 사용자가 반려하면 그 이유를 실패한 기준으로 다뤄 실행자에게 돌려보낸다.
+
+도구는 이 순서를 강제하지 않는다. 대상인지는 감독이 닫기 전에 변경 경로를 이 목록과 대조해
+정한다.
+
 ## 무인 모드 — codex 전용
 
 무인 실행은 codex venue 카드만 받는다. 팀은 세션 없이 돌지 않고, 비대화형 `claude -p` 는
