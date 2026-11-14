@@ -98,3 +98,16 @@ These checks run only when `active_topology(.stage) == ACTIVE_TOPOLOGY_V4`.
 | `ROADMAP006` | A milestone names a missing theme. |
 | `ROADMAP007/008` | A milestone/theme index row disagrees with its record fields. |
 | `ROADMAP009` | A roadmap record authors status instead of deriving it from decisions. |
+
+## Model tier finding codes
+
+These checks run only when `.stage/settings.json` declares `model_tiers` or a card names a `tier:`
+(`docs/SCHEMA_V5.md` → `Model and effort tiers`). They compare cards in the current work zone only.
+
+| Code | Meaning |
+|---|---|
+| `TIER001` | `model_tiers` or `tier_routing` is invalid (error). |
+| `TIER002` | A current card names a tier the settings do not declare (error). |
+| `TIER003` | The latest driver round for a current card ran on other model or effort values than the card's tier gives now, or its command does not read `$STAGE_MODEL` / `$STAGE_EFFORT` (warning). |
+| `TIER004` | A subagent that ran for current cards used another model or effort than their tier gives; a stated over-tier reason is quoted (warning). |
+| `TIER005` | A model-usage record line could not be read and was skipped (warning). |

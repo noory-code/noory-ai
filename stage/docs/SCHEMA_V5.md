@@ -139,6 +139,14 @@ costliest of their tiers.
     that file is unreadable.
   The audit joins `agent_finished` with `agent_requested` on `agent_id` to find a stated reason.
 
+`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER005`,
+listed in the `stage-audit` skill). Invalid tier settings and a current card naming an undeclared
+tier are errors. For current cards only, it warns when the latest `Model tier (JSON)` line in the
+card's work log differs from what the card's tier gives now or shows a command that does not read
+the variables, and when an `agent_finished` record differs from the tier's `claude` values. A
+model matches when the tier's model, without a trailing `[...]` qualifier, occurs in the recorded
+model id (`haiku` matches `claude-haiku-5-5`).
+
 ## Finished record locations
 
 A record's directory owns whether it is still live. Live drawers hold only records that still

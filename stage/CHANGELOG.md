@@ -18,6 +18,10 @@
   hook, the model and effort every subagent actually ran with, foreground or background, under
   `.stage/.runtime/model-usage/`. Subagents no longer silently inherit the parent session's model
   when a project declares `model_tiers`.
+- Audit model tiers (`TIER001`–`TIER005`): invalid tier settings and undeclared card tiers are
+  errors, and a current card whose latest driver round or subagents ran on other model or effort
+  values than its tier gives, or whose command ignores the variables, gets a warning naming the
+  card and both values.
 
 ## 0.65.0 — 2026-11-04
 
