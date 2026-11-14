@@ -71,6 +71,8 @@ DE-00000082 와 `stage/operations/cloud-execution.md` 가 환경 정책과 Claud
 
 2026-11-14: 사용자가 환경 이름 `local-no-codex` 와 초안을 확정했다. DE-00000086 을 `decided` 로 바꾸고, `environment_venues` 에 한 줄을 더하고, `.stage/operations/claude-venue.md` 에 절차 절을 더했다.
 
+2026-11-14: 회고를 쓰다가 W-00000299 의 표본 재검토 결과(5장 중 1장 반려)가 결정 레코드에 빠진 것을 찾아 Reason 과 Follow-up 에 더했다. 선택한 방향은 바뀌지 않는다.
+
 
 ## Verification
 
