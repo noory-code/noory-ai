@@ -9,7 +9,8 @@ acceptance:
   - "python3 -m unittest discover -s avatar/tests -q"
   - "python3 -m unittest tests.test_plugin_contracts -q"
   - "git diff --check"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000276
