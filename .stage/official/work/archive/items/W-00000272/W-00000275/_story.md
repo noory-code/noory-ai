@@ -11,7 +11,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
   - "python3 stage/scripts/audit_stage.py --project-root ."
   - "git diff --check"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000275

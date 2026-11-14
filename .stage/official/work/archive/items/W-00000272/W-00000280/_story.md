@@ -6,11 +6,12 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000280
+promotion: not_applicable
 review: not_required
 scope: avatar/, .stage/research/llm-work/avatar-service/
 promotes:
@@ -162,6 +163,15 @@ Codex의 재반론까지 총 5개 라운드를 남겼습니다. 기록 편향, �
 
 ## Verification
 
+### 닫을 때의 확인 — 2026-11-14
+
+사용자가 낡은 카드를 닫으라고 지시했다. 이 카드는 "사용자가 로컬 화면을 보고 실제로 유용한지 판단한다"를 기다리며 `verification: pending` 이었다. **사용자가 그 판단을 말한 기록은 없다.** 2026-11-14 의 지시는 카드를 닫으라는 것이지 화면이 유용하다는 판단이 아니다. 사용자가 이후 다시나를 독립 저장소에서 계속 만들었다는 사실은 있지만, 그것을 유용성 판단으로 옮겨 적지 않는다.
+
+성공 기준 넷은 기획 문서를 요구하고, 그 문서는 `.stage/research/llm-work/avatar-service/` 에 있다(`concept.md`, `business-model.md`, `five-screen-drafts.md`, 가상 사례 실험 결과들). 문서가 있다는 것만 확인했고 내용을 다시 판정하지 않았다. 월 5만 원 목표의 조건과 미측정 값은 `business-model.md` 가 구별해 적고 있으며, 그 가설의 지금 타당성은 다시나 저장소의 W-00000008 이 소유한다.
+
+`completed` 는 "기획 산출물이 만들어졌고 일이 다시나 저장소로 넘어갔다"는 뜻이다. 서비스가 유용하다고 검증됐다는 뜻이 아니다. 아래 기록이 남긴 미검증 항목(실제 대화에서의 정확도, 외부 전송 범위, 광고 수요)은 그대로 미검증이다.
+
+
 2026-10-09: 가상 fixture JSON의 파싱과 로컬 실행기 문법 검사가 통과했습니다. 두 번의 모델 배치는 모두 끝났지만 일부 응답은 실행기의 구조 검사를 통과하지 못했습니다. 실패한 결과를 합격으로 세지 않았습니다. 실제 호스트 파일, 분석 정확도, 사용자 가치, 종단 간 외부 통신 부재는 검증하지 않았습니다.
 
 2026-10-09: 새 기획 문서의 존재와 `git diff --check`를 확인했습니다. Stage 감사는 오류 0개와 기존 보관 카드 경고 32개를 보고했습니다. Claude CLI 호출은 종료 코드 0으로 끝났습니다. 실제 전송 검사와 법률 검토는 하지 않았습니다. 따라서 동기화 계획은 초안이며 `verification: pending`을 유지합니다.
@@ -170,6 +180,34 @@ Codex의 재반론까지 총 5개 라운드를 남겼습니다. 기록 편향, �
 심화 토론 문서도 두 체크아웃의 `git diff --check`를 통과했습니다. 새 토론 파일이 Git에서 제외되는지 확인했고, Stage 감사는 오류 0개와 기존 경고 32개를 보고했습니다. 모델 호출 성공은 기록했지만 실사용 검증으로 처리하지 않았습니다.
 토론 문서와 제외 규칙을 확인했습니다. 본 체크아웃과 Avatar worktree의 `git diff --check`가 통과했습니다. Stage 감사는 오류 0개와 기존 보관 작업의 경고 32개를 보고했습니다.
 이는 문서 정합성 검사입니다. 분석 엔진의 정확도나 비수집 구성을 시험한 결과가 아닙니다. 사용자 확인 전이므로 planning 검증 상태는 `pending`으로 유지합니다.
+
+### Executed at close — 2026-11-14
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
 
 ## Retrospective
 

@@ -8,7 +8,8 @@ autonomous: false
 acceptance:
   - "python3 .stage/research/llm-work/integration/verify_integration.py --require-real-hosts"
   - "git diff --check"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000277
