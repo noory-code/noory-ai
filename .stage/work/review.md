@@ -18,3 +18,4 @@
 | W-00000273 | passed | completed | promoted | [current/W-00000272/W-00000273/_story.md](current/W-00000272/W-00000273/_story.md) |
 | W-00000274 | passed | completed | deferred | [current/W-00000272/W-00000274/_story.md](current/W-00000272/W-00000274/_story.md) |
 | W-00000323 | passed | completed | deferred | [current/W-00000323/_story.md](current/W-00000323/_story.md) |
+| W-00000324 | passed | completed | deferred | [current/W-00000324/_story.md](current/W-00000324/_story.md) |
