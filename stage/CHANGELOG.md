@@ -7,6 +7,11 @@
   `register_work.py` records the routed tier, or one passed with `--tier`, in a card's `tier:`
   field, and `start_work.py` fills it on cards captured without one. The v4 project template ships
   Claude-only tiers; a project without `model_tiers` behaves as before.
+- Export the card tier's model and effort to driver commands as `STAGE_MODEL` and `STAGE_EFFORT`:
+  executors get their own venue's values, and the independent reviewer and the `close_work.py`
+  close review get the reviewer venue's values, so a command can write `--model "$STAGE_MODEL"`
+  instead of a fixed model. Each round's work log records what each role received and whether its
+  command reads the variables.
 
 ## 0.65.0 — 2026-11-04
 

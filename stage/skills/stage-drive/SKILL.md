@@ -194,7 +194,10 @@ passes the selected card through `STAGE_WORK_ITEM` and `STAGE_WORK_ITEM_PATH`, i
 ancestor card paths through the JSON array `STAGE_WORK_ITEM_ANCESTOR_PATHS`, and the project
 through `STAGE_PROJECT_ROOT`. Both configured executor venues must instruct the executor to read
 the selected action and every ancestor card before working; the command text is shell-expanded,
-so its variable syntax is platform-specific.
+so its variable syntax is platform-specific. When the project declares `model_tiers` and the card
+has a `tier:`, the executor and the reviewer also receive `STAGE_MODEL` and `STAGE_EFFORT` for
+their own venue; write `--model "$STAGE_MODEL"` (and the effort flag) in a command to let the
+card's tier choose instead of a literal model (`docs/SCHEMA_V5.md` → `Model and effort tiers`).
 
 **The reviewer's venue must differ from the item's.** `review.reviewers` must resolve to exactly
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and

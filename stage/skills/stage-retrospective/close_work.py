@@ -47,6 +47,7 @@ from stage_paths import (  # noqa: E402
     active_topology,
     load_review_config,
     resolve_independent_review_command,
+    resolve_independent_reviewer_venue,
     resolve_review_command,
     schema_migration_banner,
 )
@@ -63,6 +64,11 @@ from stage_work import (  # noqa: E402
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
 from driver_repository import changed_repository_paths, repository_path_snapshot  # noqa: E402
+from driver_environment import (  # noqa: E402
+    EFFORT_ENV,
+    MODEL_ENV,
+    model_tier_environment,
+)
 import audit_stage  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
@@ -735,6 +741,14 @@ def close_review_environment(
     except OSError as exc:
         raise RuntimeError(f"cannot write close-owned review path list: {exc}") from exc
     environment = os.environ.copy()
+    environment.pop(MODEL_ENV, None)
+    environment.pop(EFFORT_ENV, None)
+    item = item_from_fields(item_path, parse_frontmatter(item_path), GATE_FIELD_DEFAULTS)
+    reviewer_venue = resolve_independent_reviewer_venue(
+        load_review_config(project_root / ".stage"), item.venue
+    )
+    if reviewer_venue:
+        environment.update(model_tier_environment(project_root, item, reviewer_venue))
     environment["STAGE_WORK_ITEM_PATH"] = str(item_path.resolve())
     environment["STAGE_CHANGED_PATHS_FILE"] = str(changed_paths_file.resolve())
     environment["STAGE_REVIEW_VERDICT_FILE"] = str(verdict_file.resolve())

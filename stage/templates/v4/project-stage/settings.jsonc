@@ -38,8 +38,11 @@
   // routes to it by default. A person may change a card's tier; the card's value wins.
   "tier_routing": {"*": "standard"},
   // Executor commands are project-specific. Put each tool's explicit model option, such as
-  // --model <model>, directly in all executor and review command strings; do not rely on a
-  // user-home default. Give both venue prompts these instructions:
+  // --model <model>, in all executor and review command strings; do not rely on a user-home
+  // default. With model_tiers, write --model "$STAGE_MODEL" and the effort flag with
+  // "$STAGE_EFFORT" so the card's tier picks them: the driver exports the executor's venue values
+  // to executors and the reviewer's venue values to reviewers. Give both venue prompts these
+  // instructions:
   // Read the selected card at $STAGE_WORK_ITEM_PATH and every ancestor card listed in $STAGE_WORK_ITEM_ANCESTOR_PATHS before acting; together they are the whole instruction.
   // Do work needed for the card's purpose, including work outside its declared scope.
   // Report every decision you make and every scope boundary crossing.

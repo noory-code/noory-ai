@@ -100,6 +100,20 @@ and planned records alike; it refuses `--tier` naming an undeclared tier or used
 keeps one already set. A person may edit `tier:` at any time; readers take the card's value at the
 moment they run.
 
+The driver exports the card tier's values as `STAGE_MODEL` and `STAGE_EFFORT`: the executor
+receives its own venue's values, and the independent reviewer (and the close review in
+`close_work.py`) receives the reviewer venue's values. A command applies the tier only by reading
+the variables, for example `--model "$STAGE_MODEL" --effort "$STAGE_EFFORT"`; a command with a
+literal `--model` keeps working and keeps its literal model. Each round's `### Driver commands`
+entry in the work log adds one line when the card has a tier:
+
+```text
+Model tier (JSON): {"tier": "standard", "executor": {"venue": "codex", "model": "...", "effort": "...", "command_uses_model_env": true, "command_uses_effort_env": true}, "reviewer": {"venue": "claude", ...}}
+```
+
+`command_uses_*_env` records whether the command text names the variable; false means the round
+ran without the tier's value.
+
 ## Finished record locations
 
 A record's directory owns whether it is still live. Live drawers hold only records that still

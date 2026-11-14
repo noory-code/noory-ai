@@ -699,6 +699,26 @@ def resolve_independent_review_command(
     return differing[0][1], ""
 
 
+def resolve_independent_reviewer_venue(
+    review: dict[str, Any],
+    item_venue: str,
+) -> str | None:
+    """Return the venue selected by the validated two-venue reviewer contract."""
+
+    venue = item_venue.strip().lower()
+    reviewers = review.get("reviewers")
+    if not isinstance(reviewers, dict):
+        return None
+    differing = [
+        raw_name.strip().lower()
+        for raw_name in reviewers
+        if isinstance(raw_name, str)
+        and raw_name.strip()
+        and raw_name.strip().lower() != venue
+    ]
+    return differing[0] if len(differing) == 1 else None
+
+
 # Version of the `.stage` artifact/settings contract, independent of the
 # plugin release version. stage-init stamps new harnesses via the settings
 # template; preserved older settings are never overwritten — the audit warns

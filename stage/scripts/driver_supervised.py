@@ -45,6 +45,8 @@ from close_work import (  # noqa: E402
 from driver_environment import (  # noqa: E402
     check_environment,
     executor_environment,
+    model_tier_environment,
+    model_tier_record,
     project_environment,
 )
 from driver_git import current_head_or_empty  # noqa: E402
@@ -207,6 +209,14 @@ def run_supervised_round(
                 log_path,
                 executor_command=executor_command,
                 reviewer_command=reviewer_command,
+                model_tier=model_tier_record(
+                    project_root,
+                    item,
+                    executor_venue=item.venue,
+                    executor_command=executor_command,
+                    reviewer_venue=reviewer_venue,
+                    reviewer_command=reviewer_command,
+                ),
             )
         log_before = read_work_log(log_path)
         card_fields_before = close_owned_fields(item.path)
@@ -577,6 +587,9 @@ def run_supervised_round(
                     ),
                     "STAGE_WORK_LOG_PATH": str(log_path.resolve()),
                 }
+            )
+            reviewer_env.update(
+                model_tier_environment(project_root, item, reviewer_venue)
             )
             if narrow_review:
                 reviewer_env.update(
