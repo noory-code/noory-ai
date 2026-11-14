@@ -26,10 +26,10 @@ Stage가 일감마다 맞는 모델과 에포트 레벨을 고르게 한다
 ## Stories
 
 - W-00000327 (design, claude) — 등급 표 설계와 Agent 훅 실측 결과를 카드에 남긴다. 아래 구현 story 넷이 따르는 설계의 SSOT 다.
-- W-00000328 (development, codex) — 등급 표 설정을 읽어 등록하는 카드에 tier 를 적는다.
-- W-00000329 (development, codex) — 드라이버가 카드 등급의 모델과 에포트를 실행기와 리뷰어에 넘긴다. W-00000328 의 공용 모듈을 쓴다.
-- W-00000330 (development, codex) — Agent 호출의 모델과 에포트를 카드 등급에 맞추는 훅을 넣는다. W-00000328 의 공용 모듈을 쓴다.
-- W-00000331 (development, codex) — 카드 등급과 실제로 돈 모델·에포트가 다르면 감사가 경고하게 한다. W-00000329 와 W-00000330 이 남기는 기록을 읽는다.
+- W-00000328 (development, claude · local-no-codex) — 등급 표 설정을 읽어 등록하는 카드에 tier 를 적는다.
+- W-00000329 (development, claude · local-no-codex) — 드라이버가 카드 등급의 모델과 에포트를 실행기와 리뷰어에 넘긴다. W-00000328 의 공용 모듈을 쓴다.
+- W-00000330 (development, claude · local-no-codex) — Agent 호출의 모델과 에포트를 카드 등급에 맞추는 훅을 넣는다. W-00000328 의 공용 모듈을 쓴다.
+- W-00000331 (development, claude · local-no-codex) — 카드 등급과 실제로 돈 모델·에포트가 다르면 감사가 경고하게 한다. W-00000329 와 W-00000330 이 남기는 기록을 읽는다.
 
 ## User value
 
@@ -71,6 +71,7 @@ Stage가 일감마다 맞는 모델과 에포트 레벨을 고르게 한다
 
 ## Progress
 
+- 2026-11-14: W-00000328 을 드라이버로 Codex 실행기에 맡겼으나 Codex 가 `The 'gpt-6-astra' model is not supported when using Codex with a ChatGPT account.` 로 실패했다(저장소 변경 없음). 사용자가 "local-no-codex 로 여기서 진행" 을 골라, 구현 story 넷을 `venue: claude`, `environment: local-no-codex`, `review: pending` 으로 바꿨다. 근거는 설정의 `environment_venues` 다(DE-00000082).
 
 ## Verification
 

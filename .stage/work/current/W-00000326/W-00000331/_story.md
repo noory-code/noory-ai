@@ -2,7 +2,8 @@
 id: W-00000331
 title: 카드 등급과 실제로 돈 모델·에포트가 다르면 감사가 경고하게 한다
 kind: development
-venue: codex
+venue: claude
+environment: local-no-codex
 milestone:
 autonomous: false
 acceptance:
@@ -12,7 +13,7 @@ verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
-review: not_required
+review: pending
 scope: stage/scripts/audit_stage.py, stage/scripts/tests/test_audit_model_tier.py, stage/skills/stage-audit/, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -61,7 +62,7 @@ decision_refs:
 
 ## Next action
 
-W-00000329 와 W-00000330 이 끝난 뒤 드라이버가 Codex 실행기로 돌린다.
+W-00000329 와 W-00000330 이 끝난 뒤 이 세션의 Claude 가 local-no-codex 환경으로 직접 구현하고, 닫을 때 독립 리뷰를 받는다.
 
 ## Related truth
 

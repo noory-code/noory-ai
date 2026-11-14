@@ -2,7 +2,8 @@
 id: W-00000330
 title: Agent 호출의 모델과 에포트를 카드 등급에 맞추는 훅을 넣는다
 kind: development
-venue: codex
+venue: claude
+environment: local-no-codex
 milestone:
 autonomous: false
 acceptance:
@@ -12,7 +13,7 @@ verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
-review: not_required
+review: pending
 scope: stage/hooks/stage_model_tiers.py, stage/hooks/stage_agent_tier.py, stage/hooks/stage_guard.py, stage/hooks/hooks.json, stage/hooks/README.md, stage/hooks/tests/test_agent_tier.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -64,7 +65,7 @@ Claude 가 세션 안에서 Agent 도구로 일을 맡길 때 모델·에포트�
 
 ## Next action
 
-W-00000328 이 끝난 뒤 드라이버가 Codex 실행기로 돌린다. 실행기는 W-00000327 의 설계를 읽고 `stage_agent_tier.py` 와 시험부터 만든다.
+W-00000328 이 끝난 뒤 이 세션의 Claude 가 local-no-codex 환경으로 직접 구현하고, 닫을 때 독립 리뷰를 받는다. 구현은 W-00000327 의 설계를 읽고 `stage_agent_tier.py` 와 시험부터 만든다.
 
 ## Related truth
 

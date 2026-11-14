@@ -2,7 +2,8 @@
 id: W-00000328
 title: 등급 표 설정을 읽어 등록하는 카드에 tier 를 적는다
 kind: development
-venue: codex
+venue: claude
+environment: local-no-codex
 milestone:
 autonomous: false
 acceptance:
@@ -12,7 +13,7 @@ verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
-review: not_required
+review: pending
 scope: stage/hooks/stage_model_tiers.py, stage/hooks/stage_work.py, stage/skills/stage-work/, stage/scripts/start_work.py, stage/templates/project-stage/settings.json, stage/docs/SCHEMA_V5.md, stage/hooks/tests/test_model_tiers.py, stage/scripts/tests/, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -65,7 +66,7 @@ decision_refs:
 
 ## Next action
 
-드라이버가 Codex 실행기로 돌린다. 실행기는 W-00000327 의 설계를 읽고 `stage_model_tiers.py` 와 그 시험부터 만든다.
+이 세션의 Claude 가 local-no-codex 환경으로 직접 구현하고, 닫을 때 독립 리뷰를 받는다. 구현은 W-00000327 의 설계를 읽고 `stage_model_tiers.py` 와 그 시험부터 만든다.
 
 ## Related truth
 

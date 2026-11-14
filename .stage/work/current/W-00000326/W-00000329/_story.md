@@ -2,7 +2,8 @@
 id: W-00000329
 title: 드라이버가 카드 등급의 모델과 에포트를 실행기와 리뷰어에 넘긴다
 kind: development
-venue: codex
+venue: claude
+environment: local-no-codex
 milestone:
 autonomous: false
 acceptance:
@@ -12,7 +13,7 @@ verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
-review: not_required
+review: pending
 scope: stage/scripts/driver_environment.py, stage/scripts/driver_supervised.py, stage/scripts/driver_unattended.py, stage/scripts/driver_worklog.py, stage/skills/stage-drive/, stage/scripts/tests/test_driver_model_tier.py, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -63,7 +64,7 @@ decision_refs:
 
 ## Next action
 
-W-00000328 이 끝난 뒤 드라이버가 Codex 실행기로 돌린다.
+W-00000328 이 끝난 뒤 이 세션의 Claude 가 local-no-codex 환경으로 직접 구현하고, 닫을 때 독립 리뷰를 받는다.
 
 ## Related truth
 
