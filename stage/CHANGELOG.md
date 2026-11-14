@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Let a project name model and effort tiers in settings (`model_tiers`, cheapest first, with each
+  venue's own model and effort values) and route work kinds and scales to them (`tier_routing`).
+  `register_work.py` records the routed tier, or one passed with `--tier`, in a card's `tier:`
+  field, and `start_work.py` fills it on cards captured without one. The v4 project template ships
+  Claude-only tiers; a project without `model_tiers` behaves as before.
+
 ## 0.65.0 — 2026-11-04
 
 - Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one

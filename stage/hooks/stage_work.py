@@ -100,6 +100,8 @@ class WorkItem:
     review: str = "not_required"
     autonomous: bool = False
     acceptance: tuple[str, ...] = ()
+    # Model and effort tier (`stage_model_tiers`); "" when the card names none.
+    tier: str = ""
 
 
 def parse_yaml_string(value: str) -> str:
@@ -282,6 +284,7 @@ def item_from_fields(
         review=(scalar("review") or "not_required").strip().lower(),
         autonomous=parse_bool_field(fields.get("autonomous")),
         acceptance=parse_string_list(fields.get("acceptance")),
+        tier=scalar("tier").strip().lower(),
     )
 
 

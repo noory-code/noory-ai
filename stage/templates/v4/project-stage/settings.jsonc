@@ -20,6 +20,23 @@
   },
   // Registers additional host tool names that can write files.
   "extra_write_tools": [],
+  // Names model and effort tiers, cheapest first: declaration order is cost order. Each tier gives
+  // every venue its own model and effort, written exactly as that venue's tools accept them; Stage
+  // never translates between venues. A card records one tier in its frontmatter tier field. Write
+  // claude models as the Agent tool's aliases (haiku, sonnet, opus, fable). Add a codex or other
+  // venue column with the model names your account accepts. Delete model_tiers and tier_routing
+  // to turn tiers off.
+  "model_tiers": {
+    "scout": {"claude": {"model": "haiku", "effort": "low"}},
+    "standard": {"claude": {"model": "sonnet", "effort": "medium"}},
+    "strong": {"claude": {"model": "opus", "effort": "high"}},
+    "lead": {"claude": {"model": "fable", "effort": "high"}}
+  },
+  // Picks a new card's tier from its kind and scale. A kind maps to a tier, or to
+  // {"epic"|"story"|"action": tier} with "*" as that kind's fallback; the top-level "*" covers
+  // every other kind. "lead" is for planning, instructions, and checking results, so no kind
+  // routes to it by default. A person may change a card's tier; the card's value wins.
+  "tier_routing": {"*": "standard"},
   // Executor commands are project-specific. Put each tool's explicit model option, such as
   // --model <model>, directly in all executor and review command strings; do not rely on a
   // user-home default. Give both venue prompts these instructions:
