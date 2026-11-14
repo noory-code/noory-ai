@@ -69,6 +69,8 @@ DE-00000082 와 `stage/operations/cloud-execution.md` 가 환경 정책과 Claud
 ## Progress
 2026-11-14: 카드를 등록하고 DE-00000086 초안을 `open` 으로 썼다. 설정과 운영 문서는 사용자 확정 전이라 고치지 않았다.
 
+2026-11-14: 사용자가 환경 이름 `local-no-codex` 와 초안을 확정했다. DE-00000086 을 `decided` 로 바꾸고, `environment_venues` 에 한 줄을 더하고, `.stage/operations/claude-venue.md` 에 절차 절을 더했다.
+
 
 ## Verification
 

@@ -88,6 +88,38 @@ DE-00000062.
 
 팀 기능이 없는 세션에서는 사람 창 넘김(stage-handoff)으로 돌아간다.
 
+## codex 가 없는 로컬 세션 — `local-no-codex`
+
+근거 결정: DE-00000086. codex 구독이 없는 동안 로컬 세션에서 codex 로 라우팅되는 종류
+(`development`, `fix`, `qa`, `ops`, `chore`)의 카드는 이 환경을 붙여 claude venue 로 실행한다.
+`venue_routing` 과 `review` 설정은 고치지 않는다. 클라우드 세션은 `cloud` 를 쓴다.
+
+등록하거나 시작한다. `--environment` 가 venue 를 claude 로 채우고, `--review` 가 없으면 거절된다.
+
+```bash
+python3 stage/skills/stage-work/register_work.py --project-root . --title "..." \
+  --kind fix --scale story --environment local-no-codex --review --scope "..." \
+  --purpose "..." --success-criterion "..."
+python3 stage/scripts/start_work.py --project-root . W-00000001 --scope "..." \
+  --environment local-no-codex --review
+```
+
+실행은 위 감독 모드 절차 그대로다. 달라지는 것은 세 가지다.
+
+- **7번 걸음의 codex 판정을 Claude 대역이 맡는다.** 닫기와 드라이버가 부르는 리뷰 명령 앞에
+  `STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py` 를 둔다. 이 변수를 빠뜨리면
+  리뷰 명령이 codex 를 찾지 못해 닫기가 막힌다. 대역의 제약과 닫기 순서는
+  `stage/operations/cloud-execution.md` 의 Close 절이 소유한다.
+- **카드의 `## Verification` 에 같은 모델의 리뷰였다고 적는다.** 교차 venue 리뷰가 아니다.
+- **팀원 모델 표의 "해당 없음" 행이 이 환경에서는 팀원에게 온다.** 표가 그 종류의 모델을 정하지
+  않았으므로 모델 인자를 주지 않고 띄운다(부모 세션 모델을 물려받는다). 값은 사례가 쌓이면
+  표에 더한다.
+
+무인 모드는 codex 전용이므로 이 환경에서는 쓸 수 없다.
+
+codex 구독을 되살리면 새 카드에 이 환경을 쓰지 않는다. `environment_venues` 의 선언은 이
+환경으로 닫힌 카드가 모두 보관된 뒤에 지운다.
+
 ## 무인 모드 — codex 전용
 
 무인 실행은 codex venue 카드만 받는다. 팀은 세션 없이 돌지 않고, 비대화형 `claude -p` 는
