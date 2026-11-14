@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000332
+promotion: not_applicable
+review: passed
 scope: stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -113,6 +113,84 @@ decision_refs:
 - `python3 -m unittest discover -s stage/hooks/tests -q`: 399건 통과.
 - `python3 -m unittest discover -s stage/scripts/tests -q`: 736건 통과(2건 건너뜀).
 - `python3 stage/scripts/audit_stage.py --project-root .`: errors=0, warnings=32(모두 보관된 카드의 기존 경고).
+- hooks 전체를 `/private/tmp` 아래 현재 폴더에서도 돌려 399건 통과했다(R-00000311 의 교훈).
+- 닫기 리뷰는 codex 가 없어 Claude 대역(`stage/scripts/claude_review_companion.py`)으로 돌린 같은 모델의 리뷰이며,
+  교차 venue 리뷰가 아니다(DE-00000086).
+
+### Executed at close — 2026-11-14
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 264 tests in 0.990s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 399 tests in 4.384s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1794651378
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1794651378. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp4gvff7uu/unattended/W-00000001-1794651378
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 736 tests in 148.588s
+
+OK (skipped=2)
+```
+
+### Review at close — 2026-11-14
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000332.md
+Criteria:
+- PASS: 임시 폴더나 메모 폴더처럼 프로젝트 밖에 쓸 때는 카드 목록 글이 붙지 않는다
+  Reason: I piped PreToolUse payloads into stage/hooks/stage_guard.py: a Write to ~/stage-review-notes.txt and `S=/tmp/x.py && sed -i "" s/a/b/ "$S"` both returned no systemMessage and no additionalContext, while the pre-fix hook (HEAD~1) reported both as crossings with 332 and 298 context chars; `python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q` ran 264 tests OK, including the new outside-path, same-command-variable, and other-repository-commit cases.
+- PASS: 프로젝트 파일을 카드 범위 밖에서 고칠 때는 지금처럼 알림과 카드 목록 글이 붙는다
+  Reason: I piped an Edit of evonest/README.md (inside the workspace, outside W-00000332 scope) into the fixed hook: it returned `Scope boundary crossed: evonest/README.md.` and an additionalContext beginning `Stage work context:` with the card's scope and story; the full hooks suite `python3 -m unittest discover -s stage/hooks/tests -q` ran 399 tests OK, including cases where a same-command variable or a cd that stays inside still reports src/app.py.
+- PASS: 지난 세션 기록의 같은 도구 호출을 고치기 전과 후의 훅에 넣었을 때 알림이 붙는 횟수가 줄었고 두 값이 카드에 남아 있다
+  Reason: The card's ## Verification records before 544 crossings / 513,348 chars and after 57 / 51,119 chars over 1,696 calls; I independently replayed a seeded random sample of 300 of the 1,844 Bash/Write/Edit/MultiEdit calls now in the 11 remaining session logs through the HEAD~1 and fixed hooks against a copied .stage and saw crossings drop from 109 to 8 (103,014 to 7,157 chars), so the direction holds though I did not reproduce the exact recorded totals because the log set has changed.
+```
 
 ## Retrospective
 
