@@ -190,6 +190,11 @@ next free number, writes the card, and updates the owning index:
   value `split` is mixed by definition: register a planning/design item and an implementation
   item as separate hierarchy records instead of one ambiguous item (see `stage-handoff`); a
   deliberate single item needs the same exception decision.
+- `tier` — the model and effort tier, only when `settings.json` declares `model_tiers`.
+  `register_work.py` routes the kind and scale through `tier_routing` and writes `tier:`; show
+  that tier during confirmation, and pass `--tier <name>` only when the human picks another
+  declared tier for this work. The contract lives in `docs/SCHEMA_V5.md` → `Model and effort
+  tiers`.
 - `scope` — the paths this work expects to modify. List every governed subtree known at
   registration time. The hook reports but does not block a needed write outside this list; the
   executor must report every such boundary crossing. `*` suppresses useful boundary signals, so

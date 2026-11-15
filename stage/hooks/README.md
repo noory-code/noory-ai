@@ -6,12 +6,27 @@ This directory owns the hooks that apply Stage principles at execution time.
 
 - `SessionStart`: injects the `.stage/` state and completion gates into the session context — every open observation (`state/observations/`) as one line carrying its title and days open, active work, review candidates, an inventory of host-project instructions (`CLAUDE.md`, `AGENTS.md`, `.claude/rules|skills`, …) with a use-and-challenge directive, the newest 3 open questions (`state/questions/`), planned records with `status: selected`, and the most recent session handoff — and prunes stale question-ack markers. The observation list is complete by contract: any count or character cap drops its newest end, which is where the problem written down yesterday lives. Snippets still read under a character cap say how many lines they are hiding.
 - `PreToolUse`: blocks `.stage` deletion, governed-file modification when no work is active, and official artifact modification without a promotion intent. It appends the selected active hierarchy's one-sentence purposes after every tool decision, with the leaf scope and any scope boundary crossed by the call. Matches every tool (`*`): names outside the built-in and settings-registered write sets remain ungated, but still receive purpose context.
+  For a Claude Code `Agent` call in a project that declares `model_tiers`
+  (`docs/SCHEMA_V5.md` → `Model and effort tiers`), `stage_agent_tier.py` fills a missing `model`
+  or `effort` from the current card's tier through `updatedInput` (all original keys kept) and
+  denies a model costlier than that tier unless the `description` carries
+  `[over-tier: <reason>]`. The current cards are the driver's `STAGE_WORK_ITEM_PATH` card or every
+  open leaf with a `tier:`; the costliest of their tiers is the ceiling, and a value is filled only
+  when they share one tier.
 - `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
+  After an `Agent` call (finished or launched in the background) it appends an `agent_requested`
+  record — the subagent's id, requested model and effort, and any over-tier reason — to
+  `.stage/.runtime/model-usage/<session_id>.jsonl`; an allowed over-tier call also adds an
+  `over_tier_allowed` record at PreToolUse.
+- `SubagentStop`: when any subagent stops, foreground or background, appends an `agent_finished`
+  record with the model and effort it actually ran with (effort from the event's `effort.level`,
+  model from the subagent's own transcript) to the same file. It never blocks, and does nothing
+  without `model_tiers` and a tiered current card.
 - `Stop`: writes `.stage/.runtime/sessions/<session_id>.md`.
 
 ## Every gate, and what to do when one fires
 
-Fourteen checks can deny a call. You learn one exists by hitting it, so here they all are. Each row
+Fifteen checks can deny a call. You learn one exists by hitting it, so here they all are. Each row
 names what it protects and the move that clears it — the message itself carries the same move, and
 a row whose message does not is a defect in the message, not in this table.
 
@@ -31,6 +46,7 @@ a row whose message does not is a defect in the message, not in this table.
 | Retired roots | one location per record | a write targets a schema-v3 root | the v4 path the message names |
 | Script suffix | running on every host | an OS-specific executable lands inside `.stage` | Python or Markdown instead |
 | Inline interpreter | the gates being able to see the write | inline code (`python -c`, a heredoc) names `.stage` | Write/Edit, or a named script file |
+| Model tier | subagents running at the card's cost | an `Agent` call names a model costlier than the current card tier, or lacks model or effort while open cards differ in tier | a model at or below the tier, `[over-tier: <reason>]` in the description, or explicit model and effort |
 
 Two of these are one check reached two ways: registration and re-attribution each run once for
 write tools and once for shell commands. They are listed once because the fix is the same.

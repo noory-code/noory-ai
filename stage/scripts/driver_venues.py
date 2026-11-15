@@ -13,7 +13,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
 
 STAGE_ROOT = Path(__file__).resolve().parents[1]
 for import_dir in (
@@ -30,7 +29,10 @@ from driver_worklog import (  # noqa: E402
     print_preflight_blocker,
 )
 from close_work import ensure_work_log, run_check  # noqa: E402
-from stage_paths import read_settings  # noqa: E402
+from stage_paths import (  # noqa: E402,F401  (re-exported for driver callers)
+    read_settings,
+    resolve_independent_reviewer_venue,
+)
 from driver_subtree import ancestor_chain  # noqa: E402
 from stage_work import WorkItem  # noqa: E402
 
@@ -289,23 +291,3 @@ def reap_turn(
     except RuntimeError as exc:
         print(f"WARNING: {exc}")
     return False
-
-
-def resolve_independent_reviewer_venue(
-    review: dict[str, Any],
-    item_venue: str,
-) -> str | None:
-    """Return the venue selected by the validated two-venue reviewer contract."""
-
-    venue = item_venue.strip().lower()
-    reviewers = review.get("reviewers")
-    if not isinstance(reviewers, dict):
-        return None
-    differing = [
-        raw_name.strip().lower()
-        for raw_name in reviewers
-        if isinstance(raw_name, str)
-        and raw_name.strip()
-        and raw_name.strip().lower() != venue
-    ]
-    return differing[0] if len(differing) == 1 else None

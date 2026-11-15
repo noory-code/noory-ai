@@ -65,6 +65,88 @@ record different histories.
 - Starting a rejected planned card remains invalid. Its next lifecycle transition is direct
   archival, not start.
 
+## Model and effort tiers
+
+A project may name model and effort tiers in `.stage/settings.json`. Without `model_tiers` no
+card records a tier, no tool exports or fills a model, and every behavior below is off.
+
+```json
+"model_tiers": {
+  "scout":    {"claude": {"model": "haiku",  "effort": "low"},    "codex": {"model": "<model>", "effort": "low"}},
+  "standard": {"claude": {"model": "sonnet", "effort": "medium"}, "codex": {"model": "<model>", "effort": "medium"}},
+  "strong":   {"claude": {"model": "opus",   "effort": "high"}},
+  "lead":     {"claude": {"model": "fable",  "effort": "high"}}
+},
+"tier_routing": {"*": "standard", "chore": "scout", "development": {"action": "standard", "*": "standard"}}
+```
+
+- `model_tiers` is a non-empty object of tier names. Declaration order is cost order: the first
+  tier is the cheapest, and every reader compares cost only by that order.
+- Each tier maps venue names to an object holding `model`, `effort`, or both, as non-empty
+  strings written in that venue's own vocabulary. Stage never translates a value between venues.
+  An omitted key is neither exported nor filled; a tier without a venue gives that venue nothing.
+- `tier_routing` maps a work kind to a tier name, or to an object from scale (`epic`, `story`,
+  `action`) to tier name with `"*"` as that kind's fallback. The top-level `"*"` covers every
+  other kind. When nothing matches, the card records no tier.
+- A routing entry that names an undeclared tier, a malformed table, or `tier_routing` without
+  `model_tiers` is invalid: registration and start refuse, and runtime readers act as if no tiers
+  were declared.
+- `stage/hooks/stage_model_tiers.py` is the only reader of both settings.
+
+A card records its tier in frontmatter `tier:`, after `venue:` (after `environment:` when present).
+`register_work.py` writes the routed tier, or the declared tier passed with `--tier`, for current
+and planned records alike; it refuses `--tier` naming an undeclared tier or used without
+`model_tiers`. `start_work.py` fills a missing `tier:` on every record of the started unit and
+keeps one already set. A person may edit `tier:` at any time; readers take the card's value at the
+moment they run.
+
+The driver exports the card tier's values as `STAGE_MODEL` and `STAGE_EFFORT`: the executor
+receives its own venue's values, and the independent reviewer (and the close review in
+`close_work.py`) receives the reviewer venue's values. A command applies the tier only by reading
+the variables, for example `--model "$STAGE_MODEL" --effort "$STAGE_EFFORT"`; a command with a
+literal `--model` keeps working and keeps its literal model. Each round's `### Driver commands`
+entry in the work log adds one line when the card has a tier:
+
+```text
+Model tier (JSON): {"tier": "standard", "executor": {"venue": "codex", "model": "...", "effort": "...", "command_uses_model_env": true, "command_uses_effort_env": true}, "reviewer": {"venue": "claude", ...}}
+```
+
+`command_uses_*_env` records whether the command text names the variable; false means the round
+ran without the tier's value.
+
+In Claude Code, the PreToolUse hook applies the tier to `Agent` calls (Codex has no such tool).
+The current cards are the driver's `STAGE_WORK_ITEM_PATH` card, or else every open leaf; only
+cards with a declared `tier:` count, and nothing happens when none does. The ceiling is the
+costliest of their tiers.
+
+- A missing `model` or `effort` is filled from the tier's `claude` values through
+  `hookSpecificOutput.updatedInput`, which carries every original input key. When the current
+  cards have different tiers the call is denied instead, naming the tiers, because there is no
+  single value to fill.
+- A `model` that belongs to a costlier tier than the ceiling, or to no declared tier, is denied
+  unless the `description` contains `[over-tier: <non-empty reason>]`. Effort never triggers a
+  denial.
+- `.stage/.runtime/model-usage/<session_id>.jsonl` holds one JSON object per line, each with
+  `event`, `session_id`, `cards`, `tier` (the shared tier, or empty), and `ceiling`:
+  - PreToolUse writes `over_tier_allowed` (`model`, `reason`) for an allowed over-tier call.
+  - PostToolUse writes `agent_requested` for every Agent call that returns a subagent id,
+    finished or launched in the background: `agent_id`, `status`, `requested_model`,
+    `requested_effort`, `over_tier_reason`.
+  - SubagentStop writes `agent_finished` when any subagent stops: `agent_id`, `agent_type`, and the
+    `model` and `effort` it actually ran with. Effort comes from the event's `effort.level`; model
+    comes from the last model request in `agent_transcript_path` (`api-request` `params.model`,
+    or an assistant line's `message.model` when one is already written), and stays empty when
+    that file is unreadable.
+  The audit joins `agent_finished` with `agent_requested` on `agent_id` to find a stated reason.
+
+`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER005`,
+listed in the `stage-audit` skill). Invalid tier settings and a current card naming an undeclared
+tier are errors. For current cards only, it warns when the latest `Model tier (JSON)` line in the
+card's work log differs from what the card's tier gives now or shows a command that does not read
+the variables, and when an `agent_finished` record differs from the tier's `claude` values. A
+model matches when the tier's model, without a trailing `[...]` qualifier, occurs in the recorded
+model id (`haiku` matches `claude-haiku-5-5`).
+
 ## Finished record locations
 
 A record's directory owns whether it is still live. Live drawers hold only records that still

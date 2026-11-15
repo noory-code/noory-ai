@@ -25,10 +25,11 @@ GUARD = HOOKS_ROOT / "stage_guard.py"
 # measure different things and are meant to disagree: 18 places in the guard can
 # deny, several of them reaching one gate by two paths; 10 functions build a deny
 # message (`*_blockers` helpers return reason lists and are not counted); the
-# README groups the result into 14 gates a reader has to know about.
+# README groups the result into 15 gates a reader has to know about (the model-tier
+# gate denies from stage_agent_tier.py, outside these guard counts).
 EXPECTED_DENY_SITES = 18
 EXPECTED_BLOCKER_FUNCTIONS = 10
-EXPECTED_DOCUMENTED_GATES = 14
+EXPECTED_DOCUMENTED_GATES = 15
 
 
 def blocker_function_names() -> set[str]:
