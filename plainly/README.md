@@ -20,9 +20,13 @@ written for a person: replies, documents, commit messages, comments, records.
 
 The Korean section gives three steps in Korean: express actions and states directly, choose familiar
 words that preserve the meaning, and split long sentences without dropping conditions. It keeps
-established technical terms and permits short noun phrases for buttons, titles, and table labels.
-Sentences longer than 15 space-separated units prompt another look; this is an editing cue, not a
-grammar rule or a hard limit.
+established technical terms and permits short noun phrases for buttons and titles; a table cell
+that explains something is written as a sentence. Korean builds a sentence around its verb where
+English builds it around nouns, so the section asks the writer to rebuild a noun-centered sentence
+rather than swap its words, especially when reporting after reading English code, logs, or command
+output. It names a few words people do not say, with what to write instead, and forbids dropping
+particles, endings, or verbs to save characters. Sentences longer than 15 space-separated units
+prompt another look; this is an editing cue, not a grammar rule or a hard limit.
 
 A final silent check compares actors, objects, actions, conditions, certainty, and missing or added
 facts with the source. In particular, an unmeasured effect must not become an assumed improvement.
