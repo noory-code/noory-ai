@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Korean guidance: say outright that Korean builds a sentence around its verb and English around
+  nouns, and ask the writer to rebuild a noun-centered sentence instead of swapping its words,
+  above all when reporting after reading English code, logs, or command output. Name words people
+  do not say (an "axis" rendered as 축, a test rendered as 시험, "돌고 있다" for running) with
+  what to write instead. Forbid dropping particles, endings, or verbs to save characters. Table
+  cells that explain something are now written as sentences; only buttons and titles may stay
+  short noun phrases.
+
 ## 0.7.1 — 2026-10-04
 
 - Rewrite the Korean guidance around actions, familiar wording, and short sentences. Add a silent

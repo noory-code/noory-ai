@@ -153,9 +153,55 @@ class KoreanGuidanceTest(unittest.TestCase):
             "세는 대상과 단위를 분명히 한다",
             "조건과 그 조건이 걸리는 행동은 함께 둔다",
             "본문 문장은 서술어와 종결어미로 끝맺는다",
-            "버튼·제목·표의 이름은 명사로 짧게 쓸 수 있다",
+            "버튼과 제목은 명사로 짧게 쓸 수 있다",
             "엠대시(—)로 앞뒤 관계를 함축하지 말고",
             "'~의'를 거듭 쓰면",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+
+    def test_table_cells_and_short_words_are_not_clipped_to_save_characters(self) -> None:
+        # 0.7.1 let table labels be short noun phrases. After a long English work log the model
+        # read that as leave to clip every table cell ("757개 실행, 2개 건너뜀"), and clipped words
+        # make the reader ask again.
+        body = self.body()
+
+        for required in (
+            "표 칸에 설명을 적을 때는 문장으로 쓴다",
+            "글자 수를 아끼려고 조사·어미·동사를 빼거나 낱말을 줄여 쓰지 않는다",
+            "덜어낼 것은 반복이지 낱말이 아니다",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+        self.assertNotIn("버튼·제목·표의 이름은 명사로 짧게 쓸 수 있다", body)
+
+    def test_noun_centered_sentences_are_rebuilt_not_reworded(self) -> None:
+        # The target is the sentence built around nouns, the way an English sentence is, not
+        # Sino-Korean vocabulary. A draft of this rule told the writer to watch for clipped
+        # Sino-Korean nouns, and the author corrected it: most Korean words are Sino-Korean.
+        body = self.body()
+
+        for required in (
+            "영어는 명사를 중심으로 문장을 짓고 한국어는 동사를 중심으로 짓는다",
+            "고칠 것은 낱말이 아니라 문장이다",
+            "영어로 된 코드·로그·명령 결과를 읽고 나서 보고할 때",
+            '"실측해 보면 결과가 다릅니다" → "실제로 측정해 보면 결과가 다릅니다."',
+            # "질문을 주다" puts the noun in the middle; the author's point was the verb, not
+            # which verb goes with the noun.
+            "'질문을 주다'는 질문이라는 명사를 가운데 두고 지은 말이다",
+            '"새 세션에 질문 여덟 개를 주고" → "새 세션에서 여덟 개의 질문을 하고"',
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+        self.assertNotIn("한자를 줄여", body)
+
+    def test_words_people_do_not_say_are_named_with_their_replacements(self) -> None:
+        body = self.body()
+
+        for required in (
+            "한국 사람이 입으로 잘 하지 않는 말은 쓰지 않는다",
+            '"사람을 두 축으로 나눕니다" → "사람을 두 가지 기준으로 나눕니다."',
+            '"시험이 아직 돌고 있습니다" → "아직 테스트 중입니다."',
         ):
             with self.subTest(required=required):
                 self.assertIn(required, body)
