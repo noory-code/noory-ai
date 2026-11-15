@@ -55,6 +55,16 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
 
 LIFECYCLE_VIEW_RECORD_LIMIT = 3
 
+# States the inline-interpreter gate (`stage_shell.interpreter_inline_stage_write`) at session
+# start. Without it a session learns the rule only from the denial and pays a refused call to
+# find out.
+INLINE_INTERPRETER_RULE_LINE = (
+    "- A shell command that runs inline interpreter code (`python -c`, `node -e`, `bash -c`, "
+    "or an interpreter heredoc) and mentions `.stage` is refused, read-only code included: "
+    "the hook cannot see what such code writes. Use Write/Edit, or put the code in a script "
+    "file and run it by name."
+)
+
 
 def lifecycle_view_record_ids(
     directory: Path, limit: int = LIFECYCLE_VIEW_RECORD_LIMIT
@@ -257,6 +267,8 @@ def session_context(workspace_root: Path) -> str:
             "`scripts/start_work.py` (never hand-move it). "
             "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
         ]
+
+    parts.append(INLINE_INTERPRETER_RULE_LINE)
 
     routing = load_venue_routing(stage_root)
     if routing:

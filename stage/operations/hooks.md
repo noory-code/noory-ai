@@ -37,6 +37,10 @@ nothing downstream will say so. When a bulk change needs a program, run it and t
 - Modifying governed files when no work item is open in `work/current/`.
 - Deleting a governed source file (`rm`/`del`/`erase`/`Remove-Item`/`ri`) when no work item is open.
 - OS-specific executable scripts inside `.stage`.
+- A shell command that runs inline interpreter code (`python -c`, `node -e`, `bash -c`, or an
+  interpreter heredoc) and mentions `.stage`, read-only code included. A named script file and a
+  `-m` module invocation stay allowed. `SessionStart` states this rule in the Stage context so a
+  session reads it before a call is refused.
 
 ## Registration gate scope
 

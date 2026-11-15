@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- State the inline-interpreter rule at session start: the Stage context now says in one line that
+  a shell command running inline code (`python -c`, `node -e`, `bash -c`, or an interpreter
+  heredoc) and mentioning `.stage` is refused, and names Write/Edit or a script file as the way
+  through. A session used to learn this only from the denial. The gate and its message are
+  unchanged.
+
 ## 0.66.0 — 2026-11-15
 
 - Let a project name model and effort tiers in settings (`model_tiers`, cheapest first, with each
