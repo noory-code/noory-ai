@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.0 — 2026-11-15
+
 - Let a project name model and effort tiers in settings (`model_tiers`, cheapest first, with each
   venue's own model and effort values) and route work kinds and scales to them (`tier_routing`).
   `register_work.py` records the routed tier, or one passed with `--tier`, in a card's `tier:`
