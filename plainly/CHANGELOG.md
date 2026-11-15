@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.2 — 2026-11-16
+
 - Korean guidance: say outright that Korean builds a sentence around its verb and English around
   nouns, and ask the writer to rebuild a noun-centered sentence instead of swapping its words,
   above all when reporting after reading English code, logs, or command output. Name words people
