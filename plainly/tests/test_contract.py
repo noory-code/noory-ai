@@ -195,6 +195,33 @@ class KoreanGuidanceTest(unittest.TestCase):
                 self.assertIn(required, body)
         self.assertNotIn("한자를 줄여", body)
 
+    def test_the_four_shapes_seen_in_real_reports_carry_examples(self) -> None:
+        # Counted over about 6,000 Korean sentences the model wrote in working sessions. The
+        # textbook translationese ("~에 대한", "~을 통해") was nearly absent; these four shapes
+        # were what actually appeared, so they are the ones that carry examples.
+        body = self.body()
+
+        for required in (
+            "보고할 때 가장 자주 나오는 모양은 네 가지다",
+            '"거짓 범위 보고 수정" → "범위를 넘었다고 잘못 알리던 것을 고쳤습니다."',
+            '"머지 뒤에 갱신해 주세요" → "머지한 뒤에 갱신해 주세요."',
+            '"설치본 확인 필요" → "설치본을 확인해야 합니다."',
+            '"효과 미측정" → "효과는 아직 측정하지 않았습니다."',
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, body)
+
+    def test_a_sentence_turned_into_verbs_is_reread_for_word_order(self) -> None:
+        # Pushing toward verbs produced "테스트해 보지는 아직 않았습니다" in a comparison run,
+        # and an earlier experiment produced "검증하는 일에 기대다". The rule asks for a second
+        # read so the cure does not leave its own awkward sentence.
+        body = self.body()
+
+        self.assertIn("동사로 고친 뒤에는 말의 순서가 자연스러운지 다시 읽어 본다", body)
+        self.assertIn(
+            '"테스트해 보지는 아직 않았습니다" → "아직 테스트해 보지 않았습니다."', body
+        )
+
     def test_words_people_do_not_say_are_named_with_their_replacements(self) -> None:
         body = self.body()
 
