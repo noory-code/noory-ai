@@ -22,6 +22,12 @@
   errors, and a current card whose latest driver round or subagents ran on other model or effort
   values than its tier gives, or whose command ignores the variables, gets a warning naming the
   card and both values.
+- Report a scope crossing only when a write lands inside the workspace: writes to notes, home
+  files, and other folders outside the project no longer trigger the crossing line and the full
+  work context. A shell target such as `"$S"` now expands from `S=…` assigned earlier in the same
+  command, so a scratch copy named through a variable is no longer reported as a project path.
+  `cd ../other-repo && git add … && git commit` (or `git -C <dir>`) no longer reports the other
+  repository's files as project files. The commit and `.stage` gates are unchanged.
 
 ## 0.65.0 — 2026-11-04
 
