@@ -51,6 +51,7 @@ from stage_work import (  # noqa: E402
     venue_exception_error,
 )
 import stage_roadmap  # noqa: E402
+from stage_model_tiers import TierConfig, load_tier_config  # noqa: E402
 from stage_record_ids import branch_record_numbers  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
@@ -219,6 +220,7 @@ def fill_item(
     decision: str = "",
     milestone: str = "",
     environment: str = "",
+    tier: str = "",
 ) -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
@@ -226,6 +228,9 @@ def fill_item(
     text = set_field(text, "kind", kind)
     text = set_field(text, "venue", venue)
     text = set_optional_field(text, "environment", environment, after="venue")
+    text = set_optional_field(
+        text, "tier", tier, after="environment" if environment else "venue"
+    )
     text = set_optional_field(text, "milestone", milestone, after="parent")
     text = set_optional_field(
         text, "autonomous", "true" if autonomous else "false", after="parent"
@@ -385,6 +390,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
         text = set_field(text, "id", item_id)
         text = set_field(text, "title", args.title)
         text = set_field(text, "kind", args.kind)
+        text = set_optional_field(text, "tier", args.tier, after="venue")
         text = set_optional_field(text, "milestone", args.milestone, after="parent")
         text = set_optional_field(
             text,
@@ -461,6 +467,26 @@ def register_backlog_card(stage_root: Path, args) -> int:
     )
     print(f"{item_id}: captured (planned card in {backlog_relative})")
     return 0
+
+
+def resolve_tier(
+    config: TierConfig, requested: str, kind: str, scale: str
+) -> tuple[str, str]:
+    """Return (tier, refusal) for a new card; tier is "" when none applies."""
+
+    if config.errors:
+        return "", "model tier settings are invalid: " + "; ".join(config.errors)
+    if requested.strip():
+        if config.tiers is None:
+            return "", "--tier needs `model_tiers` in .stage/settings.json"
+        name = requested.strip().lower()
+        if config.rank(name) is None:
+            return "", (
+                f"tier `{requested.strip()}` is not declared in model_tiers "
+                f"(declared: {sorted(config.tiers)})"
+            )
+        return name, ""
+    return config.route(kind, scale), ""
 
 
 def milestone_decision_chain_is_open(stage_root: Path, milestone_path: Path) -> bool:
@@ -592,6 +618,12 @@ def main() -> int:
         "starting work in present; the venue/split contract applies later, at start_work.",
     )
     parser.add_argument(
+        "--tier",
+        default="",
+        help="Model and effort tier declared in settings.json model_tiers; "
+        "default routes the kind and scale through tier_routing.",
+    )
+    parser.add_argument(
         "--priority",
         default="",
         help="Optional ordering hint for a planned card (shown in the backlog index).",
@@ -662,6 +694,13 @@ def main() -> int:
             "refusing: milestone belongs only on a top-level epic or story",
             file=sys.stderr,
         )
+        return 1
+
+    args.tier, tier_refusal = resolve_tier(
+        load_tier_config(stage_root), args.tier, args.kind, args.scale
+    )
+    if tier_refusal:
+        print(f"refusing: {tier_refusal}", file=sys.stderr)
         return 1
 
     hierarchy_paths = None
@@ -789,6 +828,7 @@ def main() -> int:
             decision=args.decision,
             milestone=args.milestone,
             environment=args.environment.strip().lower(),
+            tier=args.tier,
         )
 
     def item_path_for(item_id: str) -> Path:

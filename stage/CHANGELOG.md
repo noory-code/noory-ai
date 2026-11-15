@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Let a project name model and effort tiers in settings (`model_tiers`, cheapest first, with each
+  venue's own model and effort values) and route work kinds and scales to them (`tier_routing`).
+  `register_work.py` records the routed tier, or one passed with `--tier`, in a card's `tier:`
+  field, and `start_work.py` fills it on cards captured without one. The v4 project template ships
+  Claude-only tiers; a project without `model_tiers` behaves as before.
+- Export the card tier's model and effort to driver commands as `STAGE_MODEL` and `STAGE_EFFORT`:
+  executors get their own venue's values, and the independent reviewer and the `close_work.py`
+  close review get the reviewer venue's values, so a command can write `--model "$STAGE_MODEL"`
+  instead of a fixed model. Each round's work log records what each role received and whether its
+  command reads the variables.
+- Keep Claude Code `Agent` calls on the current card's tier: the hook fills a missing `model` or
+  `effort` from the tier, denies a costlier model unless the description gives
+  `[over-tier: <reason>]`, and records what each call requested and, through a new `SubagentStop`
+  hook, the model and effort every subagent actually ran with, foreground or background, under
+  `.stage/.runtime/model-usage/`. Subagents no longer silently inherit the parent session's model
+  when a project declares `model_tiers`.
+- Audit model tiers (`TIER001`–`TIER005`): invalid tier settings and undeclared card tiers are
+  errors, and a current card whose latest driver round or subagents ran on other model or effort
+  values than its tier gives, or whose command ignores the variables, gets a warning naming the
+  card and both values.
+
 ## 0.65.0 — 2026-11-04
 
 - Keep Python 3.9 covered in the Stage, Avatar, and Plainly CI on Ubuntu by running that one

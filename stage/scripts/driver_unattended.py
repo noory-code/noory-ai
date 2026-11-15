@@ -41,7 +41,7 @@ from close_work import (  # noqa: E402
     review_verdict_path,
     run_check,
 )
-from driver_environment import executor_environment  # noqa: E402
+from driver_environment import executor_environment, model_tier_record  # noqa: E402
 from driver_git import (  # noqa: E402
     commit_item,
     commit_lifecycle,
@@ -282,6 +282,16 @@ def run_unattended(
                 log_path,
                 executor_command=executor_command,
                 reviewer_command=reviewer_command,
+                model_tier=model_tier_record(
+                    project_root,
+                    item,
+                    executor_venue=item.venue,
+                    executor_command=executor_command,
+                    reviewer_venue=resolve_independent_reviewer_venue(
+                        review_config, item.venue
+                    ),
+                    reviewer_command=reviewer_command,
+                ),
             )
             log_before = read_work_log(log_path)
             card_fields_before = close_owned_fields(item.path)

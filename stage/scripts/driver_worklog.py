@@ -85,14 +85,21 @@ def append_driver_commands_to_work_log(
     *,
     executor_command: str,
     reviewer_command: str,
+    model_tier: dict[str, object] | None = None,
 ) -> None:
-    """Append the exact configured commands selected for one driver round."""
+    """Append the exact configured commands selected for one driver round.
+
+    `model_tier`, when the card has a tier, records the model and effort each
+    role received (`driver_environment.model_tier_record`); the audit reads it.
+    """
 
     entry = (
         "\n### Driver commands\n"
         f"Executor command: {json.dumps(executor_command)}\n"
         f"Reviewer command: {json.dumps(reviewer_command)}\n"
     )
+    if model_tier is not None:
+        entry += f"Model tier (JSON): {json.dumps(model_tier, ensure_ascii=False)}\n"
     try:
         with log_path.open("a", encoding="utf-8") as handle:
             handle.write(entry)

@@ -46,6 +46,7 @@ from stage_work import (  # noqa: E402
     environment_venue_error,
     venue_exception_error,
 )
+from stage_model_tiers import TierConfig, load_tier_config  # noqa: E402
 
 # Work fields a present card must carry, in template order, with start values.
 WORK_FIELD_DEFAULTS = (
@@ -146,6 +147,9 @@ def build_frontmatter(fields: dict[str, Any]) -> str:
         order.insert(order.index(anchor) + 1, "milestone")
     if (fields.get("environment") or "").strip():
         order.insert(order.index("venue") + 1, "environment")
+    if (fields.get("tier") or "").strip():
+        anchor = "environment" if "environment" in order else "venue"
+        order.insert(order.index(anchor) + 1, "tier")
     for key in order:
         if key == "acceptance":
             values = parse_string_list(fields.get(key))
@@ -192,6 +196,24 @@ def started_fields(
             fields.setdefault(key, default)
             if not fields[key]:
                 fields[key] = default
+    return fields
+
+
+def fill_missing_tier(
+    fields: dict[str, Any], config: TierConfig, planned_dir: Path, path: Path
+) -> dict[str, Any]:
+    """Record the routed tier on a card captured without one; keep a set tier."""
+
+    if (fields.get("tier") or "").strip():
+        return fields
+    try:
+        scale = work_record_scale(planned_dir, path)
+    except ValueError:
+        scale = "story"
+    tier = config.route(str(fields.get("kind") or ""), scale)
+    if tier:
+        fields = dict(fields)
+        fields["tier"] = tier
     return fields
 
 
@@ -318,6 +340,14 @@ def main() -> int:
         return 1
 
     fields["venue"] = venue
+    tier_config = load_tier_config(stage_root)
+    if tier_config.errors:
+        print(
+            f"refusing: model tier settings are invalid: {'; '.join(tier_config.errors)}",
+            file=sys.stderr,
+        )
+        return 1
+    fields = fill_missing_tier(fields, tier_config, planned_dir, source_path)
     fields = started_fields(fields, scope=args.scope, decision=args.decision)
 
     body = body_after_frontmatter(text)
@@ -375,6 +405,7 @@ def main() -> int:
         child_routed = routing.get(child_kind, "")
         if not child_venue and child_routed and child_routed != VENUE_SPLIT_TOKEN:
             child_fields["venue"] = child_routed
+        child_fields = fill_missing_tier(child_fields, tier_config, planned_dir, child_path)
         child_fields = started_fields(
             child_fields,
             scope=(

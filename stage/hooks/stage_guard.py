@@ -53,6 +53,7 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
     stage_relative_forms,
 )
 import stage_topology  # noqa: E402
+import stage_agent_tier  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     hierarchy_parent_record_path,
     work_record_scale,
@@ -519,6 +520,17 @@ def active_work_chains(stage_root: Path) -> tuple[tuple[WorkItem, ...], ...]:
             current = by_id.get(current.parent)
         chains.append(tuple(reversed(chain)))
     return tuple(chains)
+
+
+def current_leaves(stage_root: Path) -> list[WorkItem]:
+    """The leaf of every chain `active_work_chains` selects; [] when unreadable."""
+
+    if not stage_root.is_dir():
+        return []
+    try:
+        return [chain[-1] for chain in active_work_chains(stage_root) if chain]
+    except Exception:  # noqa: BLE001 - the model-tier hook must never break a call
+        return []
 
 
 def work_scale_label(stage_root: Path, item: WorkItem) -> str:
@@ -1255,9 +1267,21 @@ def handle_event(event: str, payload: dict[str, Any]) -> dict[str, Any]:
         return handle_session_start(payload)
     if normalized in {"pre-tool-use", "pretooluse"}:
         workspace_root = resolve_workspace_root(payload)
-        return append_purpose_context(validate_pre_tool(payload), workspace_root, payload)
+        result = append_purpose_context(validate_pre_tool(payload), workspace_root, payload)
+        if not result and tool_name(payload) == stage_agent_tier.AGENT_TOOL:
+            return stage_agent_tier.review_agent_call(
+                payload, workspace_root / ".stage", current_leaves(workspace_root / ".stage")
+            )
+        return result
     if normalized in {"post-tool-use", "posttooluse"}:
+        if tool_name(payload) == stage_agent_tier.AGENT_TOOL:
+            stage_root = resolve_workspace_root(payload) / ".stage"
+            stage_agent_tier.record_agent_request(payload, stage_root, current_leaves(stage_root))
         return handle_post_tool(payload)
+    if normalized in {"subagent-stop", "subagentstop"}:
+        stage_root = resolve_workspace_root(payload) / ".stage"
+        stage_agent_tier.record_agent_finish(payload, stage_root, current_leaves(stage_root))
+        return continue_output()
     if normalized == "stop":
         return handle_stop(payload)
     return continue_output()

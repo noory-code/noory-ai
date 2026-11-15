@@ -293,12 +293,16 @@ the current process environment and sets:
 - `STAGE_WORK_ITEM_ANCESTOR_PATHS`: a JSON array of absolute ancestor card paths in root-first
   order; both executor venue prompts must require reading these paths with the selected card;
 - `STAGE_PROJECT_ROOT`: the absolute path to the project root;
-- `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists.
+- `GIT_INDEX_FILE`: an executor-only disposable index copied from the real Git index when it exists;
+- `STAGE_MODEL` and `STAGE_EFFORT`: the card tier's values for the executor venue, each only when
+  the tier declares it (`docs/SCHEMA_V5.md` → `Model and effort tiers`). The driver never passes
+  an inherited value through.
 
 This complete injection applies only to executor commands. Stored acceptance verification commands
 receive none of the driver-added variables. The supervised independent reviewer receives
 `STAGE_WORK_ITEM_PATH`, `STAGE_WORK_LOG_PATH`, `STAGE_CHANGED_PATHS_FILE`, and
-`STAGE_REVIEW_VERDICT_FILE`. `STAGE_REVIEW_MODE` is `full` or `narrow`; the latter accompanies the
+`STAGE_REVIEW_VERDICT_FILE`, plus `STAGE_MODEL` and `STAGE_EFFORT` for the same tier in the
+reviewer's venue; `close_work.py` gives its close review the same pair. `STAGE_REVIEW_MODE` is `full` or `narrow`; the latter accompanies the
 two prior-review inputs described below. The reviewer does not receive `STAGE_WORK_ITEM`,
 `STAGE_PROJECT_ROOT`, or the executor's disposable `GIT_INDEX_FILE`.
 

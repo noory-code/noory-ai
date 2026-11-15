@@ -25,6 +25,7 @@ if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
 import stage_guard  # noqa: E402
+import audit_model_tier  # noqa: E402
 import guidance_docs  # noqa: E402
 import refresh_decision_index  # noqa: E402
 import stage_roadmap  # noqa: E402
@@ -296,6 +297,7 @@ class Audit:
         self.audit_catalog_sync()
         self.audit_operations_ownership()
         self.audit_venue_routing(items)
+        self.audit_model_tiers(items)
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -1683,6 +1685,22 @@ class Audit:
                     "override; add it to settings.json operations_overrides or remove it.",
                     path,
                 )
+
+    def audit_model_tiers(self, items: list[AuditedItem]) -> None:
+        """Tier settings, card tiers, and recorded runs (`audit_model_tier`)."""
+
+        audit_model_tier.audit_model_tiers(
+            self.stage_root,
+            self.load_settings(),
+            self.settings_path,
+            [
+                (audited.item.item_id, audited.item.tier, audited.item.path)
+                for audited in items
+                if audited.location == "present"
+            ],
+            self.error,
+            self.warning,
+        )
 
     def audit_venue_routing(self, items: list[AuditedItem]) -> None:
         """The declared `kind -> venue` role policy (DE-00000004). No policy →
