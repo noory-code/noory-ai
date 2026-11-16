@@ -62,6 +62,7 @@ from stage_roadmap_gate import (  # noqa: E402
     reattribution_blocker,
 )
 from stage_shell import (  # noqa: E402  (after sys.path bootstrap)
+    LEADING_SHELL_VARIABLE_RE,
     _command_groups,
     _restore_sentinels,
     command_deletes_stage,
@@ -595,7 +596,6 @@ def purpose_context_targets(
 WINDOWS_ANCHORED_DEVICE_RE = re.compile(
     r"^[A-Za-z]:/dev/(?:null|zero|full|random|urandom|tty|stdin|stdout|stderr|fd/\d+)$"
 )
-LEADING_SHELL_VARIABLE_RE = re.compile(r"^\$(?:\{(?P<braced>\w+)\}|(?P<bare>\w+))(?P<rest>.*)$")
 SHELL_ASSIGNMENT_RE = re.compile(r"^(?P<name>[A-Za-z_]\w*)=(?P<value>.*)$", re.DOTALL)
 # Words that keep the next word in command position: `export NAME=value`.
 ASSIGNMENT_PREFIX_WORDS = {"export", "declare", "readonly", "local", "typeset"}
@@ -1109,10 +1109,11 @@ def mutation_targets(
     shell_write_targets: list[str] = []
     if command:
         start = shell_start_folder(payload, workspace_root)
-        shell_write_targets = shell_write_paths(command, start)
+        assignments = same_command_assignments(command)
+        shell_write_targets = shell_write_paths(command, start, assignments, True)
         shell_write_targets.extend(
             path
-            for path in shell_delete_paths(command, start)
+            for path in shell_delete_paths(command, start, assignments, True)
             if path not in shell_write_targets
         )
         for path in shell_write_targets:

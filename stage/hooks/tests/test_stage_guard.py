@@ -1154,6 +1154,53 @@ class StageGuardTest(unittest.TestCase):
             result = run("echo x > app.py", str(root / "src"))
             self.assertIn(str(Path("src") / "app.py"), reason(result))
 
+    def test_registration_gate_follows_cd_through_variables_and_and_chains(self):
+        # `S=<scratch> && mkdir -p $S/sub && cd $S/sub && sed -i … f.md` was refused as a write to
+        # `<project>/f.md`: the cd operand `$S/sub` was not expanded, and a cd after `&&` was
+        # treated as possibly skipped, though the command after the next `&&` runs only if it ran.
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            (root / "src").mkdir()
+
+            def run(command: str) -> dict:
+                payload = {
+                    "tool_name": "Bash", "cwd": str(root), "tool_input": {"command": command}
+                }
+                with patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(root)}):
+                    return stage_guard.handle_event("pre-tool-use", payload)
+
+            allowed = {
+                "variable cd in an && chain": (
+                    f"S={scratch} && mkdir -p $S/sub && cd $S/sub && sed -i '' 's/a/b/' f.md"
+                ),
+                "quoted variable after ;": f'S={scratch}; cd "$S" && echo x > f.md',
+                "braced variable, delete": f"S={scratch}; cd ${{S}} && rm f.md",
+                "literal cd in an && chain": f"true && cd {scratch} && echo x > f.md",
+            }
+            for label, command in allowed.items():
+                with self.subTest(case=label):
+                    result = run(command)
+                    self.assertEqual(decision(result), "allow", reason(result))
+
+            os.environ.pop("STAGE_TEST_UNSET_CD", None)
+            refused = {
+                "chain ends at ;": f"false && cd {scratch} ; echo x > f.md",
+                "cd after ||": f"true || cd {scratch} && echo x > f.md",
+                "cd fed by a pipe": f"S={scratch} && true | cd $S && echo x > f.md",
+                "variable the hook cannot expand": 'cd "$STAGE_TEST_UNSET_CD" && echo x > f.md',
+            }
+            for label, command in refused.items():
+                with self.subTest(case=label):
+                    result = run(command)
+                    self.assertEqual(decision(result), "deny")
+                    self.assertIn("registration gate", reason(result))
+
+            # The `.stage` delete gate keeps both folders after a cd in an && chain.
+            result = run("true && cd src && rm -rf .stage")
+            self.assertEqual(decision(result), "deny")
+            self.assertIn("deleting `.stage` entirely is blocked", reason(result))
+
     def test_blocks_shell_append_redirect_source_write_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

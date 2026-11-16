@@ -560,8 +560,32 @@ def _targets_stage_root(
     return normalized == ".stage" or normalized.endswith("/.stage")
 
 
+LEADING_SHELL_VARIABLE_RE = re.compile(r"^\$(?:\{(?P<braced>\w+)\}|(?P<bare>\w+))(?P<rest>.*)$")
+
+
+def expand_leading_variable(operand: str, assignments: dict[str, str]) -> str:
+    """A cd, pushd, or mkdir operand `$NAME/rest` or `${NAME}/rest`, NAME from `assignments` or env.
+
+    A cd operand the hook cannot expand stays as written, so the cd reads as failed and the
+    shell is kept where it was — the fail-closed reading the tracker already applies.
+    """
+
+    text = operand
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "'\"":
+        text = text[1:-1]  # non-POSIX shlex keeps the quotes
+    match = LEADING_SHELL_VARIABLE_RE.match(text)
+    if not match:
+        return operand
+    name = match.group("braced") or match.group("bare") or ""
+    value = assignments.get(name) or os.environ.get(name, "")
+    return value + match.group("rest") if value else operand
+
+
 def _command_groups(
-    command: str, workspace_root: Path | None = None
+    command: str,
+    workspace_root: Path | None = None,
+    assignments: dict[str, str] | None = None,
+    follow_and_chains: bool = False,
 ) -> list[tuple[list[Path], str, list[str]]]:
     """(possible-cwd anchors, command name, restored tokens) per simple
     command, with cd/pushd/popd groups consumed into the anchor tracking.
@@ -573,7 +597,15 @@ def _command_groups(
     `&&`/`||`/`|`, e.g. `false && cd build ; rm -rf .stage`) ADDS the rebased
     state alongside the previous ones; a definite cd (first group or after
     `;`/newline) replaces them. Consumers must treat a hit from ANY possible
-    anchor as a hit — fail closed."""
+    anchor as a hit — fail closed.
+
+    Two opt-ins serve the write and delete target lists. `assignments` expands a
+    leading variable in a cd/pushd operand (`S=/x && cd $S`). `follow_and_chains`
+    reads a cd joined only by `&&` as taken for the rest of that chain: in
+    `a && cd d && b`, `b` runs only if the cd ran. The anchors from before the
+    cd come back when the chain ends at `;`/newline or meets `||`/`|`/`&`,
+    because the chain may have stopped before the cd. The `.stage` delete check
+    passes neither, so it keeps every possible cwd."""
     anchors: list[Path] = []
     if workspace_root is not None:
         try:
@@ -599,9 +631,14 @@ def _command_groups(
             simple.append(token)
 
     groups: list[tuple[list[Path], str, list[str]]] = []
+    held: list[Path] = []  # anchors from before a cd taken inside the current && chain
     for index, (separator, raw_group) in enumerate(entries):
         if not raw_group:
             continue
+        if held and separator != "&&":
+            # The chain ended or branched, and it may have stopped before the cd.
+            tracker.anchors = _dedup_dirs(held + tracker.anchors)
+            held = []
         # Groups carry their SENTINELS: a quoted/escaped operator must stay
         # distinguishable from a real one until each consumer has classified
         # redirects; consumers restore per token. Names classify on a
@@ -626,6 +663,8 @@ def _command_groups(
             for token in [_restore_sentinels(t) for t in _strip_redirections(list(group[1:]))]:
                 if token == "--" or token.startswith("-"):
                     continue
+                if assignments is not None:
+                    token = expand_leading_variable(token, assignments)
                 text = clean_path_text(token)
                 if not text:
                     continue
@@ -652,6 +691,8 @@ def _command_groups(
             pushd_no_cd = name == "pushd" and "-n" in positional
             operands = _cd_operands(positional)
             has_dash = "-" in positional and not operands
+            if assignments is not None:
+                operands = [expand_leading_variable(operand, assignments) for operand in operands]
             if pushd_no_cd:  # `pushd -n DIR` edits the stack only — cwd unchanged
                 continue
             # A cd whose own execution is conditional (after `&&`/`||`/`|`) may
@@ -660,6 +701,11 @@ def _command_groups(
             # cwd. Keep both states in those cases.
             next_separator = entries[index + 1][0] if index + 1 < len(entries) else "\n"
             conditional = separator in {"&&", "||", "|"} or next_separator in {"|", "&"}
+            if follow_and_chains and separator == "&&" and next_separator not in {"|", "&"}:
+                # The rest of this && chain runs only if the cd ran; hold the earlier
+                # anchors until the chain ends.
+                held = _dedup_dirs(held + tracker.anchors)
+                conditional = False
             tracker.apply(name, operands, has_dash, conditional)
             continue
         groups.append((list(tracker.anchors), name, group))
@@ -943,7 +989,12 @@ def _positional_operands(tokens: list[str]) -> list[str]:
     return operands
 
 
-def shell_write_paths(command: str, workspace_root: Path | None = None) -> list[str]:
+def shell_write_paths(
+    command: str,
+    workspace_root: Path | None = None,
+    assignments: dict[str, str] | None = None,
+    follow_and_chains: bool = False,
+) -> list[str]:
     """Write targets of a shell command — output-redirect targets plus cp/mv
     destinations, tee targets, and sed -i files — rebased at every possible
     effective cwd (fail closed; see _command_groups). Unexpanded globs and
@@ -966,7 +1017,9 @@ def shell_write_paths(command: str, workspace_root: Path | None = None) -> list[
             if candidate not in paths:
                 paths.append(candidate)
 
-    for anchors, name, raw_group in _command_groups(command, workspace_root):
+    for anchors, name, raw_group in _command_groups(
+        command, workspace_root, assignments, follow_and_chains
+    ):
         for target in _output_redirect_targets(raw_group):
             add(target, anchors)
         positional = [_restore_sentinels(t) for t in _strip_redirections(list(raw_group[1:]))]
@@ -991,7 +1044,12 @@ def shell_write_paths(command: str, workspace_root: Path | None = None) -> list[
 DELETE_COMMANDS = {"rm", "del", "erase", "remove-item", "ri"}
 
 
-def shell_delete_paths(command: str, workspace_root: Path) -> list[str]:
+def shell_delete_paths(
+    command: str,
+    workspace_root: Path,
+    assignments: dict[str, str] | None = None,
+    follow_and_chains: bool = False,
+) -> list[str]:
     """Path operands of file-delete commands, rebased at every possible
     effective cwd (fail closed — any anchor's classification may deny).
 
@@ -1001,7 +1059,9 @@ def shell_delete_paths(command: str, workspace_root: Path) -> list[str]:
     unexpanded globs/variables pass through as literals (best-effort, see
     hooks/README.md §Limits)."""
     paths: list[str] = []
-    for anchors, name, raw_group in _command_groups(command, workspace_root):
+    for anchors, name, raw_group in _command_groups(
+        command, workspace_root, assignments, follow_and_chains
+    ):
         if name not in DELETE_COMMANDS:
             continue
         operands: list[str] = []
