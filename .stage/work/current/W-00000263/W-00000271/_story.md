@@ -7,12 +7,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000271
 promotion: not_applicable
-review: pending
+review: passed
 scope: plainly/output-styles/plainly.md, plainly/tests/test_contract.py, plainly/README.md, plainly/CHANGELOG.md, plainly/.claude-plugin/plugin.json
 promotes:
 decision_refs:
@@ -171,6 +171,42 @@ decision_refs:
 - 릴리스 후 14개 검사와 diff 검사가 통과했다. `git ls-remote`로 원격 main의 `d7b6de23441a19b0854dd25d6900743dc9620780`을 확인했다.
 - 설치본이 0.7.1로 갱신됐다. 새 Claude 초기 기록과 디버그 로그에서 0.7.1 및 `plainly:Plainly` 로드를 확인했다. 응답 생성은 OAuth 만료로 실패했다. 릴리스 후 실제 답변 검증과 로드 검증을 구분한다. 증거는 `.stage/.runtime/plainly-opus-lab/2026-10-04-release-071/`에 보존했다.
 - 사용자가 재로그인한 뒤 새 세션을 다시 실행했다. 0.7.1과 `plainly:Plainly`, 설치본과 본문의 해시 일치, 성공 응답을 확인했다. 재사용과 미측정 효과를 담은 한국어 답변을 받았다. 증거는 `.stage/.runtime/plainly-opus-lab/2026-10-04-release-071-retry/`에 보존했다. 한 응답으로 전체 한국어 품질을 판정하지 않는다.
+- 2026-11-16 사람의 판정: 0.7.2 와 0.7.3 을 낸 뒤 사용자가 "ㅇㅋ 1 은 충분한듯"이라고 답했다.
+  한국어가 자연스러운지는 사람이 판정한다는 이 카드의 위험 항목에 따라, 이 답을 셋째 완료 기준의
+  판정으로 받는다. 0.7.3 을 켠 새 작업 세션에서 다시 읽어 본 것은 아니다.
+- 닫기 리뷰는 codex 가 없어 Claude 대역(`stage/scripts/claude_review_companion.py`)으로 돌린 같은
+  모델의 리뷰이며, 교차 venue 리뷰가 아니다(DE-00000086).
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 19 tests in 0.002s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 19 tests in 0.002s
+
+OK
+```
+
+### Review at close — 2026-11-16
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000271.md
+Criteria:
+- PASS: 1차 비교에서 검증한 두 번째 수정안이 실제 스타일 파일에 적용되고 기존 플러그인 검사가 통과한다
+  Reason: 2026-10-04/variants/candidate2 의 고유 문장(Meaning rule, hypotheses 문장, rewrite 문장)이 plainly/output-styles/plainly.md 에 그대로 있고, 직접 실행한 python3 -m unittest discover -s plainly/tests -q 가 19개 테스트 OK 를 보였다.
+- PASS: 새 한국어 질문으로 기존 지침과 적용한 지침의 답변을 비교하고 어순 표현 의미 보존에 대한 근거와 한계를 보고한다
+  Reason: 2026-10-04-phase2/ANALYSIS.md 가 새 질문 12개로 응답 45개를 비교해 어순과 서술어, 어휘 결합, 원문에 없는 약속 같은 의미 보존 문제를 실제 인용과 함께 판정하고 검증하지 않은 가설과 일반화의 한계를 따로 적었다.
+- PASS: 후속 한국어 지침을 본체에 반영하고 처음 보는 질문의 문장 길이와 의미 보존 결과를 함께 보고한다
+  Reason: 2026-10-04-applied-korean/REPORT.md 가 최종 수정 뒤 처음 쓴 질문 세 개를 포함한 응답 24개로 최장 문장 길이(64자→36자, 53자→57자)와 수량·재사용·주체 보존 결과를 함께 보고하고 주체가 모호한 문장을 한계로 남겼으며, 그 지침이 본체 plainly.md 에 들어 있다.
+```
 
 ## Retrospective
 

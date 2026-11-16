@@ -7,4 +7,3 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000263 | planning | claude | 플레인리의 지침이 클로드의 문장에 실제로 걸리게 하고 한국어 답에서 영어 직역 문장을 없앤다. | active | Claude | [current/W-00000263/_epic.md](current/W-00000263/_epic.md) |
-| W-00000271 | fix | codex | 뜻을 바꾸거나 불필요한 설명을 붙이는 지침을 고치고 새로운 답변에서 한국어가 자연스러운지 확인한다 | active | Codex | [current/W-00000263/W-00000271/_story.md](current/W-00000263/W-00000271/_story.md) |
