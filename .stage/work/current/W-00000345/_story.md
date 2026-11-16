@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000345
+promotion: not_applicable
 review: not_required
 scope: plainly/CHANGELOG.md, plainly/.claude-plugin/plugin.json
 promotes:
@@ -73,12 +73,62 @@ decision_refs:
 
 ## Progress
 
+0.7.3 → 0.8.0. 쌓여 있던 한 묶음에 그 버전 제목이 붙었고 매니페스트가 같은 값을 말한다. 릴리스
+커밋 `2489585d` 를 PR #51 로 main 에 합쳤다(`bf84812b`). macOS 3.9 작업 하나가 러너를 받지 못해
+취소됐고, 다시 돌려 통과한 뒤 합쳤다.
 
 ## Verification
 
+- 매니페스트와 변경 기록이 0.8.0 하나를 말한다 — 통과. `plainly/.claude-plugin/plugin.json` 이
+  `0.8.0` 이고 변경 기록에 `## 0.8.0 — 2026-11-16` 이 있다.
+- 릴리스 커밋이 원격 main 에 올라갔다 — 통과. PR #51 이 CI 검사 24개 통과 뒤 합쳐졌다.
+- `claude plugin list` 가 plainly 를 0.8.0 으로 읽는다 — 통과. `Version: 0.8.0`, `Read from:` 이
+  저장소의 `plainly` 폴더다.
+- 새 세션이 `outputStyle` 설정 없이 플레인리를 강제 적용한다 — 통과. 사용자 설정을 읽지 않고
+  (`--setting-sources ""`) 플러그인만 켠 `claude -p` 세션의 디버그 로그에 `Using forced plugin
+  output style: plainly:Plainly` 가 남았고, 적용된 스타일을 물으니 `plainly:Plainly` 라고 답했다.
+- 확인하지 않은 것: 이 저장소 폴더가 아닌 곳에서 받아 설치하는 경우.
+
+### Executed at close — 2026-11-17
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 22 tests in 0.002s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
 
 ## Retrospective
 
+[R-00000345](../../retrospectives/R-00000345.md)
 
 ## Promotion decision
+
+`not_applicable` — 공식 문서로 올릴 산출물이 없다.
 
