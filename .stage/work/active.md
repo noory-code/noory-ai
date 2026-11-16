@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000350 | release | claude | --scope 를 여러 번 넘겨도 모든 경로를 카드에 담는 고침이 아직 이 저장소 안에만 있으므로, 플러그인 | active | Claude | [current/W-00000350/_story.md](current/W-00000350/_story.md) |
