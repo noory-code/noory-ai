@@ -962,6 +962,40 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertLess(existing_row, new_row)
         self.assertLess(new_row, trailing_section)
 
+    def test_repeated_scope_keeps_every_path(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(
+                root,
+                "--title", "T", "--kind", "fix",
+                "--scope", "src/a.py",
+                "--scope", "src/b.py, docs/c.md",
+            )
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
+
+        self.assertIn("\nscope: src/a.py, src/b.py, docs/c.md\n", item)
+
+    def test_single_comma_separated_scope_is_unchanged(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(root, "--title", "T", "--kind", "fix", "--scope", "src/a.py, src/b.py")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
+
+        self.assertIn("\nscope: src/a.py, src/b.py\n", item)
+
+    def test_start_with_repeated_scope_keeps_every_path(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(root, "--backlog", "--title", "T", "--kind", "fix", "--scope", "")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            proc = run_start(root, "W-00000001", "--scope", "src/a.py", "--scope", "src/b.py")
+            self.assertEqual(0, proc.returncode, proc.stderr)
+            item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
+
+        self.assertIn("\nscope: src/a.py, src/b.py\n", item)
+
     def test_starting_legacy_planned_card_adds_review_field(self):
         tmp, root = self.make()
         with tmp:

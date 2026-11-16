@@ -40,6 +40,7 @@ from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     WORK_PLANNED_STATUSES,
     format_yaml_string_list,
+    join_scope_args,
     parse_bool_field,
     parse_frontmatter,
     parse_string_list,
@@ -93,8 +94,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("item", help="Planned card id (W-*) in work/planned.")
     parser.add_argument(
         "--scope",
+        action="append",
         required=True,
-        help="Paths this work may modify; the registration gate matches writes against these.",
+        help=(
+            "Paths this work may modify; repeat it or separate paths with commas. "
+            "The registration gate matches writes against these."
+        ),
     )
     parser.add_argument("--venue", default="", help="Override the venue derived from venue_routing.")
     parser.add_argument(
@@ -125,7 +130,9 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="Stored verification command to add (repeatable).",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.scope = join_scope_args(args.scope)
+    return args
 
 
 def body_after_frontmatter(text: str) -> str:

@@ -47,6 +47,7 @@ from stage_paths import (  # noqa: E402
 from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     format_yaml_string_list,
+    join_scope_args,
     environment_venue_error,
     venue_exception_error,
 )
@@ -559,7 +560,12 @@ def main() -> int:
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--title", required=True)
     parser.add_argument("--kind", required=True)
-    parser.add_argument("--scope", required=True)
+    parser.add_argument(
+        "--scope",
+        action="append",
+        required=True,
+        help="Paths this work expects to modify; repeat it or separate paths with commas.",
+    )
     parser.add_argument(
         "--scale",
         choices=("epic", "story", "action"),
@@ -629,6 +635,7 @@ def main() -> int:
         help="Optional ordering hint for a planned card (shown in the backlog index).",
     )
     args = parser.parse_args()
+    args.scope = join_scope_args(args.scope)
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
     schema_blocker = schema_migration_banner(stage_root)
     if schema_blocker:
