@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.5 — 2026-11-17
+
 - `register_work.py` and `start_work.py` keep every `--scope` they receive. A repeated `--scope`
   used to replace the earlier ones without a warning, so a card registered with one path per flag
   recorded only the last path.
