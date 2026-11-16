@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000348 | documentation | claude | rag 플러그인을 보는 사람이 개발이 멈췄다는 것과 그 이유를 바로 알게 한다. | active | Claude | [current/W-00000348/_story.md](current/W-00000348/_story.md) |
