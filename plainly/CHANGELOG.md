@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Korean guidance: name the four noun-centered shapes that actually appear in work reports, with
+  an example each: a piece of work given a noun for a name, a noun followed directly by "뒤" or
+  "전", a sentence ended on a noun such as "필요" or "대기 중", and a word clipped with "미-" or
+  "재-". Ask the writer to reread a sentence after turning it into verbs, because pushing toward
+  verbs can leave an awkward word order.
+
 ## 0.7.2 — 2026-11-16
 
 - Korean guidance: say outright that Korean builds a sentence around its verb and English around
