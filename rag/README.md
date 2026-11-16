@@ -1,5 +1,9 @@
 # rag — Local GraphRAG plugin for Claude Code and Codex
 
+> **Development paused.** No new features or releases are planned. The plugin has no recorded
+> use, and the proposal that would have extended it was withdrawn. Existing installs keep
+> working, and the code stays in this repository.
+
 Per-project RAG. Runs **vector + graph (GraphRAG) hybrid** search locally with no external API key. First-class support on **both macOS · Windows**.
 
 ## One-line concept
