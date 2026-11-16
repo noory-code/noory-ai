@@ -10,8 +10,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000342
 promotion: pending
 review: pending
 scope: stage/hooks/stage_guard.py, stage/hooks/stage_shell.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/hooks/README.md, stage/CHANGELOG.md
@@ -80,11 +80,42 @@ decision_refs:
 
 ## Progress
 
+`stage_guard.py` 에 `shell_start_folder` 를 두었다. 훅에 오는 `cwd` 가 있는 폴더면 그 폴더를,
+아니면 저장소 폴더를 돌려준다. `mutation_targets` 가 쓰기 대상과 지우기 대상을 이 폴더에서 읽기
+시작한다. 등록 게이트와 범위 알림이 둘 다 이 계산을 쓴다. 문서 두 곳과 변경 기록에 적었다.
+커밋 `fc5ca35f`.
+
+원인을 찾을 때, 명령에 `cd /메모폴더 &&` 가 있으면 파서가 그 폴더를 따라가 통과한다는 것을
+확인했다. 셸이 이미 메모 폴더에 있고 명령에 `cd` 가 없을 때만 그때와 같은 거절이 나왔다. 그때
+명령에는 `cd` 가 있었으므로 훅이 받은 명령이 달랐을 수 있지만, 확인하지 못했다.
 
 ## Verification
+
+- 셸이 메모 폴더에 있을 때 `sed -i` 로 `MEMORY.md` 를 고치는 명령이 등록 게이트를 통과한다 —
+  통과. 새 테스트 `test_registration_gate_reads_shell_paths_from_the_shell_folder` 가 저장소 밖
+  폴더에서 `sed -i`, 리다이렉트, `rm` 세 가지를 허락하는지 본다.
+- 셸이 저장소 안에 있을 때 저장소 파일을 고치는 명령은 지금처럼 막힌다 — 통과. 같은 테스트가
+  저장소 폴더와 하위 폴더에서 거절되는지 보고, 하위 폴더에서는 거절 메시지가 `src/app.py` 를
+  가리키는지 본다.
+- `cwd` 가 없거나 존재하지 않는 폴더면 저장소 폴더에서 시작해 막힌다 — 통과. 같은 테스트의 두
+  경우.
+- 새 테스트가 고치기 전 코드에서 실패하고 고친 뒤 통과한다 — 통과. 고치기 전에는 허락해야 할 세
+  경우와 하위 폴더 경로 확인, 네 군데가 실패했다.
+- 전체 테스트: 훅 447개 통과, 스크립트 758개 통과(건너뜀 2개). 감사 오류 0개.
+- 확인하지 않은 것: 실제 Claude Code 세션에서 셸이 저장소 밖에 있을 때의 동작. 지금은 이 카드가
+  열려 있어서 등록 게이트가 걸리지 않는다.
+- 닫기 리뷰는 codex 가 없어 Claude 대역으로 돌린 같은 모델의 리뷰이며, 교차 venue 리뷰가 아니다
+  (DE-00000086).
+- 사용자 확인 — 2026-11-16: 게이트를 바꾼 카드라 닫기 전에 사용자에게 보였다(DE-00000087).
+  보인 것은 바뀐 파일과 요약, 새 테스트가 고치기 전에 네 군데 실패한 것, 전체 테스트와 감사
+  결과, 확인하지 못한 두 가지(그때 거절된 이유, 실제 세션 동작)다. 닫기 리뷰는 이 확인 뒤에
+  돌렸으므로 리뷰 판정은 사용자에게 보이기 전이다. 사용자가 "확인, 닫기"로 답했다.
 
 
 ## Retrospective
 
+[R-00000342](../../retrospectives/R-00000342.md)
 
 ## Promotion decision
+
+`not_applicable` — 공식 문서로 올릴 산출물이 없다.
