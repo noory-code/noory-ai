@@ -184,6 +184,8 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             question.write_text(
                 "---\nid: Q-0001\ntitle: Q\nwork_items: W-9999\n---\n# Q-0001\n", encoding="utf-8"
             )  # STATE001
+            with (root / ".stage" / "state" / "questions.md").open("a", encoding="utf-8") as index:
+                index.write("| Q-0001 | Q | x | open | W-9999 |\n")  # an open record keeps its line
 
             for item_id in [f"W-{index:04d}" for index in range(1, 10)] + ["W-0011", "W-0012", "W-0013"]:
                 self.append_index(root, "active.md", item_id)

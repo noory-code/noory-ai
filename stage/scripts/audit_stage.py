@@ -288,7 +288,7 @@ class Audit:
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_record_archive_indexes(graph)
-        self.audit_live_state_indexes()
+        self.audit_live_state_indexes(graph)
         self.audit_future_indexes(graph)
         if self.topology == ACTIVE_TOPOLOGY_V4:
             self.audit_roadmap(graph)
@@ -1111,7 +1111,7 @@ class Audit:
                         index_path,
                     )
 
-    def audit_live_state_indexes(self) -> None:
+    def audit_live_state_indexes(self, graph: RecordGraph) -> None:
         """Open observations and questions each have one line in their live index.
 
         `close_record.py` closes a record by moving its live-index line, so a record whose
@@ -1128,10 +1128,11 @@ class Audit:
             index_path = self.stage_root / family.live_index
             id_re = re.compile(rf"\[({prefix}-\d{{3,}})\]")
             records = {
-                path.stem: path
-                for path in sorted(live_root.glob(f"{prefix}-*.md"))
-                if RECORD_ID_RE.match(path.stem)
-            } if live_root.is_dir() else {}
+                node.record_id: node.path
+                for node in graph.state
+                if node.record_id.startswith(f"{prefix}-")
+                and node.path.is_relative_to(live_root)
+            }
             try:
                 index_text = index_path.read_text(encoding="utf-8")
             except OSError:
