@@ -2618,6 +2618,52 @@ class StageGuardTest(unittest.TestCase):
             )
             self.assertEqual("Scope boundary crossed: $X/out.txt.", message)
 
+    def test_scope_report_expands_a_same_command_variable_after_cd_into_a_folder(self):
+        # The shell parser anchors `"$S/a.md"` at the folder a `cd` entered, so the target
+        # reaches the report as `src/$S/a.md` and the variable no longer leads it (O-00000057).
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
+            root = Path(tmp)
+            self.write_purpose_reminder_fixture(root)
+            (root / "src").mkdir(exist_ok=True)
+            left_out = {
+                "heredoc into a variable after cd": (
+                    f"cd src && S={scratch} && cat > \"$S/a.md\" <<'EOF'\nerrors=0\nEOF"
+                ),
+                "redirect into a braced variable after cd": (
+                    f'cd src; S={scratch}; echo x > "${{S}}/a.md"'
+                ),
+            }
+            for label, command in left_out.items():
+                with self.subTest(case=label):
+                    self.assertEqual(
+                        "",
+                        self.scope_message(
+                            root, {"tool_name": "Bash", "tool_input": {"command": command}}
+                        ),
+                    )
+            still_named = {
+                "relative value stays under the cd folder": (
+                    'cd src && S=notes && echo x > "$S/a.md"',
+                    "Scope boundary crossed: src/notes/a.md.",
+                ),
+                "absolute value that points into the project": (
+                    f'cd src && S={root}/lib && echo x > "$S/a.md"',
+                    "Scope boundary crossed: lib/a.md.",
+                ),
+                "variable in the middle of an operand is left as written": (
+                    f'cd src && S={scratch} && echo x > "out/$S/a.md"',
+                    "Scope boundary crossed: src/out/$S/a.md.",
+                ),
+            }
+            for label, (command, expected) in still_named.items():
+                with self.subTest(case=label):
+                    self.assertEqual(
+                        expected,
+                        self.scope_message(
+                            root, {"tool_name": "Bash", "tool_input": {"command": command}}
+                        ),
+                    )
+
     def test_posix_device_paths_are_outside_the_report_even_without_a_drive(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

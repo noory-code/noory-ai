@@ -636,23 +636,67 @@ def same_command_assignments(command: str) -> dict[str, str]:
     return values
 
 
+def _anchored_variable_operand(
+    target: str, command: str | None
+) -> tuple[str, re.Match[str]] | None:
+    """Split `<folder>/$NAME/rest` when the command wrote that operand as `$NAME/rest`.
+
+    After `cd src`, the shell parser anchors `"$S/a.md"` at the folder it entered, so the
+    target reads `<workspace>/src/$S/a.md`. The split is taken only when the command holds
+    the operand as written from the variable on; `out/$S/a.md` stays as it is.
+    """
+
+    if not command:
+        return None
+    text = str(target).replace("\\", "/")
+    index = text.find("/$")
+    if index < 0:
+        return None
+    operand = text[index + 1 :]
+    match = LEADING_SHELL_VARIABLE_RE.match(operand)
+    if not match:
+        return None
+    for token in shell_tokens(command):
+        word = _restore_sentinels(token)
+        if len(word) >= 2 and word[0] == word[-1] and word[0] in "'\"":
+            word = word[1:-1]  # non-POSIX shlex keeps the quotes
+        if word.replace("\\", "/") == operand:
+            return text[:index], match
+    return None
+
+
 def expand_leading_shell_variable(
-    target: str, workspace_root: Path, assignments: dict[str, str] | None = None
+    target: str,
+    workspace_root: Path,
+    assignments: dict[str, str] | None = None,
+    command: str | None = None,
 ) -> str:
     """Expand a shell variable the parser left at the start of a write target.
 
     `cp a "$TMPDIR/x"` reaches the hook as `<workspace>/$TMPDIR/x`. An assignment
     earlier in the same command wins; otherwise the hook's environment supplies the
     value. A variable neither knows keeps the target so the report still names it.
+
+    Given the command, an operand that starts with the variable is expanded even after
+    the parser anchored it at a `cd` folder: an absolute value replaces that folder, a
+    relative one stays under it.
     """
 
     relative = entry_relative_to_workspace(target, workspace_root)
+    anchor: str | None = None
     match = LEADING_SHELL_VARIABLE_RE.match(relative)
     if not match:
-        return target
+        anchored = _anchored_variable_operand(target, command)
+        if anchored is None:
+            return target
+        anchor, match = anchored
     name = match.group("braced") or match.group("bare") or ""
     value = (assignments or {}).get(name) or os.environ.get(name, "")
-    return value + match.group("rest") if value else target
+    if not value:
+        return target
+    if anchor is None or Path(value).is_absolute():
+        return value + match.group("rest")
+    return f"{anchor}/{value}{match.group('rest')}"
 
 
 def git_runs_outside_workspace(command: str, workspace_root: Path) -> bool:
@@ -763,15 +807,14 @@ def purpose_tool_context(
         return "", ""
 
     targets, follows_symlinks = purpose_context_targets(workspace_root, payload)
-    assignments = (
-        same_command_assignments(command_text(payload))
-        if tool_name(payload) in SHELL_TOOLS
-        else {}
-    )
+    command = command_text(payload) if tool_name(payload) in SHELL_TOOLS else None
+    assignments = same_command_assignments(command) if command else {}
     leaves = tuple(chain[-1] for chain in chains)
     crossed: list[str] = []
     for raw_target in targets:
-        target = expand_leading_shell_variable(raw_target, workspace_root, assignments)
+        target = expand_leading_shell_variable(
+            raw_target, workspace_root, assignments, command
+        )
         if outside_report_target(target, workspace_root):
             continue
         if any(
