@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000342
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/hooks/stage_guard.py, stage/hooks/stage_shell.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/hooks/README.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -111,6 +111,63 @@ decision_refs:
   결과, 확인하지 못한 두 가지(그때 거절된 이유, 실제 세션 동작)다. 닫기 리뷰는 이 확인 뒤에
   돌렸으므로 리뷰 판정은 사용자에게 보이기 전이다. 사용자가 "확인, 닫기"로 답했다.
 
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 267 tests in 1.216s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 447 tests in 6.855s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-16
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000342.md
+Criteria:
+- PASS: 셸이 메모 폴더에 있을 때 sed -i 로 MEMORY.md 를 고치는 명령이 등록 게이트를 통과한다
+  Reason: Ran `python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q`: 267 tests OK; test_registration_gate_reads_shell_paths_from_the_shell_folder asserts allow for sed -i, redirect, and rm with cwd set to an existing folder outside the project and no open card, and shell_start_folder in stage_guard.py feeds that cwd to shell_write_paths and shell_delete_paths.
+- PASS: 셸이 저장소 안에 있을 때 저장소 파일을 고치는 명령은 열린 카드가 없으면 지금처럼 막힌다
+  Reason: Same command run: the test's refused subtests with cwd at the project root and at the src subfolder both deny with 'registration gate', and the subfolder redirect reason names src/app.py; all passed.
+- PASS: 훅에 오는 cwd 가 없거나 존재하지 않는 폴더면 저장소 폴더에서 읽기 시작해 지금처럼 막힌다
+  Reason: Same command run: subtests with no cwd key and with a nonexistent folder deny with 'registration gate'; shell_start_folder returns workspace_root unless cwd is a non-empty string that resolves to an existing directory.
+- PASS: 새 테스트가 고치기 전 코드에서 실패하고 고친 뒤 통과한다
+  Reason: Copied stage/hooks to a scratch folder, replaced stage_guard.py with its 953657f4 (pre-fix) version, and ran the new test with -k: 4 failures (outside-folder sed -i, redirect, delete, and the src/app.py reason check); with the current code the full test_stage_guard.py run passed 267 tests.
+```
 
 ## Retrospective
 
