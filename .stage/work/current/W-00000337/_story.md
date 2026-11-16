@@ -7,11 +7,11 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 stage/scripts/audit_stage.py --project-root ."
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000337
+promotion: promoted
 review: not_required
 scope: .stage/decisions/, .stage/official/decisions/
 promotes: .stage/official/decisions/records/DE-00000082.md, .stage/official/decisions/index.md
@@ -71,11 +71,55 @@ decision_refs:
 
 ## Progress
 
+- 2026-11-16: 사용자가 결정 승격 안건에서 "82 지금, 73은 나중에"를 골랐다.
+- 회고를 쓰고 `promotion: deferred` 로 닫았다. 승격 게이트는 연결된 카드의 승격이 `approved` 또는
+  `promoted` 여야 통과하므로 `approved` 로 바꾼 뒤 intent 두 개를 만들었다. 닫기 도구는 승격이
+  아직 안 쓰였으면 `deferred` 로 닫으라고 안내하는데, 게이트는 그 값을 받지 않는다. 두 안내가
+  어긋난다.
+- DE-00000082 를 `official/decisions/records/` 에 `status: promoted` 로 쓰고 공식 결정 인덱스에
+  한 줄을 더했다. 대기 폴더의 원본과 대기 결정 인덱스의 줄을 지웠다. 그 뒤 `promotion: promoted`
+  로 바꿨다.
 
 ## Verification
 
+- DE-00000082 가 `official/decisions/records/DE-00000082.md` 에 `status: promoted` 로 있고
+  `decisions/pending/` 에는 없다.
+- 공식 결정 인덱스에 `| DE-00000082 | promoted | W-00000292 | …` 줄이 있고, 대기 결정 인덱스에는
+  DE-00000082 줄이 없다.
+- intent 두 개는 쓰기가 끝난 뒤 모두 사라졌다.
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
 
 ## Retrospective
 
+[R-00000337](../../retrospectives/R-00000337.md)
 
 ## Promotion decision
+
+`promoted` — DE-00000082 를 공식 결정 기록으로 올렸다.
