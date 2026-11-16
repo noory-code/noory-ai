@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000347 | release | claude | 게이트가 변수로 쓴 cd 와 && 로 이어진 cd 를 따라가게 한 고침이 아직 이 저장소 안에만 있으므로,  | active | Claude | [current/W-00000347/_story.md](current/W-00000347/_story.md) |
