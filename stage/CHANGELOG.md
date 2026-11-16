@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.4 — 2026-11-17
+
 - Follow a `cd` through a same-command variable and along an `&&` chain when reading write and
   delete targets: with no open card, `S=/tmp/x && mkdir -p $S/sub && cd $S/sub && sed -i … f.md`
   was refused as a write to `<project>/f.md`. A leading variable in a `cd`, `pushd`, or `mkdir`
