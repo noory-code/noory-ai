@@ -37,3 +37,15 @@
 | O-00000034 | observation | 방아쇠 둘이 다 풀렸다 — 카드만 바뀐 경우는 W-00000236, 없는 경로는 DE-00000068 과 W-00000253 | [O-00000034](O-00000034.md) |
 | O-00000046 | observation | W-00000259 removed the counting, so retrospective numbering no longer depends on what a single copy can see | [O-00000046](O-00000046.md) |
 | O-00000057 | observation | W-00000335 expands a same-command variable after cd, which was the cause. | [O-00000057](O-00000057.md) |
+| O-00000020 | observation | The record already said W-00000251 fixed it, and W-00000251 is archived. | [O-00000020](O-00000020.md) |
+| O-00000036 | observation | The record already said W-00000249 fixed it, and W-00000249 is archived. | [O-00000036](O-00000036.md) |
+| O-00000042 | observation | The record already said W-00000246 fixed it, and W-00000246 is archived. | [O-00000042](O-00000042.md) |
+| O-00000045 | observation | The record already said W-00000316 fixed it, and W-00000316 is archived. | [O-00000045](O-00000045.md) |
+| O-00000047 | observation | The record already said W-00000307 fixed it, and W-00000307 is archived. | [O-00000047](O-00000047.md) |
+| O-00000050 | observation | The record already said W-00000311 fixed it, and W-00000311 is archived. | [O-00000050](O-00000050.md) |
+| O-00000051 | observation | The record already said W-00000315 fixed it, and W-00000315 is archived. | [O-00000051](O-00000051.md) |
+| O-00000052 | observation | The record already said W-00000305 fixed it, and W-00000305 is archived. | [O-00000052](O-00000052.md) |
+| O-00000053 | observation | The record already said W-00000306 fixed it, and W-00000306 is archived. | [O-00000053](O-00000053.md) |
+| O-00000054 | observation | The record already said W-00000300 fixed it, and W-00000300 is archived. | [O-00000054](O-00000054.md) |
+| O-00000055 | observation | The record already said W-00000318 fixed it, and W-00000318 is archived. | [O-00000055](O-00000055.md) |
+| O-00000056 | observation | The record already said W-00000314 fixed it, and W-00000314 is archived. | [O-00000056](O-00000056.md) |
