@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest stage/scripts/tests/test_register_work.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000349
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/hooks/stage_work.py, stage/skills/stage-work/register_work.py, stage/scripts/start_work.py, stage/scripts/tests/test_register_work.py, stage/skills/stage-work/SKILL.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -80,6 +80,88 @@ register_work 와 start_work 에 --scope 를 여러 번 넘기면 경고 없이 
 - `python3 -m unittest discover -s stage/hooks/tests -q`: 통과.
 - `python3 -m unittest discover -s tests -q`: 통과.
 - `python3 stage/scripts/audit_stage.py --project-root .`: errors=0.
+
+### Executed at close — 2026-11-17
+
+```
+$ python3 -m unittest stage/scripts/tests/test_register_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 50 tests in 5.296s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 448 tests in 5.520s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1794861852
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1794861852. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp_ujwcadb/unattended/W-00000001-1794861852
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 761 tests in 147.184s
+
+OK (skipped=2)
+
+$ python3 -m unittest discover -s tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 7 tests in 0.001s
+
+OK
+```
+
+### Review at close — 2026-11-17
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000349.md
+Criteria:
+- PASS: register_work 에 --scope 를 두 번 넘기면 카드의 scope 줄에 두 경로가 모두 쉼표로 이어져 들어간다.
+  Reason: I ran python3 -m unittest stage/scripts/tests/test_register_work.py -q (50 tests OK); test_repeated_scope_keeps_every_path asserts 'scope: src/a.py, src/b.py, docs/c.md', and against the pre-fix tree (8ef87765^) the same test failed with only 'src/b.py, docs/c.md' kept, so the check discriminates.
+- PASS: start_work 에 --scope 를 두 번 넘겨도 두 경로가 모두 카드에 들어간다.
+  Reason: I ran the same acceptance command (OK); test_start_with_repeated_scope_keeps_every_path asserts 'scope: src/a.py, src/b.py', and on the pre-fix tree it failed with only 'src/b.py' kept; start_work.py uses action=append and join_scope_args.
+- PASS: 쉼표로 이은 값 하나를 넘기는 기존 방식은 그대로 동작한다.
+  Reason: I ran the acceptance command (OK); test_single_comma_separated_scope_is_unchanged asserts 'scope: src/a.py, src/b.py' and passes on both the fixed and pre-fix trees, and join_scope_args only strips and joins values so a single value is kept as given.
+```
 
 ## Retrospective
 
