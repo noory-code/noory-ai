@@ -270,3 +270,4 @@
 | W-00000338 | completed | [items/W-00000338/_story.md](items/W-00000338/_story.md) |
 | W-00000339 | completed | [items/W-00000339/_story.md](items/W-00000339/_story.md) |
 | W-00000340 | completed | [items/W-00000340/_story.md](items/W-00000340/_story.md) |
+| W-00000341 | completed | [items/W-00000341/_story.md](items/W-00000341/_story.md) |
