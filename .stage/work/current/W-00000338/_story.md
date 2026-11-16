@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000338
 promotion: not_applicable
-review: pending
+review: passed
 scope: stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -88,6 +88,85 @@ decision_refs:
   고쳤다.
 - 닫기 리뷰는 codex 가 없어 Claude 대역으로 돌린 같은 모델의 리뷰이며, 교차 venue 리뷰가 아니다
   (DE-00000086).
+- 사용자 확인 — 2026-11-16: 게이트를 바꾼 카드라 닫은 결과를 본 가지에 옮기기 전에 사용자에게
+  보였다(DE-00000087). 보인 것은 세 카드(W-00000338~340)의 바뀐 경로와 요약, 기준별 리뷰 판정과
+  리뷰어가 실행한 것, 실행 없이 판정한 기준이 없다는 것, 같은 모델의 리뷰라는 것, 테스트 결과를
+  미리 적었다가 고친 일, 팀원 없이 직접 구현했다는 것이다. 사용자가 "확인, 닫기"로 답했다.
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 266 tests in 0.997s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 446 tests in 5.564s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1794821428
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1794821428. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp5yl8l2ma/unattended/W-00000001-1794821428
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 758 tests in 142.768s
+
+OK (skipped=2)
+```
+
+### Review at close — 2026-11-16
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000338.md
+Criteria:
+- PASS: 열린 카드가 없을 때 S=프로젝트 밖 경로 다음에 "$S/파일" 에 쓰는 명령을 등록 게이트가 막지 않는다
+  Reason: stage_guard.py 가 등록 게이트 호출 전에 same_command_assignments 와 expand_leading_shell_variable 로 대상을 푼다; 새 테스트의 리다이렉트·cd 뒤 heredoc·중괄호 변수 세 경우가 allow 이고, 열린 카드 없는 임시 프로젝트에 'S=/tmp/zz && echo x > "$S/a.py"' 를 직접 넣어 보니 allow 였다
+- PASS: 변수 값이 프로젝트 안을 가리키거나 풀 수 없는 변수면 지금처럼 막는다
+  Reason: 새 테스트의 프로젝트 안 절대 경로·풀 수 없는 변수 두 경우가 deny 이고, 직접 돌린 탐침에서 상대 값 S=src, S=., 프로젝트 안으로 돌아오는 S=<root>/src/.., 값에 변수가 든 S=$HOME/x, 설정되지 않은 변수가 모두 deny 였다
+- PASS: 이 경우를 확인하는 테스트가 고치기 전에는 깨지고 고친 뒤에는 통과한다
+  Reason: python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q 가 266건 OK 였고, 스크래치 복사본에서 stage_guard.py 만 2a0389b2^ 판으로 되돌려 새 테스트를 돌리니 통과해야 할 세 하위 사례가 'deny' != 'allow' 로 실패했다
+```
 
 ## Retrospective
 

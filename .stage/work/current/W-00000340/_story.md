@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000340
 promotion: not_applicable
-review: pending
+review: passed
 scope: stage/skills/stage-retrospective/close_work.py, stage/scripts/tests/test_close_work.py, stage/skills/stage-retrospective/SKILL.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -89,6 +89,85 @@ decision_refs:
   고쳤다.
 - 닫기 리뷰는 codex 가 없어 Claude 대역으로 돌린 같은 모델의 리뷰이며, 교차 venue 리뷰가 아니다
   (DE-00000086).
+- 사용자 확인 — 2026-11-16: 닫기 도구를 바꾼 카드라 닫은 결과를 본 가지에 옮기기 전에 사용자에게
+  보였다(DE-00000087). 보인 것은 세 카드(W-00000338~340)의 바뀐 경로와 요약, 기준별 리뷰 판정과
+  리뷰어가 실행한 것, 바뀐 것이 안내 문구뿐이라는 것, 같은 모델의 리뷰라는 것이다. 사용자가
+  "확인, 닫기"로 답했다.
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 74 tests in 19.506s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 446 tests in 5.277s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1794821921
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1794821921. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmpr01_fwzb/unattended/W-00000001-1794821921
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 758 tests in 187.961s
+
+OK (skipped=2)
+```
+
+### Review at close — 2026-11-16
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000340.md
+Criteria:
+- PASS: 닫기 도구가 deferred 로 닫은 뒤 approved 로 바꾸고 intent 를 만들어 쓰고 promoted 로 기록하는 순서를 안내한다
+  Reason: Commit 617e9ac6 changes the close_work.py WORK027 refusal to say close with `deferred`, set `promotion: approved` with the `promotes:` paths, create each intent with stage/scripts/promote_intent.py, write the paths, then record `promoted`, and stage-retrospective/SKILL.md gives the same order; this matches stage_runtime.py:557 admitting only approved/promoted and audit_stage.py completed_promotion_errors rejecting a completed `approved`.
+- PASS: 닫기 도구와 게이트와 감사의 동작은 바뀌지 않는다
+  Reason: git show --stat 617e9ac6 lists only CHANGELOG.md, test_close_work.py, SKILL.md and close_work.py, and the close_work.py hunk changes only the stderr message string; the later audit_stage.py change in this range comes from 86c2a80e for W-00000339, not this card.
+- PASS: 안내 문구를 확인하는 테스트가 고치기 전에는 깨지고 고친 뒤에는 통과한다
+  Reason: I ran python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q at HEAD and it ran 74 tests OK; in a scratch worktree at 617e9ac6 with close_work.py restored from 617e9ac6~1 the same command showed FAILED (failures=4).
+```
 
 ## Retrospective
 

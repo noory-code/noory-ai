@@ -6,3 +6,6 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
+| W-00000338 | passed | completed | not_applicable | [current/W-00000338/_story.md](current/W-00000338/_story.md) |
+| W-00000339 | passed | completed | not_applicable | [current/W-00000339/_story.md](current/W-00000339/_story.md) |
+| W-00000340 | passed | completed | not_applicable | [current/W-00000340/_story.md](current/W-00000340/_story.md) |
