@@ -28,7 +28,7 @@
     {
       "name": "rag",
       "source": "./rag",
-      "description": "Project-scoped GraphRAG — local sentence-transformers embeddings + sqlite-vec + Kuzu graph, no external API keys"
+      "description": "Development paused. Project-scoped GraphRAG — local sentence-transformers embeddings + sqlite-vec + Kuzu graph, no external API keys"
     },
     {
       "name": "stage",

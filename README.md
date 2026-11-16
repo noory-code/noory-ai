@@ -83,6 +83,8 @@ hook and no code that runs at prompt time.
 
 ### [RAG](rag/) — Local GraphRAG Plugin
 
+**Development paused.** No new features or releases are planned; existing installs keep working.
+
 Per-project vector + graph (GraphRAG) hybrid search. Runs fully locally with no external API key.
 
 - Local embeddings (`intfloat/multilingual-e5-small`) + sqlite-vec + Kuzu graph store

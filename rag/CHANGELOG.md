@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Pause development. No new features or releases are planned; the plugin stays installable and
+  its code stays in the repository.
 - Adopt ruff and strict mypy in the server's dev dependencies with the repository's conventions
   (`E`, `F`, `I`, `N`, `W`, `UP` rules, 100-character lines, the pydantic mypy plugin), and fix
   what they found without changing behavior: imports and `collections.abc` types, `datetime.UTC`,
