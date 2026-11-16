@@ -1057,6 +1057,65 @@ class StageAuditTest(unittest.TestCase):
 
                 self.assertIn("RECORD_ARCHIVE002", finding_codes(findings))
 
+    def test_live_record_indexes_match_their_records(self):
+        # Twelve observations once sat in the open drawer with their index lines removed.
+        # Session start kept listing them and close_record refused to close them, while the
+        # audit passed. The live drawer now gets the parity check the archive already has.
+        record = "---\nid: O-0001\ntitle: Open\nopened: 2026-11-16\nwork_items:\n---\n# O-0001 Open\n"
+        with self.subTest(case="record without an index line"), tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            (root / ".stage/state/observations/O-0001.md").write_text(record, encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+            live = [f for f in findings if f.code == "RECORD_LIVE001"]
+            self.assertEqual(len(live), 1, findings)
+            self.assertIn("O-0001", live[0].message)
+            self.assertEqual("warning", live[0].severity)
+        with self.subTest(case="index line without a record"), tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            index = root / ".stage/state/current.md"
+            index.write_text(
+                index.read_text(encoding="utf-8")
+                + "- [O-0002](observations/O-0002.md) — gone\n",
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+            dangling = [f for f in findings if f.code == "RECORD_LIVE002"]
+            self.assertEqual(len(dangling), 1, findings)
+            self.assertIn("O-0002", dangling[0].message)
+        with self.subTest(case="question without an index line"), tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            question = record.replace("O-0001", "Q-0001")
+            (root / ".stage/state/questions/Q-0001.md").write_text(question, encoding="utf-8")
+
+            findings = audit_stage.Audit(root).run()
+
+            self.assertTrue(
+                any(f.code == "RECORD_LIVE001" and "Q-0001" in f.message for f in findings),
+                findings,
+            )
+        with self.subTest(case="record and line agree"), tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            (root / ".stage/state/observations/O-0001.md").write_text(record, encoding="utf-8")
+            index = root / ".stage/state/current.md"
+            index.write_text(
+                index.read_text(encoding="utf-8") + "- [O-0001](observations/O-0001.md) — Open\n",
+                encoding="utf-8",
+            )
+
+            findings = audit_stage.Audit(root).run()
+
+            codes = finding_codes(findings)
+            self.assertNotIn("RECORD_LIVE001", codes)
+            self.assertNotIn("RECORD_LIVE002", codes)
+
     def append_index_row(self, root: Path, relative: str, first_cell: str) -> None:
         path = root / ".stage" / relative
         with path.open("a", encoding="utf-8") as handle:

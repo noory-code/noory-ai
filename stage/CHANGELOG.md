@@ -5,6 +5,10 @@
 - Let the registration gate expand a same-command variable before judging a shell target: with
   no open card, `S=/tmp/x && cat > "$S/a.md"` was refused as a write to the workspace path
   `$S/a.md`. A variable the hook cannot expand still keeps its target, so the gate fails closed.
+- Warn when an open observation or question and its live index disagree (`RECORD_LIVE001`: a
+  record with no index line, which `close_record.py` cannot close and session start keeps
+  listing; `RECORD_LIVE002`: an index line with no open record). Proposals already get this
+  check both ways from `PROPOSAL001`/`PROPOSAL002`.
 
 ## 0.66.1 — 2026-11-16
 
