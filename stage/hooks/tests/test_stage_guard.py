@@ -1115,6 +1115,45 @@ class StageGuardTest(unittest.TestCase):
                     self.assertEqual(decision(result), "deny")
                     self.assertIn("registration gate", reason(result))
 
+    def test_registration_gate_reads_shell_paths_from_the_shell_folder(self):
+        # With no open card and the shell sitting in a folder outside the project,
+        # `sed -i '' s/a/b/ MEMORY.md` was refused as a write to `<project>/MEMORY.md`:
+        # relative targets were read from the project folder, not from the hook's `cwd`.
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            (root / "src").mkdir()
+
+            def run(command: str, cwd: str | None) -> dict:
+                payload: dict = {"tool_name": "Bash", "tool_input": {"command": command}}
+                if cwd is not None:
+                    payload["cwd"] = cwd
+                with patch.dict(os.environ, {"CLAUDE_PROJECT_DIR": str(root)}):
+                    return stage_guard.handle_event("pre-tool-use", payload)
+
+            allowed = {
+                "sed -i": "sed -i '' 's/a/b/' MEMORY.md",
+                "redirect": "echo x > notes.md",
+                "delete": "rm notes.md",
+            }
+            for label, command in allowed.items():
+                with self.subTest(case=f"outside folder: {label}"):
+                    result = run(command, scratch)
+                    self.assertEqual(decision(result), "allow", reason(result))
+            refused = {
+                "shell in the project": str(root),
+                "shell in a project subfolder": str(root / "src"),
+                "folder that does not exist": str(Path(scratch) / "missing"),
+                "no cwd": None,
+            }
+            for label, cwd in refused.items():
+                with self.subTest(case=label):
+                    result = run("sed -i '' 's/a/b/' MEMORY.md", cwd)
+                    self.assertEqual(decision(result), "deny")
+                    self.assertIn("registration gate", reason(result))
+            result = run("echo x > app.py", str(root / "src"))
+            self.assertIn(str(Path("src") / "app.py"), reason(result))
+
     def test_blocks_shell_append_redirect_source_write_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

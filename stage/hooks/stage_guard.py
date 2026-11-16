@@ -1073,6 +1073,26 @@ def enum_validity_blocker(workspace_root: Path, payload: dict[str, Any], name: s
     return ""
 
 
+def shell_start_folder(payload: dict[str, Any], workspace_root: Path) -> Path:
+    """Folder the shell command starts in: the hook's `cwd` when it is a real folder.
+
+    Claude Code keeps the shell where the previous command left it and sends that folder as
+    `cwd`, so `sed -i '' s/a/b/ MEMORY.md` run from a folder outside the project edits that
+    folder's file. A missing or nonexistent `cwd` falls back to the workspace root, which keeps
+    relative targets on the project and the gates closed.
+    """
+
+    cwd = payload.get("cwd")
+    if isinstance(cwd, str) and cwd:
+        try:
+            folder = Path(cwd).expanduser().resolve()
+            if folder.is_dir():
+                return folder
+        except (OSError, RuntimeError):
+            pass
+    return workspace_root
+
+
 def mutation_targets(
     payload: dict[str, Any], name: str, workspace_root: Path
 ) -> tuple[str, list[str], list[str]]:
@@ -1088,10 +1108,11 @@ def mutation_targets(
     explicit_paths = collect_explicit_paths(payload)
     shell_write_targets: list[str] = []
     if command:
-        shell_write_targets = shell_write_paths(command, workspace_root)
+        start = shell_start_folder(payload, workspace_root)
+        shell_write_targets = shell_write_paths(command, start)
         shell_write_targets.extend(
             path
-            for path in shell_delete_paths(command, workspace_root)
+            for path in shell_delete_paths(command, start)
             if path not in shell_write_targets
         )
         for path in shell_write_targets:

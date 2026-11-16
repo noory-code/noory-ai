@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Read a relative shell write target from the folder the shell starts in: with no open card and
+  the shell sitting in a folder outside the project, `sed -i '' s/a/b/ MEMORY.md` was refused as a
+  write to `<project>/MEMORY.md`, because write and delete targets were always read from the
+  project folder. They now start at the hook's `cwd` when it names an existing folder; a missing or
+  nonexistent `cwd` keeps the project folder, so the gate stays closed there.
+
 ## 0.66.2 — 2026-11-16
 
 - Let the registration gate expand a same-command variable before judging a shell target: with
