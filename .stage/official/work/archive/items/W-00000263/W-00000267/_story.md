@@ -6,11 +6,12 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000267
+promotion: not_applicable
 review: not_required
 scope: plainly/
 promotes:
@@ -88,7 +89,31 @@ claude plugin update plainly@noory-ai
 셋째가 남았다. 사람이 한국어 답을 읽고 어색하지 않다고 확인해야 한다. 사용자가 이 세션을 여기서
 닫고 다른 곳에서 써 보겠다고 했으므로 판정은 그쪽에서 나온다.
 
+### 2026-11-16 사람의 판정
+
+- 셋째 기준: 사용자가 2026-11-16 에 플레인리를 두고 "ㅇㅋ 1 은 충분한듯"이라고 답했다. 그날
+  사용자는 0.7.1 이 켜진 긴 작업 세션에서 Claude 의 한국어 문장을 여러 번 고쳐 줬고, 그
+  지적을 바탕으로 지침을 0.7.2, 0.7.3 으로 고쳤다. 고친 지침은 새 세션 테스트에서 표 칸을
+  문장으로 쓰는 쪽으로 달라졌다. 사용자의 판정은 그 과정을 본 뒤에 나왔다. 0.7.3 을 켠
+  새 작업 세션에서 다시 읽어 본 것은 아니다.
+- 그 사이 버전은 0.7.3 까지 올라갔다. `claude plugin list` 가 `plainly@noory-ai` 를
+  `Version: 0.7.3` 으로, 저장소의 `plainly` 폴더에서 읽는다고 답한다.
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 19 tests in 0.002s
+
+OK
+```
+
 ## Retrospective
 
+[R-00000267](../../../retrospectives/R-00000267.md)
 
 ## Promotion decision
+
+`not_applicable` — 릴리스 카드라 공식 문서로 올릴 산출물이 없다.

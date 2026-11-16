@@ -66,5 +66,6 @@
 | DE-00000065 | promoted | 사용자 | [records/DE-00000065.md](records/DE-00000065.md) |
 | DE-00000066 | promoted | 사용자 | [records/DE-00000066.md](records/DE-00000066.md) |
 | DE-00000072 | decided | M-00000004 | [records/DE-00000072.md](records/DE-00000072.md) |
+| DE-00000073 | promoted | W-00000265 | [records/DE-00000073.md](records/DE-00000073.md) |
 | DE-00000074 | promoted | W-00000273 | [records/DE-00000074.md](records/DE-00000074.md) |
 | DE-00000082 | promoted | W-00000292 | [records/DE-00000082.md](records/DE-00000082.md) |

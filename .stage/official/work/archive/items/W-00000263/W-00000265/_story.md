@@ -6,14 +6,15 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000265
-promotion: deferred
+promotion: promoted
 review: not_required
 scope: .stage/decisions/pending/, plainly/
-promotes:
+promotes: .stage/official/decisions/records/DE-00000073.md, .stage/official/decisions/index.md
 decision_refs: DE-00000073
 ---
 
@@ -98,5 +99,10 @@ Summary: errors=0, warnings=32
 
 ## Retrospective
 
+[R-00000265](../../../retrospectives/R-00000265.md)
 
 ## Promotion decision
+
+`promoted` — 2026-11-16 에 DE-00000073 을 `official/decisions/records/` 로 올렸다. 이 카드를 닫을 때는
+`deferred` 였고, 사용자가 같은 날 "73은 플레인리 에픽을 닫을 때 올린다"고 정했다. 플레인리 에픽을
+닫으면서 올렸다. 결정 본문은 바꾸지 않았다.
