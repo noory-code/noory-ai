@@ -6,10 +6,10 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000308
 promotion: not_applicable
 review: not_required
 scope: stage/CHANGELOG.md, stage/.claude-plugin/, stage/.codex-plugin/, .stage/
@@ -87,10 +87,71 @@ Review dispositions (JSON): []
 
 두 매니페스트의 버전과 CHANGELOG 절은 0.63.5이며 worktree 진입 판정 수정 항목을 포함합니다. 설치 확인과 실제 worktree 동작은 미실행이므로 release 전체 검증은 pending입니다.
 
+### 2026-11-16 이 저장소에서 확인한 것
+
+사용자가 2026-11-16 에 "다시나는 상관없어요. 여기는 다시나 일감은 다시나로 넘기세요"라고 했다.
+그래서 다시나에서 하기로 했던 확인을 이 저장소에서 했다. 완료 기준의 문구는 그대로 두었다.
+
+- 설치된 버전: `claude plugin list` 가 `stage@noory-ai` 를 `Version: 0.66.0`, `Read from:` 이
+  저장소의 `stage` 폴더라고 답한다. 0.63.5 의 수정이 들어 있는 버전이다.
+- 셋째 기준(작업 폴더에 만든 intent 가 그 작업 폴더의 공식 기록 편집을 허락한다)을 직접
+  확인했다. 원래 checkout 에서 시작한 Claude 세션이 `git worktree add` 로 만든
+  `.claude/worktrees/w308-worktree-check` 안으로 작업 디렉터리를 옮긴 상태였다.
+  1. intent 없이 그 작업 폴더의 `.stage/official/work/archive/index.md` 를 Edit 로 고치려 하자
+     훅이 "Stage promotion gate violation" 으로 거절했다.
+  2. 그 작업 폴더에서 `promote_intent.py --type archive --work-item W-00000304` 로 intent 를
+     만들었다. intent 파일은 작업 폴더의 `.stage/.runtime/intents/` 에만 생겼고 원래 checkout
+     에는 없었다.
+  3. 같은 Edit 를 다시 하자 통과했다. Edit 가 끝난 뒤 intent 파일이 사라졌다.
+  훅이 intent 를 원래 checkout 에서 찾았다면 3번도 거절됐을 것이다. 확인한 뒤 그 편집은
+  되돌리고, 보관은 `archive_work.py` 로 했다.
+- 둘째 기준(작업 폴더의 카드를 등록 게이트에 막히지 않고 고친다)은 이 저장소에서 가려낼 수
+  없다. 원래 checkout 에도 열린 카드가 있어서, 훅이 어느 쪽을 읽어도 등록 게이트는 통과한다.
+  대신 같은 날 다른 관찰이 있다. 카드 W-00000334 가 작업 폴더에만 있을 때, 그 폴더 안에서
+  `stage/hooks/stage_context.py` 를 고쳐도 훅이 범위를 넘었다고 알리지 않았다. 원래 checkout
+  의 카드만 읽었다면 그 파일은 어느 카드의 범위에도 없으므로 알렸어야 한다. 등록 게이트
+  자체를 본 것은 아니다.
+- 넷째 기준: W-00000304 를 보관했다. 그 카드가 쓴 venue 예외 결정 DE-00000084 도 함께
+  보관됐다.
+- 하지 않은 것: 다시나 DE-00000005 승격. 다시나 저장소의 일이다.
+- 사용자 확인 — 2026-11-16: 위 확인 결과와 둘째 기준을 가려내지 못했다는 것을 사용자에게
+  보이고 "W-00000308 을 닫을까요"라고 물었다. 사용자가 "네, 다 해요"라고 답했다. 기준 문구에
+  있는 "다시나에서 확인"을 이 저장소에서 확인한 것으로 대신했다.
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
 ## Retrospective
 
-사용자가 설치 버전과 동작을 확인한 뒤 작성합니다. 아직 완료하지 않았습니다.
+[R-00000308](../../retrospectives/R-00000308.md)
 
 ## Promotion decision
+
+`not_applicable` — 공식 문서로 올릴 산출물이 없다.
 
 not_applicable — 이 릴리스 카드는 공식 결정이나 정책 승격을 소유하지 않습니다.
