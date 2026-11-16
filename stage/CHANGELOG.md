@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.1 — 2026-11-16
+
 - State the inline-interpreter rule at session start: the Stage context now says in one line that
   a shell command running inline code (`python -c`, `node -e`, `bash -c`, or an interpreter
   heredoc) and mentioning `.stage` is refused, and names Write/Edit or a script file as the way
