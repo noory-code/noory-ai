@@ -84,6 +84,12 @@ retrospected work item's `promotes`, then create the intent file.
 python3 stage/scripts/promote_intent.py --project-root <project-root> --work-item W-00000001 --path .stage/official/<target>.md
 ```
 
+When the paths will be written after the close, close with `--promotion deferred`. To write them
+later, set the card's `promotion: approved` with its `promotes:` paths, create each intent, write
+the paths, then record `promoted`. The promotion gate admits an intent only while the card says
+`approved` or `promoted`, and the audit rejects a completed card left at `approved`, so
+`approved` lasts only while the paths are being written.
+
 To move a closed item out of the review queue into `official/work/archive/`, use the **stage-archive**
 skill — archiving needs only an archive intent (or `archive_work.py`), never a new work item.
 

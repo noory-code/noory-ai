@@ -9,6 +9,11 @@
   record with no index line, which `close_record.py` cannot close and session start keeps
   listing; `RECORD_LIVE002`: an index line with no open record). Proposals already get this
   check both ways from `PROPOSAL001`/`PROPOSAL002`.
+- Spell out the order for writing a promotion after the close: `close_work.py` and the
+  `stage-retrospective` skill now say to close with `deferred`, then set `promotion: approved`
+  with the `promotes:` paths, create each intent, write the paths, and record `promoted`. The
+  message used to say only "close with `deferred`", and the promotion gate refuses an intent for a
+  card that says `deferred`. Behavior is unchanged.
 
 ## 0.66.1 — 2026-11-16
 

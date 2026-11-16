@@ -404,6 +404,11 @@ class CloseWorkTest(unittest.TestCase):
                 self.assertIn("would fail the audit (WORK027)", proc.stderr)
                 self.assertIn(expected, proc.stderr)
                 self.assertIn("work item unchanged", proc.stderr)
+                # The promotion gate admits an intent only while the card says `approved` or
+                # `promoted`, so "close with deferred" alone left the writer refused at the gate.
+                self.assertIn("Close with `deferred`", proc.stderr)
+                self.assertIn("set `promotion: approved`", proc.stderr)
+                self.assertIn("promote_intent.py", proc.stderr)
                 self.assertEqual(before, after)
 
     def test_closes_as_promoted_once_every_promotion_path_exists(self):
