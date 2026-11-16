@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Let the registration gate expand a same-command variable before judging a shell target: with
+  no open card, `S=/tmp/x && cat > "$S/a.md"` was refused as a write to the workspace path
+  `$S/a.md`. A variable the hook cannot expand still keeps its target, so the gate fails closed.
+
 ## 0.66.1 — 2026-11-16
 
 - State the inline-interpreter rule at session start: the Stage context now says in one line that

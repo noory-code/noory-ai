@@ -44,7 +44,7 @@ nothing downstream will say so. When a bulk change needs a program, run it and t
 
 ## Registration gate scope
 
-The registration gate covers nearly all workspace files by default — code, documents, configuration, and design artifacts alike. `.stage/`, `.git/`, and `.discuss/` are excluded. It asks only whether open work exists; a work item's scope is an advisory signal, not write authorization. An outside-scope target passes and the purpose context names the crossing so the executor reports it. Projects adjust governance in `.stage/settings.json` (`governance.exclude_paths`/`exclude_extensions`); every narrowing is reported by the audit. When `settings.json` exists but is unreadable, writes outside `.stage/` are denied until it is repaired (fail-closed).
+The registration gate covers nearly all workspace files by default — code, documents, configuration, and design artifacts alike. `.stage/`, `.git/`, and `.discuss/` are excluded. It asks only whether open work exists; a work item's scope is an advisory signal, not write authorization. An outside-scope target passes and the purpose context names the crossing so the executor reports it. Projects adjust governance in `.stage/settings.json` (`governance.exclude_paths`/`exclude_extensions`); every narrowing is reported by the audit. When `settings.json` exists but is unreadable, writes outside `.stage/` are denied until it is repaired (fail-closed). A shell target that starts with a variable assigned earlier in the same command, or set in the hook's environment, is expanded before the gate judges it, so `S=/tmp/x && cat > "$S/a.md"` is not refused as a workspace write; a variable the hook cannot expand keeps the target as written.
 
 ## Commit gate
 
@@ -84,7 +84,7 @@ Windows), temporary files, notes, and other folders — because scope plans proj
 registration gate does not govern those paths either. Commit targets are left out the same way when
 every `git` in the command runs outside the workspace, following each `cd` as taken and `git -C
 <dir>`; a `cd -` or a directory named through an unknown variable counts as inside. These
-exclusions apply to the report only;
+exclusions apply to the report only, except that the registration gate expands the same variables;
 the `.stage` gates see every target. If another check already supplied a `systemMessage`, the boundary line follows
 it. The full context is returned as `hookSpecificOutput.additionalContext`, with
 `hookEventName: PreToolUse`, so the agent receives the scopes, report instruction, crossed paths,
