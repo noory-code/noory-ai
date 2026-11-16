@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.0 — 2026-11-16
+
 - Apply the style while the plugin is enabled: the style file declares `force-for-plugin: true`,
   so no `outputStyle` setting is needed, and Claude Code uses Plainly in place of whatever
   `outputStyle` names. Using another output style now means disabling the plugin. Without this,

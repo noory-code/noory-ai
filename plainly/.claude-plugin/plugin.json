@@ -1,6 +1,6 @@
 {
   "name": "plainly",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "A plain-language output style for Claude Code, applied while the plugin is enabled.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/plainly",
   "repository": "https://github.com/noory-code/noory-ai",
