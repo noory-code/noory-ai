@@ -278,3 +278,4 @@
 | W-00000346 | completed | [items/W-00000346/_story.md](items/W-00000346/_story.md) |
 | W-00000347 | completed | [items/W-00000347/_story.md](items/W-00000347/_story.md) |
 | W-00000348 | completed | [items/W-00000348/_story.md](items/W-00000348/_story.md) |
+| W-00000349 | completed | [items/W-00000349/_story.md](items/W-00000349/_story.md) |
