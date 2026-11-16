@@ -262,3 +262,4 @@
 | W-00000333 | completed | [items/W-00000333/_story.md](items/W-00000333/_story.md) |
 | W-00000334 | completed | [items/W-00000334/_story.md](items/W-00000334/_story.md) |
 | W-00000304 | completed | [items/W-00000304/_story.md](items/W-00000304/_story.md) |
+| W-00000308 | completed | [items/W-00000308/_story.md](items/W-00000308/_story.md) |
