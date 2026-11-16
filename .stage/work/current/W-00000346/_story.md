@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000346
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/hooks/stage_shell.py, stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/hooks/README.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -123,6 +123,65 @@ decision_refs:
   경우 실패한 것, 막혀야 할 경우들, 전체 테스트와 감사 결과, 실제 세션은 확인하지 못한 것이다. 닫기
   리뷰는 이 확인 뒤에 돌렸다. 사용자가 "확인, 닫기"로 답했다.
 
+
+### Executed at close — 2026-11-17
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 268 tests in 1.014s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 448 tests in 5.368s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-17
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000346.md
+Criteria:
+- PASS: S=밖폴더 && mkdir -p $S && cd $S && sed -i 로 파일을 고치는 명령이 등록 게이트를 통과한다
+  Reason: Ran test_stage_guard.py (268 OK); its allow subtests (variable cd in an && chain, quoted/braced variable, literal cd) pass, and I ran shell_write_paths on the exact `S=/private/tmp/x346 && mkdir -p $S && cd $S && sed -i` form with mutation_targets' options, which returned only /private/tmp/x346/f.md versus project-root paths without them.
+- PASS: && 로만 이어진 줄에서 cd 뒤의 쓰기는 cd 한 폴더에서만 읽고, ; 뒤나 || 가 낀 줄에서는 지금처럼 두 폴더를 모두 본다
+  Reason: Test refuse subtests (chain ends at ;, cd after ||, cd fed by a pipe) pass; my probe of shell_write_paths showed `true && cd X && echo > f` reads f only under X, while the target after `||`, `&`, or a newline is read in both the project root and X, and a piped cd keeps both folders.
+- PASS: 훅이 값을 모르는 변수로 cd 하면 지금처럼 원래 폴더에 남는다고 보고 막는다
+  Reason: The `cd "$STAGE_TEST_UNSET_CD" && echo x > f.md` subtest is denied by the registration gate, and my probe of `cd $UNSET_346_X && echo a > f` returned only the project-root f; expand_leading_variable returns the operand unchanged when no value is found.
+- PASS: .stage 삭제 검사는 바뀌지 않는다
+  Reason: The diff of 3e193051 leaves command_deletes_stage untouched and it passes neither assignments nor follow_and_chains to _command_groups; the test's `true && cd src && rm -rf .stage` is still denied with the `.stage` delete message, and all 448 hook tests pass.
+- PASS: 새 테스트가 고치기 전 코드에서 실패하고 고친 뒤 통과한다
+  Reason: I extracted stage/ at 3e193051^ into the scratchpad, copied in the new test file, and ran the new test: 4 failures (all four allow cases); on the current tree the same test passes with the full test_stage_guard.py run (268 OK).
+```
 
 ## Retrospective
 
