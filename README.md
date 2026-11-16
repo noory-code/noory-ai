@@ -74,9 +74,10 @@ Curated reference skills for Flutter development. Each skill gives Claude Code o
 
 ### [Plainly](plainly/) — Clear Response Styles
 
-Five Claude Code output styles that put a chosen writing style into the session's system prompt.
-Carries fixed honesty, language-quality, and register rules, and keeps Claude Code's default
-coding instructions in place. No hook and no code that runs at prompt time.
+One Claude Code output style, applied while the plugin is enabled, that puts plain-language writing
+rules into the session's system prompt. Carries fixed honesty, language-quality, and register rules
+with Korean-specific guidance, and keeps Claude Code's default coding instructions in place. No
+hook and no code that runs at prompt time.
 
 **Install:** Claude Code: `/plugin install plainly@noory-ai` (Claude Code only)
 

@@ -273,3 +273,4 @@
 | W-00000341 | completed | [items/W-00000341/_story.md](items/W-00000341/_story.md) |
 | W-00000342 | completed | [items/W-00000342/_story.md](items/W-00000342/_story.md) |
 | W-00000343 | completed | [items/W-00000343/_story.md](items/W-00000343/_story.md) |
+| W-00000344 | completed | [items/W-00000344/_story.md](items/W-00000344/_story.md) |

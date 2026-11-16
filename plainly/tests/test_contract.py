@@ -49,6 +49,35 @@ class ManifestTest(unittest.TestCase):
 
         self.assertEqual(shipped, ["plainly.md"])
 
+    def test_descriptions_do_not_call_the_style_selectable(self) -> None:
+        # The forced style ignores `outputStyle`; another style needs the plugin turned off.
+        manifest = load_json(PLUGIN_ROOT / ".claude-plugin" / "plugin.json")
+        marketplace = load_json(REPOSITORY_ROOT / ".claude-plugin" / "marketplace.json")
+        entry = {item["name"]: item for item in marketplace["plugins"]}["plainly"]
+
+        for description in (manifest["description"], entry["description"]):
+            with self.subTest(description=description):
+                self.assertNotIn("selectable", str(description).lower())
+
+    def test_evals_hold_markdown_cases_only(self) -> None:
+        # `claude plugin eval` reads prompt.md and graders/*.md; nothing in the folder runs.
+        evals = PLUGIN_ROOT / "evals"
+        files = [
+            path
+            for path in evals.rglob("*")
+            if path.is_file() and "results" not in path.relative_to(evals).parts
+        ]
+        self.assertTrue(files)
+        for path in files:
+            with self.subTest(path=path.relative_to(PLUGIN_ROOT).as_posix()):
+                self.assertEqual(path.suffix, ".md")
+
+        cases = sorted(path.parent for path in evals.glob("*/prompt.md"))
+        self.assertIn(evals / "style-active", cases)
+        for case in cases:
+            with self.subTest(case=case.name):
+                self.assertTrue(list((case / "graders").glob("*.md")))
+
     def test_marketplace_registers_plainly(self) -> None:
         marketplace = load_json(REPOSITORY_ROOT / ".claude-plugin" / "marketplace.json")
         entries = {entry["name"]: entry for entry in marketplace["plugins"]}
@@ -68,10 +97,18 @@ class FrontmatterTest(unittest.TestCase):
         # fine and drops the instructions with no warning. So the spelling itself is the check.
         self.assertEqual(self.fields().get("keep-coding-instructions"), "true")
 
+    def test_the_style_applies_as_soon_as_the_plugin_is_enabled(self) -> None:
+        # Without this key the style waits for `outputStyle` to name it, and
+        # `claude plugin eval` never sets that, so an eval run compared two default sessions.
+        # The key is read by exact spelling like the one above.
+        self.assertEqual(self.fields().get("force-for-plugin"), "true")
+
     def test_frontmatter_carries_only_keys_claude_code_reads(self) -> None:
         fields = self.fields()
 
-        self.assertEqual(set(fields), {"name", "description", "keep-coding-instructions"})
+        self.assertEqual(
+            set(fields), {"name", "description", "keep-coding-instructions", "force-for-plugin"}
+        )
         self.assertEqual(fields["name"], "Plainly")
         self.assertTrue(fields["description"])
 

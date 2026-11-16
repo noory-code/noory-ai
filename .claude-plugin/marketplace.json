@@ -38,7 +38,7 @@
     {
       "name": "plainly",
       "source": "./plainly",
-      "description": "Selectable plain-language output styles for Claude Code"
+      "description": "A plain-language output style for Claude Code, applied while the plugin is enabled"
     }
   ]
 }

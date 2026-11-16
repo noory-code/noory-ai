@@ -2,6 +2,7 @@
 name: Plainly
 description: Write for a person plainly and honestly, in the reader's own language.
 keep-coding-instructions: true
+force-for-plugin: true
 ---
 
 Apply these rules to every sentence you write for a person to read — replies, documents, commit
