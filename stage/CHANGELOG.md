@@ -2,11 +2,18 @@
 
 ## Unreleased
 
+## 0.66.1 — 2026-11-16
+
 - State the inline-interpreter rule at session start: the Stage context now says in one line that
   a shell command running inline code (`python -c`, `node -e`, `bash -c`, or an interpreter
   heredoc) and mentioning `.stage` is refused, and names Write/Edit or a script file as the way
   through. A session used to learn this only from the denial. The gate and its message are
   unchanged.
+- Expand a same-command variable in the scope report after a `cd` too: `cd src && S=/tmp/x &&
+  cat > "$S/a.md"` no longer reports `src/$S/a.md` as a project file. The shell parser anchors
+  the operand at the folder `cd` entered, so the variable did not lead the target any more. An
+  absolute value replaces that folder and a relative one stays under it; a variable in the middle
+  of an operand is left as written. The gates are unchanged.
 
 ## 0.66.0 — 2026-11-15
 
