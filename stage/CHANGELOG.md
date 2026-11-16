@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.3 — 2026-11-16
+
 - Read a relative shell write target from the folder the shell starts in: with no open card and
   the shell sitting in a folder outside the project, `sed -i '' s/a/b/ MEMORY.md` was refused as a
   write to `<project>/MEMORY.md`, because write and delete targets were always read from the
