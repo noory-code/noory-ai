@@ -10,8 +10,8 @@ acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000344
 promotion: pending
 review: pending
 scope: plainly/output-styles/plainly.md, plainly/tests/test_contract.py, plainly/README.md, plainly/CHANGELOG.md, plainly/evals, plainly/.claude-plugin/plugin.json, plainly/.gitignore, .claude-plugin/marketplace.json, README.md
@@ -91,11 +91,48 @@ decision_refs:
 
 ## Progress
 
+스타일 파일에 `force-for-plugin: true` 를 넣었다. `plainly/evals/` 에 질문 다섯 개와 정규식 채점
+기준 열 개를 두었고, 결과 폴더는 `plainly/.gitignore` 로 뺐다. 플러그인 README 에 켜고 끄는 법과
+평가 절을 새로 썼고, 매니페스트·마켓플레이스 설명과 저장소 README 소개를 맞췄다. 커밋 `6fc759b6`.
+
+Claude Code 2.1.321 코드에서 확인한 것: 강제된 플러그인 스타일이 있으면 `outputStyle` 설정을 보지
+않고 그 스타일을 쓴다. 디버그 로그에 `Using forced plugin output style:` 줄을 남긴다.
 
 ## Verification
+
+- 플러그인을 켜면 `outputStyle` 설정 없이도 스타일이 적용되고, 스타일 확인 질문이 켠 쪽에서만
+  통과한다 — 통과. 바꾼 플레인리를 스크래치에 복사해 `claude plugin eval . --trust-plugin` 을
+  돌렸다. `style-active` 가 켠 쪽 1.00, 끈 쪽 0.00 이다. 바꾸기 전 복사본에서는 두 쪽 모두 "없음"
+  이라고 답했고 trace 의 `output_style` 이 `default` 였다.
+- 한국어 질문 네 개의 점수가 켠 쪽과 끈 쪽으로 함께 나온다 — 통과. 같은 실행, 질문마다 3번씩:
+
+  | 질문 | 켠 쪽 | 끈 쪽 | 끈 쪽에서 걸린 채점 |
+  |---|---|---|---|
+  | `two-axes` | 1.00 | 0.50 | "축" 세 번 모두 |
+  | `explain-to-colleague` | 1.00 | 0.83 | 엠대시 한 번 |
+  | `work-report` | 1.00 | 1.00 | 없음 |
+  | `live-test` | 1.00 | 1.00 | 없음 |
+
+  `work-report` 와 `live-test` 는 이번 실행에서 두 쪽 차이가 없었다. 끈 쪽 모델도 "재측정",
+  "실기", "실측" 을 쓰지 않았다. 두 질문은 이 말들이 다시 나오는지 지키는 용도로 남긴다. 실행에
+  쓰인 모델은 결과 파일에 남지 않아 확인하지 못했다. 비용은 $2.04 다.
+- 테스트가 `force-for-plugin` 철자와 `evals/` 에 마크다운만 있다는 것을 확인한다 — 통과. 새 테스트
+  세 개(`test_the_style_applies_as_soon_as_the_plugin_is_enabled`,
+  `test_descriptions_do_not_call_the_style_selectable`, `test_evals_hold_markdown_cases_only`)와
+  바뀐 frontmatter 키 테스트가 바꾸기 전에 다섯 군데 실패했고, 바꾼 뒤 22개 모두 통과한다. 저장소
+  계약 테스트 7개도 통과한다.
+- README 와 설명이 켜면 바로 적용되고 다른 스타일을 쓰려면 플러그인을 꺼야 한다고 말한다 — 통과.
+  플러그인 README 의 "Turning it on and off" 절, 매니페스트와 마켓플레이스의 "applied while the
+  plugin is enabled".
+- 평가를 저장소 폴더가 아니라 스크래치 복사본에서 돌렸다. `--trust-plugin` 허락을 스크래치 복사본에
+  대해 받았기 때문이다. 내용은 커밋 `6fc759b6` 과 같다.
+- 정규식 채점은 문장 모양만 본다. 뜻이 보존됐는지는 재지 않았다.
 
 
 ## Retrospective
 
+[R-00000344](../../retrospectives/R-00000344.md)
 
 ## Promotion decision
+
+`not_applicable` — 공식 문서로 올릴 산출물이 없다.
