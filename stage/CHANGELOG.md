@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Follow a `cd` through a same-command variable and along an `&&` chain when reading write and
+  delete targets: with no open card, `S=/tmp/x && mkdir -p $S/sub && cd $S/sub && sed -i … f.md`
+  was refused as a write to `<project>/f.md`. A leading variable in a `cd`, `pushd`, or `mkdir`
+  operand is now expanded like a target, and a `cd` joined only by `&&` counts as taken for the
+  rest of its chain; the earlier folder comes back when the chain ends or meets `||`, `|`, or `&`.
+  An operand the hook cannot expand still leaves the shell where it was. The `.stage` delete gate
+  is unchanged.
+
 ## 0.66.3 — 2026-11-16
 
 - Read a relative shell write target from the folder the shell starts in: with no open card and

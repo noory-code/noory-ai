@@ -78,8 +78,13 @@ For an allowed scope crossing, `systemMessage` contains only `Scope boundary cro
 is shown to the user. Targets come from the tool input only, never from the hook envelope (such as
 `transcript_path`). A relative shell target is read from the folder the shell starts in — the
 hook's `cwd` when it names an existing folder, else the workspace root — so a command run from a
-folder outside the workspace writes there, for the report and the registration gate alike. A
-shell target that starts with a variable is expanded from a `NAME=value`
+folder outside the workspace writes there, for the report and the registration gate alike. The
+same targets follow each `cd`: a `cd`, `pushd`, or `mkdir` operand that starts with a variable is
+expanded the way a target is (below), and a `cd` joined to the commands around it only by `&&` is
+read as taken for the rest of that chain, since a later `&&` command runs only if the `cd` did.
+When the chain ends at `;` or a newline, or meets `||`, `|`, or `&`, the folder from before the
+`cd` counts again. The `.stage` delete gate keeps every possible folder. A shell target that
+starts with a variable is expanded from a `NAME=value`
 assignment earlier in the same command (in command-word position, optionally after `export`), or
 else from the hook's environment; a variable neither defines stays in the report as written. The
 report leaves out every target that lands outside the workspace — devices (`/dev/…`, `NUL` on
