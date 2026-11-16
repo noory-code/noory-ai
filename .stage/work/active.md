@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000351 | documentation | claude | flutter-cask 와 pencil-m3-flutter 를 보는 사람이 개발이 멈췄다는 것과 그 이유를  | active | Claude | [current/W-00000351/_story.md](current/W-00000351/_story.md) |

@@ -1,5 +1,8 @@
 # flutter-cask
 
+> **Development paused.** No new features or releases are planned; the last feature work
+> landed in March 2026. Existing installs keep working, and the code stays in this repository.
+
 > Flutter package guide skills for Claude Code and Codex — 32 packages, zero setup
 
 Curated reference skills for Flutter development. Each skill gives the active Claude Code or Codex session immediate access to usage patterns, best practices, and code examples for common Flutter packages.

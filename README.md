@@ -64,6 +64,8 @@ Public architecture, concepts, specifications, and migration guidance are mainta
 
 ### [Flutter Cask](flutter-cask/) — Flutter Package Guide Skills
 
+**Development paused.** No new features or releases are planned; existing installs keep working.
+
 Curated reference skills for Flutter development. Each skill gives Claude Code or Codex immediate access to usage patterns, best practices, and code examples for the most common Flutter packages.
 
 - 32 skills across state management, routing, Firebase, UI, testing, and more
@@ -94,6 +96,8 @@ Per-project vector + graph (GraphRAG) hybrid search. Runs fully locally with no 
 **Install:** Claude Code: `/plugin install rag@noory-ai` · Codex: `codex plugin add rag@noory-ai`
 
 ### [Pencil M3 Flutter](pencil_m3_flutter/) — Flutter Material Design 3 Automation
+
+**Development paused.** No new features or releases are planned; existing installs keep working.
 
 Connects the Pencil app with Claude Code or Codex to initialize a per-app Material Design 3 library, generate seed-color-based Flutter theme code, and produce screen design prompts.
 

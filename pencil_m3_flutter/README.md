@@ -1,5 +1,8 @@
 # pencil-m3-flutter
 
+> **Development paused.** No new features or releases are planned; the last feature work
+> landed in March 2026. Existing installs keep working, and the code stays in this repository.
+
 Claude Code 및 Codex 플러그인 — Flutter Material Design 3 디자인 시스템 자동화.
 
 [Pencil](https://pencil.ai) 앱과 Claude Code 또는 Codex를 연동해 앱별 M3 디자인 라이브러리를 초기화하고,

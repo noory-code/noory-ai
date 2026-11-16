@@ -1,3 +1,8 @@
+## Unreleased
+
+- Pause development. No new features or releases are planned; the plugin stays installable and
+  its code stays in the repository.
+
 ## 1.1.0 — 2026-07-12
 
 ### Added
