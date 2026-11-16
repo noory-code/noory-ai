@@ -6,9 +6,3 @@
 
 | 산출물 | 검증 | 회고 | 승격 | 항목 |
 |---|---|---|---|---|
-| W-00000265 | passed | completed | promoted | [current/W-00000263/W-00000265/_story.md](current/W-00000263/W-00000265/_story.md) |
-| W-00000264 | passed | completed | not_applicable | [current/W-00000263/W-00000264/_story.md](current/W-00000263/W-00000264/_story.md) |
-| W-00000266 | passed | completed | not_applicable | [current/W-00000263/W-00000266/_story.md](current/W-00000263/W-00000266/_story.md) |
-| W-00000267 | passed | completed | not_applicable | [current/W-00000263/W-00000267/_story.md](current/W-00000263/W-00000267/_story.md) |
-| W-00000271 | passed | completed | not_applicable | [current/W-00000263/W-00000271/_story.md](current/W-00000263/W-00000271/_story.md) |
-| W-00000263 | passed | completed | not_applicable | [current/W-00000263/_epic.md](current/W-00000263/_epic.md) |
