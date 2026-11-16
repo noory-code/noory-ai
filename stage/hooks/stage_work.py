@@ -176,6 +176,14 @@ def parse_frontmatter(path: Path) -> dict[str, Any]:
     return fields
 
 
+def join_scope_args(values: list[str]) -> str:
+    """One scope declaration from every `--scope` a command received.
+
+    A repeated `--scope` adds its paths after the earlier ones instead of
+    replacing them; each value may itself be a comma-separated list."""
+    return ", ".join(value.strip() for value in values if value.strip())
+
+
 def split_scope(value: str) -> tuple[str, ...]:
     """Cleaned (NOT dot-collapsed) declaration entries. `..` survives so a
     declaration spelled through a symlink (`scope: alias/../other`) reaches the

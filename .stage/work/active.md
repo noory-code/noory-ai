@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000349 | fix | claude | register_work 와 start_work 에 --scope 를 여러 번 넘기면 경고 없이 마지막 경로 | active | Claude | [current/W-00000349/_story.md](current/W-00000349/_story.md) |

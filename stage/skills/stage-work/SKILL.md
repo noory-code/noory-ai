@@ -198,7 +198,8 @@ next free number, writes the card, and updates the owning index:
 - `scope` — the paths this work expects to modify. List every governed subtree known at
   registration time. The hook reports but does not block a needed write outside this list; the
   executor must report every such boundary crossing. `*` suppresses useful boundary signals, so
-  use it sparingly.
+  use it sparingly. Pass the paths comma-separated in one `--scope`, or repeat `--scope`;
+  `register_work.py` and `start_work.py` keep every value in the order given.
 - `scale` and placement — always pass `--scale`. Pass `--parent` only for a story inside an epic
   or an action inside a story.
 - `milestone` — include one `M-NNNNNNNN` only when the conditional question above was asked and
