@@ -26,6 +26,7 @@ if str(SCRIPT_ROOT) not in sys.path:
 
 import stage_guard  # noqa: E402
 import audit_model_tier  # noqa: E402
+import close_record  # noqa: E402
 import guidance_docs  # noqa: E402
 import refresh_decision_index  # noqa: E402
 import stage_roadmap  # noqa: E402
@@ -287,6 +288,7 @@ class Audit:
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_record_archive_indexes(graph)
+        self.audit_live_state_indexes(graph)
         self.audit_future_indexes(graph)
         if self.topology == ACTIVE_TOPOLOGY_V4:
             self.audit_roadmap(graph)
@@ -1108,6 +1110,57 @@ class Audit:
                         f"record: {record_id}",
                         index_path,
                     )
+
+    def audit_live_state_indexes(self, graph: RecordGraph) -> None:
+        """Open observations and questions each have one line in their live index.
+
+        `close_record.py` closes a record by moving its live-index line, so a record whose
+        line is missing cannot be closed, and session start keeps listing it as open. Proposals
+        are left to `audit_future_indexes`, which already checks their index both ways.
+        Warnings, not errors: the drift has to be repaired by hand in projects that have it.
+        """
+
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        for prefix in ("O", "Q"):
+            family = close_record.FAMILIES[prefix]
+            live_root = self.stage_root / family.live_root
+            index_path = self.stage_root / family.live_index
+            id_re = re.compile(rf"\[({prefix}-\d{{3,}})\]")
+            records = {
+                node.record_id: node.path
+                for node in graph.state
+                if node.record_id.startswith(f"{prefix}-")
+                and node.path.is_relative_to(live_root)
+            }
+            try:
+                index_text = index_path.read_text(encoding="utf-8")
+            except OSError:
+                index_text = ""
+            listed: set[str] = set()
+            for line in index_text.splitlines():
+                stripped = line.lstrip()
+                if stripped.startswith(("-", "*", "+")):
+                    listed.update(id_re.findall(line))
+                elif stripped.startswith("|"):
+                    cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+                    if cells and cells[0].startswith(f"{prefix}-") and RECORD_ID_RE.match(cells[0]):
+                        listed.add(cells[0])
+            for record_id, path in records.items():
+                if record_id not in listed:
+                    self.warning(
+                        "RECORD_LIVE001",
+                        f"Open {family.kind} has no line in `{family.live_index}`, so "
+                        f"close_record.py cannot close it: {record_id}",
+                        path,
+                    )
+            for record_id in sorted(listed - set(records)):
+                self.warning(
+                    "RECORD_LIVE002",
+                    f"`{family.live_index}` lists an open {family.kind} with no record in "
+                    f"`{family.live_root}`: {record_id}",
+                    index_path,
+                )
 
     def audit_future_indexes(self, graph: RecordGraph) -> None:
         """Each future family's index owns the current index of its records

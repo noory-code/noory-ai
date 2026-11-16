@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Let the registration gate expand a same-command variable before judging a shell target: with
+  no open card, `S=/tmp/x && cat > "$S/a.md"` was refused as a write to the workspace path
+  `$S/a.md`. A variable the hook cannot expand still keeps its target, so the gate fails closed.
+- Warn when an open observation or question and its live index disagree (`RECORD_LIVE001`: a
+  record with no index line, which `close_record.py` cannot close and session start keeps
+  listing; `RECORD_LIVE002`: an index line with no open record). Proposals already get this
+  check both ways from `PROPOSAL001`/`PROPOSAL002`.
+- Spell out the order for writing a promotion after the close: `close_work.py` and the
+  `stage-retrospective` skill now say to close with `deferred`, then set `promotion: approved`
+  with the `promotes:` paths, create each intent, write the paths, and record `promoted`. The
+  message used to say only "close with `deferred`", and the promotion gate refuses an intent for a
+  card that says `deferred`. Behavior is unchanged.
+
 ## 0.66.1 — 2026-11-16
 
 - State the inline-interpreter rule at session start: the Stage context now says in one line that

@@ -1082,6 +1082,39 @@ class StageGuardTest(unittest.TestCase):
         self.assertEqual(decision(result), "deny")
         self.assertIn("registration gate", reason(result))
 
+    def test_registration_gate_expands_a_same_command_variable_before_judging(self):
+        # With no open card, `S=/tmp/x && cat > "$S/a.md"` reached the gate as the
+        # workspace path `$S/a.md` and was refused, though it writes outside the project.
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as scratch:
+            root = Path(tmp)
+            self.write_stage_file(root, "index.md", "# Stage\n")
+            (root / "src").mkdir()
+            allowed = {
+                "redirect": f'S={scratch} && echo x > "$S/a.md"',
+                "heredoc after cd": f"cd src && S={scratch} && cat > \"$S/b.md\" <<'EOF'\nx\nEOF",
+                "braced variable": f'S={scratch}; cp README "${{S}}/c.md"',
+            }
+            for label, command in allowed.items():
+                with self.subTest(case=label):
+                    result = stage_guard.handle_event(
+                        "pre-tool-use",
+                        {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": command}},
+                    )
+                    self.assertEqual(decision(result), "allow", reason(result))
+            refused = {
+                "value inside the project": f'S={root}/src && echo x > "$S/a.py"',
+                "variable the hook cannot expand": 'echo x > "$STAGE_TEST_UNSET_GATE/a.py"',
+            }
+            os.environ.pop("STAGE_TEST_UNSET_GATE", None)
+            for label, command in refused.items():
+                with self.subTest(case=label):
+                    result = stage_guard.handle_event(
+                        "pre-tool-use",
+                        {"tool_name": "Bash", "cwd": str(root), "tool_input": {"command": command}},
+                    )
+                    self.assertEqual(decision(result), "deny")
+                    self.assertIn("registration gate", reason(result))
+
     def test_blocks_shell_append_redirect_source_write_without_registered_work_item(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

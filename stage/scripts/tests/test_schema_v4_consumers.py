@@ -220,6 +220,8 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            with (stage_root / "state" / "questions.md").open("a", encoding="utf-8") as index:
+                index.write(f"| Q-00000092 | Fixture question | x | open | {current_id} |\n")
 
             milestone_path = stage_root / "roadmap" / "milestones" / "M-00000092.md"
             milestone_path.write_text("# M-00000092 Fixture milestone\n", encoding="utf-8")

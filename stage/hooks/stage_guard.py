@@ -1335,7 +1335,16 @@ def validate_pre_tool(payload: dict[str, Any]) -> dict[str, Any]:
         )
         if blocker:
             return deny(blocker)
-        blocker = source_registration_blocker(workspace_root, shell_write_targets)
+        # A target named through a variable the same command assigned (`S=/tmp/x && cat >
+        # "$S/a.md"`) reaches the hook as a workspace path. Expand it the way the scope report
+        # does, so a write that lands outside the workspace is not refused as a project write.
+        # A variable the hook cannot expand keeps its target, so the gate still fails closed.
+        assignments = same_command_assignments(command)
+        registration_targets = [
+            expand_leading_shell_variable(target, workspace_root, assignments, command)
+            for target in shell_write_targets
+        ]
+        blocker = source_registration_blocker(workspace_root, registration_targets)
         if blocker:
             return deny(blocker)
 

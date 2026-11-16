@@ -1004,8 +1004,11 @@ def main() -> int:
         print(
             f"{args.item}: promotion `{promotion}` would fail the audit (WORK027): "
             + " ".join(promotion_errors)
-            + " Close with `deferred` until the promotion is written, then record `promoted` "
-            "with its `promotes:` paths; work item unchanged",
+            + " Close with `deferred` until the promotion is written. To write it, set "
+            "`promotion: approved` with the `promotes:` paths, create each intent with "
+            "`stage/scripts/promote_intent.py` (the promotion gate admits an intent only while "
+            "the card says `approved` or `promoted`), write the paths, then record `promoted`; "
+            "work item unchanged",
             file=sys.stderr,
         )
         return 1
