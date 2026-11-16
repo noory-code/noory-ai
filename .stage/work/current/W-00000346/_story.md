@@ -10,8 +10,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000346
 promotion: pending
 review: pending
 scope: stage/hooks/stage_shell.py, stage/hooks/stage_guard.py, stage/hooks/tests/test_stage_guard.py, stage/operations/hooks.md, stage/hooks/README.md, stage/CHANGELOG.md
@@ -88,11 +88,46 @@ decision_refs:
 
 ## Progress
 
+`stage_shell.py` 의 `_command_groups` 에 두 선택을 더했다. `assignments` 를 주면 `cd`·`pushd`·`mkdir`
+인자 앞의 변수를 `expand_leading_variable` 로 푼다. `follow_and_chains` 를 켜면 앞에 `&&` 가 붙은
+`cd` 를 그 줄의 나머지에서는 일어난 것으로 보고, 그 전 폴더는 따로 잡아 두었다가 줄이 끝나거나
+`||`·`|`·`&` 를 만나면 다시 더한다. `shell_write_paths`·`shell_delete_paths` 가 두 선택을 받고,
+`mutation_targets` 만 둘 다 켠다. `.stage` 삭제 검사(`command_deletes_stage`)는 아무것도 넘기지
+않으므로 그대로다. 변수 정규식은 `stage_shell.py` 한 곳에 두고 `stage_guard.py` 가 가져다 쓴다.
+문서 두 곳과 변경 기록에 적었다. 커밋 `3e193051`.
+
+`mkdir` 인자도 풀어야 했다. `mkdir -p $S/sub && cd $S/sub` 에서 만들 폴더를 풀지 않으면 그 폴더로
+들어가는 `cd` 가 실패한 것으로 읽힌다. 처음 고친 뒤 이 경우만 남아서 알았다.
 
 ## Verification
+
+- `S=밖폴더 && mkdir -p $S/sub && cd $S/sub && sed -i` 가 등록 게이트를 통과한다 — 통과. 새 테스트
+  `test_registration_gate_follows_cd_through_variables_and_and_chains` 의 허락 네 경우(변수 `cd` 가
+  있는 `&&` 줄, `;` 뒤의 따옴표 변수, 중괄호 변수와 `rm`, 리터럴 `cd` 가 있는 `&&` 줄).
+- `&&` 로만 이어진 줄에서만 `cd` 폴더만 보고, `;` 뒤나 `||`·`|` 가 낀 줄에서는 두 폴더를 모두
+  본다 — 통과. 같은 테스트의 거절 경우 `false && cd 밖 ; echo > f.md`, `true || cd 밖 && echo`,
+  `true | cd $S && echo`.
+- 훅이 값을 모르는 변수로 `cd` 하면 막는다 — 통과. 같은 테스트의 `cd "$STAGE_TEST_UNSET_CD"`.
+- `.stage` 삭제 검사는 바뀌지 않는다 — 통과. 같은 테스트의 `true && cd src && rm -rf .stage` 가
+  삭제 검사 메시지로 막힌다. `&&` 규칙이 이 검사에도 적용됐다면 `src/.stage` 로만 읽혀 통과했을
+  경우다.
+- 새 테스트가 고치기 전 코드에서 실패하고 고친 뒤 통과한다 — 통과. 고치기 전에는 허락 네 경우가
+  모두 실패했다. 거절 경우와 `.stage` 경우는 고치기 전에도 막혔다(바뀌면 안 되는 경우다).
+- 전체 테스트: 훅 448개 통과, 스크립트 758개 통과(건너뜀 2개). 감사 오류 0개.
+- 확인하지 않은 것: 실제 세션에서의 동작. 지금은 이 카드가 열려 있어 등록 게이트가 걸리지 않는다.
+  머지한 뒤 열린 카드가 없을 때 확인할 수 있다.
+- 닫기 리뷰는 codex 가 없어 Claude 대역으로 돌린 같은 모델의 리뷰이며, 교차 venue 리뷰가 아니다
+  (DE-00000086).
+- 사용자 확인 — 2026-11-17: 게이트를 바꾼 카드라 닫기 전에 사용자에게 보였다(DE-00000087). 보인
+  것은 바뀐 파일과 두 선택의 동작, `.stage` 삭제 검사를 그대로 둔 것, 새 테스트가 고치기 전에 네
+  경우 실패한 것, 막혀야 할 경우들, 전체 테스트와 감사 결과, 실제 세션은 확인하지 못한 것이다. 닫기
+  리뷰는 이 확인 뒤에 돌렸다. 사용자가 "확인, 닫기"로 답했다.
 
 
 ## Retrospective
 
+[R-00000346](../../retrospectives/R-00000346.md)
 
 ## Promotion decision
+
+`not_applicable` — 공식 문서로 올릴 산출물이 없다.
