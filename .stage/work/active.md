@@ -9,4 +9,3 @@
 | W-00000263 | planning | claude | 플레인리의 지침이 클로드의 문장에 실제로 걸리게 하고 한국어 답에서 영어 직역 문장을 없앤다. | active | Claude | [current/W-00000263/_epic.md](current/W-00000263/_epic.md) |
 | W-00000267 | release | claude | 새 버전을 실제로 켠 세션에서 한국어 문장이 나아졌는지 사람이 본다. | active | Claude | [current/W-00000263/W-00000267/_story.md](current/W-00000263/W-00000267/_story.md) |
 | W-00000271 | fix | codex | 뜻을 바꾸거나 불필요한 설명을 붙이는 지침을 고치고 새로운 답변에서 한국어가 자연스러운지 확인한다 | active | Codex | [current/W-00000263/W-00000271/_story.md](current/W-00000263/W-00000271/_story.md) |
-| W-00000335 | fix | claude | cd 로 다른 폴더에 들어간 뒤 같은 명령에서 정한 변수 경로에 쓸 때 훅이 그 경로를 프로젝트 파일로 잘못 | active | Claude | [current/W-00000335/_story.md](current/W-00000335/_story.md) |
