@@ -267,3 +267,6 @@
 | W-00000336 | completed | [items/W-00000336/_story.md](items/W-00000336/_story.md) |
 | W-00000337 | completed | [items/W-00000337/_story.md](items/W-00000337/_story.md) |
 | W-00000263 | completed | [items/W-00000263/_epic.md](items/W-00000263/_epic.md) |
+| W-00000338 | completed | [items/W-00000338/_story.md](items/W-00000338/_story.md) |
+| W-00000339 | completed | [items/W-00000339/_story.md](items/W-00000339/_story.md) |
+| W-00000340 | completed | [items/W-00000340/_story.md](items/W-00000340/_story.md) |
