@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s plainly/tests -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000344
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: plainly/output-styles/plainly.md, plainly/tests/test_contract.py, plainly/README.md, plainly/CHANGELOG.md, plainly/evals, plainly/.claude-plugin/plugin.json, plainly/.gitignore, .claude-plugin/marketplace.json, README.md
 promotes:
 decision_refs:
@@ -128,6 +128,70 @@ Claude Code 2.1.321 코드에서 확인한 것: 강제된 플러그인 스타일
   대해 받았기 때문이다. 내용은 커밋 `6fc759b6` 과 같다.
 - 정규식 채점은 문장 모양만 본다. 뜻이 보존됐는지는 재지 않았다.
 
+
+### Executed at close — 2026-11-16
+
+```
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 22 tests in 0.003s
+
+OK
+
+$ python3 -m unittest discover -s plainly/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 22 tests in 0.003s
+
+OK
+
+$ python3 -m unittest discover -s tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-16
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000344.md
+Criteria:
+- PASS: 플레인리를 켜면 outputStyle 설정 없이도 스타일이 적용되고, 평가의 스타일 확인 질문이 켠 쪽에서만 통과한다
+  Reason: plainly/output-styles/plainly.md frontmatter has force-for-plugin: true; I did not rerun claude plugin eval, but read the recorded run's aggregate-result.json (Claude 2.1.321, scratch copy whose plainly/ diff -r against the repo shows no difference) where style-active scores with 1.00 and without 0.00.
+- PASS: claude plugin eval 로 한국어 질문 네 개를 돌리면 플러그인을 켠 경우와 끈 경우의 점수가 함께 나온다
+  Reason: I did not rerun the eval; the recorded aggregate-result.json holds with and without arms for all four Korean cases (two-axes 1.00 vs 0.50, explain-to-colleague 1.00 vs 0.83, work-report and live-test 1.00 vs 1.00), matching the card's Verification table.
+- PASS: 테스트가 force-for-plugin 철자와 evals 폴더에 마크다운만 있다는 것을 확인한다
+  Reason: Ran python3 -m unittest discover -s plainly/tests -q: 22 tests OK; test_the_style_applies_as_soon_as_the_plugin_is_enabled asserts the exact force-for-plugin key and test_evals_hold_markdown_cases_only asserts every non-results file under evals/ is .md and each case has graders.
+- PASS: README 와 매니페스트·마켓플레이스 설명이 켜면 바로 적용되고 다른 스타일을 쓰려면 플러그인을 꺼야 한다고 말한다
+  Reason: plainly/README.md 'Turning it on and off' says enabling applies the style, it replaces outputStyle, and another style means /plugin disable; plugin.json and marketplace.json say 'applied while the plugin is enabled' and no longer call it selectable; the repo README now says one style applied while enabled.
+```
 
 ## Retrospective
 

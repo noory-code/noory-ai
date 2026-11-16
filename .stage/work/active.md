@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000344 | development | claude | 플레인리가 한국어 답을 실제로 바꾸는지 같은 질문으로 언제든 다시 재 볼 수 있게 한다 | active | Claude | [current/W-00000344/_story.md](current/W-00000344/_story.md) |
