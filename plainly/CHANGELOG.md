@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Apply the style while the plugin is enabled: the style file declares `force-for-plugin: true`,
+  so no `outputStyle` setting is needed, and Claude Code uses Plainly in place of whatever
+  `outputStyle` names. Using another output style now means disabling the plugin. Without this,
+  `claude plugin eval` compared two default sessions, because it never selects an output style.
+- Add `evals/` for `claude plugin eval`: one case checks that the session runs under Plainly, and
+  four Korean cases use regular-expression graders to check that answers carry none of the shapes
+  the Korean section removes. Results go to `evals/results/`, which git ignores.
+
 ## 0.7.3 — 2026-11-16
 
 - Korean guidance: name the four noun-centered shapes that actually appear in work reports, with

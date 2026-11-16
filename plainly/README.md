@@ -1,8 +1,8 @@
 # Plainly
 
-Plainly is one Claude Code output style. Selecting it puts a set of writing rules into the
-session's system prompt, where Claude Code keeps them for every turn. The plugin is a single
-markdown file — no hook, no code that runs at prompt time.
+Plainly is one Claude Code output style. While the plugin is enabled it puts a set of writing rules
+into the session's system prompt, where Claude Code keeps them for every turn. The plugin is a
+single markdown file plus its eval cases — no hook, no code that runs at prompt time.
 
 ## What the rules cover
 
@@ -34,18 +34,18 @@ These instructions guide generation; they are not a separate verifier or a guara
 Readers writing another language skip this section. Tests check the style's structure and stated
 rules. Actual Claude responses must be reviewed separately to assess writing quality.
 
-## Selecting it
+## Turning it on and off
 
-Pick it with `/output-style`, or name it in `.claude/settings.json`:
+The style declares `force-for-plugin: true`, so enabling the plugin applies it; no `outputStyle`
+setting is needed. While the plugin is enabled, Claude Code uses this style in place of whatever
+`outputStyle` names, so using another output style means disabling the plugin:
 
-```json
-{ "outputStyle": "plainly:Plainly" }
+```text
+/plugin disable plainly@noory-ai
 ```
 
-A project's own `.claude/settings.json` overrides the user-wide one. Claude Code owns this
-setting; Plainly neither reads nor writes it. A new choice applies to the next session.
-
-Claude Code disables output styles in safe mode, and Plainly does nothing there.
+A change applies to the next session. Claude Code disables output styles in safe mode, and Plainly
+does nothing there.
 
 ## Coding instructions
 
@@ -79,8 +79,28 @@ python3 -m unittest discover -s tests -q
 To see the style load without releasing the plugin:
 
 ```text
-claude -p --plugin-dir plainly \
-       --settings '{"outputStyle":"plainly:Plainly"}' \
-       --debug-file log.txt
-grep "output styles from plugin plainly" log.txt
+claude -p --plugin-dir plainly --debug-file log.txt
+grep "Using forced plugin output style" log.txt
 ```
+
+## Evals
+
+`evals/` holds cases for `claude plugin eval`. Each case is a `prompt.md` and one or more
+`graders/*.md`; nothing in the folder runs. The command asks every case with the plugin enabled
+and again without it, and reports the score difference.
+
+| Case | What it checks |
+|---|---|
+| `style-active` | The session names Plainly as its output style. It fails in both arms if the style stops loading. |
+| `work-report`, `two-axes`, `live-test`, `explain-to-colleague` | Korean answers carry none of the shapes the Korean section removes: em dashes, "재측정", "축", "실기"/"실측", chained "의", and a noun followed by "진행하다"/"수행하다"/"실시하다". |
+
+The graders are regular expressions, so a run costs only the Claude sessions it starts: five cases,
+three runs each by default, in two arms. They check the shape of a sentence, not whether it kept the
+meaning; read the answers for that. Run from the repository root:
+
+```text
+claude plugin eval plainly --trust-plugin
+```
+
+`--trust-plugin` answers the first-run prompt that asks whether you trust this plugin directory.
+Results go to `plainly/evals/results/`, which git ignores.
