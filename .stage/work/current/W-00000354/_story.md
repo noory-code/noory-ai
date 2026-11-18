@@ -9,8 +9,8 @@ acceptance:
   - "python3 -m unittest stage/scripts/tests/test_subprocess_text_encoding.py"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000354
 promotion: pending
 review: not_required
 scope: stage/hooks/tests,stage/scripts/tests,stage/CHANGELOG.md
@@ -109,5 +109,8 @@ decision_refs:
 
 ## Retrospective
 
+R-00000354에 적었다.
 
 ## Promotion decision
+
+not_applicable. 공식 기록으로 올릴 결정이 없다.
