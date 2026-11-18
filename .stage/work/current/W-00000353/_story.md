@@ -9,12 +9,12 @@ autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
   - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000353
 promotion: not_applicable
-review: pending
+review: passed
 scope: stage/scripts/driver_lifecycle.py, stage/scripts/tests/test_close_work.py, stage/scripts/tests/test_drive.py, stage/skills/stage-retrospective/SKILL.md, stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -95,6 +95,154 @@ decision_refs:
 - `python stage/scripts/audit_stage.py --project-root .`: errors=0.
 - 닫기 리뷰는 아직 받지 않았다. 이 저장소의 리뷰 명령이 POSIX 셸 문법(`OUT=$(...)`)과 `python3` 를 써서
   Windows 의 `cmd.exe` 에서 돌지 않는다. macOS 에서 닫는다.
+
+### Executed at close — 2026-11-18
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 79 tests in 23.940s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (14 earlier lines omitted)
+GVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpOyBQYXRoKCdleGVjdXRvci13b3JrLnR4dCcpLndyaXRlX3RleHQoJ2RvbmVcbicsIGVuY29kaW5nPSd1dGYtOCcpOyBpbXBvcnQganNvbiwgb3M7IGZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aDsgbG9nID0gUGF0aChvcy5lbnZpcm9uWydTVEFHRV9XT1JLX0xPR19QQVRIJ10pOyBsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgJ1xuIyMjIEV4ZWN1dG9yIHJlcG9ydFxuV2hhdCBjaGFuZ2VkOiB0ZXN0IGV4ZWN1dG9yIGNoYW5nZWQgaXRzIGRlY2xhcmVkIHBhdGhzXG5XaHk6IGV4ZXJjaXNlIHRoZSBkcml2ZXIgY29udHJhY3RcbkRlY2lzaW9ucyBtYWRlOiBOb25lXG5Xb3JrIG5vdCBkb25lOiBOb25lXG5DaGFuZ2VkIHBhdGhzIChKU09OKTpcbicgKyBqc29uLmR1bXBzKFsnZXhlY3V0b3Itd29yay50eHQnXSkgKyAnXG5SZXZpZXcgcmVxdWVzdDogcmV2aWV3IGV2ZXJ5IHN1Y2Nlc3MgY3JpdGVyaW9uXG4nLCBlbmNvZGluZz0ndXRmLTgnKQ=='"'"'))'
+[exit 0]
+
+Acceptance result:
+$ /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnL3Zhci9mb2xkZXJzL3dnLzZobmRfZjI1NV96NG5nazd5bndwdHltNDAwMDBnbi9UL3RtcDV5bDhvMWpwL2FjY2VwdGFuY2UtY291bnQnKTsgcGF0aC53cml0ZV90ZXh0KHN0cihpbnQocGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykpICsgMSkgaWYgcGF0aC5leGlzdHMoKSBlbHNlICcxJywgZW5jb2Rpbmc9J3V0Zi04Jyk='"'"'))'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'dHJ5OgogICAgZXhlYygiZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnL3Zhci9mb2xkZXJzL3dnLzZobmRfZjI1NV96NG5nazd5bndwdHltNDAwMDBnbi9UL3RtcDV5bDhvMWpwL3Jldmlld2VyLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpIikKZXhjZXB0IFN5c3RlbUV4aXQgYXMgZXhjOgogICAgaWYgZXhjLmNvZGUgbm90IGluIChOb25lLCAwKToKICAgICAgICByYWlzZQppbXBvcnQganNvbiwgb3MKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKQpyZXBvcnQgPSAoJ1xuIyMjIFJldmlld2VyIHJlcG9ydFxuQ1JJVEVSSUEgVkVSRElDVDpcbi0gY3JpdGVyaW9uOiBQQVNTIC0gdGVzdCByZXZpZXdlciBpbnNwZWN0ZWQgdGhlIGlucHV0c1xuQVBQUk9WRURcbk9VVC1PRi1DUklURVJJQSBPQlNFUlZBVElPTlM6XG4tIE5vbmVcbicpCmxvZy53cml0ZV90ZXh0KGxvZy5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykgKyByZXBvcnQsIGVuY29kaW5nPSd1dGYtOCcpClBhdGgob3MuZW52aXJvblsnU1RBR0VfUkVWSUVXX1ZFUkRJQ1RfRklMRSddKS53cml0ZV90ZXh0KAogICAganNvbi5kdW1wcyh7J2NyaXRlcmlhJzogW3snY3JpdGVyaW9uJzogJ2NyaXRlcmlvbicsICd2ZXJkaWN0JzogJ1BBU1MnLCAncmVhc29uJzogJ3Rlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHMnfV0sICdhcHByb3ZlZCc6IFRydWV9KSwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0FQUFJPVkVEJyk='"'"'))'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'cmFpc2UgU3lzdGVtRXhpdCgwKQ=='"'"'))'
+Acceptance: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'cmFpc2UgU3lzdGVtRXhpdCgwKQ=='"'"'))'
+Independent reviewer: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'aW1wb3J0IGpzb24sIG9zCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApsb2cgPSBQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1dPUktfTE9HX1BBVEgnXSkKcmVwb3J0ID0gKCdcbiMjIyBSZXZpZXdlciByZXBvcnRcbkNSSVRFUklBIFZFUkRJQ1Q6XG4tIGNyaXRlcmlvbjogUEFTUyAtIHRlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHNcbkFQUFJPVkVEXG5PVVQtT0YtQ1JJVEVSSUEgT0JTRVJWQVRJT05TOlxuLSBOb25lXG4nKQpsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgcmVwb3J0LCBlbmNvZGluZz0ndXRmLTgnKQpQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1JFVklFV19WRVJESUNUX0ZJTEUnXSkud3JpdGVfdGV4dCgKICAgIGpzb24uZHVtcHMoeydjcml0ZXJpYSc6IFt7J2NyaXRlcmlvbic6ICdjcml0ZXJpb24nLCAndmVyZGljdCc6ICdQQVNTJywgJ3JlYXNvbic6ICd0ZXN0IHJldmlld2VyIGluc3BlY3RlZCB0aGUgaW5wdXRzJ31dLCAnYXBwcm92ZWQnOiBUcnVlfSksIGVuY29kaW5nPSd1dGYtOCcpCnByaW50KCdBUFBST1ZFRCcp'"'"'))'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 105 tests in 51.926s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 79 tests in 23.451s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q
+[exit 0]
+... (14 earlier lines omitted)
+GVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpOyBQYXRoKCdleGVjdXRvci13b3JrLnR4dCcpLndyaXRlX3RleHQoJ2RvbmVcbicsIGVuY29kaW5nPSd1dGYtOCcpOyBpbXBvcnQganNvbiwgb3M7IGZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aDsgbG9nID0gUGF0aChvcy5lbnZpcm9uWydTVEFHRV9XT1JLX0xPR19QQVRIJ10pOyBsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgJ1xuIyMjIEV4ZWN1dG9yIHJlcG9ydFxuV2hhdCBjaGFuZ2VkOiB0ZXN0IGV4ZWN1dG9yIGNoYW5nZWQgaXRzIGRlY2xhcmVkIHBhdGhzXG5XaHk6IGV4ZXJjaXNlIHRoZSBkcml2ZXIgY29udHJhY3RcbkRlY2lzaW9ucyBtYWRlOiBOb25lXG5Xb3JrIG5vdCBkb25lOiBOb25lXG5DaGFuZ2VkIHBhdGhzIChKU09OKTpcbicgKyBqc29uLmR1bXBzKFsnZXhlY3V0b3Itd29yay50eHQnXSkgKyAnXG5SZXZpZXcgcmVxdWVzdDogcmV2aWV3IGV2ZXJ5IHN1Y2Nlc3MgY3JpdGVyaW9uXG4nLCBlbmNvZGluZz0ndXRmLTgnKQ=='"'"'))'
+[exit 0]
+
+Acceptance result:
+$ /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnL3Zhci9mb2xkZXJzL3dnLzZobmRfZjI1NV96NG5nazd5bndwdHltNDAwMDBnbi9UL3RtcHE2eWRrMXBxL2FjY2VwdGFuY2UtY291bnQnKTsgcGF0aC53cml0ZV90ZXh0KHN0cihpbnQocGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykpICsgMSkgaWYgcGF0aC5leGlzdHMoKSBlbHNlICcxJywgZW5jb2Rpbmc9J3V0Zi04Jyk='"'"'))'
+[exit 0]
+
+Independent reviewer result:
+$ /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'dHJ5OgogICAgZXhlYygiZnJvbSBwYXRobGliIGltcG9ydCBQYXRoOyBwYXRoID0gUGF0aCgnL3Zhci9mb2xkZXJzL3dnLzZobmRfZjI1NV96NG5nazd5bndwdHltNDAwMDBnbi9UL3RtcHE2eWRrMXBxL3Jldmlld2VyLWNvdW50Jyk7IHBhdGgud3JpdGVfdGV4dChzdHIoaW50KHBhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpKSArIDEpIGlmIHBhdGguZXhpc3RzKCkgZWxzZSAnMScsIGVuY29kaW5nPSd1dGYtOCcpIikKZXhjZXB0IFN5c3RlbUV4aXQgYXMgZXhjOgogICAgaWYgZXhjLmNvZGUgbm90IGluIChOb25lLCAwKToKICAgICAgICByYWlzZQppbXBvcnQganNvbiwgb3MKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmxvZyA9IFBhdGgob3MuZW52aXJvblsnU1RBR0VfV09SS19MT0dfUEFUSCddKQpyZXBvcnQgPSAoJ1xuIyMjIFJldmlld2VyIHJlcG9ydFxuQ1JJVEVSSUEgVkVSRElDVDpcbi0gY3JpdGVyaW9uOiBQQVNTIC0gdGVzdCByZXZpZXdlciBpbnNwZWN0ZWQgdGhlIGlucHV0c1xuQVBQUk9WRURcbk9VVC1PRi1DUklURVJJQSBPQlNFUlZBVElPTlM6XG4tIE5vbmVcbicpCmxvZy53cml0ZV90ZXh0KGxvZy5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykgKyByZXBvcnQsIGVuY29kaW5nPSd1dGYtOCcpClBhdGgob3MuZW52aXJvblsnU1RBR0VfUkVWSUVXX1ZFUkRJQ1RfRklMRSddKS53cml0ZV90ZXh0KAogICAganNvbi5kdW1wcyh7J2NyaXRlcmlhJzogW3snY3JpdGVyaW9uJzogJ2NyaXRlcmlvbicsICd2ZXJkaWN0JzogJ1BBU1MnLCAncmVhc29uJzogJ3Rlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHMnfV0sICdhcHByb3ZlZCc6IFRydWV9KSwgZW5jb2Rpbmc9J3V0Zi04JykKcHJpbnQoJ0FQUFJPVkVEJyk='"'"'))'
+[exit 0]
+APPROVED
+Mode: execute
+Target parent: W-00000001
+Selected item: W-00000002
+Executor: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'cmFpc2UgU3lzdGVtRXhpdCgwKQ=='"'"'))'
+Acceptance: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'cmFpc2UgU3lzdGVtRXhpdCgwKQ=='"'"'))'
+Independent reviewer: /opt/homebrew/opt/python@3.15/bin/python3.15 -c 'import base64;exec(base64.b64decode('"'"'aW1wb3J0IGpzb24sIG9zCmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aApsb2cgPSBQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1dPUktfTE9HX1BBVEgnXSkKcmVwb3J0ID0gKCdcbiMjIyBSZXZpZXdlciByZXBvcnRcbkNSSVRFUklBIFZFUkRJQ1Q6XG4tIGNyaXRlcmlvbjogUEFTUyAtIHRlc3QgcmV2aWV3ZXIgaW5zcGVjdGVkIHRoZSBpbnB1dHNcbkFQUFJPVkVEXG5PVVQtT0YtQ1JJVEVSSUEgT0JTRVJWQVRJT05TOlxuLSBOb25lXG4nKQpsb2cud3JpdGVfdGV4dChsb2cucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpICsgcmVwb3J0LCBlbmNvZGluZz0ndXRmLTgnKQpQYXRoKG9zLmVudmlyb25bJ1NUQUdFX1JFVklFV19WRVJESUNUX0ZJTEUnXSkud3JpdGVfdGV4dCgKICAgIGpzb24uZHVtcHMoeydjcml0ZXJpYSc6IFt7J2NyaXRlcmlvbic6ICdjcml0ZXJpb24nLCAndmVyZGljdCc6ICdQQVNTJywgJ3JlYXNvbic6ICd0ZXN0IHJldmlld2VyIGluc3BlY3RlZCB0aGUgaW5wdXRzJ31dLCAnYXBwcm92ZWQnOiBUcnVlfSksIGVuY29kaW5nPSd1dGYtOCcpCnByaW50KCdBUFBST1ZFRCcp'"'"'))'
+Attempt: 1/unlimited
+Iteration: 1/unlimited
+Execution time: 0s/unlimited
+WARNING: preflights.codex is not configured; continuing without a venue health check
+----------------------------------------------------------------------
+Ran 105 tests in 51.789s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 448 tests in 6.796s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -q
+[exit 0]
+... (270 earlier lines omitted)
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+[W-00000001] executor failed; retry 1/3
+WARNING: preflights.codex is not configured; continuing without a venue health check
+WARNING: reapers.codex is not configured after executor turn; jobs may remain
+WARNING: reapers.claude is not configured after reviewer turn; jobs may remain
+[W-00000001] completed on stage/driver/W-00000001-1795008028
+Unattended run finished: 1 item(s) closed on isolated branch stage/driver/W-00000001-1795008028. Human review + merge required; the base branch was not modified.
+Removed unattended worktree: /private/var/folders/wg/6hnd_f255_z4ngk7ynwptym40000gn/T/tmp42r7d4k0/unattended/W-00000001-1795008028
+Landed W-00000001 from stage/worktree/W-00000001 and removed its worktree and branch
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Schema-v5 migration aborted; the exact pre-migration Stage tree was restored.
+Ignoring unrelated schema-v4 migration journal.
+Schema-v5 migration complete: 3 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Migration refused: Pending promotion machinery must finish before migration: .runtime/intents/W-00000001.json
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+Stage project already uses schema v5; no migration needed.
+Preflight passed. Close every other agent/editor window before continuing; the schema-v4 maintenance marker now denies concurrent Stage writes.
+  unchanged operations/verification.md (unchanged)
+  delete backlog B-00000001-realized.md (realized by W-00000009; git history keeps the file)
+  convert backlog B-00000002-open.md -> W-00000001.md (planned work card)
+  convert backlog B-00000003-child.md -> W-00000002.md (planned work card)
+  update backlog index (1 closed rows removed)
+  stamp  settings.json schema_version = 4
+Schema-v4 responsibility relocation complete; continuing to schema v5.
+Schema-v5 migration complete: 2 flat work card(s) moved into the hierarchy.
+This command does not commit. Its successful transaction journal was removed; review the working tree before committing.
+----------------------------------------------------------------------
+Ran 770 tests in 182.431s
+
+OK (skipped=2)
+```
+
+### Review at close — 2026-11-18
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000353.md
+Criteria:
+- PASS: 카드 번호에서 만든 회고 자리를 다른 카드가 쓰고 있어도 회고를 만들 수 있고, 그 회고는 아무도 쓰지 않는 번호를 받는다.
+  Reason: reserve_retrospective now follows the owner of a taken slot (R-n owned by W-m tries R-m) and only creates a file with open('x') on a slot that exists in neither current nor archive; I ran test_close_work.py (79 OK) and test_drive.py (105 OK), and with the pre-fix driver_lifecycle.py swapped in the follow-owner, chain, and driver tests fail, so they exercise the fix.
+- PASS: 회고 번호를 정할 때 회고 파일 목록을 훑어 마지막 번호 다음을 세지 않는다. 같은 시점에서 갈라진 사본 둘이 각각 회고를 만들어도 번호가 겹치지 않는다.
+  Reason: The new loop reads only the frontmatter of the specific slot it tries and never lists or counts records; because each card owns one retrospective, two chains start on different own slots and cannot converge, and test_allocate_retrospective_does_not_count_records (two copytree copies get R-00000050 and R-00000060) passes on the fix and fails on the pre-fix code in my run.
+- PASS: 자기 번호 자리가 비어 있는 카드는 지금처럼 R-<카드 번호> 를 받고, 다시 실행해도 같은 번호를 돌려받는다.
+  Reason: I ran a scratch script calling reserve_retrospective twice for W-00000353 in an empty temp .stage and it returned R-00000353 both times with a single R-00000353.md; test_allocate_retrospective_reuses_preferred_id_owned_by_item also passes in the 79-test close_work run.
+```
+
+- 위 닫기 검사와 리뷰는 macOS 에서 코드 커밋 `6eddd547` 에 맞춘 분리 worktree 에서 돌렸다.
+- 닫기 리뷰는 같은 모델 계열의 리뷰다. codex 가 없어 Claude 대역
+  (`STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py`)으로 돌렸고, 다른 모델의 교차 리뷰가 아니다.
+- 리뷰어는 고치기 전 `driver_lifecycle.py` 를 넣어 새 테스트가 실패하는 것을 직접 봤다. "사본 둘이 같은 번호를
+  잡지 않는다"는 카드 하나가 회고를 하나만 가진다는 전제 위에서 코드를 읽고 판정했다.
+- 사용자 확인 — 2026-11-18. 사용자는 바뀐 경로와 요약, 기준 세 개의 PASS 판정, 리뷰어가 직접 실행한 것과
+  코드만 읽고 판정한 것을 보고 "확인, 닫으세요" 라고 답했다(DE-00000087).
 
 ## Retrospective
 
