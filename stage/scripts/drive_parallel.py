@@ -142,6 +142,8 @@ def run_git(project_root: Path, args: list[str]) -> tuple[int, str]:
             capture_output=True,
             env=real_git_environment(),
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
         )
     except subprocess.TimeoutExpired:
@@ -587,6 +589,8 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
             capture_output=True,
             env=environment,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=REAPER_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
@@ -639,6 +643,8 @@ def run_driver(
             capture_output=True,
             env=environment,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
         )
     except subprocess.TimeoutExpired:

@@ -82,6 +82,8 @@ def _run_git(
         cwd=project_root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     if check and result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()

@@ -159,6 +159,8 @@ def close_via_close_work(
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=outer_timeout,
             env=project_environment(project_root),
         )
@@ -185,7 +187,13 @@ def escalate_via_escalate_work(
     ]
     try:
         proc = subprocess.run(
-            command, cwd=str(project_root), capture_output=True, text=True, timeout=timeout
+            command,
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
         )
     except subprocess.TimeoutExpired:
         return False, f"escalate_work timed out after {timeout}s"

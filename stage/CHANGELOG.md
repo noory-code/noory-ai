@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Read child-process output as UTF-8 whatever the host locale is. On Windows in Korean (cp949),
+  `close_work.py` ran a check that printed UTF-8 Korean, its `subprocess` reader thread raised
+  `UnicodeDecodeError`, and the check's output was lost from the card's evidence. Every text-mode
+  `subprocess` call in the plugin (close_work, the drivers, the migrations, the handoff readers,
+  and the hooks) now passes `encoding="utf-8", errors="replace"`, and a test fails when a new
+  text-mode call leaves the encoding out.
+
 ## 0.66.5 — 2026-11-17
 
 - `register_work.py` and `start_work.py` keep every `--scope` they receive. A repeated `--scope`

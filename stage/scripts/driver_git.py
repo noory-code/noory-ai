@@ -38,6 +38,8 @@ def run_git(project_root: Path, args: list[str], timeout: int = 120) -> tuple[bo
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
         )
     except subprocess.TimeoutExpired:

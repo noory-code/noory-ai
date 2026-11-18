@@ -120,6 +120,8 @@ def _head(project_root: Path) -> str:
         cwd=project_root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     return result.stdout.strip() if result.returncode == 0 else ""
 
