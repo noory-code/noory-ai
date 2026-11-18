@@ -282,3 +282,6 @@
 | W-00000350 | completed | [items/W-00000350/_story.md](items/W-00000350/_story.md) |
 | W-00000351 | completed | [items/W-00000351/_story.md](items/W-00000351/_story.md) |
 | W-00000354 | completed | [items/W-00000354/_story.md](items/W-00000354/_story.md) |
+| W-00000352 | completed | [items/W-00000352/_story.md](items/W-00000352/_story.md) |
+| W-00000353 | completed | [items/W-00000353/_story.md](items/W-00000353/_story.md) |
+| W-00000355 | completed | [items/W-00000355/_story.md](items/W-00000355/_story.md) |
