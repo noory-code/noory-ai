@@ -8,6 +8,14 @@
   `subprocess` call in the plugin (close_work, the drivers, the migrations, the handoff readers,
   and the hooks) now passes `encoding="utf-8", errors="replace"`, and a test fails when a new
   text-mode call leaves the encoding out.
+- Give a card a free retrospective number when `R-<card number>` already belongs to another card.
+  A project that numbered retrospectives in sequence before Stage derived them from the card could
+  not close an older card: `--allocate-retrospective` and the driver stopped with "retrospective
+  R-00000040 is already archived for W-00000066, not W-00000040". The owner already has its
+  retrospective and never needs its own number, so allocation now tries `R-<owner number>` next and
+  follows owners until a number is free. It still never counts records, so parallel worktrees
+  cannot pick the same number. A retrospective the card's `retrospective_ref` already names is
+  reused.
 
 ## 0.66.5 — 2026-11-17
 

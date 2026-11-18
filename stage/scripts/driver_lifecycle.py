@@ -250,7 +250,7 @@ def set_frontmatter_field(text: str, name: str, value: str) -> str:
 def retrospective_id_for_work_item(
     item_id: str,
 ) -> str:
-    """Derive the one retrospective ID reserved for a work item."""
+    """Derive the retrospective ID a work item tries first: `R-` plus its number."""
 
     if not WORK_ID_RE.fullmatch(item_id):
         raise ValueError(f"invalid work item ID for retrospective: {item_id}")
@@ -262,47 +262,79 @@ def reserve_retrospective(
     item_id: str,
     content_for: Callable[[str], str],
 ) -> str:
-    """Reserve the work item's deterministic retrospective or fail on conflict."""
+    """Reserve the work item's retrospective without counting existing records.
 
-    retro_id = retrospective_id_for_work_item(item_id)
+    The first choice is `R-` plus the item's number. A project that numbered
+    retrospectives one after another before that rule can hold that slot for
+    another item. Then the slot's owner shows the way on: when `R-n` belongs to
+    `W-m`, `W-m` already has its retrospective and will never need `R-m`, so
+    `R-m` is tried next, and so on until a slot is free.
+
+    Each work item owns at most one retrospective, so following owners is
+    one-to-one: two items' chains never meet and never end on the same slot,
+    even in copies of `.stage` that split from the same state. Counting the
+    records and taking the last number plus one gave every copy the same answer
+    (W-00000259), so allocation never counts.
+
+    The walk stops with an error when the item's own slot is archived, when a
+    slot's owner is not a work item, or when the chain comes back to a slot it
+    already passed, which only inconsistent records can cause.
+    """
 
     paths = v4_lifecycle_paths()
     current_root = stage_root / paths.current_retrospectives
     archive_root = stage_root / paths.archive_retrospectives
     current_root.mkdir(parents=True, exist_ok=True)
-    current_path = current_root / f"{retro_id}.md"
-    archive_path = archive_root / f"{retro_id}.md"
 
-    if current_path.exists():
-        existing_owner = str(parse_frontmatter(current_path).get("work_item", ""))
-        if existing_owner == item_id:
+    card_path = current_card_path(stage_root, item_id)
+    if card_path.is_file():
+        bound_id = str(parse_frontmatter(card_path).get("retrospective_ref", "")).strip()
+        bound_path = current_root / f"{bound_id}.md"
+        if (
+            bound_id
+            and bound_path.is_file()
+            and str(parse_frontmatter(bound_path).get("work_item", "")) == item_id
+        ):
+            return bound_id
+
+    retro_id = retrospective_id_for_work_item(item_id)
+    passed: list[str] = []
+    while True:
+        current_path = current_root / f"{retro_id}.md"
+        archive_path = archive_root / f"{retro_id}.md"
+        if current_path.exists():
+            owner = str(parse_frontmatter(current_path).get("work_item", ""))
+            if owner == item_id:
+                return retro_id
+            place = "current"
+        elif archive_path.exists():
+            owner = str(parse_frontmatter(archive_path).get("work_item", ""))
+            if owner == item_id:
+                raise RuntimeError(
+                    f"retrospective {retro_id} is already archived for {item_id}; "
+                    "cannot reserve it as current"
+                )
+            place = "archived"
+        else:
+            try:
+                with current_path.open("x", encoding="utf-8") as handle:
+                    handle.write(content_for(retro_id))
+            except FileExistsError:
+                continue  # created meanwhile; read its owner on the next pass
             return retro_id
-        owner = existing_owner or "an unknown work item"
-        raise RuntimeError(
-            f"retrospective {retro_id} is already current for {owner}, not {item_id}"
-        )
 
-    if archive_path.exists():
-        existing_owner = str(parse_frontmatter(archive_path).get("work_item", ""))
-        if existing_owner == item_id:
+        passed.append(retro_id)
+        taken = f"retrospective {retro_id} is already {place} for "
+        if not WORK_ID_RE.fullmatch(owner):
             raise RuntimeError(
-                f"retrospective {retro_id} is already archived for {item_id}; "
-                "cannot reserve it as current"
+                f"{taken}{owner or 'an unknown work item'}, not {item_id}; "
+                "its owner is not a work item, so no other number can be chosen from it"
             )
-        owner = existing_owner or "an unknown work item"
-        raise RuntimeError(
-            f"retrospective {retro_id} is already archived for {owner}, not {item_id}"
-        )
-
-    try:
-        with current_path.open("x", encoding="utf-8") as handle:
-            handle.write(content_for(retro_id))
-    except FileExistsError as exc:
-        existing_owner = str(parse_frontmatter(current_path).get("work_item", ""))
-        if existing_owner == item_id:
-            return retro_id
-        owner = existing_owner or "an unknown work item"
-        raise RuntimeError(
-            f"retrospective {retro_id} is already current for {owner}, not {item_id}"
-        ) from exc
-    return retro_id
+        next_id = retrospective_id_for_work_item(owner)
+        if next_id in passed:
+            raise RuntimeError(
+                f"{taken}{owner}, not {item_id}; following the owners of "
+                f"{', '.join(passed)} returns to {next_id}, so the records disagree "
+                "about who owns which retrospective"
+            )
+        retro_id = next_id

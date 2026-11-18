@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -610,27 +611,33 @@ class CloseWorkTest(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertIn("status: active", body)
 
-    def test_allocate_retrospective_refuses_id_archived_for_another_work_item(self):
-        tmp, root = self.make(
-            retro="pending",
-            ref="",
-            with_ref_file=False,
+    def make_for_allocation(self) -> tuple[tempfile.TemporaryDirectory, Path]:
+        tmp, root = self.make(retro="pending", ref="", with_ref_file=False)
+        (root / ".stage/work/retrospectives/_template.md").write_text(
+            "---\nid: R-00000000\nwork_item: W-00000000\n---\n\n"
+            "# R-00000000 Title\n\n## Work\n\n",
+            encoding="utf-8",
         )
+        return tmp, root
+
+    def write_retrospective(self, root: Path, place: str, retro_id: str, owner: str) -> Path:
+        directory = {
+            "current": root / ".stage/work/retrospectives",
+            "archived": root / ".stage/official/work/archive/retrospectives",
+        }[place]
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / f"{retro_id}.md"
+        owner_line = f"work_item: {owner}\n" if owner else ""
+        path.write_text(f"---\nid: {retro_id}\n{owner_line}---\n", encoding="utf-8")
+        return path
+
+    def test_allocate_retrospective_follows_owner_when_own_number_is_taken(self):
+        # An older project numbered retrospectives one after another, so
+        # R-00000001 belongs to W-00000099. W-00000099 already has its
+        # retrospective and never needs R-00000099, which is free.
+        tmp, root = self.make_for_allocation()
         with tmp:
-            retrospective_root = root / ".stage/work/retrospectives"
-            (retrospective_root / "_template.md").write_text(
-                "---\nid: R-00000000\nwork_item: W-00000000\n---\n\n"
-                "# R-00000000 Title\n\n## Work\n\n",
-                encoding="utf-8",
-            )
-            archived = (
-                root / ".stage/official/work/archive/retrospectives/R-00000001.md"
-            )
-            archived.parent.mkdir(parents=True)
-            archived.write_text(
-                "---\nid: R-00000001\nwork_item: W-00000099\n---\n",
-                encoding="utf-8",
-            )
+            self.write_retrospective(root, "archived", "R-00000001", "W-00000099")
             card_before = (
                 root / ".stage/work/current/W-00000001/_story.md"
             ).read_text(encoding="utf-8")
@@ -639,13 +646,109 @@ class CloseWorkTest(unittest.TestCase):
             card_after = (
                 root / ".stage/work/current/W-00000001/_story.md"
             ).read_text(encoding="utf-8")
+            allocated = (root / ".stage/work/retrospectives/R-00000099.md").read_text(
+                encoding="utf-8"
+            )
+            rerun = run(root, "W-00000001", "--allocate-retrospective")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("R-00000099", proc.stdout.strip())
+        self.assertIn("id: R-00000099\nwork_item: W-00000001\n", allocated)
+        self.assertEqual(card_before, card_after)
+        self.assertEqual(0, rerun.returncode, rerun.stderr)
+        self.assertEqual("R-00000099", rerun.stdout.strip())
+
+    def test_allocate_retrospective_follows_a_chain_of_owners(self):
+        tmp, root = self.make_for_allocation()
+        with tmp:
+            self.write_retrospective(root, "archived", "R-00000001", "W-00000099")
+            self.write_retrospective(root, "current", "R-00000099", "W-00000007")
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+            allocated = root / ".stage/work/retrospectives/R-00000007.md"
+            owner_line = allocated.read_text(encoding="utf-8").splitlines()[2]
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("R-00000007", proc.stdout.strip())
+        self.assertEqual("work_item: W-00000001", owner_line)
+
+    def test_allocate_retrospective_does_not_count_records(self):
+        # Two copies split from the same state each allocate for a different
+        # card whose own number is taken. Taking "the last number plus one"
+        # would give both R-00000061.
+        tmp, root = self.make_for_allocation()
+        with tmp:
+            self.write_retrospective(root, "archived", "R-00000001", "W-00000050")
+            self.write_retrospective(root, "archived", "R-00000002", "W-00000060")
+            card = root / ".stage/work/current/W-00000001/_story.md"
+            second = root / ".stage/work/current/W-00000002/_story.md"
+            second.parent.mkdir(parents=True)
+            second.write_text(
+                card.read_text(encoding="utf-8").replace("W-00000001", "W-00000002"),
+                encoding="utf-8",
+            )
+            copy = Path(tmp.name + "-copy")
+            shutil.copytree(root, copy)
+            self.addCleanup(shutil.rmtree, copy, True)
+
+            first = run(root, "W-00000001", "--allocate-retrospective")
+            other = run(copy, "W-00000002", "--allocate-retrospective")
+
+        self.assertEqual(0, first.returncode, first.stderr)
+        self.assertEqual(0, other.returncode, other.stderr)
+        self.assertEqual("R-00000050", first.stdout.strip())
+        self.assertEqual("R-00000060", other.stdout.strip())
+
+    def test_allocate_retrospective_reuses_bound_retrospective_off_the_chain(self):
+        # A retrospective someone numbered by hand stays the item's one
+        # retrospective when the card already points to it.
+        tmp, root = self.make(retro="pending", ref="R-00000168", with_ref_file=False)
+        with tmp:
+            (root / ".stage/work/retrospectives/_template.md").write_text(
+                "---\nid: R-00000000\nwork_item: W-00000000\n---\n", encoding="utf-8"
+            )
+            self.write_retrospective(root, "current", "R-00000168", "W-00000001")
+            self.write_retrospective(root, "archived", "R-00000001", "W-00000099")
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+            fallback_exists = (root / ".stage/work/retrospectives/R-00000099.md").exists()
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertEqual("R-00000168", proc.stdout.strip())
+        self.assertFalse(fallback_exists)
+
+    def test_allocate_retrospective_stops_when_owner_is_not_a_work_item(self):
+        tmp, root = self.make_for_allocation()
+        with tmp:
+            self.write_retrospective(root, "archived", "R-00000001", "")
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+            leftovers = sorted(
+                path.name for path in (root / ".stage/work/retrospectives").glob("R-*.md")
+            )
 
         self.assertEqual(1, proc.returncode)
-        self.assertIn("R-00000001", proc.stderr)
-        self.assertIn("W-00000001", proc.stderr)
-        self.assertIn("W-00000099", proc.stderr)
-        self.assertFalse((retrospective_root / "R-00000002.md").exists())
-        self.assertEqual(card_before, card_after)
+        self.assertIn("R-00000001 is already archived for an unknown work item", proc.stderr)
+        self.assertIn("not W-00000001", proc.stderr)
+        self.assertEqual([], leftovers)
+
+    def test_allocate_retrospective_stops_when_owners_loop(self):
+        # W-00000002 owning two retrospectives is inconsistent; the walk
+        # R-1 -> R-2 -> R-3 -> R-2 must stop instead of spinning.
+        tmp, root = self.make_for_allocation()
+        with tmp:
+            self.write_retrospective(root, "archived", "R-00000001", "W-00000002")
+            self.write_retrospective(root, "archived", "R-00000002", "W-00000003")
+            self.write_retrospective(root, "archived", "R-00000003", "W-00000002")
+
+            proc = run(root, "W-00000001", "--allocate-retrospective")
+            leftovers = sorted(
+                path.name for path in (root / ".stage/work/retrospectives").glob("R-*.md")
+            )
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("returns to R-00000002", proc.stderr)
+        self.assertEqual([], leftovers)
 
     def test_allocate_retrospective_reuses_preferred_id_owned_by_item(self):
         tmp, root = self.make(retro="pending")
