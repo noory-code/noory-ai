@@ -16,6 +16,8 @@ def run_cli(project_root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(CLI_PATH), "--project-root", str(project_root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
 

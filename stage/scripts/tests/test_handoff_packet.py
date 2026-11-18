@@ -238,7 +238,7 @@ class HandoffPacketTest(unittest.TestCase):
         args = [sys.executable, str(SCRIPTS / "handoff_packet.py"), "--project-root", str(self.root),
                 "W-00000002", "--project-key", "test/app", "--producers", str(config)]
         result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8",
-                                env={**os.environ, "PYTHONIOENCODING": "ascii"})
+                                errors="replace", env={**os.environ, "PYTHONIOENCODING": "ascii"})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("잘못된 입력", result.stdout)
         absent = snapshot()
@@ -251,7 +251,9 @@ class HandoffPacketTest(unittest.TestCase):
         self.assertEqual(check[-2:], ["--db", db])
         self.assertEqual(subprocess.run(check, capture_output=True).returncode, 0)
         config.write_text("broken")
-        result = subprocess.run(args, capture_output=True, text=True)
+        result = subprocess.run(
+            args, capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
         self.assertEqual(result.returncode, 2)
         self.assertEqual(result.stdout, "")
         self.assertIn("E_PRODUCERS_INVALID", result.stderr)

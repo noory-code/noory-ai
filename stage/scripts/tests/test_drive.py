@@ -295,6 +295,8 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
         cwd=root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         check=True,
     )
 
@@ -427,6 +429,7 @@ class DriveTest(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",
         )
 
     def load_module(self):

@@ -43,7 +43,8 @@ migrate_stage = load_module("migrate_stage_v4", SCRIPT_ROOT / "migrate_stage.py"
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", *args], cwd=root, capture_output=True, text=True, check=True
+        ["git", *args], cwd=root, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=True
     )
 
 
@@ -517,6 +518,8 @@ class V3ToV4MigrationTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)

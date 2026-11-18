@@ -82,6 +82,8 @@ class ImportExecutorReportTest(unittest.TestCase):
             [sys.executable, str(CLI), "--project-root", str(self.root), "W-00000001", *args],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
     def test_joins_wrapped_fields_onto_one_line_each(self):
@@ -131,7 +133,8 @@ class ImportExecutorReportTest(unittest.TestCase):
 
     def head(self) -> str:
         return subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=self.root, check=True, capture_output=True, text=True
+            ["git", "rev-parse", "HEAD"], cwd=self.root, check=True, capture_output=True, text=True,
+            encoding="utf-8", errors="replace"
         ).stdout.strip()
 
     def test_multi_attempt_report_is_checked_against_every_listed_commit(self):

@@ -184,6 +184,8 @@ class TemplateV4Test(unittest.TestCase):
                 env=env,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=PROJECT_SETTINGS.parent.parent,
             )
             argv = json.loads((root / "argv.json").read_text(encoding="utf-8"))

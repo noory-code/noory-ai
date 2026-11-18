@@ -21,6 +21,8 @@ def run_cli(project_root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(CLI_PATH), "--project-root", str(project_root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -336,6 +338,8 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
             archived_item = (
@@ -515,6 +519,8 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
             archive_unit = stage / "official/work/archive/items/W-00000001"
             archived_texts = [
@@ -724,6 +730,8 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
             archived_decision = stage / f"official/decisions/archive/{decision_id}.md"
@@ -787,6 +795,8 @@ class ArchiveWorkCliTest(unittest.TestCase):
                     [sys.executable, str(AUDIT_CLI_PATH), "--project-root", str(root)],
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                 )
 
                 self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)

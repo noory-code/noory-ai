@@ -97,6 +97,8 @@ class CompanionCliTest(unittest.TestCase):
             [sys.executable, str(CLI), *args],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             env=env,
         )
 
@@ -197,6 +199,8 @@ class ProjectSettingsTest(unittest.TestCase):
                 cwd=REPO_ROOT,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 env=env,
             )
             cancelled_jobs = cancelled.read_text(encoding="utf-8").split()
