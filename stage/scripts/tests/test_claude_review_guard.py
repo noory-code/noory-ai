@@ -101,7 +101,8 @@ def unittest_reviewer(exit_status: int | None = None) -> str:
 
 def git(root: Path, *args: str) -> str:
     return subprocess.run(
-        ["git", *args], cwd=root, check=True, capture_output=True, text=True
+        ["git", *args], cwd=root, check=True, capture_output=True, text=True,
+        encoding="utf-8", errors="replace"
     ).stdout
 
 
@@ -254,7 +255,8 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
             "changed": status.splitlines(),
             "verdict_kept": (root / VERDICT_RELATIVE).exists(),
             "claude_version": subprocess.run(
-                ["claude", "--version"], capture_output=True, text=True
+                ["claude", "--version"], capture_output=True, text=True,
+                encoding="utf-8", errors="replace"
             ).stdout.strip(),
         }
         line = json.dumps(entry, ensure_ascii=False)

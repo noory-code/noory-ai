@@ -37,6 +37,8 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(ROADMAP), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -51,6 +53,8 @@ def run_tool(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 

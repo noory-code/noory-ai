@@ -185,6 +185,8 @@ def run_register(root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(REGISTER_CLI), "--project-root", str(root), *args, *base],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -193,6 +195,8 @@ def run_start(root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(START_CLI), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 

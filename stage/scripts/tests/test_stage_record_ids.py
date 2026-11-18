@@ -120,11 +120,15 @@ class StageRecordIdsTest(unittest.TestCase):
             [sys.executable, str(CLI), "--project-root", str(self.root), "DE"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         bad = subprocess.run(
             [sys.executable, str(CLI), "--project-root", str(self.root), "de-1"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
         self.assertEqual(("DE-00000010\n", 0), (ok.stdout, ok.returncode))

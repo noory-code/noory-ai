@@ -153,12 +153,16 @@ def timeout_then_success_executor_command(marker: Path) -> str:
 
 
 def git(root: Path, *args: str) -> None:
-    subprocess.run(["git", *args], cwd=str(root), check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", *args], cwd=str(root), check=True, capture_output=True, text=True,
+        encoding="utf-8", errors="replace",
+    )
 
 
 def git_out(root: Path, *args: str) -> str:
     return subprocess.run(
-        ["git", *args], cwd=str(root), check=True, capture_output=True, text=True
+        ["git", *args], cwd=str(root), check=True, capture_output=True, text=True,
+        encoding="utf-8", errors="replace"
     ).stdout.strip()
 
 
@@ -352,7 +356,8 @@ class UnattendedTest(unittest.TestCase):
     def commit_all(self, root: Path) -> None:
         git(root, "add", "-A")
         subprocess.run(["git", "commit", "-q", "-m", "fixture"],
-                       cwd=str(root), capture_output=True, text=True)
+                       cwd=str(root), capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
 
     # --- tests -------------------------------------------------------------
 
@@ -758,6 +763,8 @@ class UnattendedTest(unittest.TestCase):
             cwd=str(root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         self.assertNotEqual(0, failed_attempt.returncode)
         human_in_branch = subprocess.run(
@@ -765,6 +772,8 @@ class UnattendedTest(unittest.TestCase):
             cwd=str(root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         self.assertNotEqual(0, human_in_branch.returncode)
 
@@ -820,6 +829,8 @@ class UnattendedTest(unittest.TestCase):
                     cwd=str(root),
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                 )
 
     def test_executor_receives_selected_work_item_environment(self):

@@ -37,12 +37,22 @@ CHILD_CODE = (
 )
 
 
+# A call that must decode with the locale (the control below) carries this
+# comment on one of its lines; the guard skips it and nothing else.
+LOCALE_ON_PURPOSE = "decodes with the locale on purpose"
+
+
 def plugin_sources() -> list[Path]:
+    """Every Python file under hooks/, scripts/, and skills/, tests included.
+
+    Tests read child output too: a test that decodes with the locale fails on a
+    Korean Windows host with UnicodeDecodeError instead of reporting its result
+    (W-00000354).
+    """
+
     paths: list[Path] = []
     for directory in SOURCE_DIRS:
-        for path in sorted((PLUGIN_ROOT / directory).rglob("*.py")):
-            if "tests" not in path.relative_to(PLUGIN_ROOT).parts:
-                paths.append(path)
+        paths.extend(sorted((PLUGIN_ROOT / directory).rglob("*.py")))
     return paths
 
 
@@ -54,6 +64,7 @@ def text_mode_calls(source: str, filename: str) -> tuple[int, list[str]]:
     """Count text-mode subprocess calls and list those not decoding UTF-8 with replace."""
 
     tree = ast.parse(source, filename=filename)
+    lines = source.splitlines()
     imported = {
         alias.asname or alias.name
         for node in ast.walk(tree)
@@ -83,6 +94,9 @@ def text_mode_calls(source: str, filename: str) -> tuple[int, list[str]]:
             or "errors" in keywords
         )
         if not text_mode:
+            continue
+        span = lines[node.lineno - 1 : node.end_lineno or node.lineno]
+        if any(LOCALE_ON_PURPOSE in line for line in span):
             continue
         count += 1
         if not (
@@ -133,6 +147,10 @@ class SubprocessTextEncodingGuardTest(unittest.TestCase):
             violations.extend(found)
 
         self.assertGreater(total, 0, "the guard found no text-mode subprocess calls to check")
+        self.assertTrue(
+            any("tests/" in path.relative_to(PLUGIN_ROOT).as_posix() for path in plugin_sources()),
+            "the guard must read test files too",
+        )
         self.assertEqual(
             [],
             violations,
@@ -149,6 +167,8 @@ class SubprocessTextEncodingGuardTest(unittest.TestCase):
             "subprocess.run(['x'], text=True, encoding='utf-8', errors='replace')": 0,
             "subprocess.run(['x'], capture_output=True)": 0,
             "tempfile.mkstemp(text=True)": 0,
+            "subprocess.run(  # decodes with the locale on purpose\n    ['x'], text=True\n)": 0,
+            "subprocess.run(['x'], text=True)  # locale is fine here": 1,
         }
         for source, expected in cases.items():
             with self.subTest(source=source):
@@ -163,7 +183,7 @@ class SubprocessTextEncodingBehaviourTest(unittest.TestCase):
         output = ""
         with locale_encoding("cp949"), mock.patch.object(threading, "excepthook"):
             try:
-                proc = subprocess.run(
+                proc = subprocess.run(  # decodes with the locale on purpose
                     python_command(CHILD_CODE), shell=True, capture_output=True, text=True
                 )
                 output = proc.stdout or ""

@@ -43,6 +43,8 @@ def git(root: Path, *args: str) -> str:
         capture_output=True,
         env=environment,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     ).stdout.strip()
 
 
@@ -1271,6 +1273,8 @@ class DriveParallelTest(unittest.TestCase):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)

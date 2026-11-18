@@ -23,6 +23,8 @@ def git(root: Path, *args: str) -> str:
         capture_output=True,
         env=environment,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     ).stdout.strip()
 
 

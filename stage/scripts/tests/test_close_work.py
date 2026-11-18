@@ -52,7 +52,8 @@ REVIEW = "# Review Candidates\n\n| Artifact | Verification | Retrospective | Pro
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
+        [sys.executable, str(CLI), "--project-root", str(root), *args],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
 
 

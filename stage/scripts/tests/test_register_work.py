@@ -39,7 +39,8 @@ def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     if "--success-criterion" not in args and not milestone_mode:
         args = (*args, "--success-criterion", "The user can observe the requested outcome")
     return subprocess.run(
-        [sys.executable, str(CLI), "--project-root", str(root), *args], capture_output=True, text=True
+        [sys.executable, str(CLI), "--project-root", str(root), *args],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
 
 
@@ -48,6 +49,8 @@ def run_start(root: Path, *args: str) -> subprocess.CompletedProcess:
         [sys.executable, str(START_CLI), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -447,6 +450,8 @@ class RegisterWorkTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
         self.assertNotEqual(0, proc.returncode)
@@ -606,6 +611,8 @@ class RegisterWorkTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
         self.assertEqual(1, proc.returncode)
@@ -654,6 +661,8 @@ class RegisterWorkTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
         self.assertEqual(1, proc.returncode)

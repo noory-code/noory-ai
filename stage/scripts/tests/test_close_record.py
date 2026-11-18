@@ -20,6 +20,8 @@ def run_cli(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
         [sys.executable, str(SCRIPT), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -352,6 +354,8 @@ Pending.
                         [sys.executable, str(AUDIT), "--project-root", str(root)],
                         capture_output=True,
                         text=True,
+                        encoding="utf-8",
+                        errors="replace",
                     )
 
                     self.assertEqual(0, audit.returncode, audit.stdout + audit.stderr)

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Read child-process output as UTF-8 in the tests too. On Windows in Korean (cp949), 55 test calls
+  that ran a Stage CLI or `git` decoded its output with the locale, raised `UnicodeDecodeError` in
+  the reader thread, and then failed with a `TypeError` on the lost output, hiding the real
+  result. English-locale CI decoded with cp1252, garbled the text without an error, and passed.
+  Those calls now pass `encoding="utf-8", errors="replace"`, and the encoding test now reads test
+  files as well; a call that must decode with the locale says so in a comment.
+
 ## 0.66.6 — 2026-11-18
 
 - Read child-process output as UTF-8 whatever the host locale is. On Windows in Korean (cp949),

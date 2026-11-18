@@ -43,6 +43,8 @@ class RefreshDecisionIndexTest(unittest.TestCase):
             [sys.executable, str(SCRIPT), "--project-root", str(root)],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
     def test_refreshes_legacy_korean_table_and_preserves_surrounding_prose(self):

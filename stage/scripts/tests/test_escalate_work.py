@@ -110,6 +110,8 @@ class EscalateWorkTest(unittest.TestCase):
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
 
     def test_active_item_becomes_blocked_with_linked_pending_decision(self):
@@ -214,6 +216,8 @@ class EscalateWorkTest(unittest.TestCase):
                 ],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
             story_text = story.read_text(encoding="utf-8")
             action_text = action.read_text(encoding="utf-8")

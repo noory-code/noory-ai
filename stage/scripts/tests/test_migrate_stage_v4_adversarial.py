@@ -59,7 +59,8 @@ import stage_records  # noqa: E402
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["git", *args], cwd=root, capture_output=True, text=True, check=True
+        ["git", *args], cwd=root, capture_output=True, text=True,
+        encoding="utf-8", errors="replace", check=True
     )
 
 
@@ -125,6 +126,8 @@ def run_tool(cli: Path, root: Path, *args: str) -> subprocess.CompletedProcess[s
         [sys.executable, str(cli), "--project-root", str(root), *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
