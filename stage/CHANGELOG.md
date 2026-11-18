@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.66.6 — 2026-11-18
+
 - Read child-process output as UTF-8 whatever the host locale is. On Windows in Korean (cp949),
   `close_work.py` ran a check that printed UTF-8 Korean, its `subprocess` reader thread raised
   `UnicodeDecodeError`, and the check's output was lost from the card's evidence. Every text-mode
