@@ -206,6 +206,8 @@ def git_diff(project_root: Path) -> str:
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except OSError as exc:
         raise RuntimeError(str(exc)) from exc
@@ -234,6 +236,8 @@ def git_diff(project_root: Path) -> str:
                     cwd=str(project_root),
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                 )
             except OSError as exc:
                 raise RuntimeError(str(exc)) from exc
@@ -279,6 +283,8 @@ def git_index_path(project_root: Path) -> tuple[Path | None, str]:
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except OSError as exc:
         return None, str(exc)
@@ -300,6 +306,8 @@ def git_head_exists(project_root: Path) -> tuple[bool, str]:
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except OSError as exc:
         return False, str(exc)

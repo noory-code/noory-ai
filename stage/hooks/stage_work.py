@@ -622,6 +622,7 @@ def staged_files(workspace_root: Path) -> list[str]:
             stderr=subprocess.DEVNULL,
             text=True,
             encoding="utf-8",
+            errors="replace",
         )
     except OSError:
         return []
@@ -649,6 +650,7 @@ def changed_files(workspace_root: Path, *, include_untracked: bool = False) -> l
                 stderr=subprocess.DEVNULL,
                 text=True,
                 encoding="utf-8",
+                errors="replace",
             )
         except OSError:
             continue

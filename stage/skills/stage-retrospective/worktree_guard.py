@@ -49,6 +49,8 @@ def dirty_paths_in_scope(project_root: Path, scope_value: str) -> list[str]:
             cwd=str(project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
     except FileNotFoundError:
         return []

@@ -43,7 +43,7 @@ def command(name: str, config: dict, project: str, refs: list[str] | None = None
 
 def invoke(argv: list[str], root: Path) -> dict:
     result = subprocess.run(argv, cwd=root, capture_output=True, text=True, encoding="utf-8",
-                            shell=False, timeout=30)
+                            errors="replace", shell=False, timeout=30)
     if result.returncode:
         raise ValueError(f"producer exited {result.returncode}")
     data = json.loads(result.stdout)

@@ -569,7 +569,7 @@ class DriveTest(unittest.TestCase):
             drive.retrospective_id_for_work_item("W-00000041"),
         )
 
-    def test_driver_retrospective_refuses_id_owned_by_another_work_item(self):
+    def test_driver_retrospective_follows_owner_of_a_taken_number(self):
         tmp, root = self.make_project()
         self.addCleanup(tmp.cleanup)
         stage_root = root / ".stage"
@@ -589,12 +589,17 @@ class DriveTest(unittest.TestCase):
 
         retro_id, error = drive.write_driver_retrospective(stage_root, item)
 
-        self.assertEqual("", retro_id)
-        self.assertIn("R-00000041", error)
-        self.assertIn("W-00000099", error)
-        self.assertIn("W-00000041", error)
+        self.assertEqual("", error)
+        self.assertEqual("R-00000099", retro_id)
+        self.assertIn(
+            "work_item: W-00000041",
+            (retrospective_root / "R-00000099.md").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            "work_item: W-00000099",
+            (retrospective_root / "R-00000041.md").read_text(encoding="utf-8"),
+        )
         self.assertFalse((retrospective_root / "R-00000042.md").exists())
-        self.assertFalse((retrospective_root / "R-00000043.md").exists())
 
     def test_item_commit_always_includes_the_work_card(self):
         tmp, root = self.make_project()

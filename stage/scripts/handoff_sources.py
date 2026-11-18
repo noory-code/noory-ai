@@ -100,7 +100,8 @@ def evidence(progress: str, root: Path) -> list[str]:
             try:
                 result = subprocess.run(
                     ["git", "--literal-pathspecs", "status", "--porcelain", "--", record["path"]],
-                    cwd=root, capture_output=True, text=True, shell=False, timeout=30,
+                    cwd=root, capture_output=True, text=True, encoding="utf-8",
+                    errors="replace", shell=False, timeout=30,
                 )
                 dirty = bool(result.stdout.strip()) if result.returncode == 0 else "unknown"
             except (OSError, subprocess.TimeoutExpired):
