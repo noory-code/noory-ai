@@ -10,9 +10,9 @@ acceptance:
   - "python3 -m unittest stage/scripts/tests/test_subprocess_text_encoding.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000352
+promotion: not_applicable
 review: pending
 scope: stage/hooks/stage_work.py, stage/scripts/driver_git.py, stage/scripts/driver_lifecycle.py, stage/scripts/driver_repository.py, stage/scripts/drive_parallel.py, stage/scripts/handoff_producers.py, stage/scripts/handoff_sources.py, stage/scripts/stage_schema_v4_migration.py, stage/scripts/stage_schema_v5_migration.py, stage/skills/stage-retrospective/close_work.py, stage/skills/stage-retrospective/worktree_guard.py, stage/scripts/tests/test_subprocess_text_encoding.py, stage/CHANGELOG.md
 promotes:
@@ -74,11 +74,28 @@ Windows 를 한국어 등 UTF-8 이 아닌 로캘로 쓰는 사람이 카드를 
 
 ## Progress
 
+- 커밋 `d8f5c2ec`: 텍스트 모드 호출 18곳에 `encoding="utf-8", errors="replace"` 를 줬다.
+- 테스트를 고치기 전 코드에 돌려 봤다. 가드는 18곳을 실패로 잡았고, close_work 테스트는 출력을 빈 문자열로 받아
+  실패했다. 대조 테스트(인코딩 없는 호출은 출력을 잃는다)는 통과했다. 고친 뒤에는 넷 다 통과한다.
 
 ## Verification
 
+이 기록은 Windows 11 ARM64, 한국어 로캘(cp949), Python 3.14 에서 `python` 으로 돌린 결과다. 이 머신의
+`python3` 는 Store 바로가기라 쓰지 않았다.
+
+- `python -m unittest stage/scripts/tests/test_subprocess_text_encoding.py -q`: 4개 통과
+- `python -m unittest discover -s stage/hooks/tests -q`: 448개 통과, 44개 건너뜀.
+- `python -m unittest discover -s stage/scripts/tests`: 770개 중 실패 9개, 오류 7개, 건너뜀 6개. 고치기 전
+  `origin/main` 을 같은 머신에서 돌리면 761개 중 같은 16개가 실패한다. 새로 실패한 테스트는 없다. 16개는 테스트
+  고정물이 `python3` 를 부르거나(exit 9009), 테스트 도우미가 자식 출력을 cp949 로 읽다가 깨지는 것이다.
+- `python stage/scripts/audit_stage.py --project-root .`: errors=0.
+- 닫기 리뷰는 아직 받지 않았다. 이 저장소의 리뷰 명령이 POSIX 셸 문법(`OUT=$(...)`)과 `python3` 를 써서
+  Windows 의 `cmd.exe` 에서 돌지 않는다. macOS 에서 닫는다.
 
 ## Retrospective
 
+R-00000352 에 적었다.
 
 ## Promotion decision
+
+not_applicable. 공식 기록으로 올릴 결정이 없다.

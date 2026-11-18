@@ -7,12 +7,13 @@ environment: local-no-codex
 milestone:
 autonomous: false
 acceptance:
-  - "python3 -m unittest stage/scripts/tests/test_close_work.py stage/scripts/tests/test_drive.py -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+retrospective: completed
+retrospective_ref: R-00000353
+promotion: not_applicable
 review: pending
 scope: stage/scripts/driver_lifecycle.py, stage/scripts/tests/test_close_work.py, stage/scripts/tests/test_drive.py, stage/skills/stage-retrospective/SKILL.md, stage/CHANGELOG.md
 promotes:
@@ -76,11 +77,29 @@ decision_refs:
 
 ## Progress
 
+- 커밋 `6eddd547`: `reserve_retrospective` 가 막힌 자리의 주인을 따라가 빈 자리를 잡는다.
+- 새 테스트 여섯 개(주인 따라가기, 여러 단계 따라가기, 사본 둘, 카드가 가리키는 회고 재사용, 주인이 카드가 아닐 때,
+  길이 돌아올 때)를 고치기 전 코드에 돌려 봤다. 주인이 카드가 아닌 경우를 빼고 모두 실패했다. 고친 뒤에는 모두 통과한다.
+- 막히면 멈춘다는 것을 기대하던 기존 테스트 둘(`test_close_work`, `test_drive`)은 새 동작에 맞게 바꿨다.
 
 ## Verification
 
+이 기록은 Windows 11 ARM64, 한국어 로캘(cp949), Python 3.14 에서 `python` 으로 돌린 결과다. 이 머신의
+`python3` 는 Store 바로가기라 쓰지 않았다.
+
+- `python -m unittest discover -s stage/scripts/tests -p test_close_work.py -k allocate`: 9개 통과
+- `python -m unittest discover -s stage/hooks/tests -q`: 448개 통과, 44개 건너뜀.
+- `python -m unittest discover -s stage/scripts/tests`: 770개 중 실패 9개, 오류 7개, 건너뜀 6개. 고치기 전
+  `origin/main` 을 같은 머신에서 돌리면 761개 중 같은 16개가 실패한다. 새로 실패한 테스트는 없다. 16개는 테스트
+  고정물이 `python3` 를 부르거나(exit 9009), 테스트 도우미가 자식 출력을 cp949 로 읽다가 깨지는 것이다.
+- `python stage/scripts/audit_stage.py --project-root .`: errors=0.
+- 닫기 리뷰는 아직 받지 않았다. 이 저장소의 리뷰 명령이 POSIX 셸 문법(`OUT=$(...)`)과 `python3` 를 써서
+  Windows 의 `cmd.exe` 에서 돌지 않는다. macOS 에서 닫는다.
 
 ## Retrospective
 
+R-00000353 에 적었다.
 
 ## Promotion decision
+
+not_applicable. 공식 기록으로 올릴 결정이 없다.
