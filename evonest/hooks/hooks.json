@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/post-improve.py",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/post-improve.py\"",
             "timeout": 10
           }
         ]

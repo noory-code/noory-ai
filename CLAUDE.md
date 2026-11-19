@@ -141,7 +141,9 @@ All code must run on **macOS, Linux, and Windows**. Apply these rules to every c
 | `osascript` (macOS-only) | Platform dispatch: `osascript` / `notify-send` / `powershell` |
 | `find`, `grep`, `sed`, `awk` in scripts | Python stdlib (`pathlib`, `re`, etc.) |
 
-Hook commands in `hooks.json` must use `python3` (not `bash`). `${CLAUDE_PLUGIN_ROOT}` is available in hook commands.
+Hook commands in `hooks.json` must run a Python script, never a shell script. Each command starts with the host interpreter selector
+`case "$OS" in Windows_NT) p=python;; *) p=python3;; esac; "$p" `, because a python.org install on Windows ships
+`python.exe` and no `python3.exe`. `${CLAUDE_PLUGIN_ROOT}` is available in hook commands; quote it.
 
 ## Code Conventions
 

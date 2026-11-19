@@ -2,6 +2,14 @@
 
 All notable changes to Evonest are documented here.
 
+## Unreleased
+
+### Fixed
+
+- Run the `evonest_improve` hook with `python` on Windows. A python.org install ships
+  `python.exe` and no `python3.exe`, so the hook never started there. The command now selects
+  `python` when `OS` is `Windows_NT` and `python3` everywhere else, and quotes the plugin path.
+
 ## [1.2.0] — 2026-07-12
 
 ### Added

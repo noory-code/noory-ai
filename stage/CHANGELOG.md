@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Run the hooks with `python` on Windows. A python.org install ships `python.exe` and no
+  `python3.exe`, and Claude Code treats a hook that cannot start as a non-blocking error, so
+  every Stage gate was silently off on such a machine. Each hook command now selects `python`
+  when `OS` is `Windows_NT` and `python3` everywhere else.
 - Read child-process output as UTF-8 in the tests too. On Windows in Korean (cp949), 55 test calls
   that ran a Stage CLI or `git` decoded its output with the locale, raised `UnicodeDecodeError` in
   the reader thread, and then failed with a `TypeError` on the lost output, hiding the real

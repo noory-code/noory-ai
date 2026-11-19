@@ -127,4 +127,4 @@ Codex executes plugin hooks only after they are trusted once in the interactive 
 
 ## Portability
 
-The hook body uses only the Python standard library. `hooks.json` runs `python3` directly, so the hook and its tests must run on whatever `python3` the host machine provides — annotations stay lazy via `from __future__ import annotations` (verified on system Python 3.9.6). Windows environments without a `python3` command need the Python launcher or a host adapter.
+The hook body uses only the Python standard library. Each `hooks.json` command selects the interpreter by host — `python` when `OS` is `Windows_NT`, `python3` everywhere else — so the hook and its tests must run on whatever Python that name resolves to — annotations stay lazy via `from __future__ import annotations` (verified on system Python 3.9.6). The selector is POSIX shell: Claude Code runs it in Git Bash on Windows, and a Windows host that runs hooks in PowerShell cannot start it.
