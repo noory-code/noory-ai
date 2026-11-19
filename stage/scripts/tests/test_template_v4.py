@@ -210,6 +210,10 @@ class TemplateV4Test(unittest.TestCase):
                 cwd=PROJECT_SETTINGS.parent.parent,
             )
             argv = json.loads((root / "argv.json").read_text(encoding="utf-8"))
+            rule_path = verdict.resolve().as_posix()
+            if sys.platform == "win32":
+                # C:/dir/file is matched as /c/dir/file.
+                rule_path = "/" + rule_path[0].lower() + rule_path[2:]
 
         self.assertEqual(
             [
@@ -219,7 +223,7 @@ class TemplateV4Test(unittest.TestCase):
                 "--model",
                 "opus[1m]",
                 "--allowedTools",
-                f"Edit(/{verdict.resolve().as_posix()})",
+                f"Edit(/{rule_path})",
                 "Bash(python3 -m unittest:*)",
                 "--",
             ],

@@ -30,10 +30,24 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePath
 
 MODEL_ENV = "STAGE_CLAUDE_REVIEW_MODEL"
 DEFAULT_MODEL = "opus[1m]"
+
+
+def absolute_rule_path(path: PurePath) -> str:
+    """Spell an absolute path the way an Edit(path) permission rule matches it.
+
+    A leading `//` makes a rule path absolute. Claude Code matches a Windows path in
+    its POSIX spelling, `/c/dir/file`, so `C:/dir/file` becomes `//c/dir/file`; a
+    rule that keeps the `C:` matches nothing and the reviewer's write is denied.
+    """
+    posix = path.as_posix()
+    drive = path.drive
+    if len(drive) == 2 and drive[1] == ":":
+        posix = "/" + drive[0].lower() + posix[2:]
+    return "/" + posix
 
 
 def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> list[str]:
@@ -46,9 +60,9 @@ def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> lis
     changed_paths = environ.get("STAGE_CHANGED_PATHS_FILE", "")
     if changed_paths:
         command += ["--add-dir", str(Path(changed_paths).parent)]
-    # A leading `//` makes a permission rule path absolute. Only Edit(path) rules
-    # govern file writes; a Write(path) rule is ignored with a warning.
-    verdict_rule = "/" + Path(verdict_file).resolve().as_posix()
+    # Only Edit(path) rules govern file writes; a Write(path) rule is ignored with a
+    # warning.
+    verdict_rule = absolute_rule_path(Path(verdict_file).resolve())
     command += [
         "--model",
         environ.get(MODEL_ENV) or DEFAULT_MODEL,

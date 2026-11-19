@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Let the Claude reviewer write its verdict file on Windows. `claude_review_companion.py`
+  allowed the write with the rule `Edit(/C:/dir/verdict.json)`, which matches nothing, so
+  the reviewer's write was denied and close reported a missing verdict file. The rule is
+  now `Edit(//c/dir/verdict.json)`, the spelling Claude Code matches a Windows path by.
 - Add `scripts/run_review.py`, so a review command needs no shell syntax. A command that
   captured the reviewer's output and appended it to the work log had to be written as
   `OUT=$(...); STATUS=$?; printf ... >> "$STAGE_WORK_LOG_PATH"`, which `cmd.exe` cannot run,
