@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import io
 import logging
 import os
 import sys
@@ -14,6 +15,12 @@ from evonest.core.data_root import has_data_root
 
 def cli_main() -> None:
     """CLI entry point."""
+    # A piped stream uses the locale encoding (cp949 on Korean Windows), which cannot encode
+    # every character the CLI prints. Replace such a character instead of crashing.
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(errors="replace")
+
     # Logging setup — EVONEST_LOG_LEVEL=DEBUG to enable debug output
     log_level = os.environ.get("EVONEST_LOG_LEVEL", "WARNING").upper()
     logging.basicConfig(

@@ -51,6 +51,8 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
             ["git", "log", "--stat", "-5", "--oneline", "--", project],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=project,
             timeout=10,
         )
@@ -65,6 +67,8 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
             ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "."],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=project,
             timeout=10,
         )
@@ -95,6 +99,8 @@ def _gather_static_context(project: str, config: EvonestConfig) -> str:
                 collect_args,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=project,
                 timeout=30,
             )
@@ -620,6 +626,8 @@ def run_verify(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=str(state.project),
             )
             stdout, stderr = process.communicate(timeout=300)
@@ -649,6 +657,8 @@ def run_verify(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=str(state.project),
             )
             stdout, stderr = process.communicate(timeout=300)
@@ -695,6 +705,8 @@ def _git_diff_stat(project: Path) -> str:
             ["git", "diff", "--stat", "HEAD", "--", "."],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(project),
             timeout=30,
         )
@@ -709,6 +721,8 @@ def _git_changed_files(project: Path) -> list[str]:
             ["git", "diff", "--name-only", "HEAD", "--", "."],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(project),
             timeout=30,
         )
