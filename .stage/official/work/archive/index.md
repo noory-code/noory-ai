@@ -285,3 +285,4 @@
 | W-00000352 | completed | [items/W-00000352/_story.md](items/W-00000352/_story.md) |
 | W-00000353 | completed | [items/W-00000353/_story.md](items/W-00000353/_story.md) |
 | W-00000355 | completed | [items/W-00000355/_story.md](items/W-00000355/_story.md) |
+| W-00000356 | completed | [items/W-00000356/_story.md](items/W-00000356/_story.md) |
