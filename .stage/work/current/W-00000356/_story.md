@@ -10,8 +10,8 @@ acceptance:
   - "cd evonest && uv run pytest -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000356
 promotion: pending
 review: pending
 scope: evonest/src/evonest/cli.py,evonest/src/evonest/core/doc_updater.py,evonest/src/evonest/core/phases.py,evonest/src/evonest/core/orchestrator.py,evonest/src/evonest/core/process_manager.py,evonest/src/evonest/core/claude_runner.py,evonest/tests,evonest/CHANGELOG.md
@@ -73,7 +73,10 @@ Windows 를 한국어처럼 UTF-8 이 아닌 로캘로 쓰는 사람도 evonest 
 
 ## Next action
 
-사용자가 커밋을 승인하면 코드와 카드를 커밋한 뒤, 회고를 쓰고 Claude 대역 리뷰로 닫는다.
+macOS 에서 닫는다. 닫기 리뷰 명령은 POSIX 셸 문법이라 Windows 의 `cmd.exe` 에서 실행되지 않는다
+(W-00000352 와 같다). 코드 커밋 `20dd7ccd` 에 맞춘 분리 worktree 에서
+`STAGE_CODEX_COMPANION=stage/scripts/claude_review_companion.py` 를 앞에 두고 `close_work.py` 를
+실행한다. 회고 R-00000356 은 이미 썼다.
 
 ## Related truth
 
