@@ -1,5 +1,5 @@
 ---
-id: W-00000357
+id: W-00000358
 title: 훅 명령이 Windows에서는 python을 부르게 고친다
 kind: fix
 venue: claude
@@ -19,7 +19,7 @@ promotes:
 decision_refs:
 ---
 
-# W-00000357 훅 명령이 Windows에서는 python을 부르게 고친다
+# W-00000358 훅 명령이 Windows에서는 python을 부르게 고친다
 
 ## Purpose
 

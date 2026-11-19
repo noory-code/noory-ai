@@ -6,4 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000357 | fix | claude | python3 명령이 없는 Windows에서도 Stage와 evonest 훅이 실행된다 | active | Claude | [current/W-00000357/_story.md](current/W-00000357/_story.md) |
+| W-00000358 | fix | claude | python3 명령이 없는 Windows에서도 Stage와 evonest 훅이 실행된다 | active | Claude | [current/W-00000358/_story.md](current/W-00000358/_story.md) |
