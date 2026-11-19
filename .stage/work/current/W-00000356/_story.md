@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "cd evonest && uv run pytest -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000356
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: evonest/src/evonest/cli.py,evonest/src/evonest/core/doc_updater.py,evonest/src/evonest/core/phases.py,evonest/src/evonest/core/orchestrator.py,evonest/src/evonest/core/process_manager.py,evonest/src/evonest/core/claude_runner.py,evonest/tests,evonest/CHANGELOG.md
 promotes:
 decision_refs:
@@ -115,6 +115,68 @@ directory for Python minor version link" 로 멈춘다. 그래서 모든 명령 
 - 새 테스트 `tests/test_subprocess_text_encoding.py` 는 고치기 전 소스에서 실패하고(1 failed,
   1 passed) 고친 뒤 통과한다.
 - 리뷰는 아직 받지 않았다. 닫을 때 받는 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다.
+- 2026-11-20 맥북(macOS, 코드 커밋 `20dd7ccd` 에 맞춘 분리 worktree)에서 다시 실행했다. `uv run pytest -q` 는 440개 통과,
+  `uv run ruff check src/ tests/` 는 통과, `uv run mypy src/evonest/` 는 오류 없음이다. Windows 에서 나온 mypy 오류 두 개는
+  맥에서는 나오지 않는다. 맥에서는 `uv` 가 고른 Python 으로 실행했다.
+- 닫기 리뷰는 맥북에서 Claude 대역(`claude_review_companion.py`)으로 받았다. 같은 모델의 리뷰다(DE-00000086).
+- 고친 경로는 evonest 뿐이고 관문 경로가 아니라서 DE-00000087 의 사용자 확인 대상이 아니다. 사용자가 2026-11-20 에
+  "PR #70도 맥북에서 닫아주세요" 라고 했다.
+
+### Executed at close — 2026-11-20
+
+```
+$ cd evonest && uv run pytest -q
+[exit 0]
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 49%]
+........................................................................ [ 65%]
+........................................................................ [ 81%]
+........................................................................ [ 98%]
+........                                                                 [100%]
+440 passed in 65.56s (0:01:05)
+
+$ cd evonest && uv run ruff check src/ tests/
+[exit 0]
+All checks passed!
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000356.md
+Criteria:
+- PASS: 한국어 Windows(cp949)에서 uv run pytest 가 실패와 오류 없이 통과한다
+  Reason: 카드 Verification 에 Windows 11 ARM64, cp949 로캘에서 uv run pytest -q 가 440 passed 로 기록돼 있다(Python 3.14 사용을 밝혀 둠). 내가 macOS 에서 LC_ALL=ko_KR.CP949 PYTHONUTF8=0 uv run pytest -q 를 실행하니 440 passed 였고, 같은 조건에서 고치기 전 커밋 98e04cb7 은 3 failed, 232 errors(UnicodeDecodeError)로 깨져 이 검사가 고침을 구별함을 확인했다. 실제 Windows 에서는 내가 실행하지 않았다.
+- PASS: 출력이 파이프로 연결된 cp949 환경에서 evonest init 이 UnicodeEncodeError 없이 끝난다
+  Reason: 카드에 Windows cp949 에서 파이프로 연결한 evonest init 이 종료 코드 0 으로 기록돼 있다. 내가 macOS 에서 LC_ALL=ko_KR.CP949 PYTHONUTF8=0 uv run python -m evonest init <빈 폴더> < /dev/null | tail 을 실행하니 종료 코드 0 이었고 em dash 는 ? 로 나왔다(카드 Risks 에 적힌 대로). 같은 명령을 고치기 전 커밋에서 실행하니 UnicodeEncodeError 로 종료 코드 1 이었다.
+- PASS: 문서 동기화 대상의 상대 경로가 Windows 에서도 슬래시로 나온다
+  Reason: doc_updater._collect_targets 가 str(relative_to) 대신 relative_to(project).as_posix() 로 키를 만들어 OS 와 상관없이 슬래시를 쓴다. 이를 단언하는 test_update_docs 의 skills/mypkg/SKILL.md 같은 키 검사가 카드에 기록된 Windows 실행(440 passed)에 포함된다. 내가 Windows 에서 직접 실행하지는 않았고 macOS 에서는 uv run pytest -q 로 통과를 확인했다.
+```
 
 ## Retrospective
 
