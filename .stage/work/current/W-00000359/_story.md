@@ -14,7 +14,7 @@ retrospective: completed
 retrospective_ref: R-00000359
 promotion: pending
 review: pending
-scope: stage/scripts/run_review.py,stage/scripts/tests,stage/docs/SCHEMA_V4.md,stage/templates/v4/project-stage/settings.jsonc,stage/CHANGELOG.md
+scope: stage/scripts/run_review.py,stage/scripts/claude_review_companion.py,stage/scripts/tests,stage/docs/SCHEMA_V4.md,stage/templates/v4/project-stage/settings.jsonc,stage/CHANGELOG.md
 promotes:
 decision_refs:
 ---
@@ -44,6 +44,8 @@ Windows 에서 일하는 사람이 리뷰가 필요한 카드를 그 자리에�
 - 이 프로젝트 `.stage/settings.json` 의 리뷰 명령 여섯 개를 그 스크립트 호출로 바꾼다.
 - 프로젝트의 리뷰 명령에 셸마다 다르게 읽히는 문법이 들어오면 실패하는 테스트를 더한다.
 - Windows 에서 건너뛰던 테스트 두 개의 건너뛰기를 없앤다.
+- `claude_review_companion.py` 가 Windows 에서 판정 파일 쓰기를 허용하는 규칙을 고친다. 처음 닫아 볼
+  때 드러나서 범위에 더했다.
 - `docs/SCHEMA_V4.md`, 설정 템플릿의 설명, `stage/CHANGELOG.md` 에 적는다.
 
 ### Excluded
@@ -90,6 +92,12 @@ Windows 에서 일하는 사람이 리뷰가 필요한 카드를 그 자리에�
 - 감독 모드의 팀원을 띄우지 않고 이 세션이 직접 고쳤다. Windows 에는 tmux 가 없다.
 - 범위 밖 파일: `.stage/settings.json` 을 고쳤다. `.stage/` 는 관리 대상 소스가 아니라서 `scope` 에
   적지 않았다.
+- 이 Windows 에서 처음 닫아 봤다. 리뷰 명령이 `cmd.exe` 를 거쳐 실행됐고, 리뷰어가 세 기준을 모두
+  통과로 판정했고, 그 글이 작업 로그에 `### Reviewer report` 로 남았다. 그런데 리뷰어가 판정 파일을
+  쓰지 못해서 `review verdict file is missing` 으로 닫히지 않았다. `claude_review_companion.py` 가
+  쓰기를 허용하는 규칙을 `Edit(/C:/…)` 로 적었는데, Claude Code 는 Windows 경로를 `//c/…` 로 적은
+  규칙에만 맞춘다. 규칙을 고치고 테스트를 더했다. 이 카드의 목적(Windows 에서 카드를 끝까지 닫기)에
+  속한 일이라 새 카드로 나누지 않고 범위에 더했다.
 
 ## Verification
 
@@ -115,6 +123,12 @@ Claude Code 2.1.326. 명령은 저장소 루트에서 실행했다.
   `tracked.txt` 를 바꾸자 `close_work` 가 판정 파일을 지우고 리뷰를 실패로 남겼다. 이 검사는
   Windows 에서 처음 실행됐고, 검사 자체에도 Windows 문제가 세 군데 있어 함께 고쳤다(`claude` 를
   확장자 없이 실행, `shlex.quote` 의 작은따옴표, `run_review.py` 를 복사하지 않음).
+- 권한 규칙 표기는 실제 `claude`(haiku)로 세 가지를 비교했다. `Edit(/C:/…)` 는 쓰기가 거절됐고
+  `Edit(//c/…)` 는 파일이 써졌다. `Edit(//C:/…)` 는 파일은 써졌는데 모델이 거절됐다고 답해서 쓰지
+  않았다. 고친 뒤 `python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q`
+  의 8개가 통과했다.
+- 앞에서 통과한 실제 리뷰어 검사 2개는 이 문제를 잡지 못했다. 그 검사는 리뷰가 실패하고 판정 파일이
+  없는 것을 기대하는데, 판정 파일을 아예 쓰지 못해도 같은 결과가 나온다.
 - macOS 와 Linux 에서는 실행하지 않았다.
 - 리뷰는 아직 받지 않았다. 닫을 때 받는 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다.
 
