@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `scripts/run_review.py`, so a review command needs no shell syntax. A command that
+  captured the reviewer's output and appended it to the work log had to be written as
+  `OUT=$(...); STATUS=$?; printf ... >> "$STAGE_WORK_LOG_PATH"`, which `cmd.exe` cannot run,
+  so a project with one settings file for every platform could not close a reviewed card on
+  Windows. The script runs the reviewer without a shell, appends its output as a
+  `### Reviewer report`, exits with the reviewer's status, and expands `$STAGE_NAME` in the
+  arguments itself, because `cmd.exe` does not. `docs/SCHEMA_V4.md` and the settings template
+  describe the portable form.
 - Read child-process output as UTF-8 in the tests too. On Windows in Korean (cp949), 55 test calls
   that ran a Stage CLI or `git` decoded its output with the locale, raised `UnicodeDecodeError` in
   the reader thread, and then failed with a `TypeError` on the lost output, hiding the real

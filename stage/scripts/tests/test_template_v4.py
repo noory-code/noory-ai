@@ -142,28 +142,49 @@ class TemplateV4Test(unittest.TestCase):
                     self.assertIn("--model 'opus[1m]'", command)
                 elif name == "reviewer.claude":
                     # The guarded companion builds the claude command from this pin.
-                    self.assertIn("STAGE_CLAUDE_REVIEW_MODEL='opus[1m]' python3 ", command)
+                    self.assertIn('--env "STAGE_CLAUDE_REVIEW_MODEL=opus[1m]" -- python3 ', command)
                 else:
                     self.assertIn("--model gpt-6-astra --effort high", command)
                     self.assertNotIn("--model gpt-6-sol", command)
 
-    @unittest.skipIf(sys.platform == "win32", "the project review commands use POSIX shell syntax")
+    def test_project_review_commands_use_no_shell_specific_syntax(self):
+        # One settings file serves macOS, Linux, and Windows, so a review command has
+        # to run in both a POSIX shell and cmd.exe. run_review.py does what the shell
+        # syntax used to do.
+        review = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))["review"]
+        commands = {**review["reviewers"], **review["strengths"]}
+        for name, command in commands.items():
+            if command is None:
+                continue
+            with self.subTest(name=name):
+                self.assertTrue(command.startswith("python3 stage/scripts/run_review.py "))
+                for token in ("$(", "$?", "2>&1", ">>", "||", "&&", "'", "%", "`", "^"):
+                    self.assertNotIn(token, command)
+
     def test_project_claude_reviewer_may_write_only_its_verdict_file(self):
         command = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))["review"]["reviewers"][
             "claude"
         ]
+        # Not every Windows host has a `python3` executable; the settings file may name one.
+        command = command.replace("python3 ", f'"{sys.executable}" ', 1)
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             bin_dir = root / "bin"
             bin_dir.mkdir()
-            fake = bin_dir / "claude"
-            fake.write_text(
-                f"#!{sys.executable}\n"
+            fake_code = (
                 "import json, os, sys\n"
-                "open(os.environ['FAKE_ARGV'], 'w').write(json.dumps(sys.argv[1:]))\n",
-                encoding="utf-8",
+                "open(os.environ['FAKE_ARGV'], 'w').write(json.dumps(sys.argv[1:]))\n"
             )
-            fake.chmod(0o755)
+            if sys.platform == "win32":
+                # Windows has no shebang; `claude` is a .cmd shim there, as npm installs it.
+                (bin_dir / "claude_fake.py").write_text(fake_code, encoding="utf-8")
+                (bin_dir / "claude.cmd").write_text(
+                    f'@"{sys.executable}" "%~dp0claude_fake.py" %*\r\n', encoding="utf-8"
+                )
+            else:
+                fake = bin_dir / "claude"
+                fake.write_text(f"#!{sys.executable}\n{fake_code}", encoding="utf-8")
+                fake.chmod(0o755)
             review_tmp = root / "review-tmp"
             review_tmp.mkdir()
             verdict = root / "verdicts" / "W-1.json"

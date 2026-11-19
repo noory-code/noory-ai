@@ -106,7 +106,10 @@
   // "approved":true|false}, with no other keys at either level. criteria must be
   // non-empty with unique, non-empty one-line criterion and reason values. approved
   // is true exactly when every criterion passes. Review prose may still go to
-  // $STAGE_WORK_LOG_PATH, but prose never decides the result. A merged verdict retains
+  // $STAGE_WORK_LOG_PATH, but prose never decides the result. To record that prose on
+  // every platform, start the command with: python3 stage/scripts/run_review.py --label <name>
+  // -- <reviewer command>. Shell syntax that captures and appends output runs in a POSIX
+  // shell or in cmd.exe, never both (docs/SCHEMA_V4.md). A merged verdict retains
   // every criterion and adds reviewed_in_round so carried results are explicit.
   "review": {
     "reviewers": {
