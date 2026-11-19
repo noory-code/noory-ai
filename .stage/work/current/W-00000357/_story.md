@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "cd evonest && uv run mypy src/evonest/"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000357
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: evonest/src/evonest/tools/analyze.py,evonest/src/evonest/tools/evolve.py,evonest/CHANGELOG.md
 promotes:
 decision_refs:
@@ -88,6 +88,63 @@ W-00000356 과 같은 브랜치(`claude/evonest-windows-locale`)에 있으므로
 | `uv run pytest -q` | 440 passed | 440 passed |
 
 - 리뷰는 아직 받지 않았다. 닫을 때 받는 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다.
+- 2026-11-20 맥북(macOS, 코드 커밋 `5943e64b` 에 맞춘 분리 worktree)에서 `uv run mypy --platform <이름> src/evonest/` 를
+  `darwin`, `linux`, `win32` 세 가지로 실행했다. 셋 다 `Success: no issues found in 44 source files` 였다.
+  맥에서는 `uv` 가 고른 Python 으로 실행했다.
+- 닫기 리뷰는 맥북에서 Claude 대역(`claude_review_companion.py`)으로 받았다. 같은 모델의 리뷰다(DE-00000086).
+- 고친 경로는 evonest 뿐이고 관문 경로가 아니라서 DE-00000087 의 사용자 확인 대상이 아니다. 사용자가 2026-11-20 에
+  "PR #70도 맥북에서 닫아주세요" 라고 했다.
+
+### Executed at close — 2026-11-20
+
+```
+$ cd evonest && uv run mypy src/evonest/
+[exit 0]
+Success: no issues found in 44 source files
+
+$ cd evonest && uv run mypy --platform win32 src/evonest/
+[exit 0]
+Success: no issues found in 44 source files
+
+$ cd evonest && uv run mypy --platform linux src/evonest/
+[exit 0]
+Success: no issues found in 44 source files
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000357.md
+Criteria:
+- PASS: Windows 에서 uv run mypy src/evonest/ 가 오류 없이 끝난다
+  Reason: I did not run on a Windows machine; on macOS I ran uv run mypy --platform win32 src/evonest/ at 5943e64b and it showed Success: no issues found in 44 source files, the same command on the pre-fix source (5943e64b~1) showed the 2 unused-ignore errors at analyze.py:58 and evolve.py:77, and the card records a real Windows 11 cp949 run with Success after the fix.
+- PASS: uv run mypy --platform linux src/evonest/ 와 --platform darwin 도 오류 없이 끝난다
+  Reason: I ran uv run mypy --platform linux src/evonest/ and uv run mypy --platform darwin src/evonest/ in evonest/ at 5943e64b on macOS; both showed Success: no issues found in 44 source files.
+```
 
 ## Retrospective
 
