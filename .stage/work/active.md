@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000359 | fix | claude | 이 프로젝트의 리뷰 명령이 POSIX 셸 문법으로 출력을 받아 작업 로그에 덧붙이기 때문에 Windows 의 c | active | Claude | [current/W-00000359/_story.md](current/W-00000359/_story.md) |
