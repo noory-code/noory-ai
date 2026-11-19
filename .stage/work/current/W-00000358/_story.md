@@ -74,8 +74,8 @@ python.org 에서 Python 을 설치한 Windows 사용자는 `python3` 명령이 
 
 ## Next action
 
-Windows 세션이 `python3` 가 없는 한국어 Windows 에서 이 브랜치의 훅을 실행해 보고 결과를 `## Verification` 에
-남긴다. 그 뒤 맥북 세션이 닫기 리뷰를 받고, 관문 경로를 고친 카드이므로 사용자 확인을 받아 닫는다(DE-00000087).
+Windows 세션이 한국어 Windows 에서 이 브랜치의 훅을 실행해 보고 결과를 `## Verification` 에 남겼다.
+맥북 세션이 닫기 리뷰를 받고, 관문 경로를 고친 카드이므로 사용자 확인을 받아 닫는다(DE-00000087).
 
 
 ## Related truth
@@ -112,8 +112,33 @@ Windows 세션이 `python3` 가 없는 한국어 Windows 에서 이 브랜치의
   `permissionDecision: "deny"` 를 돌려줬다.
 - 새 Claude Code 세션(`claude -p`, 플러그인은 이 저장소 폴더에서 읽힘)에서 같은 종류의 명령을 실행시켰다.
   `PreToolUse` 훅이 거절했고, 세션 시작 글에 `Stage context` 절이 있었다.
-- 성공 기준 3번(한국어 Windows)은 아직 확인하지 않았다.
 - Codex 에서는 실행해 보지 않았다.
+
+### 한국어 Windows (성공 기준 3번)
+
+기기: Windows 11 Home (10.0.28000) ARM64. 로캘: 콘솔 코드 페이지 949, `cp949`. Python 3.14.10
+(`C:\Python314\python`). Claude Code 2.1.326. 브랜치 `claude/hook-python-on-windows` 의 `ce652431` 을
+따로 체크아웃한 작업 트리에서 실행했다.
+
+이 기기에는 `python3` 가 두 군데 있다. 사용자가 만든 shim 폴더와 `WindowsApps` 의 앱 실행 별칭이다.
+두 폴더를 `PATH` 에서 뺀 채로 실행해서 `python3` 가 없는 기기를 흉내 냈다. `command -v python3` 가
+아무것도 찾지 못하는 것을 실행마다 확인했다. `python3` 를 설치한 적이 없는 기기에서 실행한 것은 아니다.
+
+| 명령 | 결과 |
+|---|---|
+| 고친 `PreToolUse` 명령을 Git 의 `sh -c` 로 실행하고, 인라인 코드가 `.stage` 를 말하는 Bash 입력을 넣었다 | 훅이 `permissionDecision: "deny"` 를 돌려줬다(종료 코드 0). |
+| 같은 입력을 고치기 전 명령(`python3 "${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py" pre-tool-use`)에 넣었다 | `sh: line 1: python3: command not found`, 종료 코드 127. |
+| `claude -p … --plugin-dir <작업 트리>/stage --allowedTools Bash --model sonnet` 로 새 세션을 띄워 같은 종류의 Bash 명령을 실행시켰다 | `PreToolUse` 훅이 거절했고, 세션 시작 글에 `## Stage context` 절과 `W-00000358 … [active]` 줄이 있었다. |
+| `python3 -m unittest discover -s stage/hooks/tests -p test_hooks_json_interpreter.py -q` | 2개가 통과했다. |
+| `uv run python -m pytest tests/test_hooks_json.py -q` (evonest) | 1개가 통과했다. |
+
+- 새 세션의 디버그 로그에서 확인한 것: `--plugin-dir` 의 Stage 가 설치된 0.66.6 을 대신했다.
+  `SessionStart`, `PreToolUse`, `Stop` 훅이 모두 `case "$OS" in Windows_NT) p=python;; …` 명령으로 실행됐고
+  `success` 로 기록됐다. `command not found` 는 로그에 없었다.
+- Claude Code 는 이 기기에서 훅 명령을 POSIX 셸로 실행했다. `case` 문이 그대로 실행된 것으로 안다.
+  Git Bash 가 없는 Windows 에서는 실행해 보지 않았다.
+- 마지막 두 줄의 테스트는 `python3` 를 `PATH` 에 둔 채로 실행했다. 테스트 명령이 `python3` 를 부른다.
+- evonest 훅(`post-improve.py`)은 실제 세션에서 실행해 보지 않았다. 명령 형태를 확인하는 테스트만 실행했다.
 
 
 ## Retrospective
