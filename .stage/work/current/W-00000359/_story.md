@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest stage/scripts/tests/test_run_review.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000359
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/scripts/run_review.py,stage/scripts/claude_review_companion.py,stage/scripts/tests,stage/docs/SCHEMA_V4.md,stage/templates/v4/project-stage/settings.jsonc,stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -70,8 +70,7 @@ Windows 에서 일하는 사람이 리뷰가 필요한 카드를 그 자리에�
 
 ## Next action
 
-사용자가 확인하면 커밋하고, 이 Windows 에서 `close_work.py` 로 닫는다. 닫히면 그것이 첫 번째 성공
-기준의 증거다.
+닫았다. 사용자가 요청하면 push 하고 PR 을 만든다. CI 가 macOS 와 Linux 에서 테스트를 실행한다.
 
 ## Related truth
 
@@ -130,7 +129,64 @@ Claude Code 2.1.326. 명령은 저장소 루트에서 실행했다.
 - 앞에서 통과한 실제 리뷰어 검사 2개는 이 문제를 잡지 못했다. 그 검사는 리뷰가 실패하고 판정 파일이
   없는 것을 기대하는데, 판정 파일을 아예 쓰지 못해도 같은 결과가 나온다.
 - macOS 와 Linux 에서는 실행하지 않았다.
-- 리뷰는 아직 받지 않았다. 닫을 때 받는 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다.
+- 이 Windows 에서 `close_work.py` 로 닫았다. 검사 5개가 통과했고 리뷰가 통과했다. 첫 번째 성공 기준의
+  증거다. 네 번 실행했다. 첫 번째는 내가 준 검사 명령이 틀렸고, 두 번째는 판정 파일 쓰기가 거절됐고,
+  세 번째는 규칙 표기를 고치면서 `test_template_v4.py` 의 기대값을 함께 고치지 않아 검사가 실패했다.
+- 닫을 때 받은 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다. `STAGE_CODEX_COMPANION` 을
+  `stage/scripts/claude_review_companion.py` 로 두고 실행했다(DE-00000086). 리뷰어는 POSIX 셸에서는
+  실행해 보지 않았다고 판정문에 적었다.
+
+### Executed at close — 2026-11-20
+
+```
+$ python3 -m unittest stage/scripts/tests/test_run_review.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 12 tests in 1.052s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_run_review.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 12 tests in 1.054s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 26 tests in 0.490s
+
+OK
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_claude_review_guard.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 5.514s
+
+OK (skipped=2)
+
+$ python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 8 tests in 3.514s
+
+OK
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000359.md
+Criteria:
+- PASS: Windows 에서 이 프로젝트의 리뷰 명령이 close_work 를 거쳐 실행되고 리뷰어의 출력이 작업 로그에 남는다
+  Reason: I ran python3 -m unittest stage/scripts/tests/test_run_review.py stage/scripts/tests/test_template_v4.py stage/scripts/tests/test_environment_venues.py on this Windows machine and all 46 tests passed, including the settings-shaped command run through close_work.run_check; the work log already holds a ### Reviewer report from the first cmd.exe close attempt, and this reviewer is now running through cmd.exe and could write this verdict file with the //c/ rule from the companion fix.
+- PASS: 프로젝트 설정의 리뷰 명령에 셸마다 다르게 읽히는 문법이 없고, 들어오면 테스트가 실패한다
+  Reason: I read .stage/settings.json: all six review commands are one plain python3 stage/scripts/run_review.py invocation with no $(, $?, >>, &&, single quotes, % or backticks; the guard test in the test files above passed in the run I made, and I did not inject forbidden syntax to watch it fail.
+- PASS: 리뷰어가 받는 프롬프트에서 `$STAGE_이름` 이 cmd.exe 와 POSIX 셸 양쪽에서 같은 값으로 바뀐다
+  Reason: The prompt I received through cmd.exe had real paths for the set STAGE variables and empty text for the unset STAGE_PREVIOUS_REVIEW_VERDICT_FILE, matching POSIX empty expansion; run_review.expand_stage_variables does this for both $NAME and ${NAME} and its unit tests passed in my run; I did not run the command under a POSIX shell.
+```
 
 ## Retrospective
 
