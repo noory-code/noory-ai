@@ -18,6 +18,10 @@
   to come back as `skills\mypkg\SKILL.md`, so the paths sent to the model differed by OS.
 - The tests read and write files as UTF-8 and take a file name with `Path.name` instead of
   splitting on `/`. On Korean Windows 239 of 438 tests failed or errored before this change.
+- `uv run mypy src/evonest/` passes on Windows. Two `# type: ignore[attr-defined]` comments on
+  `subprocess.CREATE_NEW_PROCESS_GROUP` were reported as unused there, because the attribute
+  exists on Windows. The comments were never needed: the calls sit in a
+  `sys.platform == "win32"` branch, which mypy does not check on other platforms.
 
 All notable changes to Evonest are documented here.
 
