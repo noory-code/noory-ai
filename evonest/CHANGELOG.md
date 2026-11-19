@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Read child-process output as UTF-8 whatever the host locale is. On Windows in Korean (cp949),
+  the engine decoded the UTF-8 output of `claude`, `codex`, `git`, and `gh` with the locale,
+  which raises `UnicodeDecodeError` or garbles the text. The 12 text-mode `subprocess` calls in
+  `phases.py`, `orchestrator.py`, and `process_manager.py` now pass
+  `encoding="utf-8", errors="replace"`, and a test fails when a new text-mode call leaves the
+  encoding out.
+- `evonest init` no longer crashes when its output is piped on a locale that cannot encode
+  everything it prints. On Korean Windows the depth prompt contains an em dash, and `input()`
+  raised `UnicodeEncodeError` on a cp949 pipe. The CLI now replaces a character the stream
+  cannot encode instead of stopping.
+- Documentation sync reports relative paths with forward slashes on Windows too. The keys used
+  to come back as `skills\mypkg\SKILL.md`, so the paths sent to the model differed by OS.
+- The tests read and write files as UTF-8 and take a file name with `Path.name` instead of
+  splitting on `/`. On Korean Windows 239 of 438 tests failed or errored before this change.
+
 All notable changes to Evonest are documented here.
 
 ## [1.2.0] — 2026-07-12

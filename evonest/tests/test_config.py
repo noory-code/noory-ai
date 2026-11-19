@@ -34,10 +34,10 @@ def test_load_with_overrides(tmp_project: Path) -> None:
 
 def test_load_project_config(tmp_project: Path) -> None:
     cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
-    data = json.loads(cfg_path.read_text())
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
     data["model"] = "haiku"
     data["verify"] = {"build": "make build", "test": "make test"}
-    cfg_path.write_text(json.dumps(data))
+    cfg_path.write_text(json.dumps(data), encoding="utf-8")
 
     config = EvonestConfig.load(tmp_project)
     assert config.model == "haiku"
@@ -47,9 +47,9 @@ def test_load_project_config(tmp_project: Path) -> None:
 
 def test_override_beats_project_config(tmp_project: Path) -> None:
     cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
-    data = json.loads(cfg_path.read_text())
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
     data["model"] = "haiku"
-    cfg_path.write_text(json.dumps(data))
+    cfg_path.write_text(json.dumps(data), encoding="utf-8")
 
     config = EvonestConfig.load(tmp_project, model="opus")
     assert config.model == "opus"
@@ -185,10 +185,10 @@ def test_validate_active_level_invalid() -> None:
 def test_validate_active_level_custom(tmp_project: Path) -> None:
     """A custom level defined in levels dict should be valid."""
     cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
-    data = json.loads(cfg_path.read_text())
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
     data["levels"]["ultra"] = {"model": "opus", "observe_mode": "deep"}
     data["active_level"] = "ultra"
-    cfg_path.write_text(json.dumps(data))
+    cfg_path.write_text(json.dumps(data), encoding="utf-8")
 
     config = EvonestConfig.load(tmp_project)
     assert config.active_level == "ultra"  # no ValidationError
@@ -246,13 +246,13 @@ def test_set_dotted_adversarials(tmp_project: Path) -> None:
 def test_legacy_disabled_personas_migration(tmp_project: Path) -> None:
     """Old config with disabled_personas is automatically migrated."""
     cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
-    data = json.loads(cfg_path.read_text())
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
     # Write old format
     data.pop("personas", None)
     data.pop("adversarials", None)
     data["disabled_personas"] = ["chaos-engineer"]
     data["disabled_adversarials"] = ["break-interfaces"]
-    cfg_path.write_text(json.dumps(data))
+    cfg_path.write_text(json.dumps(data), encoding="utf-8")
 
     config = EvonestConfig.load(tmp_project)
     assert config.personas.get("chaos-engineer") is False
@@ -264,17 +264,17 @@ def test_legacy_disabled_personas_migration(tmp_project: Path) -> None:
 def test_legacy_migration_save_removes_old_keys(tmp_project: Path) -> None:
     """After migration and save, old keys are gone."""
     cfg_path = tmp_project / ".noory" / "evonest" / "config.json"
-    data = json.loads(cfg_path.read_text())
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
     data.pop("personas", None)
     data.pop("adversarials", None)
     data["disabled_personas"] = ["chaos-engineer"]
     data["disabled_adversarials"] = []
-    cfg_path.write_text(json.dumps(data))
+    cfg_path.write_text(json.dumps(data), encoding="utf-8")
 
     config = EvonestConfig.load(tmp_project)
     config.save()
 
-    saved = json.loads(cfg_path.read_text())
+    saved = json.loads(cfg_path.read_text(encoding="utf-8"))
     assert "disabled_personas" not in saved
     assert "disabled_adversarials" not in saved
     assert "personas" in saved

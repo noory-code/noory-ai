@@ -17,7 +17,7 @@ def tmp_project(tmp_path: Path) -> Path:
     # Copy templates
     templates = Path(__file__).parent.parent / "src" / "evonest" / "templates"
     for f in templates.iterdir():
-        (evonest_dir / f.name).write_text(f.read_text())
+        (evonest_dir / f.name).write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
 
     # Create subdirectories
     (evonest_dir / "history").mkdir()
@@ -29,10 +29,10 @@ def tmp_project(tmp_path: Path) -> Path:
 
     # Create empty dynamic mutation files
     for name in ("dynamic-personas.json", "dynamic-adversarials.json"):
-        (evonest_dir / name).write_text(json.dumps([]))
+        (evonest_dir / name).write_text(json.dumps([]), encoding="utf-8")
 
     # Create empty advisor + environment + scout cache files
     for name in ("advice.json", "environment.json", "scout.json"):
-        (evonest_dir / name).write_text(json.dumps({}))
+        (evonest_dir / name).write_text(json.dumps({}), encoding="utf-8")
 
     return tmp_path

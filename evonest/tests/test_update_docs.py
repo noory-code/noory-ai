@@ -26,7 +26,7 @@ def test_collect_targets_empty(tmp_path: Path) -> None:
 def test_collect_targets_skills(tmp_path: Path) -> None:
     skill_dir = tmp_path / "skills" / "mypkg"
     skill_dir.mkdir(parents=True)
-    (skill_dir / "SKILL.md").write_text("# skill content")
+    (skill_dir / "SKILL.md").write_text("# skill content", encoding="utf-8")
 
     result = _collect_targets(tmp_path, "skills")
     assert "skills/mypkg/SKILL.md" in result
@@ -36,7 +36,7 @@ def test_collect_targets_skills(tmp_path: Path) -> None:
 def test_collect_targets_codex_skills(tmp_path: Path) -> None:
     skill_dir = tmp_path / ".agents" / "skills" / "mypkg"
     skill_dir.mkdir(parents=True)
-    (skill_dir / "SKILL.md").write_text("# codex skill")
+    (skill_dir / "SKILL.md").write_text("# codex skill", encoding="utf-8")
 
     result = _collect_targets(tmp_path, "skills")
     assert result[".agents/skills/mypkg/SKILL.md"] == "# codex skill"
@@ -45,18 +45,18 @@ def test_collect_targets_codex_skills(tmp_path: Path) -> None:
 def test_collect_targets_claude_commands(tmp_path: Path) -> None:
     cmd_dir = tmp_path / ".claude" / "commands"
     cmd_dir.mkdir(parents=True)
-    (cmd_dir / "deploy.md").write_text("deploy command")
+    (cmd_dir / "deploy.md").write_text("deploy command", encoding="utf-8")
 
     result = _collect_targets(tmp_path, "commands")
     assert ".claude/commands/deploy.md" in result
 
 
 def test_collect_targets_all(tmp_path: Path) -> None:
-    (tmp_path / "CLAUDE.md").write_text("# instructions")
-    (tmp_path / "AGENTS.md").write_text("# codex instructions")
+    (tmp_path / "CLAUDE.md").write_text("# instructions", encoding="utf-8")
+    (tmp_path / "AGENTS.md").write_text("# codex instructions", encoding="utf-8")
     rules_dir = tmp_path / ".claude" / "rules"
     rules_dir.mkdir(parents=True)
-    (rules_dir / "style.md").write_text("style rules")
+    (rules_dir / "style.md").write_text("style rules", encoding="utf-8")
 
     result = _collect_targets(tmp_path, "all")
     assert "CLAUDE.md" in result
@@ -149,7 +149,7 @@ def test_parse_llm_output_create_action() -> None:
 def test_apply_doc_changes_update(tmp_path: Path) -> None:
     target = tmp_path / "skills" / "foo" / "SKILL.md"
     target.parent.mkdir(parents=True)
-    target.write_text("old content")
+    target.write_text("old content", encoding="utf-8")
 
     changes = [DocChange(
         path="skills/foo/SKILL.md",
@@ -161,7 +161,7 @@ def test_apply_doc_changes_update(tmp_path: Path) -> None:
     applied = apply_doc_changes(tmp_path, changes)
 
     assert applied == ["skills/foo/SKILL.md"]
-    assert target.read_text() == "new content"
+    assert target.read_text(encoding="utf-8") == "new content"
 
 
 def test_apply_doc_changes_create(tmp_path: Path) -> None:
@@ -175,7 +175,8 @@ def test_apply_doc_changes_create(tmp_path: Path) -> None:
     applied = apply_doc_changes(tmp_path, changes)
 
     assert applied == [".claude/agents/helper.md"]
-    assert (tmp_path / ".claude" / "agents" / "helper.md").read_text() == "# Helper Agent"
+    helper_path = tmp_path / ".claude" / "agents" / "helper.md"
+    assert helper_path.read_text(encoding="utf-8") == "# Helper Agent"
 
 
 def test_apply_doc_changes_returns_empty_on_no_changes(tmp_path: Path) -> None:

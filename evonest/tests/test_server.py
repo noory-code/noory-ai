@@ -173,7 +173,7 @@ async def test_tool_stimuli(tmp_project: Path) -> None:
     stimuli_dir = tmp_project / ".noory" / "evonest" / "stimuli"
     files = list(stimuli_dir.glob("stimulus-*.md"))
     assert len(files) == 1
-    assert "Focus on security" in files[0].read_text()
+    assert "Focus on security" in files[0].read_text(encoding="utf-8")
 
 
 @pytest.mark.asyncio
@@ -188,7 +188,7 @@ async def test_tool_decide(tmp_project: Path) -> None:
     decisions_dir = tmp_project / ".noory" / "evonest" / "decisions"
     files = list(decisions_dir.glob("decision-*.md"))
     assert len(files) == 1
-    assert "PostgreSQL" in files[0].read_text()
+    assert "PostgreSQL" in files[0].read_text(encoding="utf-8")
 
 
 @pytest.mark.asyncio
