@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000364 | documentation | claude | 두 번 넘게 겪은 실수 세 가지를 규칙 문서에 올린다 | active | claude | [current/W-00000364/_story.md](current/W-00000364/_story.md) |

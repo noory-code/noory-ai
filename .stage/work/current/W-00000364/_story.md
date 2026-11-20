@@ -2,14 +2,20 @@
 id: W-00000364
 title: 두 번 넘게 겪은 실수 세 가지를 규칙 문서에 올린다
 kind: documentation
-venue:
+venue: claude
+environment: local-no-codex
 milestone: M-00000005
-status: captured
-priority: 3
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: CLAUDE.md,AGENTS.md,stage/skills/stage-drive,stage/README.md,stage/CHANGELOG.md,.stage/operations
+promotes:
+decision_refs:
 ---
 
 # W-00000364 두 번 넘게 겪은 실수 세 가지를 규칙 문서에 올린다
@@ -43,3 +49,9 @@ scope: CLAUDE.md,AGENTS.md,stage/skills/stage-drive,stage/README.md,stage/CHANGE
 - stage/README.md 의 훅 목록이 hooks.json 에 있는 이벤트 다섯 가지와 같다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
