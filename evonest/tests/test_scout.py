@@ -185,7 +185,7 @@ def test_apply_scout_results_injects_high_score(tmp_project: Path) -> None:
     # Should have created a stimulus
     stimuli = list((state.stimuli_dir).glob("*.md"))
     assert len(stimuli) == 1
-    content = stimuli[0].read_text()
+    content = stimuli[0].read_text(encoding="utf-8")
     assert "Important update" in content
     assert "Breaking change" in content
 

@@ -513,7 +513,7 @@ def test_save_observations_proposal_content(tmp_project: Path) -> None:
 
     proposals = state.list_proposals()
     assert len(proposals) == 1
-    content = proposals[0].read_text()
+    content = proposals[0].read_text(encoding="utf-8")
     assert "Extract repository layer" in content
     assert "domain-modeler" in content
     assert "Mix of concerns detected." in content

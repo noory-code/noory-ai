@@ -47,12 +47,12 @@ def test_init_creates_templates(tmp_path: Path) -> None:
     assert (evonest_dir / "backlog.json").exists()
 
     # Verify JSON is valid and has expected structure
-    config = json.loads((evonest_dir / "config.json").read_text())
+    config = json.loads((evonest_dir / "config.json").read_text(encoding="utf-8"))
     assert config["active_level"] == "standard"
     assert "levels" in config
     assert config["levels"]["standard"]["model"] == "sonnet"
 
-    progress = json.loads((evonest_dir / "progress.json").read_text())
+    progress = json.loads((evonest_dir / "progress.json").read_text(encoding="utf-8"))
     assert progress["total_cycles"] == 0
 
 
@@ -60,10 +60,11 @@ def test_init_creates_dynamic_mutations(tmp_path: Path) -> None:
     init_project(tmp_path)
     evonest_dir = tmp_path / ".noory" / "evonest"
 
-    personas = json.loads((evonest_dir / "dynamic-personas.json").read_text())
+    personas = json.loads((evonest_dir / "dynamic-personas.json").read_text(encoding="utf-8"))
     assert personas == []
 
-    adversarials = json.loads((evonest_dir / "dynamic-adversarials.json").read_text())
+    adversarials_path = evonest_dir / "dynamic-adversarials.json"
+    adversarials = json.loads(adversarials_path.read_text(encoding="utf-8"))
     assert adversarials == []
 
 
@@ -71,10 +72,10 @@ def test_init_creates_advice_and_environment(tmp_path: Path) -> None:
     init_project(tmp_path)
     evonest_dir = tmp_path / ".noory" / "evonest"
 
-    advice = json.loads((evonest_dir / "advice.json").read_text())
+    advice = json.loads((evonest_dir / "advice.json").read_text(encoding="utf-8"))
     assert advice == {}
 
-    environment = json.loads((evonest_dir / "environment.json").read_text())
+    environment = json.loads((evonest_dir / "environment.json").read_text(encoding="utf-8"))
     assert environment == {}
 
 
@@ -82,36 +83,37 @@ def test_init_creates_gitignore(tmp_path: Path) -> None:
     init_project(tmp_path)
     gitignore = tmp_path / ".gitignore"
     assert gitignore.exists()
-    assert ".noory/evonest/" in gitignore.read_text()
+    assert ".noory/evonest/" in gitignore.read_text(encoding="utf-8")
 
 
 def test_init_appends_to_existing_gitignore(tmp_path: Path) -> None:
     gitignore = tmp_path / ".gitignore"
-    gitignore.write_text("node_modules/\n")
+    gitignore.write_text("node_modules/\n", encoding="utf-8")
 
     init_project(tmp_path)
-    content = gitignore.read_text()
+    content = gitignore.read_text(encoding="utf-8")
     assert "node_modules/" in content
     assert ".noory/evonest/" in content
 
 
 def test_init_skips_gitignore_if_already_present(tmp_path: Path) -> None:
     gitignore = tmp_path / ".gitignore"
-    gitignore.write_text("# Evonest\n.evonest/\n")
+    gitignore.write_text("# Evonest\n.evonest/\n", encoding="utf-8")
 
     init_project(tmp_path)
-    content = gitignore.read_text()
+    content = gitignore.read_text(encoding="utf-8")
     assert content.count(".evonest") == 1
 
 
 def test_init_idempotent(tmp_path: Path) -> None:
     init_project(tmp_path)
     # Modify identity
-    (tmp_path / ".noory" / "evonest" / "identity.md").write_text("# My Project")
+    (tmp_path / ".noory" / "evonest" / "identity.md").write_text("# My Project", encoding="utf-8")
 
     # Re-init should not overwrite existing files
     init_project(tmp_path)
-    assert (tmp_path / ".noory" / "evonest" / "identity.md").read_text() == "# My Project"
+    identity_path = tmp_path / ".noory" / "evonest" / "identity.md"
+    assert identity_path.read_text(encoding="utf-8") == "# My Project"
 
 
 def test_init_missing_directory() -> None:
@@ -136,7 +138,7 @@ def test_init_uses_claude_draft_when_available(tmp_path: Path) -> None:
     with patch("evonest.core.initializer._draft_identity_via_claude", return_value=draft_content):
         init_project(tmp_path)
 
-    identity = (tmp_path / ".noory" / "evonest" / "identity.md").read_text()
+    identity = (tmp_path / ".noory" / "evonest" / "identity.md").read_text(encoding="utf-8")
     assert identity == draft_content
 
 
@@ -145,7 +147,7 @@ def test_init_falls_back_to_template_when_claude_fails(tmp_path: Path) -> None:
     with patch("evonest.core.initializer._draft_identity_via_claude", return_value=None):
         init_project(tmp_path)
 
-    identity = (tmp_path / ".noory" / "evonest" / "identity.md").read_text()
+    identity = (tmp_path / ".noory" / "evonest" / "identity.md").read_text(encoding="utf-8")
     # Blank template has the placeholder sections
     assert "## Mission" in identity
     assert "## Boundaries" in identity

@@ -599,6 +599,8 @@ def _count_source_files(project: str) -> int:
             ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "*.py"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=project,
             timeout=15,
         )
@@ -699,6 +701,8 @@ def _git_commit_pr(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(project),
             timeout=30,
         )
@@ -727,6 +731,8 @@ def _git_commit_pr(
             ["git", "push", "-u", "origin", branch],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(project),
             timeout=60,
         )
@@ -753,6 +759,8 @@ def _git_commit_pr(
             ],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(project),
             timeout=60,
         )

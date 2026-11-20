@@ -14,7 +14,7 @@ def test_lock_creates_and_removes(tmp_path: Path) -> None:
     lock_path = tmp_path / "lock"
     with EvonestLock(lock_path):
         assert lock_path.exists()
-        assert lock_path.read_text() == str(os.getpid())
+        assert lock_path.read_text(encoding="utf-8") == str(os.getpid())
     assert not lock_path.exists()
 
 
@@ -48,7 +48,7 @@ def test_stale_lock_auto_cleanup(tmp_path: Path) -> None:
 
     with EvonestLock(lock_path):
         assert lock_path.exists()
-        assert lock_path.read_text() == str(os.getpid())
+        assert lock_path.read_text(encoding="utf-8") == str(os.getpid())
     assert not lock_path.exists()
 
 
@@ -59,7 +59,7 @@ def test_invalid_lock_file_auto_cleanup(tmp_path: Path) -> None:
 
     with EvonestLock(lock_path):
         assert lock_path.exists()
-        assert lock_path.read_text() == str(os.getpid())
+        assert lock_path.read_text(encoding="utf-8") == str(os.getpid())
     assert not lock_path.exists()
 
 

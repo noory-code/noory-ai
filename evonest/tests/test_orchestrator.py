@@ -200,7 +200,7 @@ async def test_lock_prevents_concurrent(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     # Create lock file manually with current PID
     state.lock_path.parent.mkdir(parents=True, exist_ok=True)
-    state.lock_path.write_text(str(os.getpid()))
+    state.lock_path.write_text(str(os.getpid()), encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="Another evolution is running"):
         await run_analyze(str(tmp_project))

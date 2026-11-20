@@ -100,6 +100,8 @@ class ProcessManager:
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 cwd=cwd,
                 timeout=self.timeout,
             )

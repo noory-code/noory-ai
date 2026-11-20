@@ -105,7 +105,7 @@ def test_cli_identity_read(tmp_project: Path) -> None:
 def test_cli_identity_set(tmp_project: Path) -> None:
     """evonest identity --set FILE should update identity."""
     id_file = tmp_project / "new-identity.md"
-    id_file.write_text("# Test Project\nA CLI test.")
+    id_file.write_text("# Test Project\nA CLI test.", encoding="utf-8")
 
     result = _run_cli("identity", str(tmp_project), "--set", str(id_file))
     assert result.returncode == 0

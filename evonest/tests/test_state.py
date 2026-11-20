@@ -171,7 +171,7 @@ def test_history(tmp_project: Path) -> None:
     data = {"success": True, "persona": "test"}
     path = state.save_cycle_history(1, data)
     assert path.name == "cycle-0001.json"
-    assert json.loads(path.read_text())["success"] is True
+    assert json.loads(path.read_text(encoding="utf-8"))["success"] is True
 
     files = state.list_history_files()
     assert len(files) == 1
@@ -180,7 +180,7 @@ def test_history(tmp_project: Path) -> None:
 def test_log(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     state.log("test message")
-    content = state.log_path.read_text()
+    content = state.log_path.read_text(encoding="utf-8")
     assert "test message" in content
 
 
@@ -204,15 +204,15 @@ def test_add_proposal_creates_file(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     content = "# Proposal: Refactor domain model"
     path_str = state.add_proposal(content)
-    path = state.proposals_dir / path_str.split("/")[-1]
+    path = state.proposals_dir / Path(path_str).name
     assert path.exists()
-    assert path.read_text() == content
+    assert path.read_text(encoding="utf-8") == content
 
 
 def test_add_proposal_filename_pattern(tmp_project: Path) -> None:
     state = ProjectState(tmp_project)
     path_str = state.add_proposal("test")
-    fname = path_str.split("/")[-1]
+    fname = Path(path_str).name
     assert fname.startswith("proposal-")
     assert fname.endswith(".md")
 

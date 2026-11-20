@@ -74,7 +74,7 @@ async def evonest_evolve(
             cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,  # type: ignore[attr-defined]
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
     else:
         proc = subprocess.Popen(

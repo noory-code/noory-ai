@@ -49,7 +49,8 @@ def _collect_targets(project: Path, target: str) -> dict[str, str]:
     for pattern in globs:
         for path in sorted(project.glob(pattern)):
             if path.is_file():
-                rel = str(path.relative_to(project))
+                # Forward slashes on every OS: the keys go to the model and come back as paths.
+                rel = path.relative_to(project).as_posix()
                 try:
                     result[rel] = path.read_text(encoding="utf-8")
                 except OSError as exc:
