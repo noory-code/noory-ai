@@ -10,11 +10,13 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000363 | 카드 한 장에 드는 문서와 절차에서 덜어낼 것을 정한다 | design | captured | 2 |  | [W-00000363/_story.md](W-00000363/_story.md) |
 | W-00000364 | 두 번 넘게 겪은 실수 세 가지를 규칙 문서에 올린다 | documentation | captured | 3 |  | [W-00000364/_story.md](W-00000364/_story.md) |
 | W-00000365 | 다음에 할 일의 순서를 .stage 로 옮긴다 | planning | captured | 4 |  | [W-00000365/_story.md](W-00000365/_story.md) |
 | W-00000366 | 도면의 위 두 층을 쓰고 도면 자리를 한 곳으로 정한다 | documentation | captured | 5 |  | [W-00000366/_story.md](W-00000366/_story.md) |
 | W-00000367 | 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게 설계한다 | design | captured | 6 |  | [W-00000367/_story.md](W-00000367/_story.md) |
+| W-00000368 | 닫기와 보관을 한 번에 하게 고친다 | development | captured | 1 |  | [W-00000368/_story.md](W-00000368/_story.md) |
+| W-00000369 | 닫을 때 카드에 붙는 출력을 판정 한 줄로 줄인다 | development | captured | 2 |  | [W-00000369/_story.md](W-00000369/_story.md) |
+| W-00000370 | 카드에서 회고 칸을 없애고 유지 카드는 두 가지만 묻는다 | development | captured | 3 |  | [W-00000370/_story.md](W-00000370/_story.md) |
 
 ## 상태 값
 
