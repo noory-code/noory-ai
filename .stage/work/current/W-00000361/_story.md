@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_run_review.py -q"
-status: active
-verification: pending
+status: completed
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000361
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -92,6 +92,59 @@ PR #71(리뷰가 필요한 카드를 Windows 에서 닫게 한 고침)은 PR #69
 - `stage/CHANGELOG.md` 에 충돌 표시가 남지 않은 것을 확인했다(0줄).
 - Stage 스크립트 테스트 전체와 evonest 테스트는 실행하지 않았다. PR 의 CI 가 실행한다.
 - 닫을 때 받는 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다(DE-00000086).
+
+### Executed at close — 2026-11-20
+
+```
+$ python3 -m unittest discover -s stage/scripts/tests -p test_run_review.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 12 tests in 1.058s
+
+OK
+
+$ python3 stage/scripts/audit_stage.py --project-root .
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 450 tests in 19.240s
+
+OK (skipped=44)
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000361.md
+Criteria:
+- PASS: main을 합친 브랜치에서 감사와 Stage 훅 테스트, 리뷰 관련 스크립트 테스트가 통과한다
+  Reason: I did not run the commands: the audit and unittest invocations were refused approval in this session. git merge-base confirms origin/main is an ancestor of HEAD, and the card's Verification records audit errors=0 plus passing hook tests and the run_review, template_v4, claude_review_guard and environment_venues tests on the resolved merge tree.
+- PASS: Stage 변경 기록의 Unreleased 절에 훅 고침과 PR #71의 고침 두 개가 모두 있다
+  Reason: Read stage/CHANGELOG.md: its Unreleased section holds the PR #71 verdict-write rule fix, the run_review.py entry, and the hook python-on-Windows entry, and grep found no conflict markers.
+```
 
 ## Retrospective
 

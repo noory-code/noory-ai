@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000361 | chore | claude | PR #71이 main과 충돌 없이 머지된다 | active | Claude | [current/W-00000361/_story.md](current/W-00000361/_story.md) |
