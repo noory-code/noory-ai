@@ -555,10 +555,9 @@ class CloseWorkTest(unittest.TestCase):
             item = item_path.read_text(encoding="utf-8")
 
         self.assertIn("Browser verification: checkout completed successfully.", item)
-        self.assertIn(f"### Executed at close — {date.today().isoformat()}", item)
+        self.assertIn(f"- Checks at close {date.today().isoformat()}: 1 passed", item)
         self.assertIn("print('check ok')", item)
-        self.assertIn("check ok", item)
-        self.assertLess(item.index("Browser verification"), item.index("### Executed at close"))
+        self.assertLess(item.index("Browser verification"), item.index("- Checks at close"))
 
     def test_failing_check_changes_nothing(self):
         tmp, root = self.make()
@@ -976,10 +975,9 @@ class CloseWorkTest(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn(
-                f"### Review at close — {date.today().isoformat()}",
+                f"- Review at close {date.today().isoformat()} by reviewer: approved (1 PASS)",
                 item,
             )
-            self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
             self.assertIn(
                 "configured verdict retained",
                 (
@@ -987,7 +985,7 @@ class CloseWorkTest(unittest.TestCase):
                 ).read_text(encoding="utf-8"),
             )
 
-    def test_passing_review_records_each_criterion_verdict_and_reason_on_card(self):
+    def test_passing_review_records_each_criterion_verdict_without_reasons_on_card(self):
         tmp, root = self.make(review="pending")
         with tmp:
             reviewer = python_command(
@@ -1013,17 +1011,13 @@ class CloseWorkTest(unittest.TestCase):
             )
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        review_block = item.split(f"### Review at close — {date.today().isoformat()}", 1)[1]
         self.assertIn(
-            "Criteria:\n"
-            "- PASS: Archive keeps evidence files\n"
-            "  Reason: test_archive_work covers each file kind\n"
-            "- PASS: Docs match the code\n"
-            "  Reason: review.md names the ``\u200b` fenced block\n"
-            "```",
-            review_block,
+            f"- Review at close {date.today().isoformat()} by reviewer: "
+            "approved (1 PASS, 2 PASS)",
+            item,
         )
-        self.assertEqual(2, review_block.count("```"))
+        self.assertNotIn("test_archive_work covers each file kind", item)
+        self.assertNotIn("```", item)
 
     def review_path_cases(self, command: str) -> tuple[tuple[str, dict, dict], ...]:
         return (
@@ -1209,7 +1203,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("CRITERIA VERDICT:", log)
         self.assertIn("APPROVED", log)
         self.assertNotIn("CRITERIA VERDICT:", item)
-        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn(": approved (1 PASS)", item)
 
     def test_review_without_verdict_file_blocks_even_on_zero_exit(self):
         tmp, root = self.make(review="pending")
@@ -1734,7 +1728,7 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn(": approved (1 PASS)", item)
         self.assertIn("committed review material", log)
 
     def test_autonomous_review_receives_close_owned_committed_path_list(self):
@@ -1759,7 +1753,7 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
+        self.assertIn(": approved (1 PASS)", item)
         self.assertIn("committed review material", log)
 
     def test_failed_json_verdict_refuses(self):
@@ -1915,13 +1909,10 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("status: completed", item)
         self.assertIn("review: passed", item)
         self.assertIn(
-            f"### Independent review at close — {date.today().isoformat()}",
+            f"- Review at close {date.today().isoformat()} by claude: approved (1 PASS)",
             item,
         )
-        self.assertIn(".stage/.runtime/driver/logs/W-00000001.md", item)
-        self.assertIn(
-            "- PASS: criterion\n  Reason: test reviewer inspected the inputs", item
-        )
+        self.assertNotIn("test reviewer inspected the inputs", item)
         self.assertIn("independent verdict retained", log)
         self.assertNotIn("same venue should not run", item)
 

@@ -93,8 +93,8 @@ WORK_LOG_PREAMBLE = """\
 
 이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 시도별 판정을
 소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
-`## Retrospective`, `## Promotion decision`을 소유한다. 닫기를 통과시킨 리뷰의 성공 기준별
-판정과 까닭은 카드의 `## Verification`이, 승인된 마지막 판 실행 보고의 `What changed`·`Why`·
+`## Retrospective`, `## Promotion decision`을 소유한다. 닫을 때 받은 리뷰마다 성공 기준별
+판정 한 줄은 카드의 `## Verification`이, 승인된 마지막 판 실행 보고의 `What changed`·`Why`·
 `Decisions made`·`Work not done` 네 줄은 카드의 `## Progress`가 소유한다. 이 로그는 커밋되지 않는
 `.stage/.runtime/` 아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유
 사실은 경로로 참조한다.
@@ -376,19 +376,66 @@ def review_verdict_error(path: Path) -> str:
     return ""
 
 
-def review_criteria_evidence(path: Path) -> str:
-    """Render each criterion of the passing verdict for the card's committed record."""
+def one_line(text: str) -> str:
+    return " ".join(_CTRL_RE.sub("", text).split())
+
+
+def check_record_line(commands: list[str], day: str) -> str:
+    """The card's committed record of the checks that passed at close."""
+
+    listed = "; ".join(f"`{one_line(command)}`" for command in commands)
+    return f"- Checks at close {day}: {len(commands)} passed — {listed}"
+
+
+def reviewer_label(command: str, fallback: str = "reviewer") -> str:
+    """Name who judged: the review command's `--label`, or the companion that replaced it."""
+
+    match = re.search(r"--label[ =]([A-Za-z0-9_.-]+)", command)
+    label = match.group(1) if match else fallback
+    # codex_companion.py hands the review to this override when it is set.
+    override = os.environ.get("STAGE_CODEX_COMPANION", "").strip()
+    if label == "codex" and override:
+        return Path(override).stem
+    return label
+
+
+def review_record_line(path: Path, reviewer: str, day: str) -> str:
+    """One committed line per review: who judged, the outcome, each criterion's verdict.
+
+    Reasons stay in the uncommitted work log. Raises RuntimeError when the verdict
+    file holds no valid verdict, because then there is no judgement to record.
+    """
 
     verdict, error = load_review_verdict(path)
     if error or verdict is None:
         raise RuntimeError(error or "review verdict is missing")
     criteria = verdict["criteria"]
     assert isinstance(criteria, list)
-    return "\n".join(
-        f"- {entry['verdict']}: {fence_safe(entry['criterion'])}\n"
-        f"  Reason: {fence_safe(entry['reason'])}"
-        for entry in criteria
+    marks = ", ".join(
+        f"{number} {entry['verdict']}" for number, entry in enumerate(criteria, 1)
     )
+    outcome = "approved" if verdict["approved"] is True else "rejected"
+    return f"- Review at close {day} by {one_line(reviewer)}: {outcome} ({marks})"
+
+
+def record_rejected_review(item_path: Path, verdict_path: Path, reviewer: str) -> bool:
+    """Leave a rejecting verdict on the still-open card; False when there was none."""
+
+    try:
+        line = review_record_line(verdict_path, reviewer, date.today().isoformat())
+        text = item_path.read_text(encoding="utf-8")
+        item_path.write_text(
+            append_to_section(text, "Verification", line), encoding="utf-8"
+        )
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return True
+
+
+def review_failure_note(recorded: bool) -> str:
+    if recorded:
+        return "the rejection is recorded on the card; its status is unchanged"
+    return "work item unchanged"
 
 
 def close_owned_fields(card_path: Path) -> dict[str, str | None]:
@@ -1094,12 +1141,10 @@ def main() -> int:
         return 1
 
     project_root = stage_root.parent
-    verification_blocks: list[str] = []
     for command in checks:
         ok, block, _raw = run_check(
             command, args.timeout, project_root, timeout_source="--timeout"
         )
-        verification_blocks.append(block)
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
             return 1
@@ -1111,7 +1156,7 @@ def main() -> int:
     # runs the legacy per-stage command. Both paths require a zero command exit
     # and an approving reviewer-owned JSON verdict.
     review_passed = False
-    review_heading = ""
+    reviewer = ""
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
             load_review_config(stage_root), work_item.venue
@@ -1145,14 +1190,21 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
+        reviewer = (
+            resolve_independent_reviewer_venue(load_review_config(stage_root), work_item.venue)
+            or reviewer_label(review_command)
+        )
         if not passed:
+            recorded = record_rejected_review(
+                item_path, review_verdict_path(stage_root, work_item.item_id), reviewer
+            )
             print(
-                f"{args.item}: independent review did not pass; work item unchanged:\n{detail}",
+                f"{args.item}: independent review did not pass; "
+                f"{review_failure_note(recorded)}:\n{detail}",
                 file=sys.stderr,
             )
             return 1
         review_passed = True
-        review_heading = "Independent review at close"
     elif (field(text, "review") or "not_required") == "pending":
         review_command, review_error = resolve_review_command(load_review_config(stage_root), args.review_stage)
         if review_error:
@@ -1176,25 +1228,24 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
+        reviewer = reviewer_label(review_command)
         if not passed:
+            recorded = record_rejected_review(
+                item_path, review_verdict_path(stage_root, work_item.item_id), reviewer
+            )
             print(
-                f"{args.item}: review did not pass; work item unchanged:\n{detail}",
+                f"{args.item}: review did not pass; {review_failure_note(recorded)}:\n{detail}",
                 file=sys.stderr,
             )
             return 1
         review_passed = True
-        review_heading = "Review at close"
 
     close_date = date.today().isoformat()
-    evidence = (
-        f"### Executed at close — {close_date}\n\n```\n"
-        + "\n\n".join(verification_blocks)
-        + "\n```"
-    )
+    evidence = check_record_line(checks, close_date)
     if review_passed:
         try:
-            criteria_evidence = review_criteria_evidence(
-                review_verdict_path(stage_root, work_item.item_id)
+            review_line = review_record_line(
+                review_verdict_path(stage_root, work_item.item_id), reviewer, close_date
             )
         except RuntimeError as exc:
             print(
@@ -1202,11 +1253,7 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
-        evidence += (
-            f"\n\n### {review_heading} — {close_date}\n\n```\n"
-            f"Review report: {work_log_reference(work_item.item_id)}\n"
-            f"Criteria:\n{criteria_evidence}\n```"
-        )
+        evidence += f"\n{review_line}"
     log_path = work_log_path(stage_root, work_item.item_id)
     try:
         report_lines = (

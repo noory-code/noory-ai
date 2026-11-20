@@ -77,8 +77,11 @@ frontmatter).
 
 ## What close writes on the card
 
-`close_work.py` changes the card only after every check and any required review
-has passed. Before that point the card is left unchanged.
+`close_work.py` completes the card only after every check and any required review
+has passed. Before that point it writes one thing: when a review at close returns a
+valid verdict that rejects the work, `## Verification` gains that review's line (below)
+and every frontmatter field stays as it was. A failing check, a review command that
+fails, and a missing or malformed verdict leave the card unchanged.
 
 - Frontmatter: `verification: passed`, the final `promotion` value,
   `status: completed`, and `review: passed` when a review ran.
@@ -87,17 +90,20 @@ has passed. Before that point the card is left unchanged.
   report's `What changed:`, `Why:`, `Decisions made:`, and `Work not done:`
   lines, verbatim. A card closed without a driver run has no report and gains
   nothing here.
-- `## Verification` gains `### Executed at close — <date>`: one fenced block with
-  each `--check` command, its exit code, and its output clipped to the last 40
-  lines and 4000 bytes.
-- When a review passed, `## Verification` also gains
-  `### Review at close — <date>` (or `### Independent review at close — <date>`
-  for an autonomous item). It is one fenced block holding:
-  - `Review report:` with the work-log path
-    (`.stage/.runtime/driver/logs/<work-id>.md`);
-  - `Criteria:` followed by every criterion of the approving verdict, in verdict
-    order, as `- <PASS|FAIL>: <criterion>` and an indented `Reason: <reason>`
-    line, without clipping.
+- `## Verification` gains one line for the checks that passed:
+  ``- Checks at close <date>: <count> passed — `<command>`; `<command>` ``.
+  Check output is not copied onto the card.
+- Each review that `close_work.py` runs and that returns a valid verdict adds one
+  line to `## Verification`, whether it approved or rejected:
+  `- Review at close <date> by <reviewer>: <approved|rejected> (1 PASS, 2 FAIL, ...)`.
+  The numbers follow the verdict's criterion order. `<reviewer>` is the reviewing
+  venue for an autonomous item; otherwise it is the review command's `--label`, or the
+  file name of the `STAGE_CODEX_COMPANION` override when that replaced a `codex`
+  label, or `reviewer` when the command names none. Counting the `rejected` lines of
+  archived cards gives the number of reviews at close that sent work back.
+- The reviewer's reasons and report are not copied onto the card. They stay in the
+  work log (`.stage/.runtime/driver/logs/<work-id>.md`), which is not committed.
+- Reviews that the drivers run between rounds are recorded in the work log only.
 
 The executor report lines and the criteria live on the card because the work
 log and the verdict file sit under `.stage/.runtime/`, which is not committed.
