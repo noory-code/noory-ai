@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Shrink what `close_work.py` writes on the card. Command output and the reviewer's
+  reasons made up 43% of the lines of closed cards. A close now adds one line naming the
+  checks that passed and one line per review with each criterion's verdict; output and
+  reasons stay in the uncommitted work log. A review at close that rejects the work now
+  leaves its line on the still-open card, so the repository alone shows how often a
+  review sent work back. Cards archived earlier are not rewritten, and reviews the
+  drivers run between rounds are still recorded in the work log only.
 - Add `close_work.py --archive`, which archives a top-level item in the same command that
   closes it. Closing and archiving by hand took two record-only commits and usually two pull
   requests per card; with the flag the close and the archive land in one commit beside the
