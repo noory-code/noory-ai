@@ -8,7 +8,8 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest stage/scripts/tests/test_run_review.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000359
@@ -135,6 +136,13 @@ Claude Code 2.1.326. 명령은 저장소 루트에서 실행했다.
 - 닫을 때 받은 리뷰는 codex 가 아니라 같은 모델(Claude 대역)의 리뷰다. `STAGE_CODEX_COMPANION` 을
   `stage/scripts/claude_review_companion.py` 로 두고 실행했다(DE-00000086). 리뷰어는 POSIX 셸에서는
   실행해 보지 않았다고 판정문에 적었다.
+- 2026-11-20 맥북(macOS)에서 PR #71 을 머지한 main(`8e9def7f`)으로 다시 실행했다.
+  `python3 -m unittest discover -s stage/scripts/tests` 는 784개가 통과했고 2개를 건너뛰었다.
+  `python3 -m unittest discover -s stage/hooks/tests -q` 는 450개가 통과했다. 감사는 errors=0, warnings=32 였다.
+  새 리뷰 명령으로 맥북에서 실제 카드를 닫아 보지는 않았다.
+- 사용자 확인 — 2026-11-20. 닫기 절차가 쓰는 리뷰 명령을 바꾼 카드라 사용자 확인이 필요하다(DE-00000087).
+  맥북 세션이 위 결과와 확인하지 않은 것을 보여 준 뒤 사용자가 "확인, 보관하세요" 라고 했다. 이 확인은
+  카드를 닫고 PR #71 을 머지한 뒤에 받았다.
 
 ### Executed at close — 2026-11-20
 
