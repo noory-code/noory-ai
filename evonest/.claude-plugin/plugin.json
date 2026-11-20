@@ -1,6 +1,6 @@
 {
   "name": "evonest",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "AI-assisted code evolution plugin for Claude Code and Codex. 20 specialist personas analyze your codebase and propose improvements. All proposals are reviewed before execution, with auto-revert on test failure.",
   "homepage": "https://github.com/noory-code/noory-ai/tree/main/evonest",
   "repository": "https://github.com/noory-code/noory-ai",
