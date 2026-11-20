@@ -95,8 +95,9 @@ the paths, then record `promoted`. The promotion gate admits an intent only whil
 `approved` or `promoted`, and the audit rejects a completed card left at `approved`, so
 `approved` lasts only while the paths are being written.
 
-To move a closed item out of the review queue into `official/work/archive/`, use the **stage-archive**
-skill — archiving needs only an archive intent (or `archive_work.py`), never a new work item.
+A top-level item closed with `--archive` goes straight into `official/work/archive/`. To move an
+item that was closed without it out of the review queue, use the **stage-archive** skill —
+archiving needs only an archive intent (or `archive_work.py`), never a new work item.
 
 ## Closing the item
 
@@ -105,7 +106,7 @@ byproduct of running the checks, not a hand-typed claim:
 
 ```bash
 python3 stage/skills/stage-retrospective/close_work.py --project-root <project-root> W-00000001 \
-  --check "<test command>" [--check "..."] [--promotion <final-choice>]
+  --check "<test command>" [--check "..."] [--promotion <final-choice>] [--archive]
 ```
 
 It runs each `--check`, records the output as evidence, and completes the item only when they pass —
@@ -122,6 +123,23 @@ matter what the command printed.
 
 For hierarchical records, `close_work` resolves the record by frontmatter ID and writes the exact
 nested link into `work/review.md`; do not substitute a flat `<id>.md` path.
+
+### Close and archive in one command
+
+When you close a top-level epic or story by hand, pass `--archive`. After the close succeeds, the
+same command archives the hierarchy and its retrospectives, so the close and the archive land in
+one commit beside the work. Commit the source changes before running it: the review judges the
+commit at `HEAD`, and the archiver refuses while a path inside the item's scope is uncommitted.
+
+| Case | What happens |
+|---|---|
+| A check or the review fails | Nothing is closed and nothing is archived. |
+| The item sits under an epic or a story | `--archive` is refused before any check runs. Close it without the flag; it is archived with its top-level item. |
+| The close succeeds and archiving fails | The command exits non-zero, names the cause, and leaves the item completed in `work/review.md`. Fix the cause, then run `archive_work.py` or rerun the same command. |
+| The item is already completed | Rerunning with `--archive` reconciles the index and archives it. |
+
+The drivers close without `--archive`: their landing step commits the closed card from
+`work/current/`, so a driver-run item still waits in `work/review.md` until it is archived.
 
 When the work ran where the shared work log does not exist (for example a cloud session that wrote its
 `### Executor report` in the commit body), import the report before closing, so `close_work` can copy

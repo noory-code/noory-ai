@@ -20,7 +20,11 @@ Usage:
     close_work.py --project-root . W-00000008 \
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
-        [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600]
+        [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600] [--archive]
+
+`--archive` archives the closed top-level item in the same command. Without it the
+item waits in `review.md`, which the drivers rely on: their landing step commits the
+closed card from `work/current/`.
 """
 
 from __future__ import annotations
@@ -668,6 +672,32 @@ def ensure_review_row(
     review_path.write_text(f"{text.rstrip(chr(10))}\n{row}\n", encoding="utf-8")
 
 
+def archive_closed_item(stage_root: Path, item_id: str) -> str:
+    """Archive one closed top-level item; the result line contains ERROR on failure."""
+
+    archive_dir = Path(__file__).resolve().parents[1] / "stage-archive"
+    if str(archive_dir) not in sys.path:
+        sys.path.insert(0, str(archive_dir))
+    import archive_work
+
+    return archive_work.archive_one(
+        stage_root, item_id, archive_work.blocking_children_by_parent(stage_root)
+    )
+
+
+def archive_after_close(stage_root: Path, item_id: str) -> int:
+    result = archive_closed_item(stage_root, item_id)
+    if "ERROR" in result:
+        print(
+            f"{item_id}: closed, but archiving failed: {result}\n"
+            "Resolve it, then run `archive_work.py` for this item (stage-archive skill).",
+            file=sys.stderr,
+        )
+        return 1
+    print(result)
+    return 0
+
+
 def run_check(
     command: str,
     timeout: int,
@@ -822,6 +852,11 @@ def main() -> int:
         help=f"Review command timeout in seconds (default: {DEFAULT_REVIEW_TIMEOUT}).",
     )
     parser.add_argument("--review-stage", default="implementation", help="settings.json review stage whose command runs at close.")
+    parser.add_argument(
+        "--archive",
+        action="store_true",
+        help="After a successful close, archive this top-level item in the same command.",
+    )
     args = parser.parse_args()
 
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
@@ -865,6 +900,14 @@ def main() -> int:
         items_root=stage_root / current_root,
     )
     status = field(text, "status")
+
+    if args.archive and work_item.parent:
+        print(
+            f"{args.item}: --archive applies to a top-level item; this one sits under "
+            f"{work_item.parent} and is archived with it. Close it without --archive.",
+            file=sys.stderr,
+        )
+        return 1
 
     if args.allocate_retrospective:
         if status not in OPEN_TO_CLOSE:
@@ -934,6 +977,8 @@ def main() -> int:
             print(f"{args.item}: {index_error}", file=sys.stderr)
             return 1
         print(f"{args.item}: already completed; index reconciled")
+        if args.archive:
+            return archive_after_close(stage_root, args.item)
         return 0
     if status not in OPEN_TO_CLOSE:
         print(f"{args.item}: status `{status}` is not active/review; refusing to close", file=sys.stderr)
@@ -1225,6 +1270,8 @@ def main() -> int:
         print(f"{args.item}: {index_error}", file=sys.stderr)
         return 1
     print(f"{args.item}: closed (verification passed on {len(checks)} check(s), status completed)")
+    if args.archive:
+        return archive_after_close(stage_root, args.item)
     return 0
 
 

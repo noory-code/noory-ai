@@ -28,6 +28,11 @@ work being archived already has one, and a second would duplicate the record (SS
 
 ## Fast path (default)
 
+A top-level item you close by hand needs no separate archive step: `close_work.py --archive`
+closes and archives it in one command (see the `stage-retrospective` skill). Use the archiver
+below for items already waiting in `work/review.md`, for driver-run items, and for rejected
+planned cards.
+
 The archiver lives beside this skill (`${CLAUDE_PLUGIN_ROOT}/skills/stage-archive/archive_work.py`;
 in this repo, `stage/skills/stage-archive/archive_work.py`).
 

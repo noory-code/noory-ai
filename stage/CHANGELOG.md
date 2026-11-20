@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add `close_work.py --archive`, which archives a top-level item in the same command that
+  closes it. Closing and archiving by hand took two record-only commits and usually two pull
+  requests per card; with the flag the close and the archive land in one commit beside the
+  work. The flag is refused for an item nested under an epic or a story before any check runs,
+  a failing check or review archives nothing, and an archive failure after a successful close
+  exits non-zero and names `archive_work.py` as the next step. The drivers still close without
+  it, because their landing step commits the closed card from `work/current/`.
+
 ## 0.67.0 — 2026-11-20
 
 - Let the Claude reviewer write its verdict file on Windows. `claude_review_companion.py`
