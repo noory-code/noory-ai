@@ -2,14 +2,20 @@
 id: W-00000365
 title: 다음에 할 일의 순서를 .stage 로 옮긴다
 kind: planning
-venue:
+venue: claude
+environment: local-no-codex
 milestone: M-00000005
-status: captured
-priority: 4
 autonomous: false
 acceptance: []
-review: not_required
-scope: .stage/roadmap,.stage/work/planned
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: .stage/roadmap,.stage/work/planned,.stage/state/observations
+promotes:
+decision_refs:
 ---
 
 # W-00000365 다음에 할 일의 순서를 .stage 로 옮긴다
@@ -41,3 +47,9 @@ scope: .stage/roadmap,.stage/work/planned
 - Claude 의 개인 메모에는 다음 할 일 목록이 없고 .stage 를 가리키는 안내만 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
