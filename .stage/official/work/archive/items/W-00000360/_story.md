@@ -8,7 +8,8 @@ milestone:
 autonomous: false
 acceptance:
   - "cd evonest && uv run python -m pytest tests/test_hooks_json.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000360
