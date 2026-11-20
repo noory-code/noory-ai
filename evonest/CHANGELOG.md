@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+All notable changes to Evonest are documented here.
+
+## [1.2.1] — 2026-11-20
 
 ### Fixed
 
@@ -26,7 +28,7 @@
   `python.exe` and no `python3.exe`, so the hook never started there. The command now selects
   `python` when `OS` is `Windows_NT` and `python3` everywhere else, and quotes the plugin path.
 
-All notable changes to Evonest are documented here.
+**441 tests passing**
 
 ## [1.2.0] — 2026-07-12
 
