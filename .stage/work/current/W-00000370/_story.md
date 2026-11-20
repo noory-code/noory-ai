@@ -2,14 +2,20 @@
 id: W-00000370
 title: 카드에서 회고 칸을 없애고 유지 카드는 두 가지만 묻는다
 kind: development
-venue:
+venue: claude
+environment: local-no-codex
 milestone: M-00000005
-status: captured
-priority: 3
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/skills/stage-work,stage/scripts,stage/templates,stage/hooks,stage/skills/stage-retrospective,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000370 카드에서 회고 칸을 없애고 유지 카드는 두 가지만 묻는다
@@ -43,3 +49,13 @@ scope: stage/skills/stage-work,stage/scripts,stage/templates,stage/hooks,stage/s
 - 이미 보관된 카드는 고치지 않는다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
