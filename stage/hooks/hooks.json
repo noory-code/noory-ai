@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" pre-tool-use",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" pre-tool-use",
             "timeout": 10
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" session-start",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" session-start",
             "timeout": 10
           }
         ]
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" stop",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" stop",
             "timeout": 10
           }
         ]
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" subagent-stop",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" subagent-stop",
             "timeout": 10
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" post-tool-use",
+            "command": "case \"$OS\" in Windows_NT) p=python;; *) p=python3;; esac; \"$p\" \"${CLAUDE_PLUGIN_ROOT}/hooks/stage_guard.py\" post-tool-use",
             "timeout": 10
           }
         ]
