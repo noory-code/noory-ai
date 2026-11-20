@@ -22,6 +22,9 @@
   `subprocess.CREATE_NEW_PROCESS_GROUP` were reported as unused there, because the attribute
   exists on Windows. The comments were never needed: the calls sit in a
   `sys.platform == "win32"` branch, which mypy does not check on other platforms.
+- Run the `evonest_improve` hook with `python` on Windows. A python.org install ships
+  `python.exe` and no `python3.exe`, so the hook never started there. The command now selects
+  `python` when `OS` is `Windows_NT` and `python3` everywhere else, and quotes the plugin path.
 
 All notable changes to Evonest are documented here.
 
