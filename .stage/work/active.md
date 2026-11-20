@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000363 | design | claude | 카드 한 장에 드는 문서와 절차에서 덜어낼 것을 정한다 | active | claude | [current/W-00000363/_story.md](current/W-00000363/_story.md) |
