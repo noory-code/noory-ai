@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "cd evonest && uv run python -m pytest tests/test_hooks_json.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000360
+promotion: not_applicable
+review: passed
 scope: evonest/CHANGELOG.md,evonest
 promotes:
 decision_refs:
@@ -89,6 +89,70 @@ PR #69(훅 명령이 Windows 에서 `python` 을 부르게 한 고침)는 PR #70
 - Windows 에서는 실행하지 않았다. 이 카드는 Windows 동작을 고치지 않는다.
 - 닫기 리뷰는 Claude 대역(`claude_review_companion.py`)으로 받는다. 같은 모델의 리뷰다(DE-00000086).
 - 고친 경로는 evonest 변경 기록과 보관 목록이고 관문 경로가 아니다. DE-00000087 의 사용자 확인 대상이 아니다.
+
+### Executed at close — 2026-11-20
+
+```
+$ cd evonest && uv run python -m pytest tests/test_hooks_json.py -q
+[exit 0]
+.                                                                        [100%]
+1 passed in 0.00s
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 450 tests in 6.469s
+
+OK
+
+$ cd evonest && uv run python -m pytest -q
+[exit 0]
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 65%]
+........................................................................ [ 81%]
+........................................................................ [ 97%]
+.........                                                                [100%]
+441 passed in 59.58s
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000360.md
+Criteria:
+- PASS: main을 합친 브랜치에서 감사와 Stage 훅 테스트, evonest 테스트가 통과한다
+  Reason: HEAD 044ebc3c(origin/main f76751b0 포함)에서 직접 실행했다: python3 stage/scripts/audit_stage.py 는 errors=0 warnings=32, python3 -m unittest discover -s stage/hooks/tests -q 는 450개 OK, evonest 의 uv run python -m pytest -q 는 441 passed, 수용 검사 tests/test_hooks_json.py 는 1 passed 였다.
+- PASS: evonest 변경 기록에 Unreleased 절이 하나만 있고 훅 고침과 PR #70의 고침이 모두 그 안에 있다
+  Reason: grep -c '^## Unreleased' evonest/CHANGELOG.md 가 1을 냈고, 그 절의 ### Fixed 에 PR #70 의 UTF-8·init·경로·테스트·mypy 다섯 줄과 evonest_improve 훅 줄이 함께 있다; 머지 커밋을 main 부모와 비교한 diff 는 이 훅 줄 추가와 hooks.json·test_hooks_json.py 뿐이라 main 쪽 evonest 내용은 바뀌지 않았다.
+- PASS: 보관 목록에 W-00000356, W-00000357, W-00000358 줄이 모두 있다
+  Reason: .stage/official/work/archive/index.md 288~290행에 W-00000356, W-00000357, W-00000358 completed 줄이 순서대로 있다.
+```
 
 ## Retrospective
 
