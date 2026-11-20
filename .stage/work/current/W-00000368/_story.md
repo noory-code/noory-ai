@@ -2,14 +2,20 @@
 id: W-00000368
 title: 닫기와 보관을 한 번에 하게 고친다
 kind: development
-venue:
+venue: claude
+environment: local-no-codex
 milestone: M-00000005
-status: captured
-priority: 1
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/skills/stage-retrospective,stage/skills/stage-archive,stage/scripts,stage/hooks,stage/operations,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000368 닫기와 보관을 한 번에 하게 고친다
@@ -42,3 +48,13 @@ scope: stage/skills/stage-retrospective,stage/skills/stage-archive,stage/scripts
 - 닫기와 보관이 지금 둘로 나뉜 이유를 확인해 카드에 적었고, 한 번에 할 수 없다고 드러나면 그 이유를 적고 이 카드를 거절한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

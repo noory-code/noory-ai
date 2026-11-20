@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000368 | development | claude | 닫기와 보관을 한 번에 하게 고친다 | active | claude | [current/W-00000368/_story.md](current/W-00000368/_story.md) |
