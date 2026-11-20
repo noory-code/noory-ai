@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- List the `SubagentStop` hook in the README. The hook list named four events while
+  `hooks/hooks.json` registers five.
 - Stop putting `## Retrospective` and `## Promotion decision` on work cards. The retrospective
   file already owns both, and more than half of recent cards left the two sections empty.
   New and newly started cards no longer get them; existing cards are not rewritten.
