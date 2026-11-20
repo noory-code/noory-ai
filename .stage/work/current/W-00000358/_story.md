@@ -8,12 +8,12 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_hooks_json_interpreter.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000358
+promotion: not_applicable
+review: passed
 scope: stage/hooks/hooks.json,stage/hooks/tests/test_hooks_json_interpreter.py,stage/hooks/README.md,stage/CHANGELOG.md,evonest/hooks/hooks.json,evonest/tests/test_hooks_json.py,evonest/CHANGELOG.md,CLAUDE.md
 promotes:
 decision_refs:
@@ -140,6 +140,83 @@ Windows 세션이 한국어 Windows 에서 이 브랜치의 훅을 실행해 보
 - 마지막 두 줄의 테스트는 `python3` 를 `PATH` 에 둔 채로 실행했다. 테스트 명령이 `python3` 를 부른다.
 - evonest 훅(`post-improve.py`)은 실제 세션에서 실행해 보지 않았다. 명령 형태를 확인하는 테스트만 실행했다.
 
+### 닫기
+
+- 사용자 확인 — 2026-11-20. 훅은 관문 경로라서 닫기 전에 사용자 확인이 필요하다(DE-00000087). 위 Windows 결과와
+  확인하지 않은 것 세 가지를 보여 준 뒤 사용자가 "확인, 닫고 머지" 라고 했다.
+- 닫기 리뷰는 맥북에서 Claude 대역(`claude_review_companion.py`)으로 받는다. 같은 모델의 리뷰다(DE-00000086).
+
+
+### Executed at close — 2026-11-20
+
+```
+$ python3 -m unittest discover -s stage/hooks/tests -p test_hooks_json_interpreter.py -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 2 tests in 0.657s
+
+OK
+
+$ python3 -m unittest discover -s stage/hooks/tests -q
+[exit 0]
+----------------------------------------------------------------------
+Ran 450 tests in 5.929s
+
+OK
+
+$ cd evonest && uv run pytest -q
+[exit 0]
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 49%]
+........................................................................ [ 65%]
+........................................................................ [ 82%]
+........................................................................ [ 98%]
+.......                                                                  [100%]
+439 passed in 56.36s
+Using CPython 3.11.14
+Creating virtual environment at: .venv
+   Building evonest @ file:///private/tmp/claude-501/-Users-woogis-Workspace-repo-noory-ai/0c2e6057-da69-4e2d-a103-0bee0b8e3685/scratchpad/close358/evonest
+      Built evonest @ file:///private/tmp/claude-501/-Users-woogis-Workspace-repo-noory-ai/0c2e6057-da69-4e2d-a103-0bee0b8e3685/scratchpad/close358/evonest
+Installed 49 packages in 39ms
+
+$ python3 stage/scripts/audit_stage.py
+[exit 0]
+k — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000034/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000035/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000036/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000037/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000038/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000039/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000048/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000055/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000061/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000074/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000080/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000090/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000123/_epic.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000137/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000154/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000159/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000160/_story.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000191.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+WARNING WORK029 [.stage/official/work/archive/items/W-00000189/W-00000192.md]: Success criteria are empty in archived work — do not invent a historical answer; ask the human before registering future work.
+Summary: errors=0, warnings=32
+```
+
+### Review at close — 2026-11-20
+
+```
+Review report: .stage/.runtime/driver/logs/W-00000358.md
+Criteria:
+- PASS: 맥에서 훅 테스트와 감사가 통과하고, 고친 명령으로 실제 세션의 Stage 관문이 전과 같이 동작한다
+  Reason: I ran `python3 -m unittest discover -s stage/hooks/tests -q` (450 tests OK), `uv run python -m pytest tests/test_hooks_json.py -q` in evonest (1 passed), and `python3 stage/scripts/audit_stage.py` (errors=0, warnings=32, same as recorded); I also ran the fixed PreToolUse command via `sh -c` with a Bash input whose inline python code reads `.stage/settings.json` and it returned permissionDecision deny; I did not start a new `claude -p` session myself, and the card's Verification records that run showing the PreToolUse deny and the Stage context section.
+- PASS: 훅 명령 6줄이 모두 같은 형태인지 테스트가 확인하고, 한 줄을 python3 로 되돌리면 그 테스트가 실패한다
+  Reason: Both tests read every command hook from hooks.json and assert the exact selector prefix (5 Stage lines, 1 evonest line); I ran the acceptance command `python3 -m unittest discover -s stage/hooks/tests -p test_hooks_json_interpreter.py -q` (2 tests OK), then in a scratch copy reverted the Stage `stop` line and the evonest line to `python3`, and the Stage test failed (failures=2) and `uv run python -m pytest` on the copied evonest test failed (1 failed).
+- PASS: python3 가 없는 한국어 Windows에서 Stage 훅이 실행되어 관문이 동작하고, 그 결과가 이 카드의 Verification 에 남는다
+  Reason: I did not run it (no Windows device here); the card's Verification records device Windows 11 ARM64, code page 949/cp949, Python 3.14.10, commit ce652431, with both python3 locations removed from PATH and `command -v python3` empty, showing the fixed PreToolUse command returning deny while the old command failed with `python3: command not found` (exit 127), and a new `claude -p --plugin-dir` session whose PreToolUse hook denied and whose debug log shows SessionStart/PreToolUse/Stop succeeding with the selector command; it honestly states python3 was hidden from PATH rather than never installed, which satisfies the verification.md Windows rule of a real non-English Windows run.
+```
 
 ## Retrospective
 
