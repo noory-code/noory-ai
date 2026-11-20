@@ -256,6 +256,27 @@ On Windows, `shell=True` uses `cmd.exe`, so use percent-delimited variable synta
 }
 ```
 
+A project whose one settings file serves both families of platform cannot use either
+syntax in a review command. Wrap the reviewer in `stage/scripts/run_review.py` instead:
+
+```json
+{
+  "review": {
+    "reviewers": {
+      "codex": "python3 stage/scripts/run_review.py --label codex -- python3 stage/scripts/codex_companion.py task --model <model> \"Read $STAGE_WORK_ITEM_PATH ...\""
+    }
+  }
+}
+```
+
+The script runs the command after `--` without a shell, appends its output to
+`$STAGE_WORK_LOG_PATH` as a `### Reviewer report`, prints it, and exits with the reviewer's
+status. It expands `$STAGE_NAME` and `${STAGE_NAME}` in every argument itself, so the prompt
+reads the same in `cmd.exe`, which leaves them alone, and in a POSIX shell, which has already
+expanded them; an unset variable becomes an empty string in both. `--env NAME=VALUE` replaces
+the POSIX `NAME=VALUE command` prefix. Keep the command free of `$(...)`, `$?`, redirection,
+`&&`, `||`, single quotes, and `%`: `cmd.exe` and POSIX shells read each of those differently.
+
 An executor first decides whether the action itself serves its stated purpose. If it does not, the
 executor stops and reports that decision. Otherwise, all needed work is done, including work
 outside the card's declared scope. Every executor decision and scope boundary crossing is reported;

@@ -206,7 +206,8 @@ class ProjectReviewerCommandTest(unittest.TestCase):
         command = settings["review"]["reviewers"]["claude"]
 
         self.assertIn(
-            "OUT=$(STAGE_CLAUDE_REVIEW_MODEL='opus[1m]' python3 "
+            'python3 stage/scripts/run_review.py --label claude '
+            '--env "STAGE_CLAUDE_REVIEW_MODEL=opus[1m]" -- python3 '
             'stage/scripts/claude_review_companion.py "',
             command,
         )
@@ -229,7 +230,6 @@ DIRECT_WRITES = ("direct-write.txt", "bash-write.txt", "chained.txt")
 
 
 @unittest.skipUnless(LIVE, "set STAGE_LIVE_REVIEW_PROBE=1 with `claude` on PATH to run")
-@unittest.skipIf(sys.platform == "win32", "the project review command uses POSIX shell syntax")
 class LiveReviewerWriteProbeTest(unittest.TestCase):
     """Run the real reviewer through both Claude entry paths at close and record the result."""
 
@@ -255,7 +255,7 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
             "changed": status.splitlines(),
             "verdict_kept": (root / VERDICT_RELATIVE).exists(),
             "claude_version": subprocess.run(
-                ["claude", "--version"], capture_output=True, text=True,
+                [shutil.which("claude") or "claude", "--version"], capture_output=True, text=True,
                 encoding="utf-8", errors="replace"
             ).stdout.strip(),
         }
@@ -278,8 +278,12 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
         root = self.tmp / "stand-in"
         root.mkdir()
         card = make_repository(root, probe_module(*WRITE_AT["test body"]))
-        command = " ".join(
-            shlex.quote(part) for part in (sys.executable, str(COMPANION), LIVE_PROMPT)
+        parts = [sys.executable, str(COMPANION), LIVE_PROMPT]
+        # cmd.exe does not strip the single quotes shlex writes.
+        command = (
+            subprocess.list2cmdline(parts)
+            if sys.platform == "win32"
+            else " ".join(shlex.quote(part) for part in parts)
         )
 
         self.probe("cloud stand-in", command, root, card)
@@ -293,7 +297,9 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
             card_criterion="`python3 -m unittest discover -s tests -q` passes when you run it",
         )
         (root / "stage/scripts").mkdir(parents=True)
-        shutil.copy(COMPANION, root / "stage/scripts" / COMPANION.name)
+        # The project command runs the companion through run_review.py.
+        for script in (COMPANION, COMPANION.with_name("run_review.py")):
+            shutil.copy(script, root / "stage/scripts" / script.name)
         git(root, "add", "-A")
         git(root, "commit", "-q", "-m", "add the companion")
         log = root / ".stage/.runtime/driver/logs" / f"{ITEM_ID}.md"

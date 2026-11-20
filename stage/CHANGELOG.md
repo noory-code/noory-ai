@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Let the Claude reviewer write its verdict file on Windows. `claude_review_companion.py`
+  allowed the write with the rule `Edit(/C:/dir/verdict.json)`, which matches nothing, so
+  the reviewer's write was denied and close reported a missing verdict file. The rule is
+  now `Edit(//c/dir/verdict.json)`, the spelling Claude Code matches a Windows path by.
+- Add `scripts/run_review.py`, so a review command needs no shell syntax. A command that
+  captured the reviewer's output and appended it to the work log had to be written as
+  `OUT=$(...); STATUS=$?; printf ... >> "$STAGE_WORK_LOG_PATH"`, which `cmd.exe` cannot run,
+  so a project with one settings file for every platform could not close a reviewed card on
+  Windows. The script runs the reviewer without a shell, appends its output as a
+  `### Reviewer report`, exits with the reviewer's status, and expands `$STAGE_NAME` in the
+  arguments itself, because `cmd.exe` does not. `docs/SCHEMA_V4.md` and the settings template
+  describe the portable form.
 - Run the hooks with `python` on Windows. A python.org install ships `python.exe` and no
   `python3.exe`, and Claude Code treats a hook that cannot start as a non-blocking error, so
   every Stage gate was silently off on such a machine. Each hook command now selects `python`

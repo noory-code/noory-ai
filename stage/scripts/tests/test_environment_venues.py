@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 STAGE = Path(__file__).resolve().parents[2]
 REGISTER = STAGE / "skills" / "stage-work" / "register_work.py"
@@ -160,7 +160,7 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
                 },
                 "claude",
             )
-            rule = "/" + verdict.resolve().as_posix()
+            rule = claude_review_companion.absolute_rule_path(verdict.resolve())
 
         self.assertEqual(
             [
@@ -181,6 +181,15 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("--permission-mode", command)
         self.assertFalse(any(part.startswith("Write(") for part in command))
+
+    def test_the_verdict_rule_is_absolute_on_posix_and_on_a_windows_drive(self):
+        rule = claude_review_companion.absolute_rule_path
+
+        self.assertEqual("//work/.stage/v.json", rule(PurePosixPath("/work/.stage/v.json")))
+        # Claude Code matches no rule that keeps the drive colon.
+        self.assertEqual(
+            "//c/work/.stage/v.json", rule(PureWindowsPath("C:\\work\\.stage\\v.json"))
+        )
 
     def test_model_override_and_missing_inputs(self):
         command = claude_review_companion.claude_command(
