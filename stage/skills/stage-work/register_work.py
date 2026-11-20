@@ -114,6 +114,25 @@ def purpose_has_multiple_sentences(purpose: str) -> bool:
     return first_end is not None and bool(one_line[first_end.end() :].strip())
 
 
+# A maintenance card answers two questions: what broke, and how it stands again.
+MAINTENANCE_OMITTED_SECTIONS = ("User value", "Risks", "Next action", "Related truth")
+
+
+def as_maintenance_card(text: str) -> str:
+    """Mark a filled card as maintenance and drop the sections it does not answer."""
+
+    text = set_optional_field(text, "maintenance", "true", after="kind")
+    for heading in MAINTENANCE_OMITTED_SECTIONS:
+        text = re.sub(
+            rf"^## {re.escape(heading)}\n.*?(?=^## |\Z)",
+            "",
+            text,
+            count=1,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+    return text.rstrip() + "\n"
+
+
 def fill_list_section(text: str, heading: str, values: list[str]) -> str:
     """Fill an empty Markdown section with one bullet per supplied value."""
 
@@ -222,6 +241,7 @@ def fill_item(
     milestone: str = "",
     environment: str = "",
     tier: str = "",
+    maintenance: bool = False,
 ) -> str:
     text = template.replace("W-00000000 Title", f"{item_id} {title}")
     text = set_field(text, "id", item_id)
@@ -244,7 +264,7 @@ def fill_item(
         text = set_field(text, "decision_refs", decision)
     text = text.replace("## Purpose\n\n", f"## Purpose\n\n{purpose}\n", 1)
     text = fill_list_section(text, "Success criteria", success_criteria)
-    return text
+    return as_maintenance_card(text) if maintenance else text
 
 
 def active_row(
@@ -405,7 +425,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
             text = set_field(text, "priority", args.priority)
         text = text.replace("## Purpose\n\n", f"## Purpose\n\n{args.purpose}\n", 1)
         text = fill_list_section(text, "Success criteria", args.success_criterion)
-        return text
+        return as_maintenance_card(text) if args.maintenance else text
 
     parent_path = None
     if paths is not None and args.scale:
@@ -634,6 +654,13 @@ def main() -> int:
         default="",
         help="Optional ordering hint for a planned card (shown in the backlog index).",
     )
+    parser.add_argument(
+        "--maintenance",
+        action="store_true",
+        help="Register a maintenance card: it restores what broke, answers only "
+        "what broke (--purpose) and how it stands again (--success-criterion), "
+        "and hangs from no milestone.",
+    )
     args = parser.parse_args()
     args.scope = join_scope_args(args.scope)
     stage_root = Path(args.project_root).expanduser().resolve() / ".stage"
@@ -683,6 +710,21 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    if args.maintenance and args.scale == "epic":
+        print(
+            "refusing: --maintenance applies to a story or an action; an epic combines "
+            "stories into an outcome",
+            file=sys.stderr,
+        )
+        return 1
+    if args.maintenance and args.milestone:
+        print(
+            "refusing: --maintenance restores what broke and hangs from no milestone; "
+            "work that makes the product do something new registers without "
+            "--maintenance",
+            file=sys.stderr,
+        )
+        return 1
     if args.parent and not ID_RE.fullmatch(args.parent):
         print(f"--parent must look like W-00000001, got {args.parent}", file=sys.stderr)
         return 2
@@ -836,6 +878,7 @@ def main() -> int:
             milestone=args.milestone,
             environment=args.environment.strip().lower(),
             tier=args.tier,
+            maintenance=args.maintenance,
         )
 
     def item_path_for(item_id: str) -> Path:

@@ -12,6 +12,42 @@ Registering mid-task leaves early commits ungated (R-00000001's learning).
 
 `.stage/` itself is not governed source, so the item file and `active.md` are free to create.
 
+## Tell maintenance from achievement first
+
+One question decides which procedure applies:
+
+> **When this work is done, does the product do something it could not do before?**
+
+| Answer | Kind of work | Procedure |
+|---|---|---|
+| Yes | Achievement, even when it looks like a fix | The rest of this skill, starting with the purpose. |
+| No | Maintenance: something that worked is restored | The two questions below. |
+
+Ask the human when the answer is not plain from what they said. A fix that makes something work
+for the first time is an achievement.
+
+### Maintenance asks two questions
+
+1. **What broke?** One sentence naming what worked before and fails now. It goes to `--purpose`.
+2. **How will you know it stands again?** A result a person observes. It goes to
+   `--success-criterion`; repeat the flag for more than one.
+
+Register with `--maintenance`:
+
+```text
+python3 stage/skills/stage-work/register_work.py --project-root <root> --maintenance \
+  --scale story --kind fix --title "..." --scope "<paths>" \
+  --purpose "<what broke>" --success-criterion "<how it stands again>"
+```
+
+The card carries `maintenance: true` and has no `## User value`, `## Risks`, `## Next action`,
+or `## Related truth` section. A maintenance card hangs from no milestone, so skip the milestone
+question; `--maintenance` is refused together with `--milestone` and for an epic. Venue, review,
+scope, the stored verification command, and running the premise once still apply as written
+below. Skip `Draw out the purpose`, `Count affected places before drafting`, and `Cover included
+outcomes with success criteria`: they size an outcome, and maintenance has none beyond the
+restored behavior.
+
 ## Draw out the purpose before anything else
 
 **Ask what the human wants to achieve, and keep asking until you can write three things without
@@ -224,8 +260,9 @@ next free number, writes the card, and updates the owning index:
   | `action` | `## Source` and `## Dependencies` — what produced the indivisible step and what it waits for |
 
   A current card keeps those same questions and adds only the lifecycle sections that execution
-  fills: `## Related truth`, `## Progress`, `## Verification`, `## Retrospective`, and
-  `## Promotion decision`. Capturing a card for later (`--backlog`) does not exempt it. A card that
+  fills: `## Related truth`, `## Progress`, and `## Verification`. The retrospective and the
+  promotion decision live in the retrospective file, not on the card. Capturing a card for later
+  (`--backlog`) does not exempt it. A card that
   leaves its questions empty is a note, and whoever picks it up will invent the missing answer.
   The audit rejects an empty `## Purpose` or `## Success criteria` section on planned and current
   cards. It reports the same omissions as warnings on archived cards, where later answers would

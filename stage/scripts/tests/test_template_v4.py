@@ -553,8 +553,6 @@ class TemplateV4Test(unittest.TestCase):
             "## Related truth",
             "## Progress",
             "## Verification",
-            "## Retrospective",
-            "## Promotion decision",
         )
 
         for lifecycle in ("planned", "current"):

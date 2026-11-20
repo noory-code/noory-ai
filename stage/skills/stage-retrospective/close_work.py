@@ -92,8 +92,8 @@ WORK_LOG_PREAMBLE = """\
 ## 책임 경계
 
 이 로그는 실행 시도별 작업자의 작업 내용·이유·변경 경로 주장과 리뷰어의 시도별 판정을
-소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`,
-`## Retrospective`, `## Promotion decision`을 소유한다. 닫을 때 받은 리뷰마다 성공 기준별
+소유한다. 작업 카드는 지속되는 수명 주기 상태와 `## Progress`, `## Verification`을
+소유한다. 회고와 승격 결정은 회고 파일이 소유한다. 닫을 때 받은 리뷰마다 성공 기준별
 판정 한 줄은 카드의 `## Verification`이, 승인된 마지막 판 실행 보고의 `What changed`·`Why`·
 `Decisions made`·`Work not done` 네 줄은 카드의 `## Progress`가 소유한다. 이 로그는 커밋되지 않는
 `.stage/.runtime/` 아래에 있기 때문이다. 그 밖의 사실은 두 파일에 복제하지 않고 서로의 소유

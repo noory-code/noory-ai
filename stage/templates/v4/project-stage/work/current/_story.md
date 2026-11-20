@@ -52,9 +52,3 @@ decision_refs:
 
 
 ## Verification
-
-
-## Retrospective
-
-
-## Promotion decision

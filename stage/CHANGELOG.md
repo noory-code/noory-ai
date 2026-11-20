@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Stop putting `## Retrospective` and `## Promotion decision` on work cards. The retrospective
+  file already owns both, and more than half of recent cards left the two sections empty.
+  New and newly started cards no longer get them; existing cards are not rewritten.
+- Add `register_work.py --maintenance` for work that restores something that worked before.
+  The card asks what broke and how it stands again, carries `maintenance: true`, and omits
+  `## User value`, `## Risks`, `## Next action`, and `## Related truth`. The flag is refused
+  with `--milestone` and for an epic. The `stage-work` skill now starts by telling maintenance
+  from achievement with one question and asks maintenance two questions instead of three.
 - Shrink what `close_work.py` writes on the card. Command output and the reviewer's
   reasons made up 43% of the lines of closed cards. A close now adds one line naming the
   checks that passed and one line per review with each criterion's verdict; output and

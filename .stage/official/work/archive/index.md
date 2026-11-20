@@ -295,3 +295,4 @@
 | W-00000363 | completed | [items/W-00000363/_story.md](items/W-00000363/_story.md) |
 | W-00000368 | completed | [items/W-00000368/_story.md](items/W-00000368/_story.md) |
 | W-00000369 | completed | [items/W-00000369/_story.md](items/W-00000369/_story.md) |
+| W-00000370 | completed | [items/W-00000370/_story.md](items/W-00000370/_story.md) |
