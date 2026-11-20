@@ -4,7 +4,7 @@ title: 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게
 kind: design
 venue:
 milestone: M-00000005
-status: captured
+status: selected
 priority: 6
 autonomous: false
 acceptance: []

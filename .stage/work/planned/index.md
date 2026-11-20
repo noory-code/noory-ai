@@ -10,9 +10,11 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000365 | 다음에 할 일의 순서를 .stage 로 옮긴다 | planning | captured | 4 |  | [W-00000365/_story.md](W-00000365/_story.md) |
-| W-00000366 | 도면의 위 두 층을 쓰고 도면 자리를 한 곳으로 정한다 | documentation | captured | 5 |  | [W-00000366/_story.md](W-00000366/_story.md) |
-| W-00000367 | 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게 설계한다 | design | captured | 6 |  | [W-00000367/_story.md](W-00000367/_story.md) |
+| W-00000366 | 도면의 위 두 층을 쓰고 도면 자리를 한 곳으로 정한다 | documentation | selected | 5 |  | [W-00000366/_story.md](W-00000366/_story.md) |
+| W-00000367 | 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게 설계한다 | design | selected | 6 |  | [W-00000367/_story.md](W-00000367/_story.md) |
+| W-00000371 | 회고에 남길 칸을 정한다 | planning | captured | 7 |  | [W-00000371/_story.md](W-00000371/_story.md) |
+| W-00000372 | Stage 를 릴리스한다 | release | captured | 8 |  | [W-00000372/_story.md](W-00000372/_story.md) |
+| W-00000373 | 세션 시작 글이 고른 계획 카드와 관찰의 날짜를 바르게 보여 주게 고친다 | fix | captured | 4 |  | [W-00000373/_story.md](W-00000373/_story.md) |
 
 ## 상태 값
 
