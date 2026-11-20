@@ -2,14 +2,20 @@
 id: W-00000363
 title: 카드 한 장에 드는 문서와 절차에서 덜어낼 것을 정한다
 kind: design
-venue:
+venue: claude
 milestone: M-00000005
-status: captured
-priority: 2
 autonomous: false
-acceptance: []
+acceptance:
+  - "python3 stage/scripts/audit_stage.py"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: .stage/decisions
+promotes:
+decision_refs:
 ---
 
 # W-00000363 카드 한 장에 드는 문서와 절차에서 덜어낼 것을 정한다
@@ -43,3 +49,13 @@ scope: .stage/decisions
 - 고른 것을 구현하는 카드가 계획된 카드로 등록되어 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision
