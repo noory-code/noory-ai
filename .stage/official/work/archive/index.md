@@ -291,3 +291,4 @@
 | W-00000360 | completed | [items/W-00000360/_story.md](items/W-00000360/_story.md) |
 | W-00000359 | completed | [items/W-00000359/_story.md](items/W-00000359/_story.md) |
 | W-00000361 | completed | [items/W-00000361/_story.md](items/W-00000361/_story.md) |
+| W-00000362 | completed | [items/W-00000362/_story.md](items/W-00000362/_story.md) |
