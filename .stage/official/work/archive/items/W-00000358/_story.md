@@ -8,7 +8,8 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -p test_hooks_json_interpreter.py -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000358
