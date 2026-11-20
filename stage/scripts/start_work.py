@@ -79,13 +79,15 @@ FRONTMATTER_ORDER = (
     "promotes",
     "decision_refs",
 )
+# The retrospective file owns the retrospective and the promotion decision; a card
+# carries no copy of them.
 RECORD_SECTIONS = (
     "## Related truth",
     "## Progress",
     "## Verification",
-    "## Retrospective",
-    "## Promotion decision",
 )
+# A maintenance card restores what broke, so it has no upstream truth to relate.
+MAINTENANCE_OMITTED_RECORD_SECTIONS = ("## Related truth",)
 
 
 def parse_args() -> argparse.Namespace:
@@ -157,6 +159,8 @@ def build_frontmatter(fields: dict[str, Any]) -> str:
     if (fields.get("tier") or "").strip():
         anchor = "environment" if "environment" in order else "venue"
         order.insert(order.index(anchor) + 1, "tier")
+    if is_maintenance(fields):
+        order.insert(order.index("kind") + 1, "maintenance")
     for key in order:
         if key == "acceptance":
             values = parse_string_list(fields.get(key))
@@ -169,8 +173,14 @@ def build_frontmatter(fields: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def ensure_record_sections(body: str) -> str:
+def is_maintenance(fields: dict[str, Any]) -> bool:
+    return str(fields.get("maintenance") or "").strip().lower() == "true"
+
+
+def ensure_record_sections(body: str, *, maintenance: bool = False) -> str:
     for section in RECORD_SECTIONS:
+        if maintenance and section in MAINTENANCE_OMITTED_RECORD_SECTIONS:
+            continue
         if section + "\n" not in body and not body.rstrip().endswith(section):
             body = body.rstrip() + f"\n\n{section}\n"
     return body.rstrip() + "\n"
@@ -358,7 +368,7 @@ def main() -> int:
     fields = started_fields(fields, scope=args.scope, decision=args.decision)
 
     body = body_after_frontmatter(text)
-    body = ensure_record_sections(body)
+    body = ensure_record_sections(body, maintenance=is_maintenance(fields))
 
     source_records = (
         tuple(
@@ -422,7 +432,8 @@ def main() -> int:
             decision=args.decision,
         )
         child_body = ensure_record_sections(
-            body_after_frontmatter(child_path.read_text(encoding="utf-8"))
+            body_after_frontmatter(child_path.read_text(encoding="utf-8")),
+            maintenance=is_maintenance(child_fields),
         )
         started_records[child_path.relative_to(source_unit)] = (
             child_fields,

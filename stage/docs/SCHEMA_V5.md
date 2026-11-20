@@ -46,9 +46,16 @@ Scale determines the remaining planning questions:
 | Action | `Source` names what produced the indivisible step, and `Dependencies` names what it waits for. |
 
 A current record keeps the same questions as its planned counterpart. It additionally carries
-`Related truth`, `Progress`, `Verification`, `Retrospective`, and `Promotion decision`, which are
-filled as execution advances. Record-section headings are machine tokens and remain English for
-every project language.
+`Related truth`, `Progress`, and `Verification`, which are filled as execution advances. The
+retrospective and the promotion decision are owned by the retrospective file; a card carries no
+section for either. Record-section headings are machine tokens and remain English for every
+project language.
+
+A story or action registered with `register_work.py --maintenance` restores something that
+worked before. It carries `maintenance: true` in frontmatter after `kind:`, asks only `Purpose`
+(what broke) and `Success criteria` (how it stands again) beside `Scope` and its scale section,
+and omits `User value`, `Risks`, `Next action`, and `Related truth`. It has no `milestone:`.
+Cards registered before these rules keep the sections they were written with.
 
 ## Rejected planned work
 
