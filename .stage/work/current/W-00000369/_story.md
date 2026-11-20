@@ -2,14 +2,20 @@
 id: W-00000369
 title: 닫을 때 카드에 붙는 출력을 판정 한 줄로 줄인다
 kind: development
-venue:
+venue: claude
+environment: local-no-codex
 milestone: M-00000005
-status: captured
-priority: 2
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/skills/stage-retrospective,stage/operations/review.md,stage/scripts,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000369 닫을 때 카드에 붙는 출력을 판정 한 줄로 줄인다
@@ -42,3 +48,13 @@ scope: stage/skills/stage-retrospective,stage/operations/review.md,stage/scripts
 - 이미 보관된 카드는 고치지 않는다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
+
+## Retrospective
+
+## Promotion decision

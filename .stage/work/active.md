@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000369 | development | claude | 닫을 때 카드에 붙는 출력을 판정 한 줄로 줄인다 | active | claude | [current/W-00000369/_story.md](current/W-00000369/_story.md) |
