@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000370 | development | claude | 카드에서 회고 칸을 없애고 유지 카드는 두 가지만 묻는다 | active | claude | [current/W-00000370/_story.md](current/W-00000370/_story.md) |
