@@ -140,6 +140,11 @@ All code must run on **macOS, Linux, and Windows**. Apply these rules to every c
 | `start_new_session=True` | `subprocess.CREATE_NEW_PROCESS_GROUP` on Windows |
 | `osascript` (macOS-only) | Platform dispatch: `osascript` / `notify-send` / `powershell` |
 | `find`, `grep`, `sed`, `awk` in scripts | Python stdlib (`pathlib`, `re`, etc.) |
+| Text-mode `subprocess` calls, `read_text`, `write_text`, and `open` without `encoding` | Pass `encoding="utf-8"` |
+
+Python takes its default text encoding from the Windows locale: cp949 on Korean Windows, cp1252 on the
+CI runner. A call that omits `encoding` therefore passes CI and fails on a non-English machine
+(R-00000354, R-00000356).
 
 Hook commands in `hooks.json` must run a Python script, never a shell script. Each command starts with the host interpreter selector
 `case "$OS" in Windows_NT) p=python;; *) p=python3;; esac; "$p" `, because a python.org install on Windows ships

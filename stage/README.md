@@ -63,6 +63,7 @@ Stage ships one hook set in `hooks/` that both Claude Code and Codex execute (Co
 - `SessionStart`: injects the current Stage context, core principles, and the artifact map.
 - `PreToolUse`: blocks `.stage` destruction, unregistered governed-file modification, hierarchy violations, and `official/` modification without a promotion intent; reminds once per question to derive answers from purpose and principles first.
 - `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
+- `SubagentStop`: records the model and effort each subagent actually ran with (never blocks).
 - `Stop`: writes a session summary the next run picks up.
 
 On Codex, hooks run only after a one-time trust approval in the interactive TUI (`/hooks`) — until then they are discovered but silently excluded, including in `codex exec`. Host contract details: `hooks/README.md`.
