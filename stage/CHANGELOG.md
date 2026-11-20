@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.67.0 — 2026-11-20
+
 - Let the Claude reviewer write its verdict file on Windows. `claude_review_companion.py`
   allowed the write with the rule `Edit(/C:/dir/verdict.json)`, which matches nothing, so
   the reviewer's write was denied and close reported a missing verdict file. The rule is
