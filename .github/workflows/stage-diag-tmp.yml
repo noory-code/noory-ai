@@ -1,0 +1,23 @@
+name: stage-diag-tmp
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/diag_windows_tmp.py"
+      - ".github/workflows/stage-diag-tmp.yml"
+jobs:
+  diag:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: stage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Diagnose
+        run: python ../.github/scripts/diag_windows_tmp.py 1 3
