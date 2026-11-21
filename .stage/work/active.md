@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000376 | ops | claude | 워크플로 네 개가 push 와 pull_request 양쪽에서 실행돼서 PR 이 열린 브랜치에 push 하면 | active | Claude | [current/W-00000376/_story.md](current/W-00000376/_story.md) |
