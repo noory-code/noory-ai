@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000378 | development | claude | 카드와 기록을 등록할 때 번호를 원격에 잡는다 | active | claude | [current/W-00000378/_story.md](current/W-00000378/_story.md) |

@@ -2,14 +2,20 @@
 id: W-00000378
 title: 카드와 기록을 등록할 때 번호를 원격에 잡는다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 6
 autonomous: false
 acceptance: []
-review: not_required
-scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.py,stage/skills/stage-roadmap/manage_roadmap.py,stage/scripts/tests,stage/skills/stage-decision/SKILL.md,stage/operations/cloud-execution.md,stage/docs/BLUEPRINT.md,.stage/operations/parallel-sessions.md
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.py,stage/skills/stage-roadmap/manage_roadmap.py,stage/scripts/tests,stage/skills/stage-decision/SKILL.md,stage/operations/cloud-execution.md,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md,.stage/operations/parallel-sessions.md
+promotes:
+decision_refs:
 ---
 
 # W-00000378 카드와 기록을 등록할 때 번호를 원격에 잡는다
@@ -58,3 +64,9 @@ scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.p
 
 이 저장소의 GitHub 원격에 `refs/stage-ids/` 아래 ref 하나를 만들 수 있는지 먼저 확인한다. 원격에 쓰는
 일이므로 사용자에게 묻고 한다.
+
+## Related truth
+
+## Progress
+
+## Verification
