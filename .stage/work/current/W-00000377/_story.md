@@ -2,14 +2,20 @@
 id: W-00000377
 title: 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 6
 autonomous: false
 acceptance: []
-review: not_required
-scope: .gitattributes,stage/skills/stage-work,stage/scripts,stage/skills/stage-retrospective,stage/skills/stage-archive,stage/hooks,stage/templates,stage/operations,stage/docs,stage/skills,.stage/index.md,.stage/operations/parallel-sessions.md
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: .gitattributes,.gitignore,.stage/work,.stage/index.md,.stage/operations/parallel-sessions.md,stage
+promotes:
+decision_refs:
 ---
 
 # W-00000377 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다
@@ -60,3 +66,9 @@ scope: .gitattributes,stage/skills/stage-work,stage/scripts,stage/skills/stage-r
 ## Next action
 
 DE-00000091 을 읽고, 세 목록을 파일로 남겨 `.gitignore` 에 넣을지 아예 두지 않을지를 먼저 정한다.
+
+## Related truth
+
+## Progress
+
+## Verification
