@@ -86,8 +86,8 @@ DE-00000091 을 읽고, 세 목록을 파일로 남겨 `.gitignore` 에 넣을�
 
 ## Verification
 
-- `python3 -m unittest discover -s stage/hooks/tests -q`: 461 tests OK (skipped=1).
-- `python3 -m unittest discover -s stage/scripts/tests -q`: 805 tests OK (skipped=2).
+- `python3 -m unittest discover -s stage/hooks/tests -q`: 461 tests OK (skipped=1), origin/main(W-00000378) 병합 뒤에도 같다.
+- `python3 -m unittest discover -s stage/scripts/tests -q`: 805 tests OK (skipped=2), origin/main 병합 뒤 818 tests OK.
 - `python3 stage/scripts/audit_stage.py --project-root .`: errors=0, warnings=32 (모두 이 카드 이전부터 있던 경고).
 - 성공 기준 1: 이 커밋에서 갈라진 로컬 브랜치 두 개가 각자 `register_work.py` → `close_work.py --allocate-retrospective`
   → `close_work.py --archive` 로 카드를 등록하고 닫고 보관했다(W-00000380, W-00000381, 임시 디렉터리 안). 두 브랜치를
