@@ -16,6 +16,10 @@ for import_dir in (HOOKS_DIR, SCRIPTS_DIR):
 from driver_git import commit_item  # noqa: E402
 from stage_work import WorkItem  # noqa: E402
 
+from git_test_config import isolate_git_config  # noqa: E402
+
+isolate_git_config()
+
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
@@ -31,8 +35,6 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
 
 def initialize_git(root: Path) -> None:
     git(root, "init", "-q")
-    git(root, "config", "user.email", "test@example.com")
-    git(root, "config", "user.name", "Stage Test")
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "seed")
     git(root, "checkout", "-q", "-b", "stage/driver/W-00000001-test")

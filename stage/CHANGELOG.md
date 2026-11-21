@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Start fewer processes in the scripts suite. Process creation is what makes the Windows shards
+  several times slower than ubuntu, and git started processes no test asked for: every commit
+  spawned `git maintenance run --auto`, and each fixture repository spent two `git config` calls
+  on an identity. The driver, land, and driver-git tests now share a throwaway global git
+  configuration (`scripts/tests/git_test_config.py`) that turns automatic maintenance and signing
+  off, supplies the identity, and trims `git init`'s template to the one file tests use. It also
+  keeps a developer's own global git settings out of the tests.
 - Split the Stage CI suites into three jobs per OS and Python. The Windows scripts suite took
   about nine minutes in one job and held every pull request for ten; `.github/scripts/unittest_shard.py`
   now deals the sorted tests round-robin to each shard, and a test fails when the matrix drops

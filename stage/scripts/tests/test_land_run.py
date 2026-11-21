@@ -9,6 +9,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from git_test_config import isolate_git_config
+
+isolate_git_config()
+
 
 SCRIPT = Path(__file__).resolve().parents[1] / "land_run.py"
 
@@ -50,8 +54,6 @@ class LandRunTest(unittest.TestCase):
         run = Path(temporary.name) / "run"
         main.mkdir()
         git(main, "init", "-q")
-        git(main, "config", "user.email", "test@example.com")
-        git(main, "config", "user.name", "Tester")
         (main / ".gitignore").write_text(".stage/.runtime/\n", encoding="utf-8")
         (main / ".stage/work/current" / self.target).mkdir(parents=True)
         (main / ".stage/work/retrospectives").mkdir(parents=True)

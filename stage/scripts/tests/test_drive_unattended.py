@@ -22,12 +22,14 @@ from pathlib import Path
 from unittest import mock
 
 from driver_test_environment import sanitize_current_driver_test_environment
+from git_test_config import isolate_git_config
 from python_shell_command import python_command
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
 
 sanitize_current_driver_test_environment()
+isolate_git_config()
 
 
 def reporting_python_command(code: str, changed_paths: list[str]) -> str:
@@ -230,8 +232,6 @@ class UnattendedTest(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name).resolve()
         git(root, "init", "-q")
-        git(root, "config", "user.email", "t@example.com")
-        git(root, "config", "user.name", "Tester")
         (root / "seed.txt").write_text("seed", encoding="utf-8")
         git(root, "add", "-A")
         git(root, "commit", "-q", "-m", "seed")
@@ -1726,8 +1726,6 @@ class UnattendedTest(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
         git(root, "init", "-q")
-        git(root, "config", "user.email", "t@example.com")
-        git(root, "config", "user.name", "Tester")
         (root / "seed.txt").write_text("seed", encoding="utf-8")
         git(root, "add", "-A")
         git(root, "commit", "-q", "-m", "seed")
