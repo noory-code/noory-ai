@@ -25,42 +25,39 @@ def run(args, cwd=None, shell=False):
 
 
 def micro():
-    repo = Path(tempfile.mkdtemp())
-    run(["git", "init", "-q"], cwd=repo)
-    (repo / "a.txt").write_text("a", encoding="utf-8")
-    run(["git", "add", "-A"], cwd=repo)
-    run(["git", "-c", "user.name=a", "-c", "user.email=a@b", "commit", "-q", "-m", "x"], cwd=repo)
-    bench("git --version", lambda: run(["git", "--version"]), 40)
-    bench("git rev-parse --git-path index", lambda: run(["git", "rev-parse", "--git-path", "index"], cwd=repo), 40)
-    bench("git ls-files --others", lambda: run(["git", "ls-files", "--others", "--exclude-standard", "-z"], cwd=repo), 40)
-    bench("git status --porcelain", lambda: run(["git", "status", "--porcelain"], cwd=repo), 40)
-    bench("python -c pass", lambda: run([sys.executable, "-c", "pass"]), 20)
-    bench("python -S -c pass", lambda: run([sys.executable, "-S", "-c", "pass"]), 20)
-    bench("shell=True python -c pass", lambda: run(f'"{sys.executable}" -c pass', shell=True), 20)
-    drive = Path("scripts/drive.py").resolve()
-    bench("python drive.py --help", lambda: run([sys.executable, str(drive), "--help"]), 10)
-
-    def init_repo():
-        d = tempfile.mkdtemp()
-        run(["git", "init", "-q"], cwd=d)
-        shutil.rmtree(d, ignore_errors=True)
-    bench("mkdtemp + git init + rmtree", init_repo, 20)
-
-    def commit_repo():
+    def one_repo(cfg_env, steps):
+        env = dict(os.environ)
+        env.pop("GIT_CONFIG_GLOBAL", None)
+        env.update(cfg_env)
         d = Path(tempfile.mkdtemp())
-        run(["git", "init", "-q"], cwd=d)
+        t = {}
+        s = time.perf_counter(); subprocess.run(["git", "init", "-q"], cwd=d, env=env, capture_output=True); t["init"] = time.perf_counter() - s
         (d / "x").write_text("x", encoding="utf-8")
-        run(["git", "add", "-A"], cwd=d)
-        run(["git", "-c", "user.name=a", "-c", "user.email=a@b", "commit", "-q", "-m", "x"], cwd=d)
-        shutil.rmtree(d, ignore_errors=True)
-    bench("init+add+commit+rmtree", commit_repo, 20)
+        s = time.perf_counter(); subprocess.run(["git", "add", "-A"], cwd=d, env=env, capture_output=True); t["add"] = time.perf_counter() - s
+        s = time.perf_counter(); subprocess.run(["git", "-c", "user.name=a", "-c", "user.email=a@b", "commit", "-q", "-m", "x"], cwd=d, env=env, capture_output=True); t["commit"] = time.perf_counter() - s
+        s = time.perf_counter(); subprocess.run(["git", "config", "user.name", "a"], cwd=d, env=env, capture_output=True); t["config"] = time.perf_counter() - s
+        s = time.perf_counter(); c = Path(tempfile.mkdtemp()) / "copy"; shutil.copytree(d / ".git", c / ".git"); t["copytree .git"] = time.perf_counter() - s
+        s = time.perf_counter(); shutil.rmtree(d, ignore_errors=True); t["rmtree"] = time.perf_counter() - s
+        shutil.rmtree(c.parent, ignore_errors=True)
+        for k, v in t.items():
+            steps[k].append(v)
 
-    def tree_io():
-        d = Path(tempfile.mkdtemp())
-        for i in range(30):
-            (d / f"f{i}").write_text("x", encoding="utf-8")
-        shutil.rmtree(d)
-    bench("mkdtemp + 30 files + rmtree", tree_io, 20)
+    sys.path.insert(0, str(Path("scripts/tests").resolve()))
+    from git_test_config import isolate_git_config
+    saved = os.environ.get("GIT_CONFIG_GLOBAL")
+    cfg = str(isolate_git_config())
+    if saved is None:
+        os.environ.pop("GIT_CONFIG_GLOBAL", None)
+    for name, env in (("default", {}), ("isolated", {"GIT_CONFIG_GLOBAL": cfg})):
+        steps = defaultdict(list)
+        for _ in range(15):
+            one_repo(env, steps)
+        for k, v in steps.items():
+            print(f"BENCH {name:9s} {k:15s} {sum(v) / len(v) * 1000:8.1f} ms", flush=True)
+    bench("git --version", lambda: run(["git", "--version"]), 30)
+    bench("python -c pass", lambda: run([sys.executable, "-c", "pass"]), 20)
+    bench("python -c import stage_work", lambda: run([sys.executable, "-c", "import sys; sys.path.insert(0, 'hooks'); import stage_work"]), 10)
+    bench("python close_work.py --help", lambda: run([sys.executable, "skills/stage-retrospective/close_work.py", "--help"]), 10)
 
 
 class R(unittest.TextTestResult):

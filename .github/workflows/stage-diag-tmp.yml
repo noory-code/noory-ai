@@ -20,4 +20,4 @@ jobs:
         with:
           python-version: "3.12"
       - name: Diagnose
-        run: python ../.github/scripts/diag_windows_tmp.py 1 3
+        run: python ../.github/scripts/diag_windows_tmp.py 1 100
