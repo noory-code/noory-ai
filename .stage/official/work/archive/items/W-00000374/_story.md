@@ -8,12 +8,13 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000374
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/scripts/claude_review_companion.py,stage/scripts/tests,stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -93,3 +94,6 @@ Windows 에서 카드를 닫을 때 리뷰어가 테스트를 직접 실행해 �
 - 사용자 확인 — 2026-11-21. 사용자가 바뀐 파일 네 개와 한 줄씩의 요약, 넓어지는 권한, 확인한 것과
   확인하지 못한 것을 보고 닫으라고 했다. 닫기 명령이 리뷰와 닫기를 한 번에 해서 기준별 리뷰 판정은
   확인받을 때 보여 주지 못했고, 그 사실을 알렸다.
+
+- Checks at close 2026-11-21: 5 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`; `python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_claude_review_guard.py -q`
+- Review at close 2026-11-21 by claude_review_companion: approved (1 PASS, 2 PASS)
