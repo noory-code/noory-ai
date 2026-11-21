@@ -37,11 +37,10 @@ This document routes project context to the correct Stage location.
 | Archived work index | `official/work/archive/index.md` |
 | Archived work items | `official/work/archive/items/` |
 | Archived retrospectives | `official/work/archive/retrospectives/` |
-| Active work | `work/active.md` |
+| Active work | `work/current/` cards with `status: active` or `blocked` |
 | Current work cards | `work/current/` |
-| Review candidates | `work/review.md` |
+| Review candidates | `work/current/` cards with `status: review`, `completed`, or `rejected` |
 | Work retrospectives | `work/retrospectives/` |
-| Planned work index | `work/planned/index.md` |
 | Planned work cards | `work/planned/` |
 | Work views | `work/views/` |
 | Pending decision index | `decisions/index.md` |

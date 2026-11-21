@@ -14,9 +14,8 @@ captured -> triaged -> rejected
 ```
 
 Starting work is a physical MOVE performed by `scripts/start_work.py`: it relocates the card
-file to `work/current/`, sets `status: active`, requires the `scope` declaration, adds the
-`work/active.md` row, removes the backlog index row, and enforces the venue/split
-contract (derive `venue` from `settings.json` `venue_routing`; a `split` kind or a
+file to `work/current/`, sets `status: active`, requires the `scope` declaration, and enforces
+the venue/split contract (derive `venue` from `settings.json` `venue_routing`; a `split` kind or a
 policy-contradicting venue needs a validated exception decision).
 
 ## Gate
@@ -25,6 +24,6 @@ policy-contradicting venue needs a validated exception decision).
 2. Grant `ready` only when executable inputs and completion criteria exist.
 3. Grant `selected` only when current capacity and priority are confirmed.
 4. `rejected` records the reason for not doing it.
-5. `index.md` and `views/` never duplicate card bodies.
+5. No index file lists planned cards (DE-00000091), and `views/` never duplicates card bodies.
 6. Work fields (`verification`, `retrospective`, `promotion`) and the registration gate apply
    only after the card reaches `work/current/`.

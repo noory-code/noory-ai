@@ -112,20 +112,6 @@ class LinkFindingOrderPinTest(unittest.TestCase):
         )
         return path
 
-    def append_index(self, root: Path, index_name: str, item_id: str) -> None:
-        path = root / ".stage" / "work" / index_name
-        target = next(
-            (
-                candidate
-                for candidate in sorted((root / ".stage/work").rglob("*.md"))
-                if f"id: {item_id}\n" in candidate.read_text(encoding="utf-8")
-            ),
-            root / ".stage/work/current" / item_id / "_story.md",
-        )
-        link = target.relative_to(path.parent).as_posix()
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(f"| {item_id} | test | x | ai | [item]({link}) |\n")
-
     def test_link_finding_codes_pin_exact_order(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -187,12 +173,6 @@ class LinkFindingOrderPinTest(unittest.TestCase):
             with (root / ".stage" / "state" / "questions.md").open("a", encoding="utf-8") as index:
                 index.write("| Q-0001 | Q | x | open | W-9999 |\n")  # an open record keeps its line
 
-            for item_id in [f"W-{index:04d}" for index in range(1, 10)] + ["W-0011", "W-0012", "W-0013"]:
-                self.append_index(root, "active.md", item_id)
-            self.append_index(root, "active.md", "W-8888")  # INDEX001
-            self.append_index(root, "review.md", "W-0010")
-            self.append_index(root, "review.md", "W-7777")  # INDEX002
-
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual(
@@ -208,8 +188,6 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "WORK024",
                 "WORK019",
                 "WORK017",
-                "INDEX001",
-                "INDEX002",
                 "BACKLOG001",
                 "BACKLOG003",
                 "BACKLOG002",
@@ -222,14 +200,6 @@ class LinkFindingOrderPinTest(unittest.TestCase):
                 "RETRO002",
                 "DECISION004",
                 "STATE001",
-                # Family-index membership (X4): every backlog record in the
-                # fixture is deliberately unindexed.
-                "BACKLOG008",
-                "BACKLOG008",
-                "BACKLOG008",
-                "BACKLOG008",
-                "BACKLOG008",
-                "BACKLOG008",
                 "FAMILY002",
             ],
             [finding.code for finding in findings],

@@ -42,11 +42,6 @@ ROUTING = {
     "chore": "scout",
     "development": {"action": "strong", "*": "standard"},
 }
-ACTIVE = (
-    "# Active Work\n\n"
-    "| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-)
 
 
 def make_stage(settings: dict | str | None) -> Path:
@@ -211,7 +206,6 @@ class RegistrationTierTest(unittest.TestCase):
         (root / ".stage/work/current").mkdir(parents=True)
         (root / ".stage/work/planned").mkdir(parents=True)
         (root / ".stage/official/work/archive/items").mkdir(parents=True)
-        (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
         (root / ".stage/settings.json").write_text(
             json.dumps({"schema_version": 5, **settings}), encoding="utf-8"
         )

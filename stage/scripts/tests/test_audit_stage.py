@@ -21,6 +21,7 @@ def load_module(name: str, path: Path):
 
 audit_stage = load_module("audit_stage", SCRIPT_ROOT / "audit_stage.py")
 init_stage = load_module("init_stage", SCRIPT_ROOT / "init_stage.py")
+stage_topology = audit_stage.stage_topology
 
 
 def finding_codes(findings):
@@ -299,24 +300,6 @@ class StageAuditTest(unittest.TestCase):
         )
         return path
 
-    def append_active_index(self, root: Path, item_id: str) -> None:
-        path = root / ".stage" / "work" / "active.md"
-        target = self.find_work_item(root, item_id)
-        link = target.relative_to(path.parent).as_posix()
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(
-                f"| {item_id} | test | active | ai | [item]({link}) |\n"
-            )
-
-    def append_review_index(self, root: Path, item_id: str, status: str = "review") -> None:
-        path = root / ".stage" / "work" / "review.md"
-        target = self.find_work_item(root, item_id)
-        link = target.relative_to(path.parent).as_posix()
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(
-                f"| {item_id} | passed | completed | {status} | [item]({link}) |\n"
-            )
-
     def test_initialized_stage_passes_audit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -341,7 +324,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="completed", verification="passed", retrospective="pending", promotion="approved")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -360,7 +342,6 @@ class StageAuditTest(unittest.TestCase):
                 promotion="promoted",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -380,7 +361,6 @@ class StageAuditTest(unittest.TestCase):
                 promotes=".stage/official/decisions/records/DE-0001.md",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -400,7 +380,6 @@ class StageAuditTest(unittest.TestCase):
                 promotes=".stage/official/decisions/index.md",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -420,7 +399,6 @@ class StageAuditTest(unittest.TestCase):
                 promotes=".stage/official/decisions/index.md",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "promoted")
 
             findings = audit_stage.Audit(root).run()
 
@@ -437,7 +415,6 @@ class StageAuditTest(unittest.TestCase):
                 retrospective="completed",
                 promotion="approved",
             )
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -455,7 +432,6 @@ class StageAuditTest(unittest.TestCase):
                 retrospective_ref="R-0001",
                 promotion="approved",
             )
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -474,7 +450,6 @@ class StageAuditTest(unittest.TestCase):
                 promotion="approved",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-9999")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -533,7 +508,6 @@ class StageAuditTest(unittest.TestCase):
                 promotion="not_applicable",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -552,7 +526,6 @@ class StageAuditTest(unittest.TestCase):
                 promotion="not_applicable",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
 
             findings = audit_stage.Audit(root).run()
 
@@ -584,75 +557,51 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertIn("WORK010", finding_codes(findings))
 
-    def test_active_item_must_be_indexed(self):
+    def test_active_item_needs_no_list_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-
-            findings = audit_stage.Audit(root).run()
-
-        self.assertIn("INDEX003", finding_codes(findings))
-
-    def test_active_item_with_matching_index_passes(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.init_stage(root)
-            self.write_work_item(root, status="active")
-            self.append_active_index(root, "W-0001")
+            self.write_work_item(root, item_id="W-0002", status="review")
 
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual([], findings)
 
-    def test_review_retrospective_link_is_not_treated_as_missing_work_item(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.init_stage(root)
-            self.write_work_item(root, status="review")
-            retrospective = root / ".stage" / "work" / "retrospectives" / "R-0001.md"
-            retrospective.write_text("# R-0001\n", encoding="utf-8")
-            review = root / ".stage" / "work" / "review.md"
-            with review.open("a", encoding="utf-8") as handle:
-                handle.write("| W-0001 | pending | [R-0001](retrospectives/R-0001.md) | pending | [item](current/W-0001.md) |\n")
-
-            findings = audit_stage.Audit(root).run()
-
-        self.assertNotIn("INDEX002", finding_codes(findings))
-
-    def test_active_prose_with_sha_like_text_is_not_treated_as_missing_work_item(self):
+    def test_retired_work_list_file_is_reported_for_deletion(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-            active = root / ".stage" / "work" / "active.md"
-            with active.open("a", encoding="utf-8") as handle:
-                handle.write("\nA SHA-256 digest is not a work item ID.\n")
-                handle.write("| W-0001 | test | active | ai | [item](current/W-0001.md) |\n")
+            for relative in stage_topology.RETIRED_WORK_LISTS:
+                path = root / ".stage" / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    "| W-0009 | test | active | ai | [item](current/W-0009.md) |\n",
+                    encoding="utf-8",
+                )
 
             findings = audit_stage.Audit(root).run()
 
-        self.assertNotIn("INDEX001", finding_codes(findings))
-
-    def test_similar_item_id_link_does_not_satisfy_missing_index(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.init_stage(root)
-            self.write_work_item(root, item_id="W-0001", status="active")
-            active = root / ".stage" / "work" / "active.md"
-            with active.open("a", encoding="utf-8") as handle:
-                handle.write("| W-00012 | test | active | ai | [item](current/W-00012.md) |\n")
-
-            findings = audit_stage.Audit(root).run()
-
-        self.assertIn("INDEX003", finding_codes(findings))
+        retired = [
+            (finding.severity, finding.code, finding.path)
+            for finding in findings
+            if finding.code.startswith("INDEX")
+        ]
+        self.assertEqual(
+            [
+                ("warning", "INDEX007", f".stage/{relative}")
+                for relative in stage_topology.RETIRED_WORK_LISTS
+            ],
+            retired,
+        )
+        self.assertFalse(any(finding.severity == "error" for finding in findings), findings)
 
     def test_parent_must_exist(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active", parent="W-9999")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -669,8 +618,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="active", parent="W-0002")
             self.write_work_item(root, item_id="W-0002", status="active", parent="W-0001")
-            self.append_active_index(root, "W-0001")
-            self.append_active_index(root, "W-0002")
 
             findings = audit_stage.Audit(root).run()
 
@@ -682,8 +629,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="rejected")
             self.write_work_item(root, item_id="W-0002", status="active", parent="W-0001")
-            self.append_review_index(root, "W-0001", "rejected")
-            self.append_active_index(root, "W-0002")
 
             findings = audit_stage.Audit(root).run()
 
@@ -707,7 +652,6 @@ class StageAuditTest(unittest.TestCase):
                 promotion="approved",
             )
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
-            self.append_review_index(root, "W-0001", "completed")
             self.write_backlog_item(
                 root,
                 item_id="W-0002",
@@ -725,8 +669,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="active")
             self.write_work_item(root, item_id="W-0002", status="active", parent="W-0001")
-            self.append_active_index(root, "W-0001")
-            self.append_active_index(root, "W-0002")
 
             findings = audit_stage.Audit(root).run()
 
@@ -737,7 +679,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -749,7 +690,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-9999")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -761,7 +701,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001", status="maybe")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -773,7 +712,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
-            self.append_active_index(root, "W-0001")
             audit_stage.refresh_decision_index.refresh_index(root)
 
             findings = audit_stage.Audit(root).run()
@@ -1127,37 +1065,17 @@ class StageAuditTest(unittest.TestCase):
         path.write_text(f"# {record_id} Title\n\n## Purpose\n\nx\n", encoding="utf-8")
         return path
 
-    def test_backlog_item_missing_from_backlog_index(self):
+    def test_planned_card_needs_no_index_row(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
             self.write_backlog_item(root)
-
-            findings = audit_stage.Audit(root).run()
-
-        self.assertIn("BACKLOG008", finding_codes(findings))
-
-    def test_indexed_backlog_item_has_no_index_finding(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.init_stage(root)
-            self.write_backlog_item(root)
-            self.append_index_row(root, "work/planned/index.md", "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
         self.assertNotIn("BACKLOG008", finding_codes(findings))
         self.assertNotIn("BACKLOG009", finding_codes(findings))
-
-    def test_backlog_index_row_requires_existing_item(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.init_stage(root)
-            self.append_index_row(root, "work/planned/index.md", "B-9999")
-
-            findings = audit_stage.Audit(root).run()
-
-        self.assertIn("BACKLOG009", finding_codes(findings))
+        self.assertFalse((root / ".stage" / "work" / "planned" / "index.md").exists())
 
     def test_milestone_missing_from_roadmap_index(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1320,7 +1238,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-            self.append_active_index(root, "W-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
 
             findings = audit_stage.Audit(root).run()
@@ -1332,7 +1249,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
-            self.append_active_index(root, "W-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001")
 
             findings = audit_stage.Audit(root).run()
@@ -1353,7 +1269,6 @@ class StageAuditTest(unittest.TestCase):
                 retrospective_ref="R-0001",
                 promotion="approved",
             )
-            self.append_review_index(root, "W-0001", "completed")
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
             self.write_retrospective(root, retro_id="R-0002", work_item="W-0001")
 
@@ -1367,8 +1282,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="active")
             self.write_work_item(root, item_id="W-0002", status="active")
-            self.append_active_index(root, "W-0001")
-            self.append_active_index(root, "W-0002")
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
             self.write_archive_retrospective(
                 root, retro_id="R-0001", work_item="W-0002"
@@ -1390,7 +1303,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, item_id="W-0001", status="active")
-            self.append_active_index(root, "W-0001")
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
             self.write_archive_retrospective(
                 root, retro_id="R-0001", work_item="W-0001"
@@ -1407,7 +1319,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-            self.append_active_index(root, "W-0001")
             self.write_retrospective(root, retro_id="R-0001", work_item="W-0001")
 
             findings = audit_stage.Audit(root).run()
@@ -1492,7 +1403,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             path = self.write_work_item(root, status="active")
             path.write_text(path.read_text(encoding="utf-8").replace("title: Test work", "title: Test work\nkind: marketing"), encoding="utf-8")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1504,7 +1414,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             path = self.write_work_item(root, status="active")
             path.write_text(path.read_text(encoding="utf-8").replace("title: Test work", "title: Test work\nkind: design"), encoding="utf-8")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1527,7 +1436,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             path = self.write_work_item(root, status="active")
             path.write_text(path.read_text(encoding="utf-8").replace("title: Test work", "title: Test work\nsource: B-9999"), encoding="utf-8")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1562,7 +1470,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, status="active")
-            self.append_active_index(root, "W-0001")
             self.write_backlog_item(root, item_id="W-0001", status="selected")
 
             findings = audit_stage.Audit(root).run()
@@ -1575,7 +1482,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001", principles="")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1587,7 +1493,6 @@ class StageAuditTest(unittest.TestCase):
             self.init_stage(root)
             self.write_work_item(root, status="active", decision_refs="DE-0001")
             self.write_decision(root, decision_id="DE-0001", work_item="W-0001", principles="Just vibes.")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -1727,7 +1632,7 @@ class StageAuditTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.init_stage(root)
-            target = root / ".stage" / "work" / "active.md"
+            target = root / ".stage" / "official" / "work" / "archive" / "index.md"
             lines = target.read_text(encoding="utf-8").splitlines()
             separator = next(
                 index
@@ -1736,7 +1641,7 @@ class StageAuditTest(unittest.TestCase):
             )
             lines.insert(
                 separator + 1,
-                "| W-00000001 | development | codex | Test | active | owner | [item](current/W-00000001.md) |",
+                "| W-00000001 | completed | [item](items/W-00000001.md) |",
             )
             target.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -1890,7 +1795,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, decision_refs="DE-0001")
-            self.append_active_index(root, "W-0001")
             source = self.write_decision(root, authorizes="venue_exception")
             audit_stage.refresh_decision_index.refresh_index(root)
             self.assertEqual([], audit_stage.Audit(root).run())
@@ -1924,7 +1828,6 @@ class StageAuditTest(unittest.TestCase):
             source = self.find_work_item(root, "W-0001")
             copy = source.parent / "W-0001-copy.md"
             copy.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
-            self.append_active_index(root, "W-0001")
 
             findings = audit_stage.Audit(root).run()
 
@@ -2004,7 +1907,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, item_id="W-1", status="active")
-            self.append_active_index(root, "W-1")
             self.write_backlog_item(root, item_id="W-2", status="captured", parent="W-1")
 
             codes = finding_codes(audit_stage.Audit(root).run())
@@ -2044,7 +1946,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, decision_refs="DE-0001")
-            self.append_active_index(root, "W-0001")
             self.write_decision(root)
 
             findings = audit_stage.Audit(root).run()
@@ -2058,7 +1959,6 @@ class StageAuditTest(unittest.TestCase):
             root = Path(tmp)
             self.init_stage(root)
             self.write_work_item(root, decision_refs="DE-0001")
-            self.append_active_index(root, "W-0001")
             self.write_decision(root)
             audit_stage.refresh_decision_index.refresh_index(root)
 

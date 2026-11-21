@@ -35,13 +35,6 @@ status: open
 
 ## Follow-up
 """
-ACTIVE_INDEX = (
-    "# Active Work\n\n"
-    "| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-    "| W-00000001 | development | codex | Stop safely | active | codex | "
-    "[current/W-00000001/_story.md](current/W-00000001/_story.md) |\n"
-)
 WORK_ITEM = """---
 id: W-00000001
 title: Stop safely
@@ -79,8 +72,6 @@ class EscalateWorkTest(unittest.TestCase):
         item.write_text(
             WORK_ITEM.format(status=status), encoding="utf-8"
         )
-        (stage_root / "work/active.md").write_text(ACTIVE_INDEX, encoding="utf-8")
-        (stage_root / "work/review.md").write_text("# Review Candidates\n", encoding="utf-8")
         (stage_root / "decisions/pending/_template.md").write_text(
             DECISION_TEMPLATE, encoding="utf-8"
         )
@@ -125,7 +116,7 @@ class EscalateWorkTest(unittest.TestCase):
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8")
             decision_path = root / ".stage/decisions/pending/DE-00000008.md"
             decision = decision_path.read_text(encoding="utf-8")
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
+            listed = (root / ".stage/work/active.md").exists()
             decision_index = (root / ".stage/decisions/index.md").read_text(encoding="utf-8")
 
             self.assertRegex(item, r"(?m)^status: blocked$")
@@ -133,8 +124,8 @@ class EscalateWorkTest(unittest.TestCase):
             self.assertIn("work_item: W-00000001", decision)
             self.assertIn("status: open", decision)
             self.assertIn(reason, decision)
-            self.assertIn("| blocked |", active)
-            self.assertIn("W-00000001", active)
+            # The blocked card reaches the active view through its status (DE-00000091).
+            self.assertFalse(listed)
             self.assertIn("DE-00000008", decision_index)
             self.assertIn("DE-00000008", result.stdout)
 
@@ -194,13 +185,6 @@ class EscalateWorkTest(unittest.TestCase):
                 WORK_ITEM.format(status="active")
                 .replace("id: W-00000001", "id: W-00000002")
                 .replace("# W-00000001", "# W-00000002"),
-                encoding="utf-8",
-            )
-            (stage_root / "work/active.md").write_text(
-                ACTIVE_INDEX
-                + "| W-00000002 | development | codex | Action | active | codex | "
-                "[current/W-00000001/W-00000002.md]"
-                "(current/W-00000001/W-00000002.md) |\n",
                 encoding="utf-8",
             )
 

@@ -13,8 +13,8 @@ place to know which window to open next.
 
 - `venue` on each work item names the surface that should carry it out. No hook gates on it, but
   when the project declares a role policy the audit checks consistency (VENUE001-VENUE005).
-- `work/active.md` shows every open item with its `Venue` column, while injected session context
-  draws the same records as an epic/story/action tree. Route the next runnable action with its
+- Injected session context shows every open item with its venue in the derived Active work view,
+  and draws the same records as an epic/story/action tree. Route the next runnable action with its
   ancestor chain, not as an isolated flat row.
 - The machine-readable role policy lives in `settings.json` `venue_routing` (`kind -> venue`);
   what each venue means belongs to the project's canon (e.g. `official/canon/vocabulary.md`). The
@@ -88,7 +88,8 @@ remaining problem, the success criteria, and the explicit NEXT action.
 
 1. Update the item body with those five elements in human-readable language.
 2. Set `venue` to the surface that should take it next.
-3. Confirm `active.md` reflects the item's real status and venue.
+3. Confirm the item's frontmatter `status` and `venue` are its real state; every work view is
+   derived from them.
 
 ## Carry current criteria and observed results
 
@@ -132,7 +133,7 @@ to split, merge, or redefine its actions. The epic's other stories remain indepe
 
 On session stop, the Stage hook writes a per-session summary to
 `.stage/.runtime/sessions/<session>.md` (machine-local, git-ignored). Concurrent windows each keep
-their own summary — no last-write-wins. Do not hand-maintain it; keep the work items and `active.md`
+their own summary — no last-write-wins. Do not hand-maintain it; keep the work items
 current instead, since those are what the next window reads first.
 
 ## Tell the human where to go
@@ -142,5 +143,4 @@ is the whole human intervention.
 
 ## Verify
 
-`python3 stage/scripts/audit_stage.py --project-root <project-root>` — every open item present in
-`active.md`, no index mismatch.
+`python3 stage/scripts/audit_stage.py --project-root <project-root>` — no work item finding.

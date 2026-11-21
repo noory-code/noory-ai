@@ -104,20 +104,6 @@ def set_or_insert_frontmatter_field(
     return inserted
 
 
-def table_rows(text: str) -> list[str]:
-    return [line for line in text.splitlines() if line.strip().startswith("|")]
-
-
-def drop_table_row(text: str, item_id: str, item_link: str | None = None) -> str:
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    kept = [
-        line
-        for line in text.splitlines()
-        if not (line.strip().startswith("|") and link in line)
-    ]
-    return "\n".join(kept) + ("\n" if text.endswith("\n") else "")
-
-
 def append_index_row(
     index_text: str,
     item_id: str,
@@ -243,7 +229,7 @@ def apply_consumed_decisions(plan: DecisionArchivePlan) -> int:
     return len(plan.decisions)
 
 
-def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]:
+def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str]:
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         return (
@@ -251,8 +237,6 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]
             paths.current_retrospectives,
             paths.archive_cards,
             paths.archive_retrospectives,
-            paths.active_index,
-            paths.review_index,
             paths.archive_index,
         )
     return (
@@ -260,38 +244,26 @@ def _archive_paths(stage_root: Path) -> tuple[str, str, str, str, str, str, str]
         Path("present", "work", "retrospectives").as_posix(),
         Path("past", "work", "archive", "items").as_posix(),
         Path("past", "work", "archive", "retrospectives").as_posix(),
-        Path("present", "work", "active.md").as_posix(),
-        Path("present", "work", "review.md").as_posix(),
         Path("past", "work", "archive", "index.md").as_posix(),
     )
 
 
-def _planned_paths(stage_root: Path) -> tuple[str, str]:
+def _planned_root(stage_root: Path) -> str:
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        paths = v4_lifecycle_paths()
-        return paths.planned_cards, paths.planned_index
-    return (
-        Path("future", "backlog", "items").as_posix(),
-        Path("future", "backlog", "index.md").as_posix(),
-    )
+        return v4_lifecycle_paths().planned_cards
+    return Path("future", "backlog", "items").as_posix()
 
 
 def completed_ids_from_review(stage_root: Path) -> list[str]:
-    current_relative, _, _, _, _, review_relative, _ = _archive_paths(stage_root)
+    """Top-level current cards whose status is terminal, read from the cards.
+
+    The review list is derived from card status (DE-00000091); no list file is read.
+    """
+    current_relative = _archive_paths(stage_root)[0]
     current_root = stage_root / current_relative
     hierarchical = active_topology(stage_root) == ACTIVE_TOPOLOGY_V4
-    review = stage_root / review_relative
-    if not review.exists():
-        return []
-    current_items = {item.item_id: item for item in load_work_items(stage_root)}
     ids: list[str] = []
-    for line in table_rows(review.read_text(encoding="utf-8")):
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if not cells or not cells[0].startswith("W-"):
-            continue
-        item = current_items.get(cells[0])
-        if item is None:
-            continue
+    for item in sorted(load_work_items(stage_root), key=lambda entry: entry.item_id):
         is_top_level = True
         if hierarchical:
             move_unit = top_level_item_path(current_root, item.path)
@@ -300,7 +272,7 @@ def completed_ids_from_review(stage_root: Path) -> list[str]:
                 and work_record_scale(current_root, item.path) in {"epic", "story"}
             )
         if item.status in TERMINAL_STATUSES and is_top_level:
-            ids.append(cells[0])
+            ids.append(item.item_id)
     return ids
 
 
@@ -326,11 +298,9 @@ def archive_one(
         current_retro_root,
         archive_root,
         archive_retro_root,
-        active_relative,
-        review_relative,
         index_relative,
     ) = _archive_paths(stage_root)
-    planned_root, planned_index_relative = _planned_paths(stage_root)
+    planned_root = _planned_root(stage_root)
     current_items_root = stage_root / current_root
     planned_items_root = stage_root / planned_root
     archive_items_root = stage_root / archive_root
@@ -427,9 +397,6 @@ def archive_one(
         return f"{item_id}: ERROR non-terminal children still name it as parent: {detail}"
 
     index_path = stage_root / index_relative
-    planned_index_path = stage_root / planned_index_relative
-    active_path = stage_root / active_relative
-    review_path = stage_root / review_relative
     for _record, record_id, _status, ref, _present_retro in record_data:
         if ref:
             archive_retro = record_path(stage_root / archive_retro_root, ref)
@@ -508,41 +475,6 @@ def archive_one(
         ),
         encoding="utf-8",
     )
-    active_text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
-    planned_index_text = (
-        planned_index_path.read_text(encoding="utf-8")
-        if planned_index_path.exists()
-        else ""
-    )
-    for record, record_id, _status, _ref, _present_retro in record_data:
-        if source_is_planned:
-            planned_link = relative_record_link(
-                planned_index_relative,
-                record.relative_to(stage_root).as_posix(),
-            )
-            planned_index_text = drop_table_row(
-                planned_index_text,
-                record_id,
-                planned_link,
-            )
-        else:
-            record_link = relative_record_link(
-                active_relative,
-                record.relative_to(stage_root).as_posix(),
-            )
-            active_text = drop_table_row(active_text, record_id, record_link)
-            review_link = relative_record_link(
-                review_relative,
-                record.relative_to(stage_root).as_posix(),
-            )
-            review_text = drop_table_row(review_text, record_id, review_link)
-    if active_path.exists() and not source_is_planned:
-        active_path.write_text(active_text, encoding="utf-8")
-    if review_path.exists() and not source_is_planned:
-        review_path.write_text(review_text, encoding="utf-8")
-    if planned_index_path.exists() and source_is_planned:
-        planned_index_path.write_text(planned_index_text, encoding="utf-8")
     if source_unit.is_dir():
         shutil.rmtree(source_unit)
     else:
@@ -583,7 +515,7 @@ def archive_one(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Archive completed Stage work items.")
     parser.add_argument("--project-root", default=".", help="Project root (default: cwd).")
-    parser.add_argument("--all-completed", action="store_true", help="Archive every completed item in review.md.")
+    parser.add_argument("--all-completed", action="store_true", help="Archive every top-level current card whose status is completed or rejected.")
     parser.add_argument(
         "--archive-consumed-decisions",
         action="store_true",

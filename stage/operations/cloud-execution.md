@@ -89,7 +89,7 @@ of a range so another card's commits in between are left out.
 4. State on the card's `## Verification` that the close review was a same-model
    review, not a cross-venue one.
 5. Copy the closed card and retrospective back to the branch and run
-   `close_work.py <id>` there once more; its reconcile path updates the indexes.
+   `close_work.py <id>` there once more; its reconcile path refreshes the decision index.
 
 ## What this does not cover
 

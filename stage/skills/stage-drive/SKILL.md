@@ -97,9 +97,10 @@ human decision remains visible. The command also rejects a duplicate ID inside o
 and an existing card-named path or branch makes a later invocation fail instead of reusing the
 same card.
 
-Each worktree has its own ignored `.stage/.runtime/` evidence. The tracked lifecycle indexes do not
-have that isolation after merge: `.stage/work/active.md` and `.stage/work/review.md` can conflict
-even when the source scopes are independent. The human resolving the merge owns those index rows.
+Each worktree has its own ignored `.stage/.runtime/` evidence. No tracked work list restates card
+status, so independent cards do not conflict on a shared list after merge. Plugin `CHANGELOG.md`
+files and the official archive indexes only gain rows; the project's `.gitattributes` gives them
+`merge=union` so both sides' rows survive (DE-00000091).
 
 ## The default run is a dry run
 

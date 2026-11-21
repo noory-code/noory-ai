@@ -126,21 +126,18 @@ class RefreshGuidanceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             init_stage.copy_templates(root, False, language="ko")
-            relative = Path("work/active.md")
+            relative = Path("official/work/archive/index.md")
             target = root / ".stage" / relative
-            row = (
-                "| W-00000001 | development | codex | Test | active | owner | "
-                "[item](current/W-00000001.md) |"
-            )
+            row = "| W-00000001 | completed | [item](items/W-00000001.md) |"
             template = init_stage.template_source(relative, "ko").read_text(encoding="utf-8")
-            project = insert_first_table_row(template.replace("# 진행 중 작업", "# stale"), row)
+            project = insert_first_table_row(template.replace("# 작업 아카이브", "# stale"), row)
             target.write_text(project, encoding="utf-8")
 
             result = run(root, relative.as_posix())
             refreshed = target.read_text(encoding="utf-8")
 
             self.assertEqual(0, result.returncode, result.stderr)
-            self.assertIn("# 진행 중 작업", refreshed)
+            self.assertIn("# 작업 아카이브", refreshed)
             self.assertNotIn("# stale", refreshed)
             self.assertIn(row, refreshed)
 

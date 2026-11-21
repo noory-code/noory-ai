@@ -87,7 +87,16 @@ class TemplateV4Test(unittest.TestCase):
         return {path.relative_to(root) for path in root.rglob("*") if path.is_file()}
 
     def test_v4_tree_mirrors_v3_file_set_under_renamed_roots(self):
-        expected = {v4_path(path) for path in self.files_under(V3_ROOT)} | EXTRA_V4_FILES
+        # The v3 work lists have no v4 template: their views are derived from card
+        # status (DE-00000091).
+        retired = {
+            Path("present/work/active.md"),
+            Path("present/work/review.md"),
+            Path("future/backlog/index.md"),
+        }
+        expected = {
+            v4_path(path) for path in self.files_under(V3_ROOT) if path not in retired
+        } | EXTRA_V4_FILES
         self.assertEqual(expected, self.files_under(V4_ROOT))
 
     def test_v4_tree_is_active_and_v3_operations_are_verbatim(self):

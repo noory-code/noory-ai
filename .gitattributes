@@ -1,0 +1,14 @@
+# Append-only lists merge by keeping both sides' lines (DE-00000091).
+#
+# Two sessions that each add a changelog line or archive a record touch the same
+# file; `merge=union` keeps both additions instead of stopping on a conflict.
+# Never give this attribute to a list that deletes rows: a union merge brings
+# back every row one side removed (replaying this repository's merges resurrected
+# closed cards in 13 of 18 cases). The active, review, and planned work lists are
+# therefore not files at all; Stage derives them from card status.
+
+# Plugin changelogs: card work only adds lines under `## Unreleased`.
+CHANGELOG.md merge=union
+
+# Official archive indexes: archiving only appends a row.
+.stage/official/**/archive/index.md merge=union
