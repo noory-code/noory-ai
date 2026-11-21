@@ -8,12 +8,13 @@ milestone:
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000375
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -78,3 +79,6 @@ main 과 충돌한다. 이 일이 끝나면 PR #85 를 머지할 수 있다.
 - 이 카드는 DE-00000087 의 대상 경로를 고치지 않는다. 머지로 들어온 `.stage/settings.json` 은 PR #83 이
   main 에서 이미 바꾼 것이다.
 - 한국어 Windows 11(cp949)에서 충돌을 푼 뒤 두 파일에 충돌 표시가 없는 것을 확인했다.
+
+- Checks at close 2026-11-21: 5 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`; `python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q`; `python3 -m unittest discover -s stage/hooks/tests -q`
+- Review at close 2026-11-21 by claude_review_companion: approved (1 PASS, 2 PASS)

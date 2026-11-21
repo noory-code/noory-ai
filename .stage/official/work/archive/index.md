@@ -301,3 +301,4 @@
 | W-00000373 | completed | [items/W-00000373/_story.md](items/W-00000373/_story.md) |
 | W-00000366 | completed | [items/W-00000366/_story.md](items/W-00000366/_story.md) |
 | W-00000374 | completed | [items/W-00000374/_story.md](items/W-00000374/_story.md) |
+| W-00000375 | completed | [items/W-00000375/_story.md](items/W-00000375/_story.md) |
