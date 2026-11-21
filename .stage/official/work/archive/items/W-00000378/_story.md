@@ -7,12 +7,13 @@ environment: cloud
 milestone: M-00000005
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000378
+promotion: not_applicable
+review: passed
 scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.py,stage/skills/stage-roadmap/manage_roadmap.py,stage/scripts/tests,stage/skills/stage-decision/SKILL.md,stage/operations/cloud-execution.md,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md,.stage/operations/parallel-sessions.md
 promotes:
 decision_refs:
@@ -70,7 +71,7 @@ decision_refs:
 
 ## Next action
 
-닫는다.
+없다. PR #88 이 병합을 기다린다.
 
 ## 원격 확인
 
@@ -92,4 +93,24 @@ decision_refs:
 
 ## Progress
 
+### Executor report at close — 2026-11-21
+
+```
+What changed: Added IdReserver and default_remote to stage/scripts/stage_record_ids.py (reads remote refs/stage-ids/*, pushes a one-commit marker with --force-with-lease=<ref>:, re-reads the ref on failure to tell a lost race from a refusing remote, prints one not-reserved line); the CLI reserves by default with --no-reserve to only name the id; register_work.py's four auto-allocation paths and manage_roadmap.py's _create_atomic (TH, M, milestone DE) use it; added stage/scripts/tests/test_stage_id_reservation.py (13 tests, bare remotes in temp dirs); updated the decision skill, cloud-execution.md, BLUEPRINT.md, parallel-sessions.md, the card, and the stage CHANGELOG.
+Why: Counting only fetched refs cannot see an unfetched session's ids; git accepts only one create-only push per ref, which removes the need to remember fetch-then-push.
+Decisions made: Push a marker commit built from the empty tree instead of HEAD so reservation never uploads branch work; add a random nonce to the marker message because two sessions building identical commits in the same second made the second push a successful no-op (caught by a test); treat a failed push as a lost race only when the ref then exists remotely, otherwise turn reservation off for the run; explicit --id registrations do not reserve, to avoid refusing a session's own earlier reservation; print the not-reserved line also when there is no remote, as the card asks.
+Work not done: Cleanup of accumulated refs/stage-ids refs; GitHub acceptance of refs/stage-ids is unverified because this cloud session's git proxy refused the push with HTTP 403, so cloud sessions fall back to the fetch-then-push rule; no alternative ref name was probed because the proxy guidance forbids routing around a policy denial.
+```
+
 ## Verification
+
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 닫기 전 전체 실행(2026-11-21): hooks 455 OK, scripts 821 OK(skipped 2), `audit_stage.py` errors=0.
+  새 시험 13개(`test_stage_id_reservation.py`)는 모두 임시 폴더의 bare 저장소를 원격으로 쓴다.
+- 성공 기준: 받아 오지 않은 두 클론의 차례 등록 → W-00000003, W-00000004(시험). 닿지 못하는 원격 → 등록되고
+  한 줄 출력(시험). 원격 없음 → `--no-reserve` 와 같은 번호(시험). GitHub 원격 확인 → 위 "원격 확인"(403).
+- 코드 커밋이 둘(9c1e5727, f03ea628)이라 리뷰가 모든 경로를 받도록 두 커밋을 합친 로컬 커밋 1d423a08 에서
+  닫았다.
+
+- Checks at close 2026-11-21: 3 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_stage_id_reservation.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_stage_record_ids.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-21 by claude_review_companion: approved (1 PASS, 2 PASS, 3 PASS, 4 PASS)
