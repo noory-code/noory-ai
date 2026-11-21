@@ -78,5 +78,7 @@ PR 을 올려 검사 수를 확인한 뒤 머지한다.
 - 이 카드는 DE-00000087 의 대상 경로를 고치지 않는다.
 - 한국어 Windows 11(cp949)에서 `python3 -m unittest discover -s stage/scripts/tests -p test_ci_workflows.py -q`
   2개와 `python3 -m unittest discover -s tests -q` 가 통과했다.
-- 두 번째 성공 기준은 닫는 시점에 확인할 수 없다. 검사 수는 PR 을 올려야 보인다. PR 을 올린 뒤에 확인하고
-  PR 본문에 적는다.
+- PR #86 을 올려서 두 번째 성공 기준을 확인했다. `gh pr checks 86 --json workflow,event` 로 세면 검사가
+  24개이고 모두 `pull_request` 로 실행됐다. 워크플로 네 개마다 6개씩이다. `push` 로 실행된 것은 없다.
+  이 PR 은 워크플로 파일 네 개를 모두 고쳐서 네 워크플로가 다 실행됐다. PR #85 는 워크플로 두 개가
+  `push` 와 `pull_request` 로 6개씩 실행돼서 24개였다.
