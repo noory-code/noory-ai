@@ -10,9 +10,10 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000367 | 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게 설계한다 | design | selected | 6 |  | [W-00000367/_story.md](W-00000367/_story.md) |
 | W-00000371 | 회고에 남길 칸을 정한다 | planning | captured | 7 |  | [W-00000371/_story.md](W-00000371/_story.md) |
 | W-00000372 | Stage 를 릴리스한다 | release | captured | 8 |  | [W-00000372/_story.md](W-00000372/_story.md) |
+| W-00000374 | 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다 | development | captured | 6 |  | [W-00000374/_story.md](W-00000374/_story.md) |
+| W-00000375 | 카드와 기록을 등록할 때 번호를 원격에 잡는다 | development | captured | 6 |  | [W-00000375/_story.md](W-00000375/_story.md) |
 
 ## 상태 값
 
