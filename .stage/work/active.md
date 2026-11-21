@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000366 | documentation | claude | 도면의 위 두 층을 쓰고 도면 자리를 한 곳으로 정한다 | active | claude | [current/W-00000366/_story.md](current/W-00000366/_story.md) |

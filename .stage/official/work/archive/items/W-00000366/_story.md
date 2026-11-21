@@ -7,12 +7,13 @@ environment: local-no-codex
 milestone: M-00000005
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000366
-promotion: approved
-review: pending
+promotion: promoted
+review: passed
 scope: .stage/official/model,stage/docs/BLUEPRINT.md,stage/README.md,stage/CHANGELOG.md
 promotes: .stage/official/model/overview.md
 decision_refs: DE-00000090
@@ -98,3 +99,6 @@ AI 가 문서 한 장에서 Stage 의 목표와 레이어와 코드가 말해 �
 - 새 세션이 이 문서만 읽고 레이어를 맞게 말하는지는 확인하지 않았다.
 - 문서의 링크와 제목 고리가 GitHub 화면에서 열리는지는 눈으로 보지 않았다.
 - 닫을 때의 리뷰는 만든 쪽과 같은 계열(Claude)이 본다. 문서만 고친 카드라 리뷰 모델은 `sonnet` 으로 한다.
+
+- Checks at close 2026-11-21: 2 passed — `python3 -m unittest discover -s stage/hooks/tests -q`; `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-21 by claude_review_companion: approved (1 PASS, 2 PASS, 3 PASS)
