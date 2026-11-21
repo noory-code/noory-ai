@@ -1,5 +1,5 @@
 ---
-id: W-00000375
+id: W-00000378
 title: 카드와 기록을 등록할 때 번호를 원격에 잡는다
 kind: development
 venue:
@@ -12,7 +12,7 @@ review: not_required
 scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.py,stage/skills/stage-roadmap/manage_roadmap.py,stage/scripts/tests,stage/skills/stage-decision/SKILL.md,stage/operations/cloud-execution.md,stage/docs/BLUEPRINT.md,.stage/operations/parallel-sessions.md
 ---
 
-# W-00000375 카드와 기록을 등록할 때 번호를 원격에 잡는다
+# W-00000378 카드와 기록을 등록할 때 번호를 원격에 잡는다
 
 ## Purpose
 
@@ -37,7 +37,7 @@ scope: stage/scripts/stage_record_ids.py,stage/skills/stage-work/register_work.p
 
 ### Excluded
 
-- 목록 파일. W-00000374 가 한다.
+- 목록 파일. W-00000377 가 한다.
 - 이미 겹친 번호를 바꾸는 도구.
 
 ## Risks

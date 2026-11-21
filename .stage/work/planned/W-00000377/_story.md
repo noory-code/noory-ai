@@ -1,5 +1,5 @@
 ---
-id: W-00000374
+id: W-00000377
 title: 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다
 kind: development
 venue:
@@ -12,7 +12,7 @@ review: not_required
 scope: .gitattributes,stage/skills/stage-work,stage/scripts,stage/skills/stage-retrospective,stage/skills/stage-archive,stage/hooks,stage/templates,stage/operations,stage/docs,stage/skills,.stage/index.md,.stage/operations/parallel-sessions.md
 ---
 
-# W-00000374 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다
+# W-00000377 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다
 
 ## Purpose
 
@@ -38,7 +38,7 @@ scope: .gitattributes,stage/skills/stage-work,stage/scripts,stage/skills/stage-r
 
 ### Excluded
 
-- 기록 번호. W-00000375 가 한다.
+- 기록 번호. W-00000378 가 한다.
 - 항목마다 파일을 하나씩 두는 방식.
 
 ## Risks
