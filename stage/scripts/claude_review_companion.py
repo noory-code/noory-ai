@@ -5,7 +5,8 @@ A session without Codex (a cloud session) can still run the project's configured
 Codex review commands unchanged: point `STAGE_CODEX_COMPANION` at this script and
 `codex_companion.py` hands it the companion's arguments. The prompt is the last
 argument; the Codex-only flags before it are ignored. The reviewer may write only
-`$STAGE_REVIEW_VERDICT_FILE` and run `python3 -m unittest`, and gets `--add-dir` for
+`$STAGE_REVIEW_VERDICT_FILE` and run `python3 -m unittest` (on Windows through the
+PowerShell tool as well as Bash), and gets `--add-dir` for
 the folder of `$STAGE_CHANGED_PATHS_FILE`, which lives outside the project; it may
 not edit project files. The result is a same-model review, never a cross-venue one;
 the cloud-execution procedure requires the card to say so.
@@ -50,7 +51,22 @@ def absolute_rule_path(path: PurePath) -> str:
     return "/" + posix
 
 
-def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> list[str]:
+def unittest_rules(platform: str) -> list[str]:
+    """Name every shell tool the reviewer may run `python3 -m unittest` through.
+
+    On Windows Claude Code offers a PowerShell tool beside Bash, and a `Bash(...)`
+    rule does not cover it: a reviewer that picks PowerShell is denied and judges
+    from records instead of a run.
+    """
+    rules = ["Bash(python3 -m unittest:*)"]
+    if platform == "win32":
+        rules.append("PowerShell(python3 -m unittest:*)")
+    return rules
+
+
+def claude_command(
+    argv: list[str], environ: dict[str, str], claude: str, platform: str = sys.platform
+) -> list[str]:
     if not argv:
         raise ValueError("expected the review prompt as the last argument")
     verdict_file = environ.get("STAGE_REVIEW_VERDICT_FILE", "")
@@ -68,7 +84,7 @@ def claude_command(argv: list[str], environ: dict[str, str], claude: str) -> lis
         environ.get(MODEL_ENV) or DEFAULT_MODEL,
         "--allowedTools",
         f"Edit({verdict_rule})",
-        "Bash(python3 -m unittest:*)",
+        *unittest_rules(platform),
         # --add-dir and --allowedTools take several values; `--` ends them before the prompt.
         "--",
         argv[-1],

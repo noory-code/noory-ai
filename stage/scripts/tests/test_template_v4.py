@@ -214,6 +214,10 @@ class TemplateV4Test(unittest.TestCase):
             if sys.platform == "win32":
                 # C:/dir/file is matched as /c/dir/file.
                 rule_path = "/" + rule_path[0].lower() + rule_path[2:]
+            shell_rules = ["Bash(python3 -m unittest:*)"]
+            if sys.platform == "win32":
+                # Claude Code offers a PowerShell tool beside Bash on Windows.
+                shell_rules.append("PowerShell(python3 -m unittest:*)")
 
         self.assertEqual(
             [
@@ -224,7 +228,7 @@ class TemplateV4Test(unittest.TestCase):
                 "opus[1m]",
                 "--allowedTools",
                 f"Edit(/{rule_path})",
-                "Bash(python3 -m unittest:*)",
+                *shell_rules,
                 "--",
             ],
             argv[:-1],
