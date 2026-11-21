@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Split the Stage CI suites into three jobs per OS and Python. The Windows scripts suite took
+  about nine minutes in one job and held every pull request for ten; `.github/scripts/unittest_shard.py`
+  now deals the sorted tests round-robin to each shard, and a test fails when the matrix drops
+  a shard number the total promises, because that shard's tests would vanish without a failure.
 - Run CI once for a push to a pull request branch. Every workflow ran on `push` and on
   `pull_request`, so a branch with an open pull request ran each job twice. `push` is now
   limited to `main`, and a test fails when a workflow drops that limit.
