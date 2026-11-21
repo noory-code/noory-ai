@@ -228,7 +228,6 @@ flowchart TB
   Work --> Planned["planned\n계획 카드 + views (planned 보조 뷰)"]
   Work --> Current["current\nactive / review 카드"]
   Work --> Retros["retrospectives\n회고 기록"]
-  Work --> WorkViews["active.md / review.md\ncurrent 뷰"]
 
   DecisionsF --> Pending["pending\n작업 중 결정 (DE-)"]
 

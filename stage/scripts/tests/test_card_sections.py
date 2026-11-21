@@ -16,15 +16,6 @@ SKILL = REGISTER.parent / "SKILL.md"
 START = STAGE / "scripts" / "start_work.py"
 CLOSE = STAGE / "skills" / "stage-retrospective" / "close_work.py"
 
-ACTIVE = (
-    "# Active Work\n\n"
-    "| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-)
-REVIEW = (
-    "# Review Candidates\n\n| Artifact | Verification | Retrospective | Promotion | Item |\n"
-    "|---|---|---|---|---|\n"
-)
 RETROSPECTIVE_COPIES = ("## Retrospective", "## Promotion decision")
 ACHIEVEMENT_ONLY = ("## User value", "## Risks", "## Next action", "## Related truth")
 
@@ -72,8 +63,6 @@ class CardSectionsTest(unittest.TestCase):
         (stage / "work/planned").mkdir(parents=True)
         (stage / "work/retrospectives").mkdir(parents=True)
         (stage / "official/work/archive/items").mkdir(parents=True)
-        (stage / "work/active.md").write_text(ACTIVE, encoding="utf-8")
-        (stage / "work/review.md").write_text(REVIEW, encoding="utf-8")
         (stage / "settings.json").write_text('{"schema_version": 5}\n', encoding="utf-8")
         return tmp, root
 

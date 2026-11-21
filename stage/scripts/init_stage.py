@@ -19,6 +19,10 @@ LANGUAGE_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$")
 DEFAULT_LANGUAGE = "en"
 CURRENT_SCHEMA_VERSION = 5
 RUNTIME_IGNORE_ENTRY = ".stage/.runtime/"
+# The official archive indexes only gain rows, so git may keep both sides' rows when
+# two branches each archive a record (DE-00000091). Lists that delete rows must never
+# carry this attribute: a union merge resurrects rows the other side removed.
+UNION_MERGE_ENTRY = ".stage/official/**/archive/index.md merge=union"
 HOOK_ROOT = PLUGIN_ROOT / "hooks"
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
@@ -141,6 +145,29 @@ def ensure_runtime_ignore_entry(project_root: Path) -> str:
     return f"appended {RUNTIME_IGNORE_ENTRY} to .gitignore"
 
 
+def ensure_union_merge_entry(project_root: Path) -> str:
+    """Ensure a git project merges the append-only archive indexes with union."""
+    git_path = project_root / ".git"
+    if not git_path.is_dir() and not git_path.is_file():
+        return "skipped (not a git repository)"
+
+    attributes_path = project_root / ".gitattributes"
+    if not attributes_path.exists():
+        attributes_path.write_bytes(f"{UNION_MERGE_ENTRY}\n".encode())
+        return f"created .gitattributes with {UNION_MERGE_ENTRY}"
+
+    content = attributes_path.read_bytes()
+    pattern = UNION_MERGE_ENTRY.split()[0].encode()
+    for line in content.splitlines():
+        fields = line.split()
+        if fields and fields[0] == pattern:
+            return f"preserved existing {pattern.decode()} entry"
+
+    separator = b"" if not content or content.endswith((b"\n", b"\r")) else b"\n"
+    attributes_path.write_bytes(content + separator + f"{UNION_MERGE_ENTRY}\n".encode())
+    return f"appended {UNION_MERGE_ENTRY} to .gitattributes"
+
+
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -158,12 +185,14 @@ def main() -> None:
 
     created, skipped = copy_templates(project_root, args.force, args.language)
     ignore_outcome = ensure_runtime_ignore_entry(project_root)
+    merge_outcome = ensure_union_merge_entry(project_root)
 
     print(f"Stage root: {project_root / '.stage'}")
     print(f"Language: {args.language}")
     print(f"Created or updated files: {len(created)}")
     print(f"Preserved existing files: {len(skipped)}")
     print(f"Runtime ignore entry: {ignore_outcome}")
+    print(f"Archive index merge entry: {merge_outcome}")
     for path in created:
         print(f"  write {path.relative_to(project_root)}")
     for path in skipped:

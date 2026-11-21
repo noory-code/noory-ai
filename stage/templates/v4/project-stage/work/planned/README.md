@@ -12,7 +12,8 @@ here, moves as one directory to `work/current/` when work starts, and rests in
   `_story.md` and action cards. An action cannot live directly in this directory.
 - Card ids are allocated from the same `W-*` counter as current work; an id never appears in two
   lifecycle locations at once.
-- `index.md` never duplicates card content; it holds only order, status, and links.
+- No index file lists these cards: the planned view is derived from each card's `status` and
+  `priority`.
 - The directory path is the only hierarchy fact; work frontmatter has no `parent` field.
 - Planned statuses: `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected`. Starting
   work is a MOVE of the top-level directory, not a status edit here.

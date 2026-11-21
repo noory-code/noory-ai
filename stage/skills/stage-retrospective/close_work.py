@@ -23,8 +23,8 @@ Usage:
         [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600] [--archive]
 
 `--archive` archives the closed top-level item in the same command. Without it the
-item waits in `review.md`, which the drivers rely on: their landing step commits the
-closed card from `work/current/`.
+completed card waits in `work/current/`, which the drivers rely on: their landing
+step commits the closed card from there.
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ from pathlib import Path
 # insert is safe and side-effect-free.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import record_path  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
@@ -686,39 +686,6 @@ def clip(output: str) -> str:
     return prefix + text
 
 
-def drop_row(text: str, item_id: str, item_link: str | None = None) -> str:
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    kept = [
-        line
-        for line in text.splitlines()
-        if not re.search(rf"\({re.escape(link)}\)", line)
-    ]
-    return "\n".join(kept) + ("\n" if text.endswith("\n") else "")
-
-
-def ensure_review_row(
-    review_path: Path,
-    item_id: str,
-    verification: str,
-    retrospective: str,
-    promotion: str,
-    item_link: str | None = None,
-) -> None:
-    # Index membership is eventually-consistent: this read-modify-write can lose a
-    # row if two windows update the index at once. The id allocation is the atomic
-    # part; a dropped index row is self-detected by the audit (INDEX003) and
-    # repaired by a re-run (which reconciles rather than duplicates).
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    row = (
-        f"| {item_id} | {verification} | {retrospective} | {promotion} | "
-        f"[{link}]({link}) |"
-    )
-    text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
-    if re.search(rf"\({re.escape(link)}\)", text):
-        return
-    review_path.write_text(f"{text.rstrip(chr(10))}\n{row}\n", encoding="utf-8")
-
-
 def archive_closed_item(stage_root: Path, item_id: str) -> str:
     """Archive one closed top-level item; the result line contains ERROR on failure."""
 
@@ -914,30 +881,21 @@ def main() -> int:
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         current_root = paths.current_cards
-        active_relative = paths.active_index
-        review_relative = paths.review_index
         current_retro_root = paths.current_retrospectives
         archive_retro_root = paths.archive_retrospectives
     else:
         current_root = Path("present", "work", "items").as_posix()
-        active_relative = Path("present", "work", "active.md").as_posix()
-        review_relative = Path("present", "work", "review.md").as_posix()
         current_retro_root = Path("present", "work", "retrospectives").as_posix()
         archive_retro_root = Path(
             "past", "work", "archive", "retrospectives"
         ).as_posix()
     item_path = record_path(stage_root / current_root, args.item)
-    active_path = stage_root / active_relative
-    review_path = stage_root / review_relative
     if not item_path.exists():
         if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
             print(f"{args.item}: no current item file at {item_path}", file=sys.stderr)
         else:
             print(f"{args.item}: no present item file at {item_path}", file=sys.stderr)
         return 2
-    item_relative = item_path.relative_to(stage_root).as_posix()
-    active_item_link = relative_record_link(active_relative, item_relative)
-    review_item_link = relative_record_link(review_relative, item_relative)
 
     text = item_path.read_text(encoding="utf-8")
     work_item = item_from_fields(
@@ -1000,30 +958,14 @@ def main() -> int:
         print(f"{args.item}: {index_error}; work item unchanged", file=sys.stderr)
         return 1
 
-    # Reconcile a re-run: an already-completed item must sit in review.md, not active.md.
+    # A re-run on a completed card refreshes the derived decision index only:
+    # the work views are derived from card status (DE-00000091).
     if status == "completed":
-        item_path.write_text(text, encoding="utf-8")
-        active_path.write_text(
-            drop_row(
-                active_path.read_text(encoding="utf-8"),
-                args.item,
-                active_item_link,
-            ),
-            encoding="utf-8",
-        ) if active_path.exists() else None
-        ensure_review_row(
-            review_path,
-            args.item,
-            field(text, "verification"),
-            field(text, "retrospective"),
-            field(text, "promotion"),
-            review_item_link,
-        )
         index_error = refresh_and_audit_decision_index(stage_root.parent)
         if index_error:
             print(f"{args.item}: {index_error}", file=sys.stderr)
             return 1
-        print(f"{args.item}: already completed; index reconciled")
+        print(f"{args.item}: already completed; decision index refreshed")
         if args.archive:
             return archive_after_close(stage_root, args.item)
         return 0
@@ -1294,24 +1236,6 @@ def main() -> int:
         return 1
     item_path.write_text(updated, encoding="utf-8")
 
-    # Index last, derived from the new status, so a re-run always converges.
-    if active_path.exists():
-        active_path.write_text(
-            drop_row(
-                active_path.read_text(encoding="utf-8"),
-                args.item,
-                active_item_link,
-            ),
-            encoding="utf-8",
-        )
-    ensure_review_row(
-        review_path,
-        args.item,
-        "passed",
-        "completed",
-        promotion,
-        review_item_link,
-    )
     index_error = refresh_and_audit_decision_index(stage_root.parent)
     if index_error:
         print(f"{args.item}: {index_error}", file=sys.stderr)

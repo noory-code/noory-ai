@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold a Stage work item and its active.md index row.
+"""Scaffold a Stage work item card.
 
 The human plans and confirms scope; this turns that decision into the files so
 the enum/index bookkeeping manual edits get wrong is done once, correctly.
@@ -9,7 +9,7 @@ gate — the value is correctness, not gate-bypass.
 Usage:
     register_work.py --project-root . --title "..." --kind feature \
         --scope "stage/skills, stage/scripts" --scale story \
-        [--parent W-00000007] [--venue claude] [--owner Claude] \
+        [--parent W-00000007] [--venue claude] \
         --purpose "..." --success-criterion "..." [--id W-00000008]
 """
 
@@ -24,7 +24,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import (  # noqa: E402
     milestone_record_roots,
-    relative_record_link,
     v4_lifecycle_paths,
 )
 from stage_record_paths import (  # noqa: E402
@@ -267,67 +266,6 @@ def fill_item(
     return as_maintenance_card(text) if maintenance else text
 
 
-def active_row(
-    item_id: str,
-    kind: str,
-    venue: str,
-    purpose: str,
-    owner: str,
-    item_link: str | None = None,
-) -> str:
-    # Link form is required: audit_stage matches items via the [..](items/<id>.md) link, not a bare id.
-    summary = (purpose.splitlines()[0] if purpose else "").strip()[:60]
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    return f"| {item_id} | {kind} | {venue} | {summary} | active | {owner} | [{link}]({link}) |"
-
-
-def insert_table_row(text: str, row: str) -> str:
-    """Insert a row after the final data row in the first Markdown table."""
-    lines = text.splitlines()
-    separator_index = next(
-        (
-            index
-            for index, line in enumerate(lines[1:], start=1)
-            if line.lstrip().startswith("|")
-            and lines[index - 1].lstrip().startswith("|")
-            and all(
-                re.fullmatch(r":?-{3,}:?", cell.strip())
-                for cell in line.strip().strip("|").split("|")
-            )
-        ),
-        None,
-    )
-    if separator_index is None:
-        body = text.rstrip("\n")
-        return f"{body}\n{row}\n" if body else f"{row}\n"
-
-    insertion_index = separator_index + 1
-    while insertion_index < len(lines) and lines[insertion_index].lstrip().startswith("|"):
-        insertion_index += 1
-    lines.insert(insertion_index, row)
-    return "\n".join(lines) + "\n"
-
-
-def ensure_active_row(
-    active_path: Path,
-    item_id: str,
-    row: str,
-    item_link: str | None = None,
-) -> None:
-    """Insert the row if the item is not already indexed. Re-run reconciles:
-    it never duplicates and never rewrites an existing row.
-
-    Index membership is eventually-consistent: this read-modify-write can lose a
-    row if two windows register at once. The id allocation (O_EXCL) is the atomic
-    part; a dropped row is self-detected by the audit (INDEX003) and repaired by a
-    re-run."""
-    text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    if re.search(rf"\({re.escape(link)}\)", text):
-        return
-    active_path.write_text(insert_table_row(text, row), encoding="utf-8")
-
-
 def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
     """Allocate the next free id with O_EXCL so two concurrent windows never
     take the same number. On a race (file appeared between scan and create),
@@ -352,41 +290,12 @@ _BACKLOG_TEMPLATE = (
 )
 
 
-def backlog_row(
-    item_id: str,
-    title: str,
-    kind: str,
-    priority: str,
-    item_link: str | None = None,
-) -> str:
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    return (
-        f"| {item_id} | {title} | {kind} | captured | {priority} |  | "
-        f"[{link}]({link}) |"
-    )
-
-
-def ensure_backlog_row(
-    index_path: Path,
-    item_id: str,
-    row: str,
-    item_link: str | None = None,
-) -> None:
-    text = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
-    link = item_link or record_path(Path("items"), item_id).as_posix()
-    if re.search(rf"\({re.escape(link)}\)", text):
-        return
-    index_path.write_text(insert_table_row(text, row), encoding="utf-8")
-
-
 def register_backlog_card(stage_root: Path, args) -> int:
     paths = None
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         paths = v4_lifecycle_paths()
         backlog_relative = paths.planned_cards
-        index_relative = paths.planned_index
         backlog_dir = stage_root / backlog_relative
-        index_path = stage_root / index_relative
         template_path = (
             hierarchy_template(paths, "planned", args.scale)
             if args.scale
@@ -394,9 +303,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
         )
     else:
         backlog_relative = Path("future", "backlog", "items").as_posix()
-        index_relative = Path("future", "backlog", "index.md").as_posix()
         backlog_dir = stage_root / "future" / "backlog" / "items"
-        index_path = stage_root / "future" / "backlog" / "index.md"
         template_path = _BACKLOG_TEMPLATE
     if not backlog_dir.exists():
         print(f"Stage backlog dir not found: {backlog_dir}", file=sys.stderr)
@@ -477,15 +384,6 @@ def register_backlog_card(stage_root: Path, args) -> int:
     else:
         item_id = create_item_atomic(backlog_dir, numbers, content_for)
         item_path = record_path(backlog_dir, item_id)
-    item_link = relative_record_link(
-        index_relative, item_path.relative_to(stage_root).as_posix()
-    )
-    ensure_backlog_row(
-        index_path,
-        item_id,
-        backlog_row(item_id, args.title, args.kind, args.priority, item_link),
-        item_link,
-    )
     print(f"{item_id}: captured (planned card in {backlog_relative})")
     return 0
 
@@ -576,7 +474,7 @@ def main() -> int:
     if milestone_result is not None:
         return milestone_result
 
-    parser = argparse.ArgumentParser(description="Scaffold a Stage work item + active.md row.")
+    parser = argparse.ArgumentParser(description="Scaffold a Stage work item card.")
     parser.add_argument("--project-root", default=".")
     parser.add_argument("--title", required=True)
     parser.add_argument("--kind", required=True)
@@ -598,7 +496,6 @@ def main() -> int:
         help="Existing epic parent for a story or story parent for an action.",
     )
     parser.add_argument("--venue", default="")
-    parser.add_argument("--owner", default="Claude")
     parser.add_argument("--purpose", default="")
     parser.add_argument(
         "--success-criterion",
@@ -758,18 +655,14 @@ def main() -> int:
         hierarchy_paths = paths
         planned_relative = paths.planned_cards
         items_relative = paths.current_cards
-        active_relative = paths.active_index
         archive_relative = paths.archive_cards
         items_dir = stage_root / items_relative
-        active_path = stage_root / active_relative
         template_path = hierarchy_template(paths, "current", args.scale)
     else:
         planned_relative = ""
         items_relative = Path("present", "work", "items").as_posix()
-        active_relative = Path("present", "work", "active.md").as_posix()
         archive_relative = Path("past", "work", "archive", "items").as_posix()
         items_dir = stage_root / "present" / "work" / "items"
-        active_path = stage_root / "present" / "work" / "active.md"
         template_path = _TEMPLATE
 
     # A planned card (DE-00000007) is captured, not started: it waits in
@@ -886,23 +779,6 @@ def main() -> int:
             return record_path(items_dir, item_id)
         return hierarchy_item_path(items_dir, item_id, args.scale, parent_path)
 
-    def item_link_for(item_id: str) -> str:
-        item_path = item_path_for(item_id)
-        return relative_record_link(
-            active_relative, item_path.relative_to(stage_root).as_posix()
-        )
-
-    def row_for(item_id: str) -> str:
-        item_link = item_link_for(item_id)
-        return active_row(
-            item_id,
-            args.kind,
-            args.venue,
-            args.purpose,
-            args.owner,
-            item_link,
-        )
-
     if args.id:
         if not ID_RE.match(args.id):
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
@@ -921,11 +797,8 @@ def main() -> int:
             print(f"{args.id}: refusing — id already used by an archived item", file=sys.stderr)
             return 1
         if item_path.exists():
-            # Re-run reconciles the index rather than overwriting authored content.
-            ensure_active_row(
-                active_path, args.id, row_for(args.id), item_link_for(args.id)
-            )
-            print(f"{args.id}: already exists; index reconciled")
+            # A re-run never overwrites authored content.
+            print(f"{args.id}: already exists")
             return 0
         other_branches = branch_record_numbers(stage_root.parent, "W").get(
             int(args.id[2:]), set()
@@ -943,10 +816,7 @@ def main() -> int:
             with open(desired_path, "x", encoding="utf-8") as handle:
                 handle.write(content_for(args.id))
         except FileExistsError:
-            ensure_active_row(
-                active_path, args.id, row_for(args.id), item_link_for(args.id)
-            )
-            print(f"{args.id}: already exists; index reconciled")
+            print(f"{args.id}: already exists")
             return 0
         item_id = args.id
     else:
@@ -963,7 +833,6 @@ def main() -> int:
                 content_for,
             )
 
-    ensure_active_row(active_path, item_id, row_for(item_id), item_link_for(item_id))
     if args.review:
         command, _err = resolve_review_command(load_review_config(stage_root), "implementation")
         if not command:

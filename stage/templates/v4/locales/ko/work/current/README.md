@@ -9,7 +9,7 @@
 
 - 폴더 위치가 유일한 계층 사실이며 작업 frontmatter에는 `parent` 필드가 없다.
 - 최상위 에픽 또는 독립 스토리 하나가 수명주기 위치 사이를 통째로 이동한다.
-- `work/active.md`와 `work/review.md`는 현재 뷰이며 본문을 절대 중복하지 않는다.
+- 이 카드들을 다시 적는 목록 파일은 없다. 진행 중 뷰와 리뷰 뷰는 각 카드의 `status`에서 만든다.
 - 작업이 완료 후보가 되면 그 검증, 회고, 승격 결정을 링크한다.
 - 훅은 각 작업 파일의 frontmatter를 상태 SSOT로 사용한다.
 - 작업이 더 이상 현재 흐름에 속하지 않으면 `status: archived`로 설정하고 `official/work/archive/items/`로 이동한다.

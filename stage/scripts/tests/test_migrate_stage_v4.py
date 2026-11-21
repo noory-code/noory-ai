@@ -235,9 +235,27 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertEqual(5, settings["schema_version"])
             self.assertEqual(
                 [],
-                [finding for finding in findings if finding.code != "TEMPLATE004"],
+                [
+                    finding
+                    for finding in findings
+                    if finding.code not in {"TEMPLATE004", "INDEX007"}
+                ],
             )
             self.assertIn("TEMPLATE004", {finding.code for finding in findings})
+            # The migration carries the v3 work lists over; the audit names each one
+            # for deletion because their views are now derived from card status.
+            self.assertEqual(
+                {
+                    ("warning", ".stage/work/active.md"),
+                    ("warning", ".stage/work/review.md"),
+                    ("warning", ".stage/work/planned/index.md"),
+                },
+                {
+                    (finding.severity, finding.path)
+                    for finding in findings
+                    if finding.code == "INDEX007"
+                },
+            )
             self.assertIn("R100", staged)
             self.assertIn("does not commit", output.lower())
             self.assertIn("journal was removed", output)

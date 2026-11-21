@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Stop keeping work lists that two sessions edit at once (DE-00000091). `work/active.md`,
+  `work/review.md`, and `work/planned/index.md` restated each card's `status`, so two branches
+  that each registered, closed, or archived a card conflicted on them, and a union merge would
+  bring closed cards back. Registering, starting, escalating, closing, and archiving no longer
+  write them; the session-start "Active work" and "Review candidates" sections and
+  `archive_work.py --all-completed` read card status instead. New projects get no such files.
+  A project that still has them sees audit warning INDEX007 naming each file to delete; the
+  INDEX001-INDEX006 and BACKLOG008/BACKLOG009 checks that compared the lists with the cards no
+  longer run on schema-v5 projects, and the completion gate no longer blocks on a list row
+  without a card there. `register_work.py` and `start_work.py` drop `--owner`, which only
+  filled a list column.
+- Merge the append-only official archive indexes with `merge=union`. `init_stage.py` now adds
+  `.stage/official/**/archive/index.md merge=union` to the project's `.gitattributes` (creating it
+  when absent), so two branches that each archive a record keep both rows. Re-run `init_stage.py`
+  in an existing project to add the line; it preserves every existing file.
 - Split the Stage CI suites into three jobs per OS and Python. The Windows scripts suite took
   about nine minutes in one job and held every pull request for ten; `.github/scripts/unittest_shard.py`
   now deals the sorted tests round-robin to each shard, and a test fails when the matrix drops

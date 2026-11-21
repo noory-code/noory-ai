@@ -55,8 +55,6 @@ class LandRunTest(unittest.TestCase):
         (main / ".gitignore").write_text(".stage/.runtime/\n", encoding="utf-8")
         (main / ".stage/work/current" / self.target).mkdir(parents=True)
         (main / ".stage/work/retrospectives").mkdir(parents=True)
-        (main / ".stage/work/active.md").write_text("active\n", encoding="utf-8")
-        (main / ".stage/work/review.md").write_text("review\n", encoding="utf-8")
         (main / ".stage/settings.json").write_text(
             '{"schema_version": 5, "governance": {"exclude_paths": []}}\n',
             encoding="utf-8",
@@ -137,13 +135,10 @@ class LandRunTest(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def finish_run(self, run: Path, *, indexes: bool = True) -> None:
+    def finish_run(self, run: Path) -> None:
         self.write_card(run, status="completed")
         self.write_retrospective(run)
         (run / "src.txt").write_text("after\n", encoding="utf-8")
-        if indexes:
-            (run / ".stage/work/active.md").write_text("closed\n", encoding="utf-8")
-            (run / ".stage/work/review.md").write_text("candidate\n", encoding="utf-8")
         log = run / ".stage/.runtime/driver/logs" / f"{self.target}.md"
         log.parent.mkdir(parents=True)
         log.write_text("run evidence\n", encoding="utf-8")
@@ -228,14 +223,6 @@ class LandRunTest(unittest.TestCase):
         self.assertEqual((status, stderr), (0, ""))
         self.assertNotIn("Project rules under .stage/operations/ changed; read them again:", stdout)
 
-    def test_accepts_terminal_run_without_index_changes(self):
-        main, run = self.make_repository()
-        self.finish_run(run, indexes=False)
-
-        status, _, stderr = self.run_main(main, run)
-
-        self.assertEqual((status, stderr), (0, ""))
-
     def test_accepts_rejected_run_with_retrospective(self):
         main, run = self.make_repository()
         self.finish_run(run)
@@ -310,8 +297,6 @@ class LandRunTest(unittest.TestCase):
         )
         self.write_retrospective(run)
         (run / "src.txt").write_text("after\n", encoding="utf-8")
-        (run / ".stage/work/active.md").write_text("closed\n", encoding="utf-8")
-        (run / ".stage/work/review.md").write_text("candidate\n", encoding="utf-8")
         log = run / ".stage/.runtime/driver/logs" / f"{self.target}.md"
         log.parent.mkdir(parents=True)
         log.write_text("run evidence\n", encoding="utf-8")
@@ -322,32 +307,6 @@ class LandRunTest(unittest.TestCase):
         self.assertTrue(main.joinpath(target_path.relative_to(run)).is_file())
         self.assertTrue(main.joinpath(parent_dir.relative_to(run), "_story.md").is_file())
         self.assertTrue(main.joinpath(".stage/work/retrospectives/R-00000002.md").is_file())
-
-    def test_uses_registry_derived_index_paths(self):
-        main, run = self.make_repository()
-        self.finish_run(run, indexes=False)
-        custom_active = run / ".stage/work/custom-active.md"
-        custom_review = run / ".stage/work/custom-review.md"
-        custom_active.write_text("closed\n", encoding="utf-8")
-        custom_review.write_text("candidate\n", encoding="utf-8")
-        module = load_module()
-        actual = module.v4_lifecycle_paths()
-        derived = type(actual)(
-            **{
-                **actual.__dict__,
-                "active_index": "work/custom-active.md",
-                "review_index": "work/custom-review.md",
-            }
-        )
-
-        with mock.patch.object(module, "v4_lifecycle_paths", return_value=derived):
-            status = module.main(
-                ["--project-root", str(main), "--worktree", str(run), self.target]
-            )
-
-        self.assertEqual(status, 0)
-        self.assertTrue(main.joinpath(".stage/work/custom-active.md").is_file())
-        self.assertTrue(main.joinpath(".stage/work/custom-review.md").is_file())
 
     def test_rejects_stage_official_change_before_main_branch_changes(self):
         main, run = self.make_repository()

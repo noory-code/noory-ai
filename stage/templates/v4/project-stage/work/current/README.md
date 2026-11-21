@@ -9,7 +9,7 @@ An epic directory contains `_epic.md` plus story directories. A story directory 
 
 - Folder placement is the only hierarchy fact; work frontmatter has no `parent` field.
 - One top-level epic or independent story moves through lifecycle locations as a whole.
-- `work/active.md` and `work/review.md` are current views and never duplicate bodies.
+- No list file restates these cards: the active and review views are derived from each card's `status`.
 - When work becomes a completion candidate, link its verification, retrospective, and promotion decision.
 - Hooks use each work file's frontmatter as the status SSOT.
 - When work no longer belongs to the current flow, set `status: archived` and move it to `official/work/archive/items/`.

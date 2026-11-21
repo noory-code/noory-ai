@@ -69,7 +69,8 @@ well as guidance and can destroy project data.
   and preserving project items in template-empty table or list containers.
 - Work item frontmatter enum violations.
 - Completed work with open verification, retrospective, or promotion decision.
-- Mismatches between `active.md`, `review.md`, and `items/`.
+- Retired work list files (`work/active.md`, `work/review.md`, `work/planned/index.md`) left by an
+  earlier Stage version (INDEX007, a warning): the views are derived from card status, so delete them.
 - Work item hierarchy: invalid epic/story/action placement, cycles, and open records placed under
   finalized hierarchy locations. Placement findings name the missing/invalid location rather
   than suggesting that operators repair a `parent` field.

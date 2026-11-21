@@ -125,13 +125,6 @@ class SchemaV5MigrationTest(unittest.TestCase):
             .replace("promotion: not_applicable", "promotion: pending", 1),
             encoding="utf-8",
         )
-        active = stage_root / "work/active.md"
-        active.write_text(
-            active.read_text(encoding="utf-8")
-            + "| W-00000003 | fix | codex | Fixture | active | codex | "
-            "[item](current/W-00000003.md) |\n",
-            encoding="utf-8",
-        )
         return temporary, project_root, stage_root
 
     def test_flat_cards_become_one_shape_and_cross_lifecycle_children_rejoin_parent(self):

@@ -70,6 +70,10 @@ PROMOTION_VALUES = PROMOTION_FINAL | {"pending"}
 # not_required) completes without any review. Declaring `review: pending` opts
 # THAT item in — it then cannot complete until `review: passed`. Same shape as
 # verification, but bypassed by default.
+# Card statuses each derived work view shows (DE-00000091): the session-start
+# "Active work" and "Review candidates" sections read these instead of list files.
+ACTIVE_VIEW_STATUSES = ("active", "blocked")
+REVIEW_VIEW_STATUSES = ("review", "completed", "rejected")
 REVIEW_DONE = {"passed", "not_required"}
 REVIEW_VALUES = REVIEW_DONE | {"pending"}
 _WORK_ENUM_FIELDS = (
@@ -561,13 +565,13 @@ def environment_venue_error(
 
 
 def fallback_index_blockers(stage_root: Path) -> list[str]:
+    # The current topology keeps no work list files: the active and review views
+    # are derived from card status (DE-00000091), so no list row can outlive its
+    # card. Only a legacy v3 tree can still hold rows without cards.
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        active_path, review_path = stage_topology.get_zone("work", "current").index_surfaces
-        active = parse_index_rows(stage_root / active_path)
-        review = parse_index_rows(stage_root / review_path)
-    else:
-        active = parse_index_rows(stage_root / "present" / "work" / "active.md")
-        review = parse_index_rows(stage_root / "present" / "work" / "review.md")
+        return []
+    active = parse_index_rows(stage_root / "present" / "work" / "active.md")
+    review = parse_index_rows(stage_root / "present" / "work" / "review.md")
     blockers: list[str] = []
     if active:
         blockers.append("Work item SSOT is missing: move active.md rows into items/*.md")

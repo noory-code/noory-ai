@@ -32,11 +32,10 @@ project harness).
 │   ├── decisions/records/      official decision records
 │   └── work/archive/           archived items/ and retrospectives/
 ├── work/
-│   ├── planned/                planned W cards + backlog index (was future/backlog/items)
+│   ├── planned/                planned W cards (was future/backlog/items)
 │   ├── current/                open W cards: active, blocked, review, completed, rejected
 │   ├── retrospectives/         current-cycle retrospectives
 │   ├── views/                  auxiliary views (was future/backlog/views)
-│   ├── active.md  review.md    phase index surfaces (kept separate; no unified board file)
 ├── decisions/
 │   ├── pending/                DE records under consideration
 │   └── index.md                pending index
@@ -210,7 +209,8 @@ coupled transition:
   `official/decisions/records/`;
 - create an open record from `decisions/pending/_template.md`, append its identity to the work
   item's `decision_refs`, and regenerate `decisions/index.md` from the pending records;
-- keep the blocked item in `work/active.md` and remove any stale row from `work/review.md`.
+- write no work list row: the active and review views are derived from card status
+  (DE-00000091), so the blocked card appears in the active view.
 
 `blocked` remains an open work status. A limit hit or stuck execution loop must use this
 transition: the result is `blocked` plus a pending decision, never `completed`. Attempt counting,

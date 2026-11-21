@@ -121,8 +121,8 @@ as JSON to `STAGE_REVIEW_VERDICT_FILE`, and `close_work` refuses to close unless
 zero and that file approves — a missing, malformed, or non-approving verdict blocks the close no
 matter what the command printed.
 
-For hierarchical records, `close_work` resolves the record by frontmatter ID and writes the exact
-nested link into `work/review.md`; do not substitute a flat `<id>.md` path.
+For hierarchical records, `close_work` resolves the record by frontmatter ID. It writes no work list
+file: the session-start Review candidates view is derived from the card's `status`.
 
 ### Close and archive in one command
 
@@ -135,11 +135,11 @@ commit at `HEAD`, and the archiver refuses while a path inside the item's scope 
 |---|---|
 | A check or the review fails | Nothing is closed and nothing is archived. |
 | The item sits under an epic or a story | `--archive` is refused before any check runs. Close it without the flag; it is archived with its top-level item. |
-| The close succeeds and archiving fails | The command exits non-zero, names the cause, and leaves the item completed in `work/review.md`. Fix the cause, then run `archive_work.py` or rerun the same command. |
-| The item is already completed | Rerunning with `--archive` reconciles the index and archives it. |
+| The close succeeds and archiving fails | The command exits non-zero, names the cause, and leaves the item completed in `work/current/`. Fix the cause, then run `archive_work.py` or rerun the same command. |
+| The item is already completed | Rerunning with `--archive` refreshes the decision index and archives it. |
 
 The drivers close without `--archive`: their landing step commits the closed card from
-`work/current/`, so a driver-run item still waits in `work/review.md` until it is archived.
+`work/current/`, so a driver-run item still waits there, completed, until it is archived.
 
 When the work ran where the shared work log does not exist (for example a cloud session that wrote its
 `### Executor report` in the commit body), import the report before closing, so `close_work` can copy
