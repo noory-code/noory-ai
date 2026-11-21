@@ -1,9 +1,145 @@
-# Stage Mermaid 설계도
+# Stage 도면
 
-이 문서는 Stage 설계도를 Mermaid 차트 중심으로 정리한다. 무엇을 위한 물건인지는
-[PHILOSOPHY.md](PHILOSOPHY.md)가 소유한다.
+이 문서는 Stage 가 어떤 층으로 이루어져 있는지를 소유한다. Stage 의 코드를 고치기 전에 이 문서를 먼저 읽는다.
 
-## 1. 전체 지도
+도면은 네 층이다. 위 두 층과 코드가 말해 주지 않는 것은 이 문서에 직접 적는다. 아래 두 층은 그 내용을 가진
+문서와 코드로 가는 링크만 둔다.
+
+| 층 | 무엇을 말하는가 | 어디에 있는가 |
+|---|---|---|
+| 목표 | Stage 가 무엇을 위한 물건인가 | [목표](#목표) |
+| 레이어 | 코드가 어떤 책임으로 나뉘는가 | [레이어](#레이어) |
+| 컴포넌트 | 레이어마다 어떤 파일이 있는가 | [컴포넌트로 가는 길](#컴포넌트로-가는-길) |
+| 컴포넌트 설계 | 각 파일이 왜 그렇게 동작하는가 | 결정 기록과 코드 |
+
+## 목표
+
+실행은 자유롭게 두고 목적은 엄격하게 지킨다. Stage 는 일하는 방법을 정하지 않는다. 일이 목적에 매달려 있는지,
+그 목적에 닿았는지를 만든 쪽이 아닌 쪽이 판정하는지만 지킨다.
+
+목표의 본문은 [PHILOSOPHY.md](PHILOSOPHY.md)가 소유한다. 이 문서는 그 목표를 다시 적지 않는다.
+
+## 레이어
+
+Stage 의 코드는 일곱 레이어로 나뉜다. 각 레이어는 한 가지 질문에 답한다.
+
+| 레이어 | 답하는 질문 | 코드 | 계약을 가진 문서 |
+|---|---|---|---|
+| 기록 | 무엇을 어디에 적는가 | `templates/`, 프로젝트의 `.stage/` | [SCHEMA_V5.md](SCHEMA_V5.md), [artifacts.md](../operations/artifacts.md) |
+| 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
+| 관문 | 지금 이 쓰기와 커밋을 허용하는가 | `hooks/hooks.json`, `hooks/stage_guard.py`, `hooks/stage_shell.py`, `hooks/stage_git.py`, `hooks/stage_runtime.py`, `hooks/stage_context.py`, `hooks/stage_roadmap_gate.py`, `hooks/stage_agent_tier.py` | [hooks/README.md](../hooks/README.md) |
+| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
+| 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
+| 드라이버 | 등록된 일을 사람 대신 누가 실행하는가 | `scripts/drive.py`, `scripts/drive_parallel.py`, `scripts/driver_*.py`, `scripts/land_run.py`, `scripts/import_executor_report.py` | `skills/stage-drive/SKILL.md` |
+| 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
+
+검증과 점검은 다른 레이어다. 검증은 카드 한 장의 결과를 보고 그 일이 목적에 닿았는지 판정한다. 점검은 기록
+전체를 읽고 형식과 연결이 계약대로인지 본다. 점검을 통과한 카드가 목적에 닿지 않았을 수 있고, 그 반대도 있다.
+
+레이어는 책임을 나눈 것이다. 가져다 쓰는 방향을 한쪽으로 묶은 것은 아니다. 굵은 흐름은 아래 그림과 같다.
+모든 레이어가 경로와 규칙을 가져다 쓰고, 드라이버는 검증을 거쳐 카드를 닫고, 검증은 닫기 전에 점검을 실행한다.
+
+```mermaid
+flowchart TD
+  driver["드라이버"]
+  verify["검증"]
+  audit["점검"]
+  procedure["절차"]
+  gate["관문"]
+  rules["경로와 규칙"]
+  records["기록"]
+
+  driver --> verify
+  verify --> audit
+  driver --> rules
+  verify --> rules
+  audit --> rules
+  procedure --> rules
+  gate --> rules
+  rules --> records
+```
+
+그림에 없는 방향으로 가져다 쓰는 곳은 아래와 같다.
+
+| 가져다 쓰는 쪽 | 가져오는 모듈 |
+|---|---|
+| 검증 `close_work.py` | 드라이버 `driver_repository.py`, `driver_environment.py`, `driver_lifecycle.py` |
+| 검증 `close_work.py` | 절차 `archive_work.py` |
+| 점검 `audit_stage.py`, `stage_records.py` | 관문 `stage_guard.py` |
+| 점검 `audit_stage.py` | 절차 `close_record.py` |
+| 드라이버 `land_run.py` | 점검 `stage_records.py` |
+| 절차 `archive_work.py` | 관문 `stage_runtime.py` |
+| 절차 `handoff_packet.py` | 드라이버 `driver_subtree.py` |
+| 경로와 규칙 `stage_work.py` | 관문 `stage_git.py` |
+
+## 코드가 말해 주지 않는 것
+
+### 공용 모듈은 `hooks/` 에 있다
+
+경로와 규칙 레이어의 모듈 대부분이 `hooks/` 에 있고, `scripts/` 와 `skills/` 의 스크립트가 `sys.path` 에
+`hooks/` 를 넣어 가져다 쓴다. 반대 방향은 없다. `hooks/` 의 모듈은 `scripts/` 와 `skills/` 의 코드를 가져다
+쓰지 않는다.
+
+이유는 관문이 혼자 실행되어야 하기 때문이다. 호스트는 도구를 부를 때마다 `hooks/stage_guard.py` 를 직접
+실행한다. 그래서 관문이 쓰는 규칙은 `hooks/` 안에서 표준 라이브러리만으로 닫혀 있어야 한다. 같은 규칙을
+스크립트도 써야 하므로, 규칙을 두 번 적지 않고 관문 옆의 정의를 스크립트가 가져다 쓴다.
+
+이 모듈들은 `stage_guard.py` 한 파일을 책임별로 나누면서 생겼고, 나눈 자리에 그대로 있다. 나눈 기록은
+[IMPLEMENTATION_AUDIT.md](IMPLEMENTATION_AUDIT.md)의 P33 이다. 공용 모듈을 `hooks/` 밖의 다른 폴더로
+옮길지를 정한 결정 기록은 없다.
+
+스크립트만 쓰는 규칙은 `scripts/` 에 있다(`lifecycle_paths.py`, `stage_record_ids.py`).
+
+### `close_work.py` 와 드라이버는 서로를 가져다 쓴다
+
+카드를 닫는 일은 `close_work.py` 한 곳이 소유한다. 드라이버는 카드의 상태를 직접 고치지 않고 `close_work.py`
+를 실행해서 닫는다. 그래서 드라이버의 모듈들이 `close_work.py` 에서 작업 로그, 리뷰 판정, 검사 실행 함수를
+가져다 쓴다. 여기까지는 위 그림과 같은 방향이다.
+
+반대 방향이 세 군데 있다. `close_work.py` 가 드라이버 쪽 모듈에서 아래 셋을 가져다 쓴다.
+
+| `close_work.py` 가 가져다 쓰는 것 | 있는 곳 | 쓰는 이유 |
+|---|---|---|
+| 저장소의 변경 경로 스냅샷 | `scripts/driver_repository.py` | 리뷰 명령이 판정 파일 말고 다른 파일을 고쳤는지 리뷰 앞뒤로 비교한다. |
+| 카드 등급의 모델과 노력 환경 변수 | `scripts/driver_environment.py` | 닫을 때의 리뷰에 리뷰어 쪽 등급의 값을 넘긴다. |
+| 회고 번호 예약 | `scripts/driver_lifecycle.py` | 회고 번호를 세지 않고 카드 번호에서 얻는다. |
+
+셋 모두 드라이버 쪽에 있는 도구를 `close_work.py` 가 다시 만들지 않고 쓰는 것이다. 앞의 두 모듈은
+`close_work.py` 를 가져다 쓰지 않고, `close_work.py` 는 둘을 파일 맨 위에서 가져온다. `driver_lifecycle.py` 는
+`close_work.py` 를 가져다 쓰고, `close_work.py` 는 회고 번호를 예약하는 함수 안에서만 `driver_lifecycle.py` 를
+가져온다.
+
+세 도구를 드라이버 밖의 공용 모듈로 옮길지를 정한 결정 기록은 없다.
+
+### 스크립트는 두 폴더에 있다
+
+스킬 하나의 절차만 실행하는 스크립트는 그 스킬 폴더에 있다(`skills/stage-work/register_work.py`,
+`skills/stage-retrospective/close_work.py`, `skills/stage-archive/archive_work.py`,
+`skills/stage-roadmap/manage_roadmap.py`). 여러 절차가 함께 쓰는 스크립트는 `scripts/` 에 있다. 스킬 폴더의
+스크립트도 `scripts/` 와 `hooks/` 를 `sys.path` 에 넣어 가져다 쓴다.
+
+`scripts/release_plugin.py` 는 Stage 의 레이어에 들지 않는다. 이 저장소의 플러그인을 릴리스하는 도구다.
+
+### Stage 의 코드는 표준 라이브러리만 쓴다
+
+`hooks/`, `scripts/`, `skills/` 의 코드는 패키지를 설치하지 않고 호스트의 `python3` 로 실행된다. 실행 조건은
+[hooks/README.md](../hooks/README.md)의 Portability 가 소유한다.
+
+## 컴포넌트로 가는 길
+
+| 알고 싶은 것 | 읽을 곳 |
+|---|---|
+| 기록의 종류와 자리 | [artifacts.md](../operations/artifacts.md), 이 문서의 [기록 레이어의 그림](#기록-레이어의-그림) |
+| 일감 계층의 계약 | [SCHEMA_V5.md](SCHEMA_V5.md) |
+| 관문 하나하나가 막는 것 | [hooks/README.md](../hooks/README.md) |
+| 스킬과 명령 | [README.md](../README.md), 각 스킬의 `SKILL.md` |
+| 어떤 동작을 왜 그렇게 정했는가 | 프로젝트의 `official/decisions/index.md` |
+
+## 기록 레이어의 그림
+
+아래 그림들은 기록 레이어의 구조를 Mermaid 로 그린다.
+
+### 1. 전체 지도
 
 ```mermaid
 mindmap
@@ -33,7 +169,7 @@ mindmap
       operations
 ```
 
-## 2. 큰 시간축
+### 2. 큰 시간축
 
 ```mermaid
 timeline
@@ -49,7 +185,7 @@ timeline
           : 후보 작업
 ```
 
-## 3. 개별 시간축
+### 3. 개별 시간축
 
 ```mermaid
 flowchart LR
@@ -61,7 +197,7 @@ flowchart LR
   Before --> During --> After --> Retrospective
 ```
 
-## 4. 공간축
+### 4. 공간축
 
 ```mermaid
 flowchart TB
@@ -114,7 +250,7 @@ flowchart TB
   Operations --> HookOps["hooks"]
 ```
 
-## 5. 세 축의 결합
+### 5. 세 축의 결합
 
 ```mermaid
 flowchart TB
@@ -171,7 +307,7 @@ flowchart TB
   SOps --> LAfter
 ```
 
-## 6. 작업 항목 상태 전이
+### 6. 작업 항목 상태 전이
 
 작업 항목 상태 enum의 SSOT는 `operations/artifacts.md`다. `work/current/README.md`는 같은 값을 참조한다.
 
@@ -200,7 +336,7 @@ stateDiagram-v2
 
 `archived` 이동은 승격과 다르다. `official/work/archive/` 대상은 archive intent로 보관하며, rejected 작업도 보관할 수 있다.
 
-## 7. 요청 처리 흐름
+### 7. 요청 처리 흐름
 
 ```mermaid
 sequenceDiagram
@@ -225,7 +361,7 @@ sequenceDiagram
   Stage->>Artifact: 공식 승격 또는 재작업
 ```
 
-## 8. 원칙 적용 위치
+### 8. 원칙 적용 위치
 
 ```mermaid
 flowchart LR
@@ -248,7 +384,7 @@ flowchart LR
   Feedback --> Context
 ```
 
-## 9. 의사결정 통제
+### 9. 의사결정 통제
 
 ```mermaid
 flowchart TB
@@ -285,7 +421,7 @@ flowchart TB
   Outcome --> Planned["Planned\n계획 또는 제안"]
 ```
 
-## 10. Stage 하네스의 두 축
+### 10. Stage 하네스의 두 축
 
 ```mermaid
 flowchart LR
@@ -324,7 +460,7 @@ flowchart LR
   HookLayer --> StableExecution
 ```
 
-## 11. 첫 완성 단위
+### 11. 첫 완성 단위
 
 ```mermaid
 flowchart TB
@@ -357,7 +493,7 @@ flowchart TB
   CompletionGate --> ClosedLoop
 ```
 
-## 11-1. 산출물 패밀리 원칙
+### 11-1. 산출물 패밀리 원칙
 
 ```mermaid
 flowchart TB
@@ -378,7 +514,7 @@ flowchart TB
   Rule --> Durable["지속 가능한 문서 구조"]
 ```
 
-## 11-2. 끝난 기록이 사는 자리
+### 11-2. 끝난 기록이 사는 자리
 
 **폴더가 상태다.** 살아 있는 서랍에 있으면 아직 유효하고, 보관함에 있으면 끝났다. 사람이 파일을
 열지 않고 자리만 보고 판단한다. 상태를 말하는 frontmatter 칸은 따로 두지 않는다 — 자리와 칸이
@@ -414,7 +550,7 @@ flowchart LR
 **사람이 손으로 옮기는 길은 없다.** 손으로 옮기는 자리를 남기면 인덱스가 따로 낡는다. 되돌리는
 길도 닫는 명령이 함께 가진다. 기록은 어느 경우에도 안 지운다.
 
-## 12. 완성도와 회고 게이트
+### 12. 완성도와 회고 게이트
 
 ```mermaid
 flowchart TB
@@ -435,7 +571,7 @@ flowchart TB
   Return --> Current["Current\n작업 중 산출물"]
 ```
 
-## 13. 호스트와 플랫폼 독립성
+### 13. 호스트와 플랫폼 독립성
 
 ```mermaid
 flowchart TB
@@ -475,7 +611,7 @@ flowchart TB
 
 호스트 훅 계약(도구명 매핑 · 출력 규칙 · 신뢰 게이트)의 상세 정본은 `hooks/README.md` §Host contract.
 
-## 14. 이식성 게이트
+### 14. 이식성 게이트
 
 ```mermaid
 flowchart LR
@@ -495,7 +631,7 @@ flowchart LR
   Decision -->|실패| Redesign["재설계 또는 호스트별 어댑터로 분리"]
 ```
 
-## 15. 훅 실행 게이트
+### 15. 훅 실행 게이트
 
 ```mermaid
 flowchart TB

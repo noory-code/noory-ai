@@ -14,6 +14,10 @@ It owns why Stage is shaped this way — who it is for, what counts as an achiev
 only maintenance, and why choosing where to cut the work is the design. Changing a rule without reading
 it usually means re-deciding something already decided.
 
+Read [docs/BLUEPRINT.md](docs/BLUEPRINT.md) before changing code. It owns which layer a file
+belongs to and what the code does not say about itself, such as why the shared modules live in
+`hooks/`.
+
 ## Document language
 
 Explanation is written in Korean, contracts in English.

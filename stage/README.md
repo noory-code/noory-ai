@@ -119,7 +119,9 @@ python3 stage/scripts/promote_intent.py --project-root . --type archive --work-i
 
 [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md) owns what Stage is for; every other design document owns
 how it is built.
-[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the responsibility-topology blueprint introduced with schema v4.
+[docs/BLUEPRINT.md](docs/BLUEPRINT.md) is the blueprint: the goal, the seven layers the code is divided
+into, what the code does not say about itself, and the record-topology diagrams. Read it before
+changing Stage code.
 [docs/SCHEMA_V5.md](docs/SCHEMA_V5.md) is the current work-hierarchy contract.
 [docs/SCHEMA_V4.md](docs/SCHEMA_V4.md) is the historical schema-v4 topology design.
 [docs/DISCUSSION.md](docs/DISCUSSION.md) and [docs/IMPLEMENTATION_AUDIT.md](docs/IMPLEMENTATION_AUDIT.md) are historical v3 design records, kept as history.
