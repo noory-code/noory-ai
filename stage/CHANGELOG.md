@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Run CI once for a push to a pull request branch. Every workflow ran on `push` and on
+  `pull_request`, so a branch with an open pull request ran each job twice. `push` is now
+  limited to `main`, and a test fails when a workflow drops that limit.
 - Let the Claude reviewer run tests through the PowerShell tool on Windows. Claude Code
   offers a PowerShell tool beside Bash there, and `claude_review_companion.py` allowed
   `python3 -m unittest` with a `Bash(...)` rule only, so a reviewer that picked PowerShell

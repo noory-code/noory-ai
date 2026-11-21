@@ -1,7 +1,9 @@
 name: plugin-contracts
 
 on:
+  # A pull request branch runs through pull_request alone; push covers main after a merge.
   push:
+    branches: [main]
     paths:
       - ".agents/**"
       - ".claude-plugin/**"
