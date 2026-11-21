@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import importlib.util
 import re
 import unittest
 from pathlib import Path
 
 WORKFLOWS = Path(__file__).resolve().parents[3] / ".github" / "workflows"
+SHARD_SCRIPT = WORKFLOWS.parent / "scripts" / "unittest_shard.py"
 PYTHON_39_PLUGINS = ("stage", "avatar", "plainly")
 
 
@@ -69,6 +71,43 @@ class CiWorkflowsTest(unittest.TestCase):
 
                 self.assertRegex(text, r"(?m)^  pull_request:\n    paths:\n")
                 self.assertRegex(text, r"(?m)^  push:\n    branches: \[main\]\n    paths:\n")
+
+
+    def test_stage_matrix_runs_every_shard_number_up_to_the_total(self):
+        # A shard number the matrix drops never runs, and its tests vanish without a failure.
+        text = (WORKFLOWS / "stage.yml").read_text(encoding="utf-8")
+        total = re.search(r"(?m)^  SHARD_TOTAL: (\d+)$", text)
+        shards = re.search(r"(?m)^        shard: \[(.*)\]$", text)
+        assert total and shards, "stage.yml must declare SHARD_TOTAL and matrix.shard"
+        expected = list(range(1, int(total.group(1)) + 1))
+
+        self.assertEqual(expected, [int(value) for value in shards.group(1).split(",")])
+        included = re.findall(
+            r"- os: ubuntu-24\.04\n\s+python: \"3\.9\"\n\s+shard: (\d+)", text
+        )
+        self.assertEqual(expected, sorted(int(value) for value in included))
+
+    def test_shards_together_run_every_test_exactly_once(self):
+        spec = importlib.util.spec_from_file_location("unittest_shard", SHARD_SCRIPT)
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        class Sample(unittest.TestCase):
+            pass
+
+        for index in range(7):
+            setattr(Sample, f"test_{index}", lambda self: None)
+        tests = list(unittest.TestLoader().loadTestsFromTestCase(Sample))
+        everything = sorted(test.id() for test in tests)
+        for total in (1, 2, 3, 4, 8):
+            with self.subTest(total=total):
+                picked = [
+                    test.id()
+                    for shard in range(1, total + 1)
+                    for test in module.shard_tests(tests, shard, total)
+                ]
+                self.assertEqual(everything, sorted(picked))
 
 
 if __name__ == "__main__":
