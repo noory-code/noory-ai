@@ -6,10 +6,11 @@ venue: claude
 milestone: M-00000005
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000367
 promotion: deferred
 review: not_required
 scope: .stage/decisions
@@ -90,3 +91,5 @@ W-00000374 와 W-00000375 를 시작한다. 두 카드는 고치는 파일이 �
 - GitHub 의 머지 버튼이 union 을 따르는지, GitHub 이 `refs/stage-ids/` 를 받아 주는지는 확인하지 않았다.
   두 구현 카드의 끝나는 조건에 넣었다.
 - 시험에 쓴 스크립트는 저장소에 두지 않았다. 결과는 두 결정 기록의 표에 있다.
+
+- Checks at close 2026-11-21: 2 passed — `python3 -m unittest discover -s stage/hooks/tests -q`; `python3 stage/scripts/audit_stage.py --project-root .`

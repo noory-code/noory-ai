@@ -6,4 +6,3 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000367 | design | claude | 여러 세션이 목록 파일과 카드 번호에서 부딪히지 않게 설계한다 | active | claude | [current/W-00000367/_story.md](current/W-00000367/_story.md) |
