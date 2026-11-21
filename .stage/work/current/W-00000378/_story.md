@@ -26,6 +26,13 @@ decision_refs:
 
 ## Actions
 
+- `stage_record_ids.py` 에 `IdReserver` 를 둔다. 원격의 `refs/stage-ids/*` 를 한 번 읽어 센다. 번호를 고르면
+  그 번호만 담은 커밋 하나를 만들어 `--force-with-lease=<ref>:` 로 push 한다. 거절되면 원격에 그 ref 가
+  생겼는지 다시 읽고, 생겼으면 다음 번호로, 없으면 원격이 push 를 거절한 것으로 보고 잡기를 끈다.
+- `register_work.py` 의 번호 고르는 네 자리(진행 중/계획, 평면/계층)와 `manage_roadmap.py` 의
+  `_create_atomic`(TH, M, 마일스톤 결정 DE)이 같은 `IdReserver` 를 쓴다. `--id` 로 번호를 직접 준 등록은
+  원격에 가지 않는다.
+- `stage_record_ids.py` 명령은 기본으로 번호를 잡는다. `--no-reserve` 는 번호만 말한다.
 
 ## User value
 
@@ -48,8 +55,9 @@ decision_refs:
 
 ## Risks
 
-- GitHub 이 `refs/stage-ids/` 라는 이름의 ref 를 받아 주는지 확인하지 않았다. 시험은 로컬의 빈 저장소로
-  했다. 받아 주지 않으면 태그 같은 다른 이름을 쓴다.
+- 이 저장소의 원격을 클라우드 세션에서 확인했다(2026-11-21). 결과는 아래 "원격 확인" 에 있다. 클라우드
+  세션의 git 프록시가 push 를 거절하므로, 병렬로 가장 많이 도는 클라우드 세션에서는 이 기능이 번호를 잡지
+  못하고 예전처럼 동작한다. GitHub 자체가 `refs/stage-ids/` 를 받는지는 프록시에 막혀 확인하지 못했다.
 - 등록할 때마다 원격을 한 번 다녀온다. 느리면 세션이 이 기능을 끄고 일하게 된다.
 - 테스트가 실제 원격에 가면 안 된다. 임시 폴더의 빈 저장소를 원격으로 쓴다.
 
@@ -62,8 +70,23 @@ decision_refs:
 
 ## Next action
 
-이 저장소의 GitHub 원격에 `refs/stage-ids/` 아래 ref 하나를 만들 수 있는지 먼저 확인한다. 원격에 쓰는
-일이므로 사용자에게 묻고 한다.
+닫는다.
+
+## 원격 확인
+
+클라우드 세션(`claude/w378-reserve-ids`)에서 한 번 실행했다. 메인 세션이 이 확인을 지시했다.
+
+| 명령 | 결과 |
+|---|---|
+| `git push --force-with-lease=refs/stage-ids/W-99999999: origin HEAD:refs/stage-ids/W-99999999` | `error: RPC failed; HTTP 403 curl 22 The requested URL returned error: 403`, `fatal: the remote end hung up unexpectedly`, 종료 코드 1 |
+| `git ls-remote origin 'refs/stage-ids/*'` | 아무것도 없다. ref 는 만들어지지 않았다. 지울 것이 없다. |
+
+- 403 은 세션의 에이전트 프록시가 준 것이다. 프록시 안내(`/root/.ccr/README.md`)는 403 을 정책 거절로 보고
+  다시 시도하거나 돌아가지 말라고 한다. 그래서 태그나 다른 이름으로는 시험하지 않았다.
+- 같은 세션에서 세션 브랜치(`refs/heads/claude/w378-reserve-ids`) push 는 성공했다. 프록시는 세션
+  브랜치 밖의 ref 를 막는 것으로 보인다. 정책 문서를 보지 못했으므로 추정이다.
+- 확인하지 못한 것: GitHub 이 `refs/stage-ids/` 를 받는지, 사용자의 로컬 세션(맥북, Windows)에서 push 가
+  되는지.
 
 ## Related truth
 

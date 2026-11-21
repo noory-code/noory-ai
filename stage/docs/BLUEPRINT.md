@@ -90,6 +90,11 @@ flowchart TD
 
 스크립트만 쓰는 규칙은 `scripts/` 에 있다(`lifecycle_paths.py`, `stage_record_ids.py`).
 
+`stage_record_ids.py` 는 네트워크에 간다. 번호를 고른 뒤 원격에
+`refs/stage-ids/<번호>` 를 만들어 번호를 잡는다(DE-00000092). `register_work.py` 와 `manage_roadmap.py` 도
+이 모듈로 번호를 잡는다. 원격이 없거나 닿지 못하거나 push 를 거절하면 이 체크아웃과 받아 온 브랜치만 세어
+번호를 고르고, 잡지 못했다고 한 줄 출력한다. 관문(훅)은 이 모듈을 쓰지 않는다.
+
 ### `close_work.py` 와 드라이버는 서로를 가져다 쓴다
 
 카드를 닫는 일은 `close_work.py` 한 곳이 소유한다. 드라이버는 카드의 상태를 직접 고치지 않고 `close_work.py`

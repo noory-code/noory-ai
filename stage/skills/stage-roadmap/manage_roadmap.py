@@ -25,6 +25,7 @@ import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
 import refresh_decision_index  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
+from stage_record_ids import IdReserver  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -170,17 +171,30 @@ def _create_atomic(
     prefix: str,
     existing_ids: list[str],
     content_for: Callable[[str], str],
+    project_root: Path,
 ) -> str:
+    # Ids reserved on the remote by sessions this checkout has not fetched count
+    # too (DE-00000092); next_artifact_id keeps only the prefix's counter family.
+    reserver = IdReserver(project_root)
+    existing_ids = existing_ids + sorted(reserver.remote_ids())
     candidate = stage_topology.next_artifact_id(prefix, existing_ids)
     for _ in range(1000):
         path = directory / f"{candidate}.md"
+        if path.exists() or not reserver.claim(candidate):
+            existing_ids.append(candidate)
+            candidate = stage_topology.next_artifact_id(prefix, existing_ids)
+            continue
         try:
             with path.open("x", encoding="utf-8") as handle:
                 handle.write(content_for(candidate))
-            return candidate
         except FileExistsError:
             existing_ids.append(candidate)
             candidate = stage_topology.next_artifact_id(prefix, existing_ids)
+            continue
+        note = reserver.unreserved_note(candidate)
+        if note:
+            print(note, file=sys.stderr)
+        return candidate
     raise RuntimeError(f"could not allocate a free {prefix} id")
 
 
@@ -205,7 +219,7 @@ def create_theme(stage_root: Path, args: argparse.Namespace) -> int:
         return text
 
     record_id = _create_atomic(
-        directory, "TH", _roadmap_existing_ids(stage_root), content_for
+        directory, "TH", _roadmap_existing_ids(stage_root), content_for, stage_root.parent
     )
     row = f"| {record_id} | {_clean_cell(args.title)} | [{record_id}.md]({record_id}.md) |"
     _ensure_index_row(index_path, record_id, row)
@@ -247,7 +261,7 @@ def create_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         return text
 
     record_id = _create_atomic(
-        directory, "M", _roadmap_existing_ids(stage_root), content_for
+        directory, "M", _roadmap_existing_ids(stage_root), content_for, stage_root.parent
     )
     row = (
         f"| {record_id} | {args.theme} | {_clean_cell(args.title)} | "
@@ -405,6 +419,7 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
         "DE",
         _decision_existing_ids(stage_root),
         lambda item_id: _decision_content(template, item_id, milestone),
+        stage_root.parent,
     )
     _append_decision_ref(milestone_path, decision_id)
     _ensure_index_row(
@@ -466,6 +481,7 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
             entries,
             args.attestation,
         ),
+        stage_root.parent,
     )
     _append_decision_ref(milestone_path, decision_id)
     _ensure_index_row(
