@@ -100,7 +100,9 @@ same card.
 Each worktree has its own ignored `.stage/.runtime/` evidence. No tracked work list restates card
 status, so independent cards do not conflict on a shared list after merge. Plugin `CHANGELOG.md`
 files and the official archive indexes only gain rows; the project's `.gitattributes` gives them
-`merge=union` so both sides' rows survive (DE-00000091).
+`merge=union` so both sides' rows survive when git merges them (DE-00000091). GitHub's merge
+button ignores `merge=union`: when a pull request conflicts only in those files, merge the base
+branch into the pull request branch with git, push, and then merge.
 
 ## The default run is a dry run
 

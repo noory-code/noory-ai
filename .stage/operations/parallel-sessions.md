@@ -44,3 +44,6 @@
   머지로 실행했을 때 18번 가운데 13번이 그랬다.
 - `.gitattributes` 는 합치는 쪽 체크아웃의 것을 쓴다. 양쪽 모두에 없으면 예전처럼 충돌한다.
 - union 으로 합친 줄의 순서는 두 브랜치가 더한 순서를 따르지 않을 수 있다.
+- GitHub 의 머지 버튼은 `merge=union` 을 따르지 않는다(W-00000377 에서 PR 두 개로 확인). PR 이 `CHANGELOG.md` 나
+  `official/**/archive/index.md` 에서만 충돌한다고 나오면 PR 브랜치에서 `git fetch origin` 과
+  `git merge origin/main` 을 실행하고 push 한 뒤 머지 버튼을 누른다. git 이 union 으로 합친다.

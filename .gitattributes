@@ -6,6 +6,9 @@
 # back every row one side removed (replaying this repository's merges resurrected
 # closed cards in 13 of 18 cases). The active, review, and planned work lists are
 # therefore not files at all; Stage derives them from card status.
+#
+# GitHub's merge button ignores this attribute. When a pull request conflicts only in
+# these files, merge the base branch into the pull request branch with git first.
 
 # Plugin changelogs: card work only adds lines under `## Unreleased`.
 CHANGELOG.md merge=union

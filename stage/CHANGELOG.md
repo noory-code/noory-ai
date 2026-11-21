@@ -16,7 +16,9 @@
 - Merge the append-only official archive indexes with `merge=union`. `init_stage.py` now adds
   `.stage/official/**/archive/index.md merge=union` to the project's `.gitattributes` (creating it
   when absent), so two branches that each archive a record keep both rows. Re-run `init_stage.py`
-  in an existing project to add the line; it preserves every existing file.
+  in an existing project to add the line; it preserves every existing file. GitHub's merge button
+  ignores `merge=union`, so a pull request that conflicts only in those files needs the base branch
+  merged into it with git first.
 - Reserve record ids on the remote. Two sessions that had not fetched each other's branches
   picked the same card or decision number, even with the fetch-then-push rule (R-00000358).
   `stage_record_ids.py`, `register_work.py`, and `manage_roadmap.py` now push a one-commit
