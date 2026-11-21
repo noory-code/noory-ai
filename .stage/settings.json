@@ -5,7 +5,8 @@
     "operations/verification.md",
     "index.md",
     "state/current.md",
-    "proposals/index.md"
+    "proposals/index.md",
+    "official/model/overview.md"
   ],
   "governance": {
     "exclude_paths": [],
