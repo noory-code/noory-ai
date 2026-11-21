@@ -6,11 +6,19 @@ on:
     branches: [main]
     paths:
       - "stage/**"
+      - ".github/scripts/unittest_shard.py"
       - ".github/workflows/stage.yml"
   pull_request:
     paths:
       - "stage/**"
+      - ".github/scripts/unittest_shard.py"
       - ".github/workflows/stage.yml"
+
+# The scripts suite takes about nine minutes on Windows in one job, so each
+# OS/Python pair splits both suites into SHARD_TOTAL jobs. Keep SHARD_TOTAL equal
+# to the length of matrix.shard and to each ubuntu-24.04 include list.
+env:
+  SHARD_TOTAL: 3
 
 jobs:
   test:
@@ -19,6 +27,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python: ["3.9", "3.12"]
+        shard: [1, 2, 3]
         # ubuntu-latest (26.04) ships no Python 3.9; keep 3.9 covered on the previous LTS.
         exclude:
           - os: ubuntu-latest
@@ -26,6 +35,13 @@ jobs:
         include:
           - os: ubuntu-24.04
             python: "3.9"
+            shard: 1
+          - os: ubuntu-24.04
+            python: "3.9"
+            shard: 2
+          - os: ubuntu-24.04
+            python: "3.9"
+            shard: 3
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -36,16 +52,22 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Hook suite
-        run: python -m unittest discover -s hooks/tests -q
+        run: >-
+          python ../.github/scripts/unittest_shard.py --start-dir hooks/tests
+          --shard ${{ matrix.shard }} --total ${{ env.SHARD_TOTAL }}
       - name: Scripts suite
-        run: python -m unittest discover -s scripts/tests -q
+        run: >-
+          python ../.github/scripts/unittest_shard.py --start-dir scripts/tests
+          --shard ${{ matrix.shard }} --total ${{ env.SHARD_TOTAL }}
       - name: init -> audit smoke
+        if: matrix.shard == 1
         shell: bash
         run: |
           mkdir -p "${RUNNER_TEMP}/stage-smoke"
           python scripts/init_stage.py --project-root "${RUNNER_TEMP}/stage-smoke"
           python scripts/audit_stage.py --project-root "${RUNNER_TEMP}/stage-smoke" --strict
       - name: Hook entrypoint smoke
+        if: matrix.shard == 1
         shell: bash
         run: |
           printf '{"hook_event_name":"SessionStart","cwd":"."}' \
