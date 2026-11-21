@@ -10,7 +10,6 @@
 
 | ID | 제목 | 종류 | 상태 | 우선순위 | 부모 | 항목 |
 |---|---|---|---|---|---|---|
-| W-00000371 | 회고에 남길 칸을 정한다 | planning | captured | 7 |  | [W-00000371/_story.md](W-00000371/_story.md) |
 | W-00000372 | Stage 를 릴리스한다 | release | captured | 8 |  | [W-00000372/_story.md](W-00000372/_story.md) |
 | W-00000378 | 카드와 기록을 등록할 때 번호를 원격에 잡는다 | development | captured | 6 |  | [W-00000378/_story.md](W-00000378/_story.md) |
 

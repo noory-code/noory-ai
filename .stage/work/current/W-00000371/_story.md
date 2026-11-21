@@ -2,14 +2,20 @@
 id: W-00000371
 title: 회고에 남길 칸을 정한다
 kind: planning
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 7
 autonomous: false
 acceptance: []
-review: not_required
-scope: .stage/decisions,stage/operations/retrospective.md,stage/templates
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: .stage/decisions,.stage/work,stage/operations/retrospective.md,stage/templates
+promotes:
+decision_refs:
 ---
 
 # W-00000371 회고에 남길 칸을 정한다
@@ -48,3 +54,9 @@ W-00000364 에서 본 것(R-00000364): 규칙을 찾는 데 쓴 칸은 `## Rule 
 - 고른 대로 고치는 카드가 계획된 카드로 등록되어 있거나 고치지 않기로 한 이유가 결정 기록에 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification

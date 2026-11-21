@@ -7,3 +7,4 @@
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
 | W-00000377 | development | claude | 목록 파일을 union 으로 합치고 줄을 지우는 목록은 카드에서 만든다 | active | claude | [current/W-00000377/_story.md](current/W-00000377/_story.md) |
+| W-00000371 | planning | claude | 회고에 남길 칸을 정한다 | active | claude | [current/W-00000371/_story.md](current/W-00000371/_story.md) |
