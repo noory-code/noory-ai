@@ -159,6 +159,7 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
                     "STAGE_REVIEW_VERDICT_FILE": str(verdict),
                 },
                 "claude",
+                "linux",
             )
             rule = claude_review_companion.absolute_rule_path(verdict.resolve())
 
@@ -181,6 +182,22 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("--permission-mode", command)
         self.assertFalse(any(part.startswith("Write(") for part in command))
+
+    def test_windows_also_allows_unittest_through_the_powershell_tool(self):
+        def allowed(platform: str) -> list[str]:
+            command = claude_review_companion.claude_command(
+                ["Review."], {"STAGE_REVIEW_VERDICT_FILE": "/v.json"}, "claude", platform
+            )
+            return command[command.index("--allowedTools") + 1 : command.index("--")]
+
+        # A Bash(...) rule does not cover the PowerShell tool Claude Code offers on Windows.
+        self.assertEqual(
+            ["Bash(python3 -m unittest:*)", "PowerShell(python3 -m unittest:*)"],
+            allowed("win32")[1:],
+        )
+        for platform in ("linux", "darwin"):
+            self.assertEqual(["Bash(python3 -m unittest:*)"], allowed(platform)[1:])
+        self.assertTrue(allowed("win32")[0].startswith("Edit("))
 
     def test_the_verdict_rule_is_absolute_on_posix_and_on_a_windows_drive(self):
         rule = claude_review_companion.absolute_rule_path

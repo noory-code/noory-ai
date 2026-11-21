@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Let the Claude reviewer run tests through the PowerShell tool on Windows. Claude Code
+  offers a PowerShell tool beside Bash there, and `claude_review_companion.py` allowed
+  `python3 -m unittest` with a `Bash(...)` rule only, so a reviewer that picked PowerShell
+  was denied and judged from records instead of a run. On Windows the reviewer now also
+  gets `PowerShell(python3 -m unittest:*)`; macOS and Linux are unchanged.
 - Show folder cards in the session-start text. A planned card kept as `W-…/_story.md` or
   `_epic.md` never appeared under `### Selected backlog`, and the lifecycle view reported
   `planned — none` and left folder cards out of the archive count, because both views
