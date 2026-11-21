@@ -53,7 +53,7 @@ from stage_work import (  # noqa: E402
 )
 import stage_roadmap  # noqa: E402
 from stage_model_tiers import TierConfig, load_tier_config  # noqa: E402
-from stage_record_ids import branch_record_numbers  # noqa: E402
+from stage_record_ids import IdReserver, branch_record_numbers  # noqa: E402
 
 ID_RE = re.compile(r"^W-(\d{8})$")
 MILESTONE_RE = re.compile(r"^M-\d{8}$")
@@ -209,11 +209,15 @@ def create_hierarchy_item_atomic(
     scale: str,
     parent_path: Path | None,
     content_for,
+    reserver: IdReserver | None = None,
 ) -> tuple[str, Path]:
     candidate = (max(numbers) + 1) if numbers else 1
     for _ in range(1000):
         item_id = f"W-{candidate:08d}"
         path = hierarchy_item_path(items_dir, item_id, scale, parent_path)
+        if path.exists() or (reserver is not None and not reserver.claim(item_id)):
+            candidate += 1
+            continue
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with open(path, "x", encoding="utf-8") as handle:
@@ -328,14 +332,23 @@ def ensure_active_row(
     active_path.write_text(insert_table_row(text, row), encoding="utf-8")
 
 
-def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
+def create_item_atomic(
+    items_dir: Path,
+    numbers: set[int],
+    content_for,
+    reserver: IdReserver | None = None,
+) -> str:
     """Allocate the next free id with O_EXCL so two concurrent windows never
     take the same number. On a race (file appeared between scan and create),
-    step to the next candidate and retry."""
+    step to the next candidate and retry. With a reserver, an id another
+    session already reserved on the remote is skipped the same way."""
     candidate = (max(numbers) + 1) if numbers else 1
     for _ in range(1000):
         item_id = f"W-{candidate:08d}"
         path = record_path(items_dir, item_id)
+        if path.exists() or (reserver is not None and not reserver.claim(item_id)):
+            candidate += 1
+            continue
         try:
             with open(path, "x", encoding="utf-8") as handle:
                 handle.write(content_for(item_id))
@@ -343,6 +356,12 @@ def create_item_atomic(items_dir: Path, numbers: set[int], content_for) -> str:
         except FileExistsError:
             candidate += 1
     raise RuntimeError("could not allocate a free work-item id")
+
+
+def report_unreserved(reserver: IdReserver, item_id: str) -> None:
+    note = reserver.unreserved_note(item_id)
+    if note:
+        print(note, file=sys.stderr)
 
 
 _BACKLOG_TEMPLATE = (
@@ -467,15 +486,22 @@ def register_backlog_card(stage_root: Path, args) -> int:
             print(f"{item_id}: refusing — id is already used", file=sys.stderr)
             return 1
     elif paths is not None and args.scale:
+        reserver = IdReserver(stage_root.parent)
         item_id, item_path = create_hierarchy_item_atomic(
             backlog_dir,
-            numbers,
+            numbers | reserver.remote_numbers("W"),
             args.scale,
             parent_path,
             content_for,
+            reserver,
         )
+        report_unreserved(reserver, item_id)
     else:
-        item_id = create_item_atomic(backlog_dir, numbers, content_for)
+        reserver = IdReserver(stage_root.parent)
+        item_id = create_item_atomic(
+            backlog_dir, numbers | reserver.remote_numbers("W"), content_for, reserver
+        )
+        report_unreserved(reserver, item_id)
         item_path = record_path(backlog_dir, item_id)
     item_link = relative_record_link(
         index_relative, item_path.relative_to(stage_root).as_posix()
@@ -950,18 +976,20 @@ def main() -> int:
             return 0
         item_id = args.id
     else:
+        reserver = IdReserver(stage_root.parent)
+        numbers = existing_numbers(stage_root) | reserver.remote_numbers("W")
         if hierarchy_paths is None:
-            item_id = create_item_atomic(
-                items_dir, existing_numbers(stage_root), content_for
-            )
+            item_id = create_item_atomic(items_dir, numbers, content_for, reserver)
         else:
             item_id, _created_path = create_hierarchy_item_atomic(
                 items_dir,
-                existing_numbers(stage_root),
+                numbers,
                 args.scale,
                 parent_path,
                 content_for,
+                reserver,
             )
+        report_unreserved(reserver, item_id)
 
     ensure_active_row(active_path, item_id, row_for(item_id), item_link_for(item_id))
     if args.review:
