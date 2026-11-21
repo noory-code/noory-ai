@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Throwaway line B (W-00000377 merge-button check).
 - Stop keeping work lists that two sessions edit at once (DE-00000091). `work/active.md`,
   `work/review.md`, and `work/planned/index.md` restated each card's `status`, so two branches
   that each registered, closed, or archived a card conflicted on them, and a union merge would
