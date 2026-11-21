@@ -62,9 +62,10 @@ def isolate_git_config() -> Path:
     root = Path(tempfile.mkdtemp(prefix="stage-test-git-"))
     atexit.register(shutil.rmtree, str(root), True)
     # `git init` copies its template into every new repository. Git's default
-    # template is a dozen sample hooks no test runs; keep only info/exclude,
-    # which tests append ignore rules to.
+    # template is a dozen sample hooks no test runs; keep the layout tests write
+    # into (an empty hooks directory and info/exclude) without the samples.
     template_dir = root / "template"
+    (template_dir / "hooks").mkdir(parents=True)
     (template_dir / "info").mkdir(parents=True)
     (template_dir / "info" / "exclude").write_text("", encoding="utf-8")
     config_path = root / "gitconfig"

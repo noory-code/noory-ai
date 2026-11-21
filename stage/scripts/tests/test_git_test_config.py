@@ -53,12 +53,12 @@ class IsolatedGitConfigTest(unittest.TestCase):
         self.assertEqual("0", git(self.root, "config", "gc.auto"))
         self.assertEqual("false", git(self.root, "config", "commit.gpgsign"))
 
-    def test_init_copies_only_the_exclude_file_tests_append_to(self):
+    def test_init_keeps_the_layout_tests_write_into_without_sample_hooks(self):
         git_dir = self.root / ".git"
 
         self.assertTrue((git_dir / "info" / "exclude").is_file())
-        hooks = git_dir / "hooks"
-        self.assertEqual([], sorted(hooks.iterdir()) if hooks.is_dir() else [])
+        self.assertTrue((git_dir / "hooks").is_dir())
+        self.assertEqual([], sorted((git_dir / "hooks").iterdir()))
 
     def test_repository_settings_still_override_the_test_identity(self):
         git(self.root, "config", "user.name", "Repository Owner")
