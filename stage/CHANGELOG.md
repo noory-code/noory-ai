@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Show folder cards in the session-start text. A planned card kept as `W-…/_story.md` or
+  `_epic.md` never appeared under `### Selected backlog`, and the lifecycle view reported
+  `planned — none` and left folder cards out of the archive count, because both views
+  skipped every file whose name starts with an underscore.
+- Count an open observation's age from the local date. The session-start text compared the
+  hand-written `opened:` date with the UTC date, so an observation opened in the morning east
+  of Greenwich read `open -1d`.
 - List the `SubagentStop` hook in the README. The hook list named four events while
   `hooks/hooks.json` registers five.
 - Stop putting `## Retrospective` and `## Promotion decision` on work cards. The retrospective

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, tzinfo
 from pathlib import Path
 
 # Sibling modules load by bare name; make the hooks dir importable whether this
@@ -72,12 +72,8 @@ def lifecycle_view_record_ids(
     """Return a bounded artifact-ID sample and total from one registry scan root."""
 
     records: list[str] = []
-    try:
-        paths = record_paths(directory)
-    except OSError:
-        return records, 0
-    for path in paths:
-        if path.name.startswith("_") or path.name.lower() in {"index.md", "readme.md"}:
+    for path in record_files(directory):
+        if path.name.lower() == "index.md":
             continue
         fields = parse_frontmatter(path)
         record_id = fields.get("id") or path.stem
@@ -622,16 +618,17 @@ def bounded_record_line(
 
 
 def record_files(directory: Path) -> list[Path]:
-    """Individual record files of an artifact family (skips index/template files)."""
+    """Individual record files of an artifact family (skips readme/template files).
+
+    `record_paths` owns which underscore files are records: it drops the
+    templates at the family root and keeps the `_epic.md` and `_story.md`
+    cards inside hierarchy folders.
+    """
     try:
         files = record_paths(directory)
     except OSError:
         return []
-    return [
-        path
-        for path in files
-        if not path.name.startswith("_") and path.name.lower() != "readme.md"
-    ]
+    return [path for path in files if path.name.lower() != "readme.md"]
 
 
 def question_is_answered(path: Path) -> bool:
@@ -662,6 +659,13 @@ def observation_root(stage_root: Path) -> Path:
     return stage_root / "present" / "state" / "observations"
 
 
+def local_today(now: datetime | None = None, zone: tzinfo | None = None) -> date:
+    """Today's date where the session runs. `opened:` is written by hand from
+    the writer's own calendar, so the age is counted from the same calendar;
+    the UTC date lags it by a day every morning east of Greenwich."""
+    return (now or datetime.now(timezone.utc)).astimezone(zone).date()
+
+
 def days_open(opened: str, today: date) -> int | None:
     """Days since the record declared it opened; None when undeclared or
     unparseable. Filesystem timestamps are not a substitute — a fresh clone or
@@ -681,7 +685,7 @@ def open_observation_lines(stage_root: Path, today: date | None = None) -> list[
     bounded per record instead: a line carries the ID, the title, and how long
     the record has been open, never its body.
     """
-    today = today or datetime.now(timezone.utc).date()
+    today = today or local_today()
     records: list[tuple[str, str, str]] = []
     for path in record_files(observation_root(stage_root)):
         fields = parse_frontmatter(path)
