@@ -7,6 +7,10 @@
   `python3 -m unittest` with a `Bash(...)` rule only, so a reviewer that picked PowerShell
   was denied and judged from records instead of a run. On Windows the reviewer now also
   gets `PowerShell(python3 -m unittest:*)`; macOS and Linux are unchanged.
+- Put the blueprint in one place. `docs/BLUEPRINT.md` now opens with the goal, a table of the seven
+  layers the code is divided into, and what the code does not say about itself: why the shared
+  modules live in `hooks/`, and why `close_work.py` and the driver import each other. The existing
+  diagrams follow as the record layer's drawings.
 - Show folder cards in the session-start text. A planned card kept as `W-…/_story.md` or
   `_epic.md` never appeared under `### Selected backlog`, and the lifecycle view reported
   `planned — none` and left folder cards out of the archive count, because both views

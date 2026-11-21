@@ -6,3 +6,4 @@
 
 | 작업 | 종류 | Venue | 목적 | 상태 | 소유자 | 항목 |
 |---|---|---|---|---|---|---|
+| W-00000375 | chore | claude | PR #85 가 main 과 충돌 없이 머지된다 | active | Claude | [current/W-00000375/_story.md](current/W-00000375/_story.md) |

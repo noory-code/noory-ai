@@ -299,4 +299,5 @@
 | W-00000364 | completed | [items/W-00000364/_story.md](items/W-00000364/_story.md) |
 | W-00000365 | completed | [items/W-00000365/_story.md](items/W-00000365/_story.md) |
 | W-00000373 | completed | [items/W-00000373/_story.md](items/W-00000373/_story.md) |
+| W-00000366 | completed | [items/W-00000366/_story.md](items/W-00000366/_story.md) |
 | W-00000374 | completed | [items/W-00000374/_story.md](items/W-00000374/_story.md) |
