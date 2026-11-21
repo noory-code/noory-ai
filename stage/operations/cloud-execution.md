@@ -38,7 +38,11 @@ python3 stage/scripts/start_work.py --project-root . W-00000001 --scope "..." \
 
 `--environment` fills an omitted `--venue` with the environment's venue. Take
 decision and other record numbers from `stage/scripts/stage_record_ids.py`; parallel
-sessions work on parallel branches.
+sessions work on parallel branches. That command, `register_work.py`, and
+`manage_roadmap.py` reserve each new id on the remote as `refs/stage-ids/<id>`
+(DE-00000092). A cloud session's git proxy may refuse that push — this repository's
+did with HTTP 403 (W-00000378) — and the id is then chosen from fetched refs only,
+with a `not reserved on the remote` line; fetch before registering and push right after.
 
 ## Execute (in the environment)
 
