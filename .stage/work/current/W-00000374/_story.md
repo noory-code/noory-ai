@@ -10,8 +10,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000374
 promotion: pending
 review: pending
 scope: stage/scripts/claude_review_companion.py,stage/scripts/tests,stage/CHANGELOG.md
@@ -90,3 +90,6 @@ Windows 에서 카드를 닫을 때 리뷰어가 테스트를 직접 실행해 �
   `-p test_template_v4.py` 26개, `-p test_claude_review_guard.py` 8개(2개 건너뜀)가 통과했다.
 - 닫기 리뷰어의 모델인 opus 가 어느 셸 도구를 고르는지는 확인하지 않았다.
 - macOS 와 Linux 에서는 실행하지 않았다. 그쪽 허용 목록은 테스트로만 확인했다.
+- 사용자 확인 — 2026-11-21. 사용자가 바뀐 파일 네 개와 한 줄씩의 요약, 넓어지는 권한, 확인한 것과
+  확인하지 못한 것을 보고 닫으라고 했다. 닫기 명령이 리뷰와 닫기를 한 번에 해서 기준별 리뷰 판정은
+  확인받을 때 보여 주지 못했고, 그 사실을 알렸다.
