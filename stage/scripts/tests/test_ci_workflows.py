@@ -58,6 +58,18 @@ class CiWorkflowsTest(unittest.TestCase):
                     combinations(matrix_block(text)),
                 )
 
+    def test_push_runs_on_main_only_so_a_pull_request_branch_runs_once(self):
+        # A workflow that runs on every push and on pull_request runs twice for each push to
+        # a branch with an open pull request.
+        workflows = sorted(WORKFLOWS.glob("*.yml"))
+        self.assertTrue(workflows)
+        for workflow in workflows:
+            with self.subTest(workflow=workflow.name):
+                text = workflow.read_text(encoding="utf-8")
+
+                self.assertRegex(text, r"(?m)^  pull_request:\n    paths:\n")
+                self.assertRegex(text, r"(?m)^  push:\n    branches: \[main\]\n    paths:\n")
+
 
 if __name__ == "__main__":
     unittest.main()
