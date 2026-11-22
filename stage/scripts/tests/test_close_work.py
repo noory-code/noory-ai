@@ -15,6 +15,9 @@ from unittest import mock
 
 from python_shell_command import python_command
 
+# A check every platform shell runs. `true` is not a cmd.exe command, so a Windows host
+# without Git's POSIX tools on PATH failed every close that used it (W-00000394).
+PASSING_CHECK = python_command("pass")
 CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-retrospective" / "close_work.py"
 
 ITEM = """---
@@ -257,7 +260,7 @@ class CloseWorkTest(unittest.TestCase):
             outside.parent.mkdir(parents=True)
             outside.write_text("dirty\n", encoding="utf-8")
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
 
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
@@ -266,14 +269,14 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             self.init_git(root)
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
 
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
     def test_allows_non_git_tree(self):
         tmp, root = self.make()
         with tmp:
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
 
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
@@ -392,7 +395,7 @@ class CloseWorkTest(unittest.TestCase):
                     )
                     before = item.read_text(encoding="utf-8")
 
-                    proc = run(root, "W-00000001", "--promotion", promotion, "--check", "true")
+                    proc = run(root, "W-00000001", "--promotion", promotion, "--check", PASSING_CHECK)
                     after = item.read_text(encoding="utf-8")
 
                 self.assertEqual(1, proc.returncode, proc.stdout)
@@ -419,7 +422,7 @@ class CloseWorkTest(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            proc = run(root, "W-00000001", "--promotion", "promoted", "--check", "true")
+            proc = run(root, "W-00000001", "--promotion", "promoted", "--check", PASSING_CHECK)
             body = item.read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
@@ -435,7 +438,7 @@ class CloseWorkTest(unittest.TestCase):
                 authorizes="venue_exception",
             )
             self.link_decision(root)
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             body = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -478,7 +481,7 @@ class CloseWorkTest(unittest.TestCase):
             item_path = root / ".stage/work/current/W-00000001/_story.md"
             before = item_path.read_text(encoding="utf-8")
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             after = item_path.read_text(encoding="utf-8")
 
         self.assertEqual(1, proc.returncode)
@@ -565,14 +568,14 @@ class CloseWorkTest(unittest.TestCase):
     def test_refuses_without_completed_retrospective(self):
         tmp, root = self.make(retro="pending")
         with tmp:
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("retrospective", proc.stderr)
 
     def test_refuses_missing_retro_file(self):
         tmp, root = self.make(with_ref_file=False)
         with tmp:
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
 
     def test_refuses_retrospective_id_archived_for_different_work_item(self):
@@ -828,7 +831,7 @@ class CloseWorkTest(unittest.TestCase):
     def test_refuses_non_final_promotion(self):
         tmp, root = self.make(promotion="pending")
         with tmp:
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("promotion", proc.stderr)
 
@@ -900,7 +903,7 @@ class CloseWorkTest(unittest.TestCase):
         with tmp:
             p = root / ".stage/work/current/W-00000001/_story.md"
             p.write_text(p.read_text(encoding="utf-8").replace("## Verification\n", "## Notes\n"), encoding="utf-8")
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("Verification", proc.stderr)
 
@@ -963,7 +966,7 @@ class CloseWorkTest(unittest.TestCase):
                     "stages": {"implementation": "standard"},
                 },
             )
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
@@ -999,7 +1002,7 @@ class CloseWorkTest(unittest.TestCase):
                 add_verdict=False,
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -1031,7 +1034,7 @@ class CloseWorkTest(unittest.TestCase):
                 with tmp:
                     self._write_review(root, review)
 
-                    proc = run(root, "W-00000001", "--check", "true", "--timeout", "1")
+                    proc = run(root, "W-00000001", "--check", PASSING_CHECK, "--timeout", "1")
                     item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                         encoding="utf-8"
                     )
@@ -1049,7 +1052,7 @@ class CloseWorkTest(unittest.TestCase):
                     self._write_review(root, review, add_verdict=False)
 
                     proc = run(
-                        root, "W-00000001", "--check", "true", "--review-timeout", "1"
+                        root, "W-00000001", "--check", PASSING_CHECK, "--review-timeout", "1"
                     )
                     item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                         encoding="utf-8"
@@ -1143,7 +1146,7 @@ class CloseWorkTest(unittest.TestCase):
                     with mock.patch.object(
                         close_work, "run_check", recording_run_check
                     ), mock.patch.object(
-                        sys, "argv", [*argv, "--check", "true"]
+                        sys, "argv", [*argv, "--check", PASSING_CHECK]
                     ), mock.patch("sys.stdout"), mock.patch("sys.stderr"):
                         exit_code = close_work.main()
 
@@ -1217,7 +1220,7 @@ class CloseWorkTest(unittest.TestCase):
                 },
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -1252,7 +1255,7 @@ class CloseWorkTest(unittest.TestCase):
                 add_verdict=False,
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -1287,7 +1290,7 @@ class CloseWorkTest(unittest.TestCase):
                 add_verdict=False,
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -1325,7 +1328,7 @@ class CloseWorkTest(unittest.TestCase):
                 add_verdict=False,
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
 
         self.assertEqual(0, proc.returncode, proc.stderr)
 
@@ -1539,7 +1542,7 @@ class CloseWorkTest(unittest.TestCase):
                 "APPROVED\n",
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             text = item.read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
@@ -1566,7 +1569,7 @@ class CloseWorkTest(unittest.TestCase):
                 with tmp:
                     item = self.write_progress_card_and_log(root, log)
 
-                    proc = run(root, "W-00000001", "--check", "true")
+                    proc = run(root, "W-00000001", "--check", PASSING_CHECK)
                     text = item.read_text(encoding="utf-8")
 
                 self.assertEqual(0, proc.returncode, proc.stderr)
@@ -1586,7 +1589,7 @@ class CloseWorkTest(unittest.TestCase):
             item = root / ".stage/work/current/W-00000001/_story.md"
             before = item.read_text(encoding="utf-8")
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             after = item.read_text(encoding="utf-8")
 
         self.assertEqual(1, proc.returncode, proc.stderr)
@@ -1746,7 +1749,7 @@ class CloseWorkTest(unittest.TestCase):
                 },
             )
 
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
                 encoding="utf-8"
             )
@@ -1797,7 +1800,7 @@ class CloseWorkTest(unittest.TestCase):
                 },
                 add_verdict=False,
             )
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("review verdict did not approve", proc.stderr)
             self.assertIn("status: active", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
@@ -1808,7 +1811,7 @@ class CloseWorkTest(unittest.TestCase):
         tmp, root = self.make(review="not_required")
         with tmp:
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('BLOCK: should not run')\""}, "stages": {"implementation": "standard"}})
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             item = (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8")
             self.assertIn("status: completed", item)
@@ -1818,7 +1821,7 @@ class CloseWorkTest(unittest.TestCase):
         tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"strengths": {"standard": "python3 -c \"print('review ok')\""}, "stages": {"implementation": "standard"}})
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("review: passed", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
 
@@ -1826,7 +1829,7 @@ class CloseWorkTest(unittest.TestCase):
         # review: pending but the stage has no configured command -> cannot honestly pass.
         tmp, root = self.make(review="pending")
         with tmp:
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("review is pending", proc.stderr)
 
@@ -1844,7 +1847,7 @@ class CloseWorkTest(unittest.TestCase):
                 },
                 add_verdict=False,
             )
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("status: active", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
 
@@ -1852,7 +1855,7 @@ class CloseWorkTest(unittest.TestCase):
         tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"stages": {"implementation": "redteam"}})  # not a valid strength
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
             self.assertIn("review config", proc.stderr)
 
@@ -1860,7 +1863,7 @@ class CloseWorkTest(unittest.TestCase):
         tmp, root = self.make(review="pending")
         with tmp:
             self._write_review(root, {"stages": {"implementation": "standard"}})  # no strengths.standard command
-            proc = run(root, "W-00000001", "--check", "true")
+            proc = run(root, "W-00000001", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 1)
 
     def test_autonomous_item_runs_opposite_venue_reviewer_and_blocks_on_verdict(self):
@@ -1991,7 +1994,7 @@ class CloseWorkTest(unittest.TestCase):
     def test_promotion_arg_sets_final(self):
         tmp, root = self.make(promotion="pending")
         with tmp:
-            proc = run(root, "W-00000001", "--promotion", "not_applicable", "--check", "true")
+            proc = run(root, "W-00000001", "--promotion", "not_applicable", "--check", PASSING_CHECK)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("promotion: not_applicable", (root / ".stage/work/current/W-00000001/_story.md").read_text(encoding="utf-8"))
 
