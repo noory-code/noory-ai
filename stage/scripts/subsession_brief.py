@@ -208,6 +208,8 @@ def work_brief(
         "",
         LIFECYCLE_RULE,
         f"- Do not edit {card_word} `{'`, `'.join(RECORD_FIELDS)}` fields.",
+        f"- Do not edit {card_word} `## Progress` or `## Next action` section; the main session writes",
+        "  them from your report.",
         "- Do not open or merge a pull request.",
         f"- Commit and push only to your own branch{f' `{branch}`' if branch else ''}.",
     ]

@@ -62,6 +62,7 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn("own branch `claude/w2`", out)
         self.assertIn("Do not run `start_work.py`, `register_work.py`, `close_work.py`", out)
         self.assertIn("send the main session `session_main` one message", out)
+        self.assertIn("Do not edit the card's `## Progress` or `## Next action` section", out)
 
     def test_the_brief_asks_for_scope_crossings_in_the_commit_report(self) -> None:
         self.card()

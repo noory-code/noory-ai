@@ -21,7 +21,11 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("--role verify", text)
         self.assertIn("## Take over from the records", text)
         self.assertIn("`list_sessions`", text)
-        self.assertIn("waiting_confirmations:", text)
+        self.assertIn("scripts/started_cards.py --project-root .", text)
+        self.assertIn("waiting_sessions:", text)
+        self.assertIn("`limit: 100`", text)
+        self.assertIn("`stage-project:<repository>`", text)
+        self.assertIn("Waiting on user: <question>", text)
 
     def test_handoff_keeps_no_copy_of_the_sub_session_procedure(self) -> None:
         text = read("stage-handoff")

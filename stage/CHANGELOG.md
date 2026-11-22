@@ -12,6 +12,17 @@
   verify brief asks for a `PASS`/`FAIL` verdict per success criterion and forbids every change. A
   story's work brief is unchanged. `stage-drive` states its boundary with the orchestrator, and
   `operations/cloud-execution.md` says how to bring an epic's story commits over.
+- Add `scripts/started_cards.py` for the orchestrator's take-over (W-00000404). A trial take-over
+  found 31 started cards on 63 fetched branches, 30 of them already archived on the default branch,
+  and needed a hand-written loop to read their status. The script lists every started card on HEAD,
+  the default branch, and each unmerged fetched branch, drops cards the default branch archived,
+  names the copy edited last when a card sits on several branches, and lists what waits in the
+  records (`blocked` cards, `Waiting on user:` lines under `## Next action`, undecided pending
+  decisions, open questions). `start_work.py` reads other branches through the same functions. The
+  skill now pages the session list, filters it by a `stage-project:<repository>` tag or a card id
+  in the title, counts a session that reported and waits as waiting, reads only a session's last
+  assistant text, and makes the orchestrator write each report and each unanswered question onto
+  the card. The work brief forbids editing the card's `## Progress` and `## Next action`.
 - Move an executor or reviewer to the venue's next model when a usage limit stops one (W-00000386).
   New settings `model_fallbacks` (per venue, model groups that share one usage limit, in preference
   order) and `usage_limit_patterns` (per venue, regular expressions that mark a failed run's output

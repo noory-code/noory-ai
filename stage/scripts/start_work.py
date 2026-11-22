@@ -16,14 +16,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
-from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     record_path,
     record_paths,
@@ -31,8 +28,6 @@ from stage_record_paths import (  # noqa: E402
     work_record_scale,
 )
 from stage_paths import (  # noqa: E402
-    ACTIVE_TOPOLOGY_V4,
-    active_topology,
     load_environment_venues,
     load_venue_routing,
     schema_migration_banner,
@@ -49,6 +44,7 @@ from stage_work import (  # noqa: E402
     venue_exception_error,
 )
 from stage_model_tiers import TierConfig, load_tier_config  # noqa: E402
+from started_cards import lifecycle_roots, ref_paths, unmerged_refs  # noqa: E402
 
 # Work fields a present card must carry, in template order, with start values.
 WORK_FIELD_DEFAULTS = (
@@ -234,22 +230,6 @@ def fill_missing_tier(
     return fields
 
 
-def git_lines(project_root: Path, *args: str) -> list[str] | None:
-    """Run one git command; return its NUL- or newline-separated output, or None on failure."""
-
-    try:
-        proc = subprocess.run(
-            ["git", *args], cwd=str(project_root), capture_output=True, timeout=60
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    if proc.returncode != 0:
-        return None
-    text = os.fsdecode(proc.stdout)
-    separator = "\0" if "\0" in text else "\n"
-    return [line for line in text.split(separator) if line]
-
-
 def started_on_other_branches(
     project_root: Path, item_id: str, roots: dict[str, str]
 ) -> dict[str, str]:
@@ -264,24 +244,12 @@ def started_on_other_branches(
     already fetched; it never touches the network.
     """
 
-    refs = git_lines(
-        project_root,
-        "for-each-ref",
-        "--no-merged=HEAD",
-        "--format=%(refname:short)",
-        "refs/heads",
-        "refs/remotes",
-    )
+    refs = unmerged_refs(project_root, "HEAD")
     if not refs:
         return {}
     found: dict[str, str] = {}
     for ref in refs:
-        if ref.endswith("/HEAD"):
-            continue
-        paths = git_lines(
-            project_root, "ls-tree", "-r", "-z", "--name-only", ref, "--", *roots
-        )
-        for path in paths or ():
+        for path in ref_paths(project_root, ref, list(roots)):
             parts = Path(path).parts
             if item_id in parts or Path(path).stem == item_id:
                 state = next(
@@ -302,15 +270,7 @@ def main() -> int:
     if schema_blocker:
         print(schema_blocker, file=sys.stderr)
         return 2
-    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        paths = v4_lifecycle_paths()
-        planned_root = paths.planned_cards
-        current_root = paths.current_cards
-        archive_root = paths.archive_cards
-    else:
-        planned_root = Path("future", "backlog", "items").as_posix()
-        current_root = Path("present", "work", "items").as_posix()
-        archive_root = Path("past", "work", "archive", "items").as_posix()
+    planned_root, current_root, archive_root = lifecycle_roots(stage_root)
 
     source_path = record_path(stage_root / planned_root, args.item)
     if not source_path.is_file():

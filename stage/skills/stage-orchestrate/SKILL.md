@@ -35,31 +35,66 @@ orchestrator_does_not:
 A new orchestrator starts here, and so does one that replaces an archived orchestrator. Nothing is
 handed over in a message.
 
-1. `git fetch origin`, then read the project's `CLAUDE.md` or `AGENTS.md`.
-2. Cards in progress: every record under `.stage/work/current/` whose `status` is `active` or
-   `blocked`, on the checked-out branch and on each fetched branch
-   (`git ls-tree -r --name-only origin/<branch> .stage/work/current`). A card that exists only on
-   another branch was started by the session that owns that branch.
-3. Sessions: read the platform's session list. On Claude Code cloud that is `list_sessions`
-   without `children`: sessions an earlier orchestrator created are not this session's children.
-   A session on the user's device is read the same way as a cloud session.
-4. Confirmations waiting for an answer come from three places:
+1. `git fetch origin "+refs/heads/*:refs/remotes/origin/*"`, then read the project's `CLAUDE.md` or
+   `AGENTS.md`. A cloud session starts on a detached HEAD; the next step reads refs, not a branch.
+2. Cards and records, in one call:
 
-   ```yaml
-   waiting_confirmations:
-     - a listed session whose status bucket is `blocked`, or whose summary names a needed action
-     - a card whose status is `blocked`; its `## Next action` names the question
-     - a decision under `.stage/decisions/pending/` whose status is not `decided`
+   ```bash
+   python3 <stage-plugin-root>/scripts/started_cards.py --project-root .
    ```
 
-   Read a waiting session's question from its last messages (`list_events` with kinds `assistant`
-   and `result`).
-5. Match each session to a card by the card id in its title or branch. Tell the user, in one list:
-   the cards in progress and their session, the confirmations waiting, and the sessions that
-   match no open card.
+   It lists every started card (any status, so `review` and `completed` cards that are not archived
+   yet are included) on HEAD, the default branch, and each fetched branch the default branch has
+   not merged, and drops cards the default branch archived. When a card sits on several branches
+   it names the copy to read: the one whose record was edited last. It also lists what waits in the
+   records: `blocked` cards, `Waiting on user:` lines under a card's `## Next action`, pending
+   decisions that are not decided, and open questions. Planned cards are not in progress; read
+   `.stage/work/planned/` when you organize work.
+3. Sessions. Take your own id from `get_session`, then page the session list: `list_sessions` with
+   `limit: 100`, passing `after_id: <last_id>` while `has_more` is true.
 
-When step 2 or 4 means reading more than the open cards and pending decisions, give the reading to
-a sub-agent and keep its summary.
+   ```yaml
+   keep_a_row_when:
+     - it is not archived
+     - and: its tags include `stage-project:<repository>`, or its title names a card id from step 2
+   drop: this session's own row
+   earlier_orchestrator: a kept row tagged `stage-orchestrator`; list it apart and send it nothing
+   match_to_card: by the card id in the title only; the session list carries no branch
+   ```
+
+4. A kept session waits for an answer when one of these holds:
+
+   ```yaml
+   waiting_sessions:
+     - its status bucket is `blocked`
+     - its summary names a needed action
+     - its title names a card from step 2 and its bucket is `completed` or `review_ready`
+       (it reported and waits for a review result or a user decision)
+   ```
+
+   Read what each one waits for from its last assistant text only: `list_events` with
+   `kinds: ["assistant"]` and `limit: 5`. For more than three waiting sessions, give the reading to
+   a sub-agent that returns one line per session.
+5. Tell the user, in one list: each card in progress with its session, what waits in the records,
+   what waits in sessions, kept sessions that match no card, and earlier orchestrators.
+6. Tag this session `stage-project:<repository>` and `stage-orchestrator` (`set_session_tags`).
+
+## Keep the records current
+
+The take-over reads records, so what is only in a transcript is lost to the next orchestrator.
+Work and verification sessions do not edit a card; you do, on your branch, and commit and push:
+
+```yaml
+on_a_session_report:
+  - add to the card's `## Progress`: the date, the session id, the reported commit, and which
+    success criteria the report claims
+  - set the card's `## Next action` to the one next step
+on_a_question_for_the_user:
+  - add a line `Waiting on user: <question>` under the `## Next action` of the card it belongs to
+  - a question that belongs to no card: register a question record under `.stage/state/questions/`
+on_the_answer:
+  - remove that line or close that question record, and record the answer where it applies
+```
 
 ## Organize work
 
@@ -79,7 +114,8 @@ start_a_session_when:
   - the user will talk at length (discussion, planning)
   - a judgment needs a context that did not see the building (verification)
 use_a_sub_agent_when:
-  - the task returns a summary to this session (reading records, searching, comparing)
+  - the task returns a summary to this session (searching, comparing)
+  - reading more than ten record files, or more than three session transcripts
   - the task is a story inside an epic; the work session that holds the epic runs it
 do_it_in_this_session_when:
   - it is a confirmation, a relay, a start, a close, or a merge
@@ -108,14 +144,16 @@ its own branch, so you hold the ids its card may need (DE-00000094).
      --main-session <this-session-id> --branch <session-branch>
    ```
 
-   Create the session from the branch that holds the start, and put the card id in its title.
+   Create the session from the branch that holds the start. Title it `<W-id> work` and tag it
+   `stage-project:<repository>` and `stage-main-session:<this-session-id>`.
 5. The session reports the branch, the commit of each card, changed paths, checks, decisions,
-   scope crossings, what needs the user, and follow-up candidates. Ask the user what needs the
-   user, and send the answer back to that session.
+   scope crossings, what needs the user, and follow-up candidates. Record the report ("Keep the
+   records current"), ask the user what needs the user, and send the answer back to that session.
 
 ## Start a verification session
 
-Start one when a work session has reported. Create it from the work session's branch.
+Start one when a work session has reported. Create it from the work session's branch, title it
+`<W-id> verify`, and give it the same two tags as a work session.
 
 ```bash
 python3 <stage-plugin-root>/scripts/subsession_brief.py --project-root . <W-id> \
@@ -146,10 +184,11 @@ card is merged.
 
 ## When this session's context fills
 
-Bring every open card's Progress and Next action up to date, commit and push, tell the user, and
-archive this session. The next orchestrator starts at "Take over from the records". The git
-records and each session's transcript remain; only this session's working memory is lost, so
-anything not in a record or a pushed commit must be written down first.
+Check "Keep the records current" for every card in progress: every reported result is in
+`## Progress`, and every question you asked the user that has no answer yet is a
+`Waiting on user:` line or a question record. Commit and push, tell the user, and archive this
+session. The next orchestrator starts at "Take over from the records". The git records and each
+session's transcript remain; this session's working memory does not.
 
 ## Boundary with the driver
 
@@ -161,4 +200,4 @@ acceptance checks; decide what those cards are, and in what order, here.
 
 - `python3 <stage-plugin-root>/scripts/audit_stage.py --project-root <project-root>` — no work
   item finding.
-- Every card in `.stage/work/current/` maps to a listed session or to this session.
+- Every card `started_cards.py` lists maps to a kept session or to this session.
