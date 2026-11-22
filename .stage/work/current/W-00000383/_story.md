@@ -2,14 +2,22 @@
 id: W-00000383
 title: 옛 목록 파일이 남은 프로젝트를 옮길 때 그 파일을 지운다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 8
 autonomous: false
-acceptance: []
-review: not_required
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/scripts,stage/CHANGELOG.md
+promotes:
+decision_refs:
+reserved_ids: DE-00000095
 ---
 
 # W-00000383 옛 목록 파일이 남은 프로젝트를 옮길 때 그 파일을 지운다
@@ -43,3 +51,9 @@ W-00000377(DE-00000091)이 세 목록 파일을 없앴다. 이미 그 파일이 
 - 세 목록 파일이 있는 프로젝트를 옮기면 세 파일이 지워지고 감사가 INDEX007 을 내지 않는다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
