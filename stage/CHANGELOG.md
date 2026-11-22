@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Pin what a merge does to a changelog line when one branch released the plugin and another added
+  the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
+  inserts a version heading above the queued lines, so git places the card's line by its
+  neighbours: a line added first under `## Unreleased` lands in the released section when the card
+  is merged into the released branch, and stays queued without its blank line when the released
+  branch is merged into the card branch; a line added after the last queued line lands in the
+  released section in every direction, with or without `merge=union`, and nothing conflicts.
 - Delete the retired work lists when a project migrates. `work/active.md`, `work/review.md`, and
   `work/planned/index.md` restate card status and no command updates them since DE-00000091, yet
   the v3-to-v4 and v4-to-v5 migrations kept them, so every migrated project drew one INDEX007
