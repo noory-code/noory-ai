@@ -8,12 +8,13 @@ milestone: M-00000005
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -p test_changelog_union.py -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000384
+promotion: not_applicable
+review: passed
 scope: stage/scripts/tests/test_changelog_union.py,stage/scripts/release_plugin.py,stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -99,4 +100,24 @@ order: 카드 브랜치에 릴리스된 기본 브랜치를 먼저 합친다(`.g
 시험 `test_comparing_the_released_section_with_the_release_commit_finds_the_line` 이 이 비교로 줄을 찾고 옮기면 의도한
 변경 기록이 되는 것을 고정한다.
 
+### Executor report at close — 2026-11-22
+
+```
+What changed: Added stage/scripts/tests/test_changelog_union.py, which runs release_plugin.py in a throwaway repository with and without merge=union and pins the merge text in both directions: a line added first under Unreleased lands in the released section when the card is merged into the released branch, and stays queued without its blank line when the released branch is merged into the card branch; without union that case conflicts (GitHub's button); a line added after the last queued line lands in the released section in every direction with or without union; a fourth test pins the handling check (compare the released section with the release commit and move extra lines back) for both the top and the bottom line; added the stage/CHANGELOG.md note; wrote the result table and the handling procedure in the card's Actions, Scope, Risks, and Progress.
+Why: The card's success criterion asks that the merge result be pinned by a test and that the handling of a misplaced line be written on the card.
+Decisions made: release_plugin.py is unchanged, because no line-based release format makes git place a concurrent addition correctly (the queued lines never move, only a heading is inserted above them) and union resolves every conflict silently; the handling is a manual check written on the card instead of a new tool, and an automatic check is left as a follow-up; the misplacement is not caused by union (the bottom-line case misplaces with plain three-way merge too); the reserved DE-00000096 was not used, because the card adds no policy beyond the existing DE-00000091 and the handling procedure.
+Work not done: No automatic detection of misplaced changelog lines; the .gitattributes comment and the release step in CLAUDE.md were not updated to point at the handling.
+```
+
 ## Verification
+
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 서브세션(session_018VXR6RKC7WJPCucJXJqZEQ)이 만들고 메인 세션이 닫았다(DE-00000094). 서브세션 브랜치
+  `claude/w384-changelog-union` 의 10a31bda 까지를 squash 했다(4a45a115).
+- 메인 세션이 다시 돌린 검사: `test_changelog_union.py` 4개 통과, scripts 전체 통과, 감사 오류 0건.
+- 결과(시험으로 고정): 맨 위에 더한 줄은 union 으로 합칠 때 합치는 방향에 따라 릴리스된 절이나 Unreleased 에 들어간다.
+  union 없이 합치면 충돌한다. 맨 아래에 더한 줄은 방향과 union 여부에 상관없이 릴리스된 절에 들어간다.
+- 처리 방법은 이 카드의 `## Progress` 에 있다. 그 비교가 두 경우 모두 줄을 찾는 것을 시험이 확인한다.
+
+- Checks at close 2026-11-22: 3 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_changelog_union.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_changelog_union.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-22 by claude_review_companion: approved (1 PASS)
