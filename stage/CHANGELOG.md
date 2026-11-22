@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Reserve record ids on the remote. Two sessions that had not fetched each other's branches
+  picked the same card or decision number, even with the fetch-then-push rule (R-00000358).
+  `stage_record_ids.py`, `register_work.py`, and `manage_roadmap.py` now push a one-commit
+  `refs/stage-ids/<id>` with a create-only lease after choosing an id, count ids already
+  reserved there, and move to the next number when another session holds it. When there is no
+  remote, it cannot be read, or it refuses the push, the id is chosen as before and one stderr
+  line says it was not reserved. `stage_record_ids.py --no-reserve` only names the next id.
+  The Claude Code cloud git proxy refused this push with HTTP 403, so cloud sessions still
+  depend on fetching before registering and pushing right after.
+
 - Split the Stage CI suites into three jobs per OS and Python. The Windows scripts suite took
   about nine minutes in one job and held every pull request for ten; `.github/scripts/unittest_shard.py`
   now deals the sorted tests round-robin to each shard, and a test fails when the matrix drops

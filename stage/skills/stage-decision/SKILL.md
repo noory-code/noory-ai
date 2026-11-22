@@ -155,8 +155,11 @@ A decision that shapes the work is recorded, not just made.
   question, options, principles applied, chosen direction, and the counted sites under
   `## Where this applies`. Take the number from
   `python3 stage/scripts/stage_record_ids.py --project-root <project-root> DE`, never from the
-  current checkout alone: it also counts every local and remote-tracking branch, so a parallel
-  session's decision cannot share the id. Fetch first when other sessions push.
+  current checkout alone: it counts every local and remote-tracking branch and the ids reserved
+  on the remote, then reserves the id it prints as `refs/stage-ids/<id>` on the remote, so a
+  parallel session's decision cannot share the id. When it prints
+  `<id>: not reserved on the remote`, the id was chosen from fetched refs only: fetch before
+  taking the id and push the record right after.
 - Set the record's `work_item` to the current work item and add the record to the work item's
   `decision_refs`.
 - Record a decision when ANY of these holds; otherwise skip the record:
