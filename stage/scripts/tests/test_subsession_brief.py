@@ -63,6 +63,22 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn("Do not run `start_work.py`, `register_work.py`, `close_work.py`", out)
         self.assertIn("send the main session `session_main` one message", out)
 
+    def test_the_brief_asks_for_scope_crossings_in_the_commit_report(self) -> None:
+        self.card()
+
+        out = brief(self.root, "W-00000002").stdout
+
+        self.assertIn("outside the scope, and why, in that report's `Decisions made:`", out)
+        self.assertIn("reads only the commit's report, not your message", out)
+
+    def test_the_brief_leaves_other_os_checks_to_the_main_session(self) -> None:
+        self.card()
+
+        out = brief(self.root, "W-00000002").stdout
+
+        self.assertIn("Checks that must run on another OS (for example Windows) are not yours to run", out)
+        self.assertIn("The main session opens the pull request and reads its CI jobs.", out)
+
     def test_a_card_without_reserved_ids_forbids_new_records(self) -> None:
         self.card()
 

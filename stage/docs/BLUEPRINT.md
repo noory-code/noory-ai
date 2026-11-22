@@ -26,9 +26,9 @@ Stage 의 코드는 일곱 레이어로 나뉜다. 각 레이어는 한 가지 �
 | 레이어 | 답하는 질문 | 코드 | 계약을 가진 문서 |
 |---|---|---|---|
 | 기록 | 무엇을 어디에 적는가 | `templates/`, 프로젝트의 `.stage/` | [SCHEMA_V5.md](SCHEMA_V5.md), [artifacts.md](../operations/artifacts.md) |
-| 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
+| 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `hooks/stage_process.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py`, `scripts/stage_id_blocks.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
 | 관문 | 지금 이 쓰기와 커밋을 허용하는가 | `hooks/hooks.json`, `hooks/stage_guard.py`, `hooks/stage_shell.py`, `hooks/stage_git.py`, `hooks/stage_runtime.py`, `hooks/stage_context.py`, `hooks/stage_roadmap_gate.py`, `hooks/stage_agent_tier.py` | [hooks/README.md](../hooks/README.md) |
-| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
+| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
 | 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
 | 드라이버 | 등록된 일을 사람 대신 누가 실행하는가 | `scripts/drive.py`, `scripts/drive_parallel.py`, `scripts/driver_*.py`, `scripts/land_run.py`, `scripts/import_executor_report.py` | `skills/stage-drive/SKILL.md` |
 | 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
@@ -124,6 +124,24 @@ flowchart TD
 스크립트도 `scripts/` 와 `hooks/` 를 `sys.path` 에 넣어 가져다 쓴다.
 
 `scripts/release_plugin.py` 는 Stage 의 레이어에 들지 않는다. 이 저장소의 플러그인을 릴리스하는 도구다.
+
+### 시간 제한은 프로세스 그룹 전체를 끝낸다
+
+검사, 리뷰, 드라이버 실행처럼 시간 제한을 거는 명령은 `hooks/stage_process.py` 의 `run_bounded()` 로 띄운다. 명령을
+제 프로세스 그룹에서 시작하고, 시간이 넘으면 그 그룹을 통째로 끝낸다(Windows 는 `taskkill /T /F`, 그 밖은 `killpg`).
+`subprocess.run` 의 timeout 은 Windows 에서 `cmd.exe` 만 끝내고 파이프를 쥔 손자 프로세스를 기다렸다(W-00000381).
+이 파일이 경로와 규칙 레이어에 있는 것은 여러 레이어(검증, 드라이버)가 함께 가져다 쓰기 때문이다.
+
+새 프로세스 그룹은 POSIX 에서 새 세션이라서, 그렇게 띄운 명령에는 제어 터미널이 없다. 지금의 리뷰어와 검사 명령은
+터미널을 읽지 않고 출력도 모두 붙잡히므로 이것을 받아들인다(사용자가 2026-11-22 에 정했다). `/dev/tty` 를 읽는 리뷰어는
+이 길로 띄우면 실패한다.
+
+### 드라이버는 `git ls-files -t` 에 기댄다
+
+드라이버가 저장소 상태를 볼 때 `driver_repository.py` 는 `git ls-files -t --cached --stage --others` 한 번으로 추적
+파일과 추적하지 않는 파일을 함께 읽는다(W-00000382). git 문서는 `-t` 를 "semi-deprecated" 라고 적는다. git 프로세스가
+세 개에서 하나로 줄고, 추적하지 않는 파일 이름에 탭이 있어도 `? ` 표시로 가를 수 있어서 이것을 받아들인다(사용자가
+2026-11-22 에 정했다). git 이 `-t` 의 출력을 바꾸면 `scripts/tests/test_driver_repository.py` 가 실패한다.
 
 ### Stage 의 코드는 표준 라이브러리만 쓴다
 

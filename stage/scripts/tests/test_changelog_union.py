@@ -18,6 +18,9 @@ by writing the side being merged into first. The result therefore depends on the
 
 A line added after the last queued line does not conflict at all and lands in the released section
 in both directions, with or without union.
+
+`release_plugin.py --check-released` finds such a line: it compares each released section with the
+one the commit that wrote its heading holds (W-00000392).
 """
 
 from __future__ import annotations
@@ -207,8 +210,9 @@ class ChangelogUnionMergeTest(unittest.TestCase):
                     self.assertEqual(0, merge.returncode, merge.stdout + merge.stderr)
                     self.assertEqual(MISPLACED_BOTTOM, self.merged_text())
 
-    def test_comparing_the_released_section_with_the_release_commit_finds_the_line(self) -> None:
-        # The card's handling: the released section must equal the one the release commit wrote.
+    def test_the_release_check_finds_the_line_in_the_released_section(self) -> None:
+        # The card's handling: `release_plugin.py --check-released` compares each released section
+        # with the one its release commit wrote and lists what it gained.
         heading = "## 0.2.0 — 2026-02-01"
         for at_top in (True, False):
             with self.subTest(at_top=at_top):
@@ -217,20 +221,43 @@ class ChangelogUnionMergeTest(unittest.TestCase):
                 release_commit = self.release_on_main()
                 git(self.repository, "merge", "--no-edit", "card")
 
-                at_release = git(
-                    self.repository, "show", f"{release_commit}:stage/CHANGELOG.md"
-                ).stdout
-                released_lines = section(at_release, heading).splitlines(keepends=True)
-                merged_lines = section(self.merged_text(), heading).splitlines(keepends=True)
-                extra = [line for line in merged_lines if line not in released_lines]
-                self.assertEqual([CARD], extra)
+                check = release_plugin.check_released_sections(self.repository, "stage")
+                self.assertEqual(
+                    (
+                        release_plugin.SectionIntrusion(
+                            heading, release_commit, (CARD.rstrip("\n"),)
+                        ),
+                    ),
+                    check.intrusions,
+                )
+                self.assertEqual((), check.unrecorded_headings)
 
-                # Moving the extra lines back under `## Unreleased` gives the intended changelog.
+                # Moving the listed lines back under `## Unreleased` gives the intended changelog,
+                # and the check then passes.
                 repaired = self.merged_text().replace(CARD, "", 1)
                 repaired = repaired.replace(
                     f"## Unreleased\n\n{heading}", f"## Unreleased\n\n{CARD}\n{heading}", 1
                 )
                 self.assertEqual(INTENDED, repaired)
+                self.changelog.write_bytes(repaired.encode("utf-8"))
+                git(self.repository, "commit", "-q", "-am", "move the card line back")
+                self.assertEqual(
+                    (), release_plugin.check_released_sections(self.repository, "stage").intrusions
+                )
+
+    def test_the_release_check_passes_when_the_line_stayed_queued(self) -> None:
+        # Merging the released branch into the card branch keeps a top line under `## Unreleased`.
+        self.make_base(union=True)
+        self.add_card_line(at_top=True)
+        self.release_on_main()
+        git(self.repository, "checkout", "-q", "card")
+        git(self.repository, "merge", "--no-edit", "main")
+        self.assertEqual(KEPT_TOP, self.merged_text())
+
+        check = release_plugin.check_released_sections(self.repository, "stage")
+        self.assertEqual((), check.intrusions)
+        self.assertEqual((), check.unrecorded_headings)
+
 
 if __name__ == "__main__":
     unittest.main()

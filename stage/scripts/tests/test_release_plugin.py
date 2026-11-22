@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from git_test_config import isolate_git_config  # noqa: E402
+
+isolate_git_config()
 
 CLI_PATH = Path(__file__).resolve().parents[1] / "release_plugin.py"
 
@@ -70,13 +76,23 @@ class ReleasePluginCliTest(unittest.TestCase):
         repository_root: Path,
         bump: str,
     ) -> subprocess.CompletedProcess[str]:
+        return self.run_mode(repository_root, "--bump", bump)
+
+    def run_mode(
+        self,
+        repository_root: Path,
+        *mode: str,
+        stdout_encoding: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        env = None
+        if stdout_encoding is not None:
+            env = {**os.environ, "PYTHONIOENCODING": stdout_encoding}
         return subprocess.run(
             [
                 sys.executable,
                 str(CLI_PATH),
                 "stage",
-                "--bump",
-                bump,
+                *mode,
                 "--repository-root",
                 str(repository_root),
             ],
@@ -85,7 +101,28 @@ class ReleasePluginCliTest(unittest.TestCase):
             encoding="utf-8",
             errors="replace",
             check=False,
+            env=env,
         )
+
+    def test_check_released_prints_utf_8_when_the_console_is_cp1252(self):
+        # A Windows runner's stdout is cp1252, which writes the heading's em dash as one
+        # byte that UTF-8 cannot read (W-00000393).
+        temporary_directory, repository_root = self.make_released_repository()
+        heading = f"## 0.54.5 — {date.today().isoformat()}"
+        with temporary_directory:
+            changelog_path = repository_root / "stage" / "CHANGELOG.md"
+            changelog = changelog_path.read_text(encoding="utf-8")
+            changelog_path.write_text(
+                changelog.replace(f"{heading}\n\n", f"{heading}\n\n- Slipped in.\n", 1),
+                encoding="utf-8",
+            )
+            self.commit_all(repository_root, "card line merged into the released section")
+
+            result = self.run_mode(repository_root, "--check-released", stdout_encoding="cp1252")
+
+        self.assertEqual(1, result.returncode, result.stderr)
+        self.assertIn(f"{heading} (released in ", result.stdout)
+        self.assertNotIn("\ufffd", result.stdout)
 
     def test_release_reopens_unreleased_section_and_updates_both_manifests(self):
         temporary_directory, repository_root = self.make_repository()
@@ -246,6 +283,88 @@ class ReleasePluginCliTest(unittest.TestCase):
 
         self.assertNotEqual(0, result.returncode)
         self.assertIn("invalid choice", result.stderr)
+        self.assertEqual(before, after)
+
+
+    @staticmethod
+    def commit_all(repository_root: Path, message: str) -> None:
+        for args in (("add", "-A"), ("commit", "-q", "-m", message)):
+            subprocess.run(
+                ["git", *args],
+                cwd=repository_root,
+                check=True,
+                capture_output=True,
+            )
+
+    def make_released_repository(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+        temporary_directory, repository_root = self.make_repository()
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main"],
+            cwd=repository_root,
+            check=True,
+            capture_output=True,
+        )
+        self.commit_all(repository_root, "base")
+        released = self.run_cli(repository_root, "patch")
+        self.assertEqual(0, released.returncode, released.stderr)
+        self.commit_all(repository_root, "release stage 0.54.5")
+        return temporary_directory, repository_root
+
+    def test_check_released_fails_and_lists_a_line_added_to_a_released_section(self):
+        temporary_directory, repository_root = self.make_released_repository()
+        heading = f"## 0.54.5 — {date.today().isoformat()}"
+        with temporary_directory:
+            changelog_path = repository_root / "stage" / "CHANGELOG.md"
+            changelog = changelog_path.read_text(encoding="utf-8")
+            changelog_path.write_text(
+                changelog.replace(
+                    f"{heading}\n\n",
+                    f"{heading}\n\n- Slipped in after the release.\n",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            self.commit_all(repository_root, "card line merged into the released section")
+            before = self.snapshot_plugin(repository_root)
+
+            result = self.run_mode(repository_root, "--check-released")
+            after = self.snapshot_plugin(repository_root)
+
+        self.assertEqual(1, result.returncode, result.stderr)
+        self.assertIn(f"{heading} (released in ", result.stdout)
+        self.assertIn("+ - Slipped in after the release.", result.stdout)
+        self.assertNotIn("Ship the queued Stage changes", result.stdout)
+        self.assertNotIn("Previous release", result.stdout)
+        self.assertEqual(before, after)
+
+    def test_check_released_passes_when_released_sections_are_unchanged(self):
+        temporary_directory, repository_root = self.make_released_repository()
+        with temporary_directory:
+            changelog_path = repository_root / "stage" / "CHANGELOG.md"
+            changelog = changelog_path.read_text(encoding="utf-8")
+            changelog_path.write_text(
+                changelog.replace(
+                    "## Unreleased\n\n", "## Unreleased\n\n- Queued for the next release.\n\n", 1
+                ),
+                encoding="utf-8",
+            )
+            self.commit_all(repository_root, "queue a line")
+
+            result = self.run_mode(repository_root, "--check-released")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("no released section gained lines after its release", result.stdout)
+        self.assertNotIn("Not checked", result.stdout)
+
+    def test_check_released_and_bump_cannot_run_together(self):
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            before = self.snapshot_plugin(repository_root)
+            result = self.run_mode(repository_root, "--check-released", "--bump", "patch")
+            after = self.snapshot_plugin(repository_root)
+
+        self.assertEqual(2, result.returncode)
+        self.assertIn("not allowed with argument", result.stderr)
         self.assertEqual(before, after)
 
 

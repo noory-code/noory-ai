@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- Print UTF-8 from `release_plugin.py` on every console. `--check-released` prints changelog headings
+  that carry an em dash, and a Windows console's default encoding (cp1252 on the CI runner, cp949 on
+  Korean Windows) wrote it as a byte a UTF-8 reader could not decode; the Windows CI jobs failed on
+  it. A test now runs the check with a cp1252 console on every OS.
+- Say in `docs/BLUEPRINT.md` what the new code does not say about itself: `hooks/stage_process.py`
+  ends a timed-out command's whole process group and runs it without a controlling terminal on
+  POSIX, and the driver relies on `git ls-files -t`, which git calls semi-deprecated, on purpose.
+  The layer table now lists `hooks/stage_process.py`, `scripts/stage_id_blocks.py`, and
+  `scripts/subsession_brief.py`.
+- Tell sub-sessions two more things in `subsession_brief.py`. A sub-session that edited files
+  outside the card's scope said so in its message but not in its commit's executor report, and the
+  close review, which reads only the report, sent the card back (W-00000382). The brief now asks for
+  every scope crossing in the report's `Decisions made:` line. It also says that checks needing
+  another OS, such as Windows, belong to the main session, which opens the pull request and reads
+  its CI jobs (W-00000381).
+- Find changelog lines that slipped into an already released section with
+  `python3 stage/scripts/release_plugin.py <plugin> --check-released` (W-00000392). For every
+  release heading it finds the oldest non-merge commit whose diff added that heading, reads the
+  section as that commit wrote it, and prints each non-blank line the section holds now and did not
+  then, under its heading; it exits 1 when there are any and 0 otherwise, and changes no file. A
+  merge therefore no longer needs a by-hand comparison to show that a card's line landed under the
+  released heading. A heading no commit added (uncommitted, or written while resolving a merge) is
+  listed as not checked.
 - Pin what a merge does to a changelog line when one branch released the plugin and another added
   the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
   inserts a version heading above the queued lines, so git places the card's line by its
