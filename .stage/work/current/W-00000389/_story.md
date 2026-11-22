@@ -2,14 +2,20 @@
 id: W-00000389
 title: W-00000381, W-00000382, W-00000384 에서 사용자가 정한 것을 기록에 남긴다
 kind: documentation
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 5
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: .stage/decisions/pending/DE-00000091.md,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000389 W-00000381, W-00000382, W-00000384 에서 사용자가 정한 것을 기록에 남긴다
@@ -42,3 +48,9 @@ scope: .stage/decisions/pending/DE-00000091.md,stage/docs/BLUEPRINT.md,stage/CHA
 - git ls-files -t 를 쓰기로 한 것이 그 이유와 함께 기록에 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
