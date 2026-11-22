@@ -202,6 +202,11 @@
   a failing check or review archives nothing, and an archive failure after a successful close
   exits non-zero and names `archive_work.py` as the next step. The drivers still close without
   it, because their landing step commits the closed card from `work/current/`.
+- `manage_roadmap.py` no longer hands out a theme, milestone, or chain-decision id that a started
+  card's `reserved_ids:` holds for a sub-session or that a record on another local or
+  remote-tracking branch already uses (W-00000398). It counted only its own checkout's roadmap and
+  decision records plus remote reservations; it now counts the same used numbers
+  `stage_record_ids.py` does.
 
 ## 0.67.0 — 2026-11-20
 
