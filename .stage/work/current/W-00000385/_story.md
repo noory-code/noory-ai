@@ -2,14 +2,20 @@
 id: W-00000385
 title: 메인 세션이 서브세션에 일과 번호 묶음을 나눠 주는 방법을 설계한다
 kind: design
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 6
 autonomous: false
 acceptance: []
-review: not_required
-scope: .stage/decisions
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: .stage/decisions,.stage/work
+promotes:
+decision_refs:
 ---
 
 # W-00000385 메인 세션이 서브세션에 일과 번호 묶음을 나눠 주는 방법을 설계한다
@@ -58,3 +64,9 @@ scope: .stage/decisions
 - 고른 방법을 구현하는 카드가 계획된 카드로 등록되어 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
