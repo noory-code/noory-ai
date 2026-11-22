@@ -7,12 +7,13 @@ environment: cloud
 milestone: M-00000005
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000377
+promotion: not_applicable
+review: passed
 scope: .gitattributes,.gitignore,.stage/work,.stage/index.md,.stage/operations/parallel-sessions.md,stage
 promotes:
 decision_refs:
@@ -84,12 +85,23 @@ DE-00000091 을 읽고, 세 목록을 파일로 남겨 `.gitignore` 에 넣을�
 - 감사 규칙 INDEX000~INDEX006, BACKLOG008/BACKLOG009 를 없앴다(v3 구조 포함). 비교할 목록이 없다.
 - `register_work.py`, `start_work.py` 의 `--owner` 를 없앴다. 목록의 Owner 칸만 채우던 값이다.
 
+### Executor report at close — 2026-11-22
+
+```
+What changed: Root .gitattributes gives every CHANGELOG.md and .stage/official/**/archive/index.md merge=union; the three work list files, their v4 templates, LifecyclePaths fields, and topology index surfaces are removed; register_work, start_work, escalate_work, close_work, archive_work, and land_run no longer read or write them; stage_context derives Active work and Review candidates from card status; archive_work --all-completed selects terminal top-level current cards by status; audit INDEX000-INDEX006 and BACKLOG008/BACKLOG009 are removed and INDEX007 warns about each leftover list file; the completion gate fallback no longer blocks schema-v5 projects on list rows; init_stage adds the archive union entry to .gitattributes; skills, operations docs, schema docs, templates, .stage/index.md, and parallel-sessions.md are updated; tests follow.
+Why: DE-00000091 chose union for append-only lists and card-derived views for lists that delete rows, so parallel branches merge without hand-resolving list conflicts.
+Decisions made: No list files at all instead of git-ignored generated files, because an ignored file helps neither GitHub readers nor other sessions and every reader can derive the view from cards; existing projects keep working and get audit warning INDEX007 per leftover file to delete (warning, not error, because a stale file misleads readers but breaks no tool); migration scripts stay unchanged and migrated projects receive the same INDEX007 warnings; init_stage.py adds only the archive index union line to other projects, and re-running it adds the line to existing projects; INDEX000-INDEX006 and BACKLOG008/009 are removed for v3 too because no command writes the lists any more; the v3 completion-gate fallback is kept; --owner is removed from register_work.py and start_work.py because it only filled a list column.
+Work not done: The GitHub merge button does not honor merge=union (checked by the main session with PRs #90 and #91: the second PR was refused as conflicting while git merge-tree with the attribute merged cleanly), so pull requests that conflict only in append-only lists need the base branch merged in with git first; this is documented rather than fixed; the three throwaway branches claude/w377-union-test-base, -a, -b could not be deleted (proxy 403) and are left for the user; migration scripts do not delete the retired list files; record numbering is left to W-00000378.
+```
+
 ## Verification
 
 - 사용자 확인(DE-00000087, 2026-11-22, 메인 세션이 전달): 관문과 점검 규칙 변경에 "1 OK". 세 목록 파일 삭제,
   INDEX000~INDEX006 과 BACKLOG008/BACKLOG009 삭제, INDEX007 경고 추가, v5 의 `fallback_index_blockers` 변경,
   `--owner` 삭제를 확인했다.
 - 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 코드가 여러 커밋(merge 포함)에 걸쳐 있어 리뷰가 모든 경로를 받도록, origin/main 위에 브랜치 트리를 얹은 로컬
+  커밋 34b88fd4(경로 69개)에서 닫았다.
 - `python3 -m unittest discover -s stage/hooks/tests -q`: 461 tests OK (skipped=1), origin/main(W-00000378) 병합 뒤에도 같다.
 - `python3 -m unittest discover -s stage/scripts/tests -q`: 805 tests OK (skipped=2), origin/main 병합 뒤 818 tests OK.
 - `python3 stage/scripts/audit_stage.py --project-root .`: errors=0, warnings=32 (모두 이 카드 이전부터 있던 경고).
@@ -107,3 +119,6 @@ DE-00000091 을 읽고, 세 목록을 파일로 남겨 `.gitignore` 에 넣을�
   충돌이 없고, attr source 없이 합치면 `stage/CHANGELOG.md` 와 `.stage/official/work/archive/index.md` 에서 충돌한다.
   GitHub 머지 버튼은 `merge=union` 을 따르지 않는다. union 은 git CLI 로 합칠 때(예: PR 브랜치에 main 을 합칠 때)만
   돕는다. #91 은 닫혔다. 임시 브랜치 세 개는 메인 세션에서도 403 으로 지우지 못해 사용자가 지운다.
+
+- Checks at close 2026-11-22: 3 passed — `python3 -m unittest discover -s stage/hooks/tests -q`; `python3 -m unittest discover -s stage/scripts/tests -q`; `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS, 3 PASS, 4 PASS, 5 PASS)
