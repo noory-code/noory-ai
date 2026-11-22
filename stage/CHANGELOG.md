@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Pin what a merge does to a changelog line when one branch released the plugin and another added
+  the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
+  inserts a version heading above the queued lines, so git places the card's line by its
+  neighbours: a line added first under `## Unreleased` lands in the released section when the card
+  is merged into the released branch, and stays queued without its blank line when the released
+  branch is merged into the card branch; a line added after the last queued line lands in the
+  released section in every direction, with or without `merge=union`, and nothing conflicts.
+- End the whole process tree when a close check, a close review, a parallel driver, or a venue
+  reaper runs past its time limit. `subprocess.run(..., timeout=...)` kills only its direct child.
+  On Windows that child is `cmd.exe`, and the python under it kept the output pipes open, so the
+  call waited for it: a 1-second `--timeout` on a 5-second check took 5.5 seconds, and
+  `--review-timeout` likewise (W-00000381). On POSIX the call returned on time but left the
+  descendants running. `close_work.py` and `drive_parallel.py` now run these commands through
+  `hooks/stage_process.py`, which starts each in its own process group and, on timeout or
+  interrupt, ends that group (`taskkill /T /F` on Windows, `killpg` on POSIX).
 - Delete the retired work lists when a project migrates. `work/active.md`, `work/review.md`, and
   `work/planned/index.md` restate card status and no command updates them since DE-00000091, yet
   the v3-to-v4 and v4-to-v5 migrations kept them, so every migrated project drew one INDEX007

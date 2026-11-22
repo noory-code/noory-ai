@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from datetime import date
 from pathlib import Path
@@ -1088,6 +1089,39 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("check failed", proc.stderr)
         self.assertIn("[TIMED OUT after 1s] (--timeout)", proc.stderr)
         self.assertIn("status: active", item)
+
+    def test_run_check_timeout_ends_the_whole_process_tree_in_time(self):
+        # A shell (cmd.exe on Windows) or a script that starts its own child leaves a
+        # descendant holding the output pipes. On Windows the call then waited for that
+        # descendant; on POSIX it returned and left the descendant running. The time limit
+        # must end the descendant on both (W-00000381).
+        close_work = load_close_module()
+        for label in ("direct", "grandchild"):
+            with self.subTest(command=label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    marker = Path(tmp) / "survived.txt"
+                    sleeper = (
+                        "import time; from pathlib import Path; time.sleep(1.5); "
+                        f"Path({str(marker)!r}).write_text('x', encoding='utf-8')"
+                    )
+                    command = python_command(
+                        sleeper
+                        if label == "direct"
+                        else "import subprocess, sys\n"
+                        f"subprocess.run([sys.executable, '-c', {sleeper!r}])"
+                    )
+                    started = time.monotonic()
+                    ok, evidence, _ = close_work.run_check(
+                        command, 1, Path(tmp), timeout_source="--timeout"
+                    )
+                    elapsed = time.monotonic() - started
+                    time.sleep(max(0.0, 2.5 - elapsed))
+                    survived = marker.exists()
+
+                self.assertFalse(ok)
+                self.assertIn("[TIMED OUT after 1s] (--timeout)", evidence)
+                self.assertLess(elapsed, 2.0)
+                self.assertFalse(survived, "a descendant outlived the time limit")
 
     def test_timeouts_default_to_900_for_checks_and_3600_for_reviews(self):
         for label, item_fields, review in self.review_path_cases(python_command("print(1)")):
