@@ -85,7 +85,7 @@ class HandoffPacketTest(unittest.TestCase):
         self.assertIn('"criteria", "check", "--project", "test/app"', text)
         self.assertIn('"--refs", "distill:CR-aaaaaaaaaaaa@2"', text)
         self.assertIn("Implement parse_host.", text)
-        self.assertIn("avatar: Criteria were not queried", text)
+        self.assertNotIn("avatar", text)
 
     def test_scope_mismatch_and_duplicate_versions_stop_the_packet(self) -> None:
         bad = snapshot()
@@ -114,6 +114,15 @@ class HandoffPacketTest(unittest.TestCase):
                 with self.assertRaisesRegex(packet.PacketError, "E_PRODUCERS_INVALID"):
                     packet.build_packet(self.root, "W-00000002", "test/app", {"distill": {"argv": argv}})
                 run.assert_not_called()
+        with patch("handoff_producers.subprocess.run") as run:
+            with self.assertRaisesRegex(packet.PacketError, "E_PRODUCERS_INVALID"):
+                packet.build_packet(
+                    self.root,
+                    "W-00000002",
+                    "test/app",
+                    {"avatar": {"argv": [sys.executable, "producer.py"]}},
+                )
+            run.assert_not_called()
 
     def test_file_evidence_is_rehashed_and_checks_are_not_run(self) -> None:
         path = self.root / "app/config.py"

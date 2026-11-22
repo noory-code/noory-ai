@@ -60,6 +60,7 @@
   `python3 -m unittest` with a `Bash(...)` rule only, so a reviewer that picked PowerShell
   was denied and judged from records instead of a run. On Windows the reviewer now also
   gets `PowerShell(python3 -m unittest:*)`; macOS and Linux are unchanged.
+- Drop the removed `avatar` plugin from `scripts/tests/test_ci_workflows.py` and from the handoff packet producer contract (`scripts/handoff_packet.py`, `scripts/handoff_producers.py`, `docs/HANDOFF_PACKET.md`, and `README.md`).
 - Put the blueprint in one place. `docs/BLUEPRINT.md` now opens with the goal, a table of the seven
   layers the code is divided into, and what the code does not say about itself: why the shared
   modules live in `hooks/`, and why `close_work.py` and the driver import each other. The existing

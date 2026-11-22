@@ -56,7 +56,7 @@ def build_packet(root: Path, item_id: str, project_key: str, config: dict) -> st
         lines += [f"### {card.item_id}", "", section(bodies[card.item_id], "Purpose") or "Purpose missing; do not invent one.", ""]
     lines += ["## Criteria as of check", "", "These criteria were current at the reported check. Recheck before using them.", ""]
     commands = []
-    for name in ("distill", "avatar"):
+    for name in ("distill",):
         if name not in config:
             lines += [f"{name}: Criteria were not queried; absence is not established.", ""]
             continue
@@ -101,11 +101,11 @@ def build_packet(root: Path, item_id: str, project_key: str, config: dict) -> st
             explicitly_none = True
             continue
         for ref in value.split(","):
-            if re.fullmatch(r"(?:distill:CR|avatar:PC)-[0-9a-f]{12}@[1-9][0-9]*", ref.strip()):
+            if re.fullmatch(r"distill:CR-[0-9a-f]{12}@[1-9][0-9]*", ref.strip()):
                 applied.add(ref.strip())
             elif f"Unparsed record: {line}" not in unparsed:
                 unparsed.append(f"Unparsed record: {line}")
-    for name in ("distill", "avatar"):
+    for name in ("distill",):
         refs = sorted(ref for ref in applied if ref.startswith(name + ":"))
         if not refs:
             continue
