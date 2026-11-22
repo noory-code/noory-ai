@@ -17,6 +17,13 @@
   descendants running. `close_work.py` and `drive_parallel.py` now run these commands through
   `hooks/stage_process.py`, which starts each in its own process group and, on timeout or
   interrupt, ends that group (`taskkill /T /F` on Windows, `killpg` on POSIX).
+- Start fewer Git processes when the driver observes the repository. A path snapshot now reads the
+  index and the untracked paths with one `git ls-files -t` call, the progress diff and the current
+  HEAD start with the command that answers the common case and run the worktree checks only after
+  it fails, and the observations taken around an executor read the untracked paths once for both
+  the fingerprint and the snapshot. The scripts suite starts 5,330 Git processes instead of 6,879
+  (counted with strace on Linux, the new tests included), which matters on Windows, where each
+  process costs 35–46 ms. What the driver observes is unchanged.
 - Delete the retired work lists when a project migrates. `work/active.md`, `work/review.md`, and
   `work/planned/index.md` restate card status and no command updates them since DE-00000091, yet
   the v3-to-v4 and v4-to-v5 migrations kept them, so every migrated project drew one INDEX007

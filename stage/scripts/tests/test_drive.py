@@ -3042,8 +3042,8 @@ class DriveTest(unittest.TestCase):
                 drive.subprocess,
                 "run",
                 side_effect=[
-                    index_path,
                     missing_head,
+                    index_path,
                     unborn_head,
                     failed_unborn_diff,
                 ],
@@ -3079,17 +3079,15 @@ class DriveTest(unittest.TestCase):
                 "--execute",
                 "W-00000001",
             ]
+            # Only the progress diff enumerates untracked paths on its own; the
+            # observations around the executor read them from one index listing.
             enumerations = [
-                (set(), ""),
-                (set(), ""),
-                ({"executor-work.txt"}, ""),
-                ({"executor-work.txt"}, ""),
                 (set(), "injected progress enumeration failure"),
             ]
 
             with (
                 mock.patch.object(sys, "argv", argv),
-                # The snapshot builder calls this from driver_repository's own
+                # The progress diff calls this from driver_repository's own
                 # namespace, so patching the name drive re-exports would not
                 # reach it.
                 mock.patch.object(
