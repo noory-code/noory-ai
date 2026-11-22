@@ -7,9 +7,17 @@ that follows the kill waits until they finish. The time limit then bounds nothin
 a 1-second limit on a 5-second command took 5.5 seconds on Windows).
 
 `run_bounded` starts the command in its own process group and, on timeout or interrupt, ends
-that group: `taskkill /T /F` on Windows, `killpg(SIGKILL)` on POSIX. It keeps the
+that group: `taskkill /T /F` on Windows, `killpg` on POSIX. It keeps the
 `subprocess.run` contract callers already use: it returns a `CompletedProcess` with text output
 and raises `subprocess.TimeoutExpired` on timeout.
+
+Calls nest: the driver runs close_work, which runs a review through run_review, which runs the
+reviewer, each through `run_bounded`. `taskkill /T` follows the parent chain, so on Windows the
+outer kill reaches every level. On POSIX each level is a group of its own, and a `killpg` of the
+outer group does not reach the inner ones (W-00000391). So the POSIX kill sends SIGTERM to the
+group first, and `run_bounded`, while it waits on the main thread, answers SIGTERM by ending its
+own command's group before it exits. SIGKILL follows after `TERM_GRACE_SECONDS`, for a process
+that ignores SIGTERM.
 """
 
 from __future__ import annotations
@@ -18,7 +26,9 @@ import os
 import signal
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+import threading
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 # After the tree is killed, wait at most this long for the pipes to close. A descendant that
@@ -26,6 +36,9 @@ from pathlib import Path
 # returns without its output rather than waiting for it.
 DRAIN_SECONDS = 2.0
 TASKKILL_SECONDS = 10.0
+# How long a POSIX group gets to end its own descendants after SIGTERM before SIGKILL.
+TERM_GRACE_SECONDS = 2.0
+TERMINATED_STATUS = 128 + 15
 
 
 def _group_options() -> dict[str, object]:
@@ -55,7 +68,17 @@ def kill_process_tree(proc: subprocess.Popen[str]) -> None:
                 pass
     else:
         # The group outlives its leader while any member remains, so this also reaches
-        # descendants of a shell that already exited.
+        # descendants of a shell that already exited. SIGTERM first lets a nested
+        # run_bounded end the group it started, which this group's kill cannot reach.
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except OSError:
+            pass
+        else:
+            try:
+                proc.wait(timeout=TERM_GRACE_SECONDS)
+            except subprocess.TimeoutExpired:
+                pass
         try:
             os.killpg(proc.pid, signal.SIGKILL)
         except OSError:
@@ -64,6 +87,28 @@ def kill_process_tree(proc: subprocess.Popen[str]) -> None:
         proc.kill()
     except OSError:
         pass
+
+
+def _exit_on_sigterm(signum: int, frame: object) -> None:
+    raise SystemExit(TERMINATED_STATUS)
+
+
+@contextmanager
+def _sigterm_ends_tree() -> Iterator[None]:
+    """Turn SIGTERM into SystemExit while waiting, so the caller ends its tree on the way out.
+
+    Signal handlers can be set only on the main thread; a worker thread's caller is the
+    outermost level (drive_parallel.py), which no outer kill has to reach.
+    """
+    if sys.platform == "win32" or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+    previous = signal.signal(signal.SIGTERM, _exit_on_sigterm)
+    try:
+        yield
+    finally:
+        # None means the handler was not set from Python; the default is the closest match.
+        signal.signal(signal.SIGTERM, signal.SIG_DFL if previous is None else previous)
 
 
 def _drain(proc: subprocess.Popen[str]) -> tuple[str, str]:
@@ -83,28 +128,32 @@ def run_bounded(
     env: Mapping[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Run `command`, capturing UTF-8 text output, and end its process tree at `timeout`."""
-    proc = subprocess.Popen(
-        command,
-        shell=shell,
-        cwd=None if cwd is None else str(cwd),
-        env=None if env is None else dict(env),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        **_group_options(),  # type: ignore[call-overload]
-    )
-    try:
-        stdout, stderr = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        kill_process_tree(proc)
-        stdout, stderr = _drain(proc)
-        raise subprocess.TimeoutExpired(command, timeout, output=stdout, stderr=stderr) from None
-    except BaseException:
-        # A separate process group no longer receives the terminal's Ctrl+C, so an interrupt
-        # of this process must end the tree itself instead of leaving it running.
-        kill_process_tree(proc)
-        _drain(proc)
-        raise
+    with _sigterm_ends_tree():
+        proc = subprocess.Popen(
+            command,
+            shell=shell,
+            cwd=None if cwd is None else str(cwd),
+            env=None if env is None else dict(env),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            **_group_options(),  # type: ignore[call-overload]
+        )
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            kill_process_tree(proc)
+            stdout, stderr = _drain(proc)
+            raise subprocess.TimeoutExpired(
+                command, timeout, output=stdout, stderr=stderr
+            ) from None
+        except BaseException:
+            # A separate process group no longer receives the terminal's Ctrl+C, so an
+            # interrupt of this process, or an outer run_bounded's SIGTERM, must end the
+            # tree itself instead of leaving it running.
+            kill_process_tree(proc)
+            _drain(proc)
+            raise
     return subprocess.CompletedProcess(command, proc.returncode, stdout or "", stderr or "")

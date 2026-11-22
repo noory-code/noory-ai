@@ -274,7 +274,9 @@ The script runs the command after `--` without a shell, appends its output to
 status. It expands `$STAGE_NAME` and `${STAGE_NAME}` in every argument itself, so the prompt
 reads the same in `cmd.exe`, which leaves them alone, and in a POSIX shell, which has already
 expanded them; an unset variable becomes an empty string in both. `--env NAME=VALUE` replaces
-the POSIX `NAME=VALUE command` prefix. Keep the command free of `$(...)`, `$?`, redirection,
+the POSIX `NAME=VALUE command` prefix. `--timeout SECONDS` (default 3600, `close_work.py`'s
+review timeout) ends the reviewer's whole process tree when it runs out; the partial output and a
+timeout line are recorded and the script exits 124. Keep the command free of `$(...)`, `$?`, redirection,
 `&&`, `||`, single quotes, and `%`: `cmd.exe` and POSIX shells read each of those differently.
 
 An executor first decides whether the action itself serves its stated purpose. If it does not, the
