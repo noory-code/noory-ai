@@ -15,7 +15,7 @@ promotion: pending
 review: pending
 scope: .stage/decisions,.stage/work
 promotes:
-decision_refs:
+decision_refs: DE-00000094
 ---
 
 # W-00000385 메인 세션이 서브세션에 일과 번호 묶음을 나눠 주는 방법을 설계한다
