@@ -8,6 +8,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -463,7 +464,9 @@ class DriveTest(unittest.TestCase):
         drive = self.load_module()
         completed = subprocess.CompletedProcess([], 0, "closed\n", "")
 
-        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+        with mock.patch.object(
+            sys.modules["driver_lifecycle"], "run_bounded", return_value=completed
+        ) as run:
             closed, output = drive.close_via_close_work(
                 root,
                 "W-00000001",
@@ -484,7 +487,9 @@ class DriveTest(unittest.TestCase):
         drive = self.load_module()
         completed = subprocess.CompletedProcess([], 0, "closed\n", "")
 
-        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+        with mock.patch.object(
+            sys.modules["driver_lifecycle"], "run_bounded", return_value=completed
+        ) as run:
             closed, output = drive.close_via_close_work(
                 root,
                 "W-00000001",
@@ -505,7 +510,9 @@ class DriveTest(unittest.TestCase):
         drive = self.load_module()
         completed = subprocess.CompletedProcess([], 0, "closed\n", "")
 
-        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+        with mock.patch.object(
+            sys.modules["driver_lifecycle"], "run_bounded", return_value=completed
+        ) as run:
             closed, output = drive.close_via_close_work(root, "W-00000001", [], 30)
 
         self.assertTrue(closed, output)
@@ -526,7 +533,9 @@ class DriveTest(unittest.TestCase):
         drive = self.load_module()
         completed = subprocess.CompletedProcess([], 0, "closed\n", "")
 
-        with mock.patch.object(drive.subprocess, "run", return_value=completed) as run:
+        with mock.patch.object(
+            sys.modules["driver_lifecycle"], "run_bounded", return_value=completed
+        ) as run:
             closed, output = drive.close_via_close_work(
                 root, "W-00000001", ["true"], 30, review_timeout=3600
             )
@@ -536,6 +545,59 @@ class DriveTest(unittest.TestCase):
         self.assertEqual("30", command[command.index("--timeout") + 1])
         self.assertEqual("3600", command[command.index("--review-timeout") + 1])
         self.assertEqual(30 * 3 + 3600 + 60, run.call_args.kwargs["timeout"])
+
+    def assert_timeout_ends_the_process_tree(self, script_name: str, call) -> None:
+        # The called script starts a child that writes a marker after the limit, through
+        # run_bounded as close_work does, so the child sits in a process group of its own.
+        # The limit must end both, on Windows as well as POSIX (W-00000391).
+        tmp, root = self.make_project()
+        self.addCleanup(tmp.cleanup)
+        write_card(root / ".stage", "W-00000001", promotion="deferred")
+        drive = self.load_module()
+        marker = root / "survived.txt"
+        sleeper = (
+            "import time; from pathlib import Path; time.sleep(2); "
+            f"Path({str(marker)!r}).write_text('x', encoding='utf-8')"
+        )
+        script = root / "slow_script.py"
+        script.write_text(
+            "import sys\n"
+            f"sys.path.insert(0, {str(SCRIPT.parents[1] / 'hooks')!r})\n"
+            "from stage_process import run_bounded\n"
+            f"run_bounded([sys.executable, '-c', {sleeper!r}], timeout=60)\n",
+            encoding="utf-8",
+        )
+
+        with mock.patch.object(sys.modules["driver_lifecycle"], script_name, script):
+            started = time.monotonic()
+            ok, output = call(drive, root)
+            elapsed = time.monotonic() - started
+        time.sleep(max(0.0, 3.0 - elapsed))
+
+        self.assertFalse(ok)
+        self.assertIn("timed out after 1s", output)
+        self.assertLess(elapsed, 2.0)
+        self.assertFalse(marker.exists(), "a descendant outlived the time limit")
+
+    def test_close_timeout_ends_the_whole_close_work_process_tree(self):
+        # With no check or review budget the outer limit is the margin alone.
+        def close(drive, root):
+            with mock.patch.object(
+                sys.modules["driver_lifecycle"], "CLOSE_WORK_MARGIN_SECONDS", 1
+            ):
+                return drive.close_via_close_work(
+                    root, "W-00000001", [], 0, review_timeout=0
+                )
+
+        self.assert_timeout_ends_the_process_tree("CLOSE_WORK", close)
+
+    def test_escalate_timeout_ends_the_whole_escalate_work_process_tree(self):
+        self.assert_timeout_ends_the_process_tree(
+            "ESCALATE_WORK",
+            lambda drive, root: drive.escalate_via_escalate_work(
+                root, "W-00000001", "stuck", timeout=1
+            ),
+        )
 
     def test_driver_retrospective_ids_follow_work_items_across_isolated_projects(self):
         drive = self.load_module()

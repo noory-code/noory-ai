@@ -8,7 +8,9 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+import unittest.mock
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
@@ -164,6 +166,99 @@ class RunReviewTest(unittest.TestCase):
 
         self.assertEqual(127, result.returncode)
         self.assertIn("cannot run no-such-reviewer-binary", self.log.read_text(encoding="utf-8"))
+
+    def test_a_reviewer_past_its_time_limit_fails_and_leaves_no_descendant(self):
+        # The reviewer starts a child that would write a marker after the limit. The limit
+        # must end both, record the timeout, and fail the review (W-00000391).
+        marker = self.root / "survived.txt"
+        sleeper = (
+            "import time; from pathlib import Path; time.sleep(2); "
+            f"Path({str(marker)!r}).write_text('x', encoding='utf-8')"
+        )
+        reviewer = self.root / "slow_reviewer.py"
+        reviewer.write_text(
+            "import subprocess, sys\n"
+            "print('partial verdict', flush=True)\n"
+            f"subprocess.run([sys.executable, '-c', {sleeper!r}])\n",
+            encoding="utf-8",
+        )
+
+        started = time.monotonic()
+        result = self.run_script(
+            "--label", "probe", "--timeout", "1", "--", "python3", str(reviewer),
+            env=self.environment(),
+        )  # fmt: skip
+        elapsed = time.monotonic() - started
+        time.sleep(max(0.0, 3.0 - elapsed))
+
+        self.assertEqual(run_review.TIMEOUT_STATUS, result.returncode, result.stderr)
+        self.assertLess(elapsed, 2.0)
+        self.assertFalse(marker.exists(), "a reviewer descendant outlived the time limit")
+        log = self.log.read_text(encoding="utf-8")
+        self.assertIn("### Reviewer report\npartial verdict\n", log)
+        self.assertIn("run_review: probe review timed out after 1s", log)
+        self.assertIn("run_review: probe review timed out after 1s", result.stdout)
+
+    def test_close_works_review_limit_reaches_a_reviewer_run_review_started(self):
+        # run_review starts the reviewer in a process group of its own. When close_work's
+        # --review-timeout ends run_review first, the reviewer and its child must end too;
+        # on POSIX a kill of close_work's group alone does not reach them (W-00000391).
+        close_work = load(CLOSE_WORK, "close_work_for_nested_limit")
+        marker = self.root / "survived.txt"
+        sleeper = (
+            "import time; from pathlib import Path; time.sleep(2); "
+            f"Path({str(marker)!r}).write_text('x', encoding='utf-8')"
+        )
+        reviewer = self.root / "slow_reviewer.py"
+        reviewer.write_text(
+            f"import subprocess, sys\nsubprocess.run([sys.executable, '-c', {sleeper!r}])\n",
+            encoding="utf-8",
+        )
+        command = (
+            f'"{sys.executable}" "{SCRIPT}" --label probe --timeout 3600 -- '
+            f'python3 "{reviewer}"'
+        )
+
+        started = time.monotonic()
+        ok, evidence, _ = close_work.run_check(
+            command, timeout=1, cwd=self.root, env=self.environment()
+        )
+        elapsed = time.monotonic() - started
+        time.sleep(max(0.0, 3.0 - elapsed))
+
+        self.assertFalse(ok)
+        self.assertIn("[TIMED OUT after 1s]", evidence)
+        self.assertLess(elapsed, 2.0)
+        self.assertFalse(marker.exists(), "a reviewer descendant outlived the time limit")
+
+    def test_the_time_limit_defaults_to_the_close_review_timeout(self):
+        close_work = load(CLOSE_WORK, "close_work_for_run_review_default")
+        seen: dict[str, float] = {}
+
+        def fake_run_bounded(command, *, timeout, env=None, **_):
+            seen["timeout"] = timeout
+            return subprocess.CompletedProcess(command, 0, "ok\n", "")
+
+        with unittest.mock.patch.object(
+            run_review, "run_bounded", fake_run_bounded
+        ), unittest.mock.patch.dict(
+            os.environ, self.environment(), clear=True
+        ), unittest.mock.patch("sys.stdout"):
+            status = run_review.main(["--", "python3", str(self.reviewer), "0"])
+
+        self.assertEqual(0, status)
+        self.assertEqual(close_work.DEFAULT_REVIEW_TIMEOUT, seen["timeout"])
+
+    def test_a_time_limit_must_be_positive_whole_seconds(self):
+        for value in ("0", "-5", "1.5", "soon"):
+            with self.subTest(value=value):
+                result = self.run_script(
+                    "--timeout", value, "--", "python3", str(self.reviewer), "0",
+                    env=self.environment(),
+                )  # fmt: skip
+
+                self.assertEqual(2, result.returncode)
+                self.assertFalse(self.seen.exists())
 
     def test_a_command_string_in_the_settings_shape_runs_in_the_platform_shell(self):
         # close_work hands a configured command to the platform shell: `sh` on macOS
