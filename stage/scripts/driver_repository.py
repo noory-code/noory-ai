@@ -25,6 +25,8 @@ from stage_work import WorkItem  # noqa: E402
 # Runtime bookkeeping is the driver's own writing, never an executor's output,
 # so it stays out of every snapshot the driver compares.
 STAGE_RUNTIME_PREFIX = ".stage/.runtime/"
+# What progress detection sees when the project root is not a Git worktree.
+NO_GIT_WORKTREE_DIFF = "\0NO-GIT-WORKTREE\0"
 
 
 def git_untracked_paths(project_root: Path) -> tuple[set[str], str]:
@@ -105,21 +107,90 @@ def worktree_path_fingerprint(path: Path) -> str:
         return f"unreadable:{type(exc).__name__}"
 
 
+def git_index_and_untracked(
+    project_root: Path,
+) -> tuple[dict[str, str], set[str], str] | None:
+    """Return real-index metadata and untracked paths from one Git process.
+
+    Return None when the root is not a Git worktree. That check runs only after
+    the listing fails, so a worktree costs one process instead of three.
+    """
+
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "ls-files",
+                "-t",
+                "--cached",
+                "--stage",
+                "--others",
+                "--exclude-standard",
+                "-z",
+            ],
+            cwd=str(project_root),
+            capture_output=True,
+        )
+    except OSError as exc:
+        return {}, set(), str(exc)
+    if result.returncode != 0:
+        failure = (
+            result.stderr.decode(errors="replace").strip()
+            or f"git ls-files failed with exit code {result.returncode}"
+        )
+        index_path, index_error = git_index_path(project_root)
+        if index_error:
+            return {}, set(), index_error
+        if index_path is None:
+            return None
+        return {}, set(), failure
+
+    entries: dict[str, str] = {}
+    untracked: set[str] = set()
+    for raw_entry in result.stdout.split(b"\0"):
+        if not raw_entry:
+            continue
+        # -t prefixes a one-letter status and a space; "?" marks an untracked path.
+        if raw_entry[1:2] != b" ":
+            return {}, set(), "git ls-files -t returned an invalid entry"
+        tag, body = raw_entry[:1], raw_entry[2:]
+        if tag == b"?":
+            path = os.fsdecode(body)
+            if not path.startswith(STAGE_RUNTIME_PREFIX):
+                untracked.add(path)
+            continue
+        metadata, separator, raw_path = body.partition(b"\t")
+        if not separator:
+            return {}, set(), "git ls-files --stage returned an invalid entry"
+        path = os.fsdecode(raw_path)
+        rendered_metadata = metadata.decode(errors="replace")
+        existing = entries.get(path)
+        entries[path] = (
+            rendered_metadata
+            if existing is None
+            else f"{existing}\n{rendered_metadata}"
+        )
+    return entries, untracked, ""
+
+
 def repository_path_snapshot(project_root: Path) -> dict[str, str]:
     """Snapshot path-level repository state using the driver's real Git environment."""
 
-    index_path, index_error = git_index_path(project_root)
-    if index_error:
-        raise RuntimeError(index_error)
-    if index_path is None:
+    listing = git_index_and_untracked(project_root)
+    if listing is None:
         return {}
+    index_entries, untracked_paths, listing_error = listing
+    if listing_error:
+        raise RuntimeError(listing_error)
+    return snapshot_from_listing(project_root, index_entries, untracked_paths)
 
-    index_entries, entries_error = git_index_entries(project_root)
-    if entries_error:
-        raise RuntimeError(entries_error)
-    untracked_paths, untracked_error = git_untracked_paths(project_root)
-    if untracked_error:
-        raise RuntimeError(untracked_error)
+
+def snapshot_from_listing(
+    project_root: Path,
+    index_entries: dict[str, str],
+    untracked_paths: set[str],
+) -> dict[str, str]:
+    """Build a path snapshot from one index-and-untracked listing."""
 
     snapshot: dict[str, str] = {}
     for relative in sorted(set(index_entries) | untracked_paths):
@@ -194,11 +265,56 @@ def executor_changed_only_work_card(
 def git_diff(project_root: Path) -> str:
     """Return all changes for progress detection; fail if untracked paths are unknown."""
 
-    index_path, index_error = git_index_path(project_root)
-    if index_error:
-        raise RuntimeError(index_error)
-    if index_path is None:
-        return "\0NO-GIT-WORKTREE\0"
+    tracked_diff = git_tracked_diff(project_root)
+    if tracked_diff is None:
+        return NO_GIT_WORKTREE_DIFF
+    untracked_paths, untracked_error = git_untracked_paths(project_root)
+    if untracked_error:
+        raise RuntimeError(untracked_error)
+    return tracked_diff + untracked_diff(project_root, untracked_paths)
+
+
+def repository_observation(project_root: Path) -> tuple[str, dict[str, str]]:
+    """Return `repository_fingerprint()` and `repository_path_snapshot()` together.
+
+    Both read the untracked paths; one shared listing saves a Git process each time
+    the driver observes the repository around an executor or reviewer.
+    """
+
+    tracked_diff = git_tracked_diff(project_root)
+    if tracked_diff is None:
+        return _sha256(NO_GIT_WORKTREE_DIFF), {}
+    listing = git_index_and_untracked(project_root)
+    if listing is None:
+        raise RuntimeError("the project root stopped being a Git worktree while observed")
+    index_entries, untracked_paths, listing_error = listing
+    if listing_error:
+        raise RuntimeError(listing_error)
+    diff = tracked_diff + untracked_diff(project_root, untracked_paths)
+    return (
+        _sha256(diff),
+        snapshot_from_listing(project_root, index_entries, untracked_paths),
+    )
+
+
+def untracked_diff(project_root: Path, untracked_paths: set[str]) -> str:
+    """Render untracked paths and their content digests for progress detection."""
+
+    untracked: list[str] = []
+    for relative in sorted(untracked_paths):
+        path = project_root / relative
+        try:
+            content = path.read_bytes()
+        except OSError as exc:
+            digest = f"unreadable:{type(exc).__name__}"
+        else:
+            digest = hashlib.sha256(content).hexdigest()
+        untracked.append(f"{relative}\0{digest}")
+    return "\0UNTRACKED\0" + "\0".join(untracked)
+
+
+def git_tracked_diff(project_root: Path) -> str | None:
+    """Return tracked changes against HEAD (or an unborn index); None outside Git."""
 
     try:
         result = subprocess.run(
@@ -214,6 +330,12 @@ def git_diff(project_root: Path) -> str:
     if result.returncode == 0:
         tracked_diff = result.stdout
     else:
+        # Only a failed diff pays for the worktree check.
+        index_path, index_error = git_index_path(project_root)
+        if index_error:
+            raise RuntimeError(index_error)
+        if index_path is None:
+            return None
         head_exists, head_error = git_head_exists(project_root)
         if head_error:
             raise RuntimeError(head_error)
@@ -257,21 +379,7 @@ def git_diff(project_root: Path) -> str:
             + "\0UNBORN-UNSTAGED\0"
             + unborn_diffs[1]
         )
-
-    untracked_paths, untracked_error = git_untracked_paths(project_root)
-    if untracked_error:
-        raise RuntimeError(untracked_error)
-    untracked: list[str] = []
-    for relative in sorted(untracked_paths):
-        path = project_root / relative
-        try:
-            content = path.read_bytes()
-        except OSError as exc:
-            digest = f"unreadable:{type(exc).__name__}"
-        else:
-            digest = hashlib.sha256(content).hexdigest()
-        untracked.append(f"{relative}\0{digest}")
-    return tracked_diff + "\0UNTRACKED\0" + "\0".join(untracked)
+    return tracked_diff
 
 
 def git_index_path(project_root: Path) -> tuple[Path | None, str]:
@@ -321,12 +429,15 @@ def git_head_exists(project_root: Path) -> tuple[bool, str]:
     )
 
 
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def fingerprint(project_root: Path, acceptance_output: list[str]) -> str:
-    payload = git_diff(project_root) + "\0" + "\n".join(acceptance_output)
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return _sha256(git_diff(project_root) + "\0" + "\n".join(acceptance_output))
 
 
 def repository_fingerprint(project_root: Path) -> str:
     """Fingerprint repository state without executor testimony or verification output."""
 
-    return hashlib.sha256(git_diff(project_root).encode("utf-8")).hexdigest()
+    return _sha256(git_diff(project_root))

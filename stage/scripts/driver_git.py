@@ -149,6 +149,11 @@ def current_head(project_root: Path) -> tuple[str, str]:
 def current_head_or_empty(project_root: Path) -> tuple[str, str]:
     """Return HEAD, or an empty basis for an unborn/non-Git repository."""
 
+    # One process answers the common case; only a failure pays for the checks
+    # that tell an unborn branch or a non-Git root apart from a Git error.
+    ok, out = run_git(project_root, ["rev-parse", "--verify", "--quiet", "HEAD"])
+    if ok:
+        return out.strip(), ""
     index_path, index_error = git_index_path(project_root)
     if index_error:
         return "", index_error

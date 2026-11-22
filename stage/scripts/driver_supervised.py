@@ -57,6 +57,7 @@ from driver_repository import (  # noqa: E402
     fingerprint,
     git_index_path,
     repository_fingerprint,
+    repository_observation,
     repository_path_snapshot,
 )
 from driver_review import (  # noqa: E402
@@ -243,8 +244,9 @@ def run_supervised_round(
         if previous_verdict is not None and not narrow_review:
             print("Review mode: full (the card's success criteria changed since the last verdict)")
         if not args.resume:
-            repository_before = repository_fingerprint(project_root)
-            repository_paths_before = repository_path_snapshot(project_root)
+            repository_before, repository_paths_before = repository_observation(
+                project_root
+            )
         else:
             repository_before = item_state["resume_repository_fingerprint"]
             repository_paths_before = {}
@@ -349,8 +351,9 @@ def run_supervised_round(
                 )
             )
             try:
-                repository_after = repository_fingerprint(project_root)
-                repository_paths_after = repository_path_snapshot(project_root)
+                repository_after, repository_paths_after = repository_observation(
+                    project_root
+                )
                 changed_paths = cumulative_executor_changed_paths(
                     changed_paths,
                     repository_paths_before,
