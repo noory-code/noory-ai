@@ -22,6 +22,11 @@ Usage (from the project root):
 `--env NAME=VALUE` (repeatable) sets a variable for the reviewer, replacing the POSIX
 `NAME=VALUE command` prefix. A reviewer named `python3` or `python` runs with this
 interpreter, so the command does not depend on a `python3` executable on PATH.
+
+`--timeout SECONDS` (default: close_work's review timeout) bounds the reviewer. When it
+runs out, the reviewer's whole process tree ends on every platform, the partial output and
+a timeout line go to the work log, and the script exits with status 124, so the review fails.
+The reviewer's stdout comes first in the report and its stderr after it.
 """
 
 from __future__ import annotations
@@ -33,6 +38,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+STAGE_ROOT = Path(__file__).resolve().parents[1]
+for import_dir in (STAGE_ROOT / "hooks", STAGE_ROOT / "skills" / "stage-retrospective"):
+    if str(import_dir) not in sys.path:
+        sys.path.insert(0, str(import_dir))
+
+from close_work import DEFAULT_REVIEW_TIMEOUT  # noqa: E402
+from stage_process import run_bounded  # noqa: E402
+
+TIMEOUT_STATUS = 124
 WORK_LOG_ENV = "STAGE_WORK_LOG_PATH"
 STAGE_VARIABLE = re.compile(r"\$(?:\{(STAGE_[A-Z0-9_]+)\}|(STAGE_[A-Z0-9_]+))")
 PYTHON_NAMES = {"python3", "python"}
@@ -63,6 +77,22 @@ def reviewer_command(command: list[str], environ: dict[str, str]) -> list[str]:
     return expanded
 
 
+def positive_seconds(text: str) -> int:
+    try:
+        seconds = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected whole seconds, got {text!r}") from None
+    if seconds <= 0:
+        raise argparse.ArgumentTypeError(f"expected a positive number of seconds, got {text}")
+    return seconds
+
+
+def reviewer_output(stdout: object, stderr: object) -> str:
+    # TimeoutExpired carries str | bytes | None; run_bounded always hands over text.
+    parts = [part.rstrip("\n") for part in (stdout, stderr) if isinstance(part, str)]
+    return "\n".join(part for part in parts if part)
+
+
 def append_report(log_path: Path, output: str) -> None:
     # Append bytes so the log keeps its line endings and encoding on every platform.
     with log_path.open("ab") as handle:
@@ -85,6 +115,12 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--label", default="reviewer", help="Reviewer name used in messages.")
     parser.add_argument("--env", action="append", default=[], metavar="NAME=VALUE")
+    parser.add_argument(
+        "--timeout",
+        type=positive_seconds,
+        default=DEFAULT_REVIEW_TIMEOUT,
+        help=f"Reviewer time limit in seconds (default: {DEFAULT_REVIEW_TIMEOUT}).",
+    )
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -102,19 +138,16 @@ def main(argv: list[str]) -> int:
         return 1
 
     try:
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env=environ,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
+        result = run_bounded(command, env=environ, timeout=args.timeout)
+    except subprocess.TimeoutExpired as exc:
+        partial = reviewer_output(exc.output, exc.stderr)
+        note = f"run_review: {args.label} review timed out after {args.timeout}s"
+        output = f"{partial}\n{note}" if partial else note
+        status = TIMEOUT_STATUS
     except OSError as exc:
         output, status = f"run_review: cannot run {command[0]}: {exc}", 127
     else:
-        output, status = (result.stdout or "").rstrip("\n"), result.returncode
+        output, status = reviewer_output(result.stdout, result.stderr), result.returncode
 
     try:
         append_report(Path(log_path), output)

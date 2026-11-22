@@ -29,12 +29,15 @@ for import_dir in (
 from close_work import work_log_reference  # noqa: E402
 from driver_environment import project_environment  # noqa: E402
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
+from stage_process import run_bounded  # noqa: E402
 from stage_record_paths import record_path  # noqa: E402
 from stage_work import WorkItem, parse_frontmatter, parse_string_list  # noqa: E402
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
 ESCALATE_WORK = STAGE_ROOT / "scripts" / "escalate_work.py"
 AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
+# close_work's own work beyond its checks and review: reading records, git, writing the card.
+CLOSE_WORK_MARGIN_SECONDS = 60
 
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 
@@ -115,7 +118,8 @@ def close_via_close_work(
 
     `timeout` bounds each check and `review_timeout` (default: `timeout`) bounds the
     review. The outer kill covers every check plus the review, so close_work is
-    never cut off while its own budgets still run and the reviewer is never orphaned.
+    never cut off while its own budgets still run. When it does fire, it ends
+    close_work's whole process tree, so neither a check nor the reviewer outlives it.
     """
 
     card_fields = parse_frontmatter(current_card_path(project_root / ".stage", item_id))
@@ -140,15 +144,11 @@ def close_via_close_work(
     for check in extra_checks:
         command += ["--check", check]
     check_count = len(parse_string_list(card_fields.get("acceptance"))) + len(extra_checks)
-    outer_timeout = timeout * check_count + review_budget + 60
+    outer_timeout = timeout * check_count + review_budget + CLOSE_WORK_MARGIN_SECONDS
     try:
-        proc = subprocess.run(
+        proc = run_bounded(
             command,
-            cwd=str(project_root),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
+            cwd=project_root,
             timeout=outer_timeout,
             env=project_environment(project_root),
         )
@@ -156,13 +156,16 @@ def close_via_close_work(
         return False, f"close_work timed out after {outer_timeout}s"
     except OSError as exc:
         return False, str(exc)
-    return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
+    return proc.returncode == 0, proc.stdout + proc.stderr
 
 
 def escalate_via_escalate_work(
     project_root: Path, item_id: str, reason: str, timeout: int = 120
 ) -> tuple[bool, str]:
-    """Reuse the reviewed escalate_work.py: item -> blocked + a pending decision."""
+    """Reuse the reviewed escalate_work.py: item -> blocked + a pending decision.
+
+    `timeout` ends escalate_work's whole process tree, not only escalate_work itself.
+    """
 
     command = [
         sys.executable,
@@ -174,20 +177,12 @@ def escalate_via_escalate_work(
         reason,
     ]
     try:
-        proc = subprocess.run(
-            command,
-            cwd=str(project_root),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-        )
+        proc = run_bounded(command, cwd=project_root, timeout=timeout)
     except subprocess.TimeoutExpired:
         return False, f"escalate_work timed out after {timeout}s"
     except OSError as exc:
         return False, str(exc)
-    return proc.returncode == 0, (proc.stdout or "") + (proc.stderr or "")
+    return proc.returncode == 0, proc.stdout + proc.stderr
 
 
 def shell_command(args: list[str], os_name: str | None = None) -> str:

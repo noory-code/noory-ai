@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- End the whole process tree when the driver's `close_work` or `escalate_work` call, or a reviewer
+  wrapped in `scripts/run_review.py`, runs past its time limit. `driver_lifecycle.py` called both
+  scripts with `subprocess.run(..., timeout=...)`, which kills only the direct child, so a check or
+  reviewer under `close_work` outlived the driver's limit and, on Windows, held the call open until
+  it finished. `run_review.py` ran the reviewer with no limit at all. Both now use
+  `hooks/stage_process.py`. `run_review.py` takes `--timeout SECONDS` (default: `close_work.py`'s
+  review timeout, 3600); past it, the partial output and a timeout line go to the work log and the
+  script exits 124, so the review fails. The reviewer's stderr now follows its stdout in the
+  report instead of being interleaved with it. Nested limits now reach every level on POSIX too:
+  each `run_bounded` call starts its own process group, so close_work's `killpg` did not reach a
+  reviewer that `run_review.py` started, nor the driver's kill a check that close_work started.
+  The POSIX kill now sends SIGTERM to the group first, and `run_bounded`, waiting on the main
+  thread, answers SIGTERM by ending its own command's group; SIGKILL follows two seconds later.
+  Windows needed no change, since `taskkill /T` follows the parent chain (W-00000391).
 - Pin what a merge does to a changelog line when one branch released the plugin and another added
   the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
   inserts a version heading above the queued lines, so git places the card's line by its
