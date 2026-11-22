@@ -49,16 +49,6 @@ Sample purpose
 
 """
 RETRO = "---\nid: {ref}\nwork_item: {wid}\n---\n\n# {ref} Sample retro\n"
-ACTIVE = (
-    "# Active Work\n\n| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-    "| W-00000001 | chore | codex | x | active | Claude | "
-    "[current/W-00000001/_story.md](current/W-00000001/_story.md) |\n"
-)
-REVIEW = (
-    "# Review Candidates\n\n| Artifact | Verification | Retrospective | Promotion | Item |\n"
-    "|---|---|---|---|---|\n"
-)
 INDEX = "# Work Archive\n\n| Work | Final status | Item |\n|---|---|---|\n"
 PASSING_CHECK = python_command("print('ok')")
 FAILING_CHECK = python_command("raise SystemExit(1)")
@@ -104,8 +94,6 @@ class CloseAndArchiveTest(unittest.TestCase):
         (stage / "work/retrospectives/R-00000001.md").write_text(
             RETRO.format(ref="R-00000001", wid="W-00000001"), encoding="utf-8"
         )
-        (stage / "work/active.md").write_text(ACTIVE, encoding="utf-8")
-        (stage / "work/review.md").write_text(REVIEW, encoding="utf-8")
         (stage / "official/work/archive/index.md").write_text(INDEX, encoding="utf-8")
         (stage / "settings.json").write_text('{"schema_version": 5}\n', encoding="utf-8")
         return tmp, root
@@ -134,8 +122,6 @@ class CloseAndArchiveTest(unittest.TestCase):
         self.assertFalse((stage / "work/retrospectives/R-00000001.md").exists())
         index = (stage / "official/work/archive/index.md").read_text(encoding="utf-8")
         self.assertIn("| W-00000001 | completed |", index)
-        self.assertNotIn("W-00000001", (stage / "work/active.md").read_text(encoding="utf-8"))
-        self.assertNotIn("W-00000001", (stage / "work/review.md").read_text(encoding="utf-8"))
 
     def test_archive_flag_closes_and_archives_in_one_command(self):
         tmp, root = self.make()
@@ -157,8 +143,6 @@ class CloseAndArchiveTest(unittest.TestCase):
             self.assertEqual(0, proc.returncode, proc.stderr + proc.stdout)
             card = root / ".stage/work/current/W-00000001/_story.md"
             self.assertIn("status: completed", card.read_text(encoding="utf-8"))
-            review = (root / ".stage/work/review.md").read_text(encoding="utf-8")
-            self.assertIn("W-00000001", review)
             self.assertFalse(
                 (root / ".stage/official/work/archive/items/W-00000001").exists()
             )

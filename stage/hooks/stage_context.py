@@ -26,6 +26,8 @@ import stage_topology  # noqa: E402
 import stage_roadmap  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
+    ACTIVE_VIEW_STATUSES,
+    REVIEW_VIEW_STATUSES,
     WORK_OPEN_STATUSES,
     item_is_open,
     load_work_items,
@@ -141,6 +143,53 @@ def active_milestone_table(stage_root: Path) -> str:
         title = milestone.title.replace("|", "\\|")
         lines.append(
             f"| [{milestone.record_id}]({link}) | {milestone.theme or '—'} | {title} |"
+        )
+    return "\n".join(lines)
+
+
+def _table_cell(value: str) -> str:
+    return " ".join(value.split()).replace("|", "\\|") or "—"
+
+
+def derived_work_view(stage_root: Path, statuses: tuple[str, ...], review: bool) -> str:
+    """Render current cards whose status is in ``statuses`` as a Markdown table.
+
+    The cards own their status; this view replaces the retired `work/active.md`
+    and `work/review.md` files (DE-00000091), so it cannot disagree with them.
+    Returns "" when no card qualifies.
+    """
+
+    items = sorted(
+        (item for item in load_work_items(stage_root) if item.status in statuses),
+        key=lambda item: id_sort_key(item.item_id),
+    )
+    if not items:
+        return ""
+    if review:
+        lines = [
+            "| Work | Title | Status | Verification | Retrospective | Promotion | Card |",
+            "|---|---|---|---|---|---|---|",
+        ]
+    else:
+        lines = [
+            "| Work | Title | Kind | Venue | Status | Card |",
+            "|---|---|---|---|---|---|",
+        ]
+    for item in items:
+        try:
+            link = item.path.relative_to(stage_root).as_posix()
+        except ValueError:
+            link = item.path.as_posix()
+        card = f"[{link}]({link})"
+        if review:
+            cells = (
+                item.item_id, item.title, item.status, item.verification,
+                item.retrospective, item.promotion, card,
+            )
+        else:
+            cells = (item.item_id, item.title, item.kind, item.venue, item.status, card)
+        lines.append(
+            "| " + " | ".join(cell if cell == card else _table_cell(cell) for cell in cells) + " |"
         )
     return "\n".join(lines)
 
@@ -296,17 +345,17 @@ def session_context(workspace_root: Path) -> str:
         parts.append("\n" + derived_lifecycle_view(stage_root))
         parts.append("\n" + active_milestone_table(stage_root))
         parts.append("\n" + work_hierarchy_view(stage_root))
-        active_index, review_index = stage_topology.get_zone(
-            "work", "current"
-        ).index_surfaces
-        snippets: list[tuple[str, Path | None]] = [
-            ("Active work", stage_root / active_index),
-            ("Review candidates", stage_root / review_index),
+        snippets: list[tuple[str, str]] = [
+            ("Active work", derived_work_view(stage_root, ACTIVE_VIEW_STATUSES, review=False)),
+            (
+                "Review candidates",
+                derived_work_view(stage_root, REVIEW_VIEW_STATUSES, review=True),
+            ),
         ]
     else:
         snippets = [
-            ("Active work", stage_root / "present" / "work" / "active.md"),
-            ("Review candidates", stage_root / "present" / "work" / "review.md"),
+            ("Active work", read_if_exists(stage_root / "present" / "work" / "active.md")),
+            ("Review candidates", read_if_exists(stage_root / "present" / "work" / "review.md")),
         ]
     # The observation index file (`state/current.md`) owns nothing this view
     # does not derive from the records themselves, and reading it through a
@@ -315,8 +364,7 @@ def session_context(workspace_root: Path) -> str:
     observations = open_observation_lines(stage_root)
     if observations:
         parts.append("\n### Open observations\n" + "\n".join(observations))
-    for title, path in snippets:
-        body = read_if_exists(path) if path is not None else ""
+    for title, body in snippets:
         if body:
             parts.append(f"\n### {title}\n{body}")
 

@@ -41,11 +41,13 @@ individual records as their own files, and a `_template.md` to copy.
 | `terminal_disposition` | on a closed card: `accepted` or `rejected` (the archive index derives from it) |
 | `decision_refs` | optional IDs or paths of linked decision records |
 | `milestone` | optional roadmap attribution, `0..1`: the single milestone that claims this card's completion credit |
-| `priority` | optional, planned cards only: ordering hint shown in the planned index |
+| `priority` | optional, planned cards only: ordering hint for the planned view |
 | `venue` | optional execution-surface routing; project-defined values, derived from `settings.json` `venue_routing` when declared |
 
-`work/active.md` and `work/review.md` are current views. Hooks judge from the frontmatter of work
-records anywhere in the hierarchy below `work/current/`.
+No list file restates a card's status. The active, review, and planned views are derived from the
+frontmatter of the cards, and hooks judge from the frontmatter of work records anywhere in the
+hierarchy below `work/current/` (DE-00000091). Two sessions that each register, close, and archive
+a card therefore never edit the same list row.
 
 `venue` names the execution surface that should carry out the work item — the routing signal a human reads to open the right window when more than one agent or session works the project. No hook gates on it. The machine-readable `kind -> venue` role policy is project-declared in `settings.json` `venue_routing` (registration derives from it; the audit checks consistency); what each venue means belongs to the project's canon. A policy-contradicting venue is valid only with a linked decision record that is decided/promoted and declares `authorizes: venue_exception`; the reserved routing value `split` marks a kind as mixed by definition and places its separate design and implementation actions under one story. The harness fixes no venue names.
 
@@ -75,9 +77,9 @@ remains in `work/current/`; archived cards that predate it are not rejected retr
 
 | Status | Location |
 |---|---|
-| `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected` (planned) | hierarchy below `work/planned/` + `work/planned/index.md` |
-| `active`, `blocked` | hierarchy below `work/current/` + `work/active.md` |
-| `review`, `completed`, `rejected` | hierarchy below `work/current/` + `work/review.md` |
+| `captured`, `triaged`, `ready`, `selected`, `deferred`, `rejected` (planned) | hierarchy below `work/planned/` |
+| `active`, `blocked` | hierarchy below `work/current/` |
+| `review`, `completed`, `rejected` | hierarchy below `work/current/` |
 | `archived` | hierarchy below `official/work/archive/items/` |
 
 `rejected` appears in two lifecycle states: a planned card declined before any work started

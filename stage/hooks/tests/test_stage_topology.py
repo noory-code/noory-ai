@@ -207,7 +207,9 @@ class StageTopologyTests(unittest.TestCase):
         audit = stage_topology.scan_roots("audit")
         context = stage_topology.scan_roots("context")
         self.assertIn("work/current", records)
-        self.assertIn("work/active.md", audit)
+        self.assertIn("official/work/archive/index.md", audit)
+        for retired in stage_topology.RETIRED_WORK_LISTS:
+            self.assertNotIn(retired, audit)
         self.assertIn("state/questions", context)
         self.assertNotIn("official/canon/principles", context)
         with self.assertRaises(ValueError):

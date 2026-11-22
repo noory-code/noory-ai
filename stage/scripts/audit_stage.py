@@ -65,9 +65,6 @@ REQUIRED_WORK_FIELDS = (
 )
 CURRENT_LIFECYCLE_FIELDS = ("verification", "retrospective", "promotion")
 PLANNED_REJECTION_OPTIONAL_FIELDS = (*CURRENT_LIFECYCLE_FIELDS, "scope")
-ACTIVE_VIEW_STATUSES = {"active", "blocked"}
-REVIEW_VIEW_STATUSES = {"review", "completed", "rejected"}
-ITEM_LINK_RE = re.compile(r"\((?:\./)?items/([A-Za-z][A-Za-z0-9]*-\d{3,})\.md(?:#[^)]+)?\)")
 # Prefix → owning locations. SSOT for the mapping = the plugin-owned
 # operations/artifacts.md §Artifact catalog; keep the two in lock-step.
 RECORD_LOCATIONS: dict[str, tuple[str, ...]] = {
@@ -193,20 +190,10 @@ class Audit:
             self.template_root = V4_TEMPLATE_ROOT
             self.record_locations = v4_record_locations()
             self.routing_only_locations = v4_routing_only_locations()
-            item_directory = Path(
-                stage_topology.card_location_for_status("active")
-            ).name
-            self.item_link_re = re.compile(
-                rf"\((?:\./)?{re.escape(item_directory)}/"
-                r"(?:[A-Za-z][A-Za-z0-9]*-\d{3,}/)*"
-                r"([A-Za-z][A-Za-z0-9]*-\d{3,})"
-                r"(?:\.md|/(?:_epic|_story)\.md)(?:#[^)]+)?\)"
-            )
         else:
             self.template_root = TEMPLATE_ROOT
             self.record_locations = RECORD_LOCATIONS
             self.routing_only_locations = ROUTING_ONLY_LOCATIONS
-            self.item_link_re = ITEM_LINK_RE
 
     def error(self, code: str, message: str, path: Path | str = "") -> None:
         self.findings.append(Finding("error", code, message, self.display_path(path)))
@@ -280,7 +267,7 @@ class Audit:
         items = self.audit_work_items(graph)
         self.audit_archived_work_intents(items)
         self.audit_hierarchy(items)
-        self.audit_work_indexes(items)
+        self.audit_work_indexes()
         self.audit_backlog_items(graph)
         self.audit_retrospective_identities(graph)
         self.audit_orphan_records(graph)
@@ -664,83 +651,25 @@ class Audit:
                 parent_entry = by_id.get(cursor)
                 cursor = parent_entry.item.parent if parent_entry else ""
 
-    def audit_work_indexes(self, audited_items: list[AuditedItem]) -> None:
-        present_items = [entry.item for entry in audited_items if entry.location == "present"]
-        known_ids = {item.item_id for item in present_items}
-        if self.topology == ACTIVE_TOPOLOGY_V4:
-            active_relative, review_relative = stage_topology.get_zone(
-                "work", "current"
-            ).index_surfaces
-            active_ids, active_unknown = self.mentioned_item_ids(
-                self.stage_root / active_relative, known_ids
-            )
-            review_ids, review_unknown = self.mentioned_item_ids(
-                self.stage_root / review_relative, known_ids
-            )
-        else:
-            active_relative = "present/work/active.md"
-            review_relative = "present/work/review.md"
-            active_ids, active_unknown = self.mentioned_item_ids(
-                self.stage_root / "present" / "work" / "active.md", known_ids
-            )
-            review_ids, review_unknown = self.mentioned_item_ids(
-                self.stage_root / "present" / "work" / "review.md", known_ids
-            )
+    def audit_work_indexes(self) -> None:
+        """Report work list files Stage no longer keeps.
 
-        for unknown_id in sorted(active_unknown):
-            self.error(
-                "INDEX001",
-                f"active.md references a work item that does not exist: {unknown_id}",
-                active_relative,
-            )
-        for unknown_id in sorted(review_unknown):
-            self.error(
-                "INDEX002",
-                f"review.md references a work item that does not exist: {unknown_id}",
-                review_relative,
-            )
-
-        by_id = {item.item_id: item for item in present_items}
-        for item in present_items:
-            if item.status in ACTIVE_VIEW_STATUSES and item.item_id not in active_ids:
-                self.error(
-                    "INDEX003",
-                    f"An active work item is missing from the active.md index: {item.item_id}",
-                    item.path,
+        The active, review, and planned views are derived from card status
+        (DE-00000091), so no list can drift from its cards and no list row is
+        checked. A list file left by an earlier Stage version is stale and
+        misleads whoever reads it.
+        """
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        for relative in stage_topology.RETIRED_WORK_LISTS:
+            path = self.stage_root / relative
+            if path.is_file():
+                self.warning(
+                    "INDEX007",
+                    "Retired work list file: Stage derives this view from card "
+                    "status and no longer updates the file. Delete it.",
+                    path,
                 )
-            if item.status in REVIEW_VIEW_STATUSES and item.item_id not in review_ids:
-                self.error(
-                    "INDEX004",
-                    f"A review/completed/rejected work item is missing from the review.md index: {item.item_id}",
-                    item.path,
-                )
-
-        for item_id in sorted(active_ids):
-            item = by_id.get(item_id)
-            if item and item.status not in ACTIVE_VIEW_STATUSES:
-                self.error(
-                    "INDEX005",
-                    f"An active.md entry does not have status active/blocked: {item_id}",
-                    item.path,
-                )
-        for item_id in sorted(review_ids):
-            item = by_id.get(item_id)
-            if item and item.status not in REVIEW_VIEW_STATUSES:
-                self.error(
-                    "INDEX006",
-                    f"A review.md entry does not have status review/completed/rejected: {item_id}",
-                    item.path,
-                )
-
-    def mentioned_item_ids(self, path: Path, known_ids: set[str]) -> tuple[set[str], set[str]]:
-        try:
-            text = path.read_text(encoding="utf-8")
-        except OSError:
-            self.error("INDEX000", "Work index file cannot be read.", path)
-            return set(), set()
-
-        linked_ids = set(self.item_link_re.findall(text))
-        return linked_ids & known_ids, linked_ids - known_ids
 
     def audit_backlog_items(self, graph: RecordGraph) -> None:
         """Planned work cards (DE-00000007): future/backlog/items/ holds W
@@ -1172,13 +1101,9 @@ class Audit:
                 self.stage_root
                 / stage_topology.get_zone("proposals", "planned").canonical_path
             )
+            # Planned work cards have no index file: the planned view is derived
+            # from card status (DE-00000091).
             families = (
-                (
-                    stage_topology.get_zone("work", "planned").index_surfaces[0],
-                    [(node.record_id, node.path) for node in graph.backlog],
-                    ("W", "B"),
-                    ("BACKLOG008", "BACKLOG009"),
-                ),
                 (
                     stage_topology.get_zone("proposals", "planned").index_surfaces[0],
                     [
@@ -1192,14 +1117,6 @@ class Audit:
             )
         else:
             families = (
-                (
-                    "future/backlog/index.md",
-                    [(node.record_id, node.path) for node in graph.backlog],
-                    # Planned cards are W records; legacy un-migrated B rows stay
-                    # recognized so pre-v3 projects keep a truthful index check.
-                    ("W", "B"),
-                    ("BACKLOG008", "BACKLOG009"),
-                ),
                 (
                     "future/roadmap/index.md",
                     [(node.record_id, node.path) for node in graph.milestones],

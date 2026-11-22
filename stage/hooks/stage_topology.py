@@ -202,7 +202,6 @@ FAMILIES: dict[str, FamilyRecord] = {
                 "work/planned",
                 "planned",
                 statuses=PLANNED_WORK_STATUSES,
-                indexes=("work/planned/index.md",),
                 template="project-stage/work/planned/_template.md",
                 destination="current",
                 resolver="work-status",
@@ -213,7 +212,6 @@ FAMILIES: dict[str, FamilyRecord] = {
                 "work/current",
                 "current",
                 statuses=CURRENT_WORK_STATUSES,
-                indexes=("work/active.md", "work/review.md"),
                 template="project-stage/work/current/_template.md",
                 destination="official",
                 resolver="work-status",
@@ -360,6 +358,17 @@ ARTIFACT_PREFIXES: dict[str, ArtifactPrefix] = {
     "K": ArtifactPrefix("K", "state", "risk", "risk"),
     "P": ArtifactPrefix("P", "proposals", "proposal", "proposals"),
 }
+
+
+# Work lists that earlier Stage versions kept as files. Each row restated a card's
+# `status`, and every session edited the same file, so parallel branches collided
+# on them (DE-00000091). Readers now derive these views from the cards; a file
+# left at one of these paths is stale and the audit asks for its removal.
+RETIRED_WORK_LISTS: tuple[str, ...] = (
+    "work/active.md",
+    "work/review.md",
+    "work/planned/index.md",
+)
 
 
 V3_TO_V4_RELOCATIONS: dict[str, str] = {
