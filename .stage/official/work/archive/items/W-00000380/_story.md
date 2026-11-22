@@ -89,3 +89,5 @@ Work not done: The driver_repository snapshot still starts three to four git pro
 - 닫기 리뷰어는 `test_ci_workflows.py`(4 통과)와 `test_git_test_config.py`(5 통과)만 실행했다. 전체 discover 와
   GitHub Actions 조회는 클라우드에서 승인을 받지 못해 실행하지 못했다. 826 이라는 수와 CI 시간은 이 카드에 적힌
   증거와 바뀐 파일을 읽은 것에 기댄다. 그 수와 시간은 닫는 쪽이 CI 로그와 API 에서 직접 셌다.
+- 닫은 뒤 main 4287eb70(W-00000377)을 병합하고 두 스위트를 다시 돌렸다. hooks 461, scripts 823 모두 통과했다.
+  scripts 823 은 병합된 main 의 818 에 이 카드의 5개를 더한 수다. 회고 R-00000380 은 PR #93 의 세 절 형식으로 고쳐 적었다.
