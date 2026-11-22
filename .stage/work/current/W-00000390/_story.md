@@ -2,14 +2,20 @@
 id: W-00000390
 title: 서브세션 브리핑에 범위 넘기 보고와 Windows 확인 방법을 넣는다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 5
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/scripts/subsession_brief.py,stage/scripts/tests/test_subsession_brief.py,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000390 서브세션 브리핑에 범위 넘기 보고와 Windows 확인 방법을 넣는다
@@ -41,3 +47,9 @@ scope: stage/scripts/subsession_brief.py,stage/scripts/tests/test_subsession_bri
 - 브리핑이 Windows 에서 확인해야 하는 일은 메인 세션이 PR 의 CI 로 확인한다고 말하고, 그것을 시험이 확인한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
