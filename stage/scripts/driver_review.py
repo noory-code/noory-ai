@@ -26,6 +26,7 @@ for import_dir in (
         sys.path.insert(0, str(import_dir))
 
 from close_work import load_review_verdict, normalize_review_verdict  # noqa: E402
+from driver_model_fallback import USAGE_LIMITS_EXHAUSTED_MARKER  # noqa: E402
 
 
 def load_driver_review_verdict(
@@ -257,5 +258,8 @@ def infrastructure_failure(output: str) -> bool:
             "usage limit reached",
             "rate_limit_error",
             "429 too many requests",
+            # Every model group a venue lists hit its usage limit
+            # (`driver_model_fallback`); the driver stops instead of retrying.
+            USAGE_LIMITS_EXHAUSTED_MARKER,
         )
     )

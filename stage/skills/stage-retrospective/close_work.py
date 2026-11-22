@@ -74,6 +74,7 @@ from driver_environment import (  # noqa: E402
     MODEL_ENV,
     model_tier_environment,
 )
+from driver_model_fallback import run_with_model_fallbacks  # noqa: E402
 import audit_stage  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
@@ -817,13 +818,27 @@ def run_close_review(
         )
         verdict_file = Path(environment["STAGE_REVIEW_VERDICT_FILE"])
         before = repository_path_snapshot(project_root)
-        ok, block, _raw = run_check(
-            command,
-            review_timeout,
-            project_root,
-            env=environment,
-            timeout_source="--review-timeout",
+        item = item_from_fields(item_path, parse_frontmatter(item_path), GATE_FIELD_DEFAULTS)
+        reviewer_venue = resolve_independent_reviewer_venue(
+            load_review_config(project_root / ".stage"), item.venue
         )
+        review_run = run_with_model_fallbacks(
+            lambda run_env: run_check(
+                command,
+                review_timeout,
+                project_root,
+                env=run_env,
+                timeout_source="--review-timeout",
+            ),
+            stage_root=project_root / ".stage",
+            venue=reviewer_venue or "",
+            role="reviewer",
+            command=command,
+            env=environment,
+            log_path=Path(environment["STAGE_WORK_LOG_PATH"]),
+            before_retry=lambda: verdict_file.unlink(missing_ok=True),
+        )
+        ok, block = review_run.ok, review_run.evidence
         try:
             after = repository_path_snapshot(project_root)
         except RuntimeError as exc:

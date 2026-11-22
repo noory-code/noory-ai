@@ -50,6 +50,7 @@ from driver_environment import (  # noqa: E402
     project_environment,
 )
 from driver_git import current_head_or_empty  # noqa: E402
+from driver_model_fallback import run_with_model_fallbacks  # noqa: E402
 from driver_repository import (  # noqa: E402
     changed_repository_paths,
     cumulative_executor_changed_paths,
@@ -84,6 +85,7 @@ from driver_worklog import (  # noqa: E402
     append_failure_to_work_log,
     cap_text,
     print_escalation,
+    print_usage_limit_blocker,
     reconcile_executor_work_log,
 )
 
@@ -185,6 +187,8 @@ def run_supervised_round(
     failure = ""
     reviewer_blocked = False
     infrastructure_failed = False
+    executor_exhausted = False
+    reviewer_exhausted = False
     acceptance_output: list[str] = list(
         item_state.get("resume_acceptance_output", [])
         if resume_role == "reviewer"
@@ -296,15 +300,14 @@ def run_supervised_round(
                 print_escalation(f"cannot persist executor running role: {exc}")
                 return 1
 
-            (
-                executor_ok,
-                executor_evidence,
-                _executor_raw,
-                executor_seconds,
-            ) = timed_run_check(
+            executor_run, executor_seconds = timed_fallback_run(
                 executor_command,
                 args.timeout,
                 project_root,
+                stage_root=stage_root,
+                venue=item.venue,
+                role="executor",
+                log_path=log_path,
                 env=executor_environment(
                     item,
                     project_root,
@@ -314,6 +317,9 @@ def run_supervised_round(
                     items=items,
                 ),
             )
+            executor_ok = executor_run.ok
+            executor_evidence = executor_run.evidence
+            executor_exhausted = executor_run.exhausted
             execution_seconds += executor_seconds
             state["execution_seconds"] = execution_seconds
             try:
@@ -374,6 +380,9 @@ def run_supervised_round(
                 if executor_log_error:
                     step_ok = False
                     failure = executor_log_error
+                elif executor_exhausted:
+                    step_ok = False
+                    failure = "executor stopped: every model group hit its usage limit"
                 elif not executor_ok:
                     step_ok = False
                     failure = "executor command failed"
@@ -605,17 +614,20 @@ def run_supervised_round(
                         ),
                     }
                 )
-            (
-                reviewed,
-                review_evidence,
-                _review_raw,
-                reviewer_seconds,
-            ) = timed_run_check(
+            review_run, reviewer_seconds = timed_fallback_run(
                 reviewer_command,
                 args.timeout,
                 project_root,
+                stage_root=stage_root,
+                venue=reviewer_venue,
+                role="reviewer",
+                log_path=log_path,
                 env=reviewer_env,
+                before_retry=lambda: reviewer_verdict_file.unlink(missing_ok=True),
             )
+            reviewed = review_run.ok
+            review_evidence = review_run.evidence
+            reviewer_exhausted = review_run.exhausted
             try:
                 review_paths_after = repository_path_snapshot(project_root)
                 review_written = {
@@ -727,7 +739,9 @@ def run_supervised_round(
                 else:
                     infrastructure_failed = False
                 review_failure = (
-                    verdict_error or "independent reviewer command failed"
+                    "independent reviewer stopped: every model group hit its usage limit"
+                    if reviewer_exhausted
+                    else verdict_error or "independent reviewer command failed"
                 )
                 if step_ok:
                     step_ok = False
@@ -829,6 +843,14 @@ def run_supervised_round(
         print(f"Recommended next action: {UNCHANGED_REPOSITORY_NEXT_ACTION}")
         return 0
 
+    if executor_exhausted or reviewer_exhausted:
+        # Another round on the same venue would hit the same limits; a person
+        # waits for a reset or moves the card through a venue exception.
+        print_usage_limit_blocker(
+            f"{failure}; no attempt was spent (see the `### Driver model` lines)"
+        )
+        return 1
+
     escalation_reasons: list[str] = []
     if no_progress and not infrastructure_failed:
         escalation_reasons.append("NO-PROGRESS fingerprint matched the previous attempt")
@@ -865,6 +887,40 @@ def run_supervised_round(
         )
     )
     return 1
+def timed_fallback_run(
+    command: str,
+    timeout: int,
+    cwd: Path,
+    *,
+    stage_root: Path,
+    venue: str,
+    role: str,
+    log_path: Path,
+    env: dict[str, str],
+    before_retry=None,
+):
+    """Run one role's turn through the venue's model fallbacks, timing every run."""
+
+    seconds = [0.0]
+
+    def run(run_env: dict[str, str]) -> tuple[bool, str, str]:
+        passed, evidence, raw, elapsed = timed_run_check(command, timeout, cwd, env=run_env)
+        seconds[0] += elapsed
+        return passed, evidence, raw
+
+    result = run_with_model_fallbacks(
+        run,
+        stage_root=stage_root,
+        venue=venue,
+        role=role,
+        command=command,
+        env=env,
+        log_path=log_path,
+        before_retry=before_retry,
+    )
+    return result, seconds[0]
+
+
 def timed_run_check(
     command: str,
     timeout: int,

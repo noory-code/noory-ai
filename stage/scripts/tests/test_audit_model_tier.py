@@ -200,6 +200,22 @@ class AuditModelTierTest(unittest.TestCase):
         self.assertEqual("ERROR", findings[0][0])
         self.assertIn("cheap", findings[0][3])
 
+    def test_invalid_model_fallbacks_are_errors(self):
+        self.write_settings({**SETTINGS, "model_fallbacks": {"agy": ["gemini"]}})
+        self.assertIn(("ERROR", "TIER006"), [(f[0], f[1]) for f in self.findings()])
+
+        self.write_settings({**SETTINGS, "usage_limit_patterns": {"agy": ["("]}})
+        self.assertIn(("ERROR", "TIER006"), [(f[0], f[1]) for f in self.findings()])
+
+        self.write_settings(
+            {
+                **SETTINGS,
+                "model_fallbacks": {"agy": [["claude-sonnet-5-5-high", "gpt-oss"], ["gemini"]]},
+                "usage_limit_patterns": {"agy": ["RESOURCE_EXHAUSTED"]},
+            }
+        )
+        self.assertNotIn("TIER006", self.codes())
+
     def test_a_card_tier_without_model_tiers_is_an_error(self):
         self.write_settings({k: v for k, v in SETTINGS.items() if k not in ("model_tiers", "tier_routing")})
 

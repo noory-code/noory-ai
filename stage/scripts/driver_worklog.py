@@ -35,6 +35,10 @@ RECOMMEND_RETRY = "failed, retry (attempt {attempt}/{cap})"
 RECOMMEND_ESCALATE = (
     "attempt cap reached / no progress / global limit exceeded → escalate_work"
 )
+RECOMMEND_USAGE_LIMIT = (
+    "wait for the venue's usage limit to reset, add an unspent model group to "
+    "model_fallbacks, or move the card to another venue through a venue exception decision"
+)
 
 # Two outcomes that look like failure and are not. An executor that changed
 # nothing may have found the work already done, and one that changed only its
@@ -184,6 +188,15 @@ def print_escalation(reason: str) -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     print(f"Outcome: blocked — {reason}")
     print(f"Recommended next action: {RECOMMEND_ESCALATE}")
+
+
+def print_usage_limit_blocker(reason: str) -> None:
+    """Report that every model of a venue hit its usage limit, without blaming the card."""
+
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    print(f"Outcome: blocked — {reason}")
+    print(f"Recommended next action: {RECOMMEND_USAGE_LIMIT}")
 
 
 def print_preflight_blocker(reason: str) -> None:
