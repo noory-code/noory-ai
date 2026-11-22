@@ -2,14 +2,20 @@
 id: W-00000388
 title: 메인 세션이 서브세션에 일을 맡기고 닫는 절차와 번호 묶음을 만든다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 5
 autonomous: false
 acceptance: []
-review: not_required
-scope: stage/skills/stage-handoff/SKILL.md,stage/operations/cloud-execution.md,stage/scripts/stage_record_ids.py,stage/scripts/tests,.stage/operations/parallel-sessions.md,stage/CHANGELOG.md
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/skills/stage-handoff,stage/operations/cloud-execution.md,stage/scripts,stage/CHANGELOG.md,.stage/operations/parallel-sessions.md
+promotes:
+decision_refs:
 ---
 
 # W-00000388 메인 세션이 서브세션에 일을 맡기고 닫는 절차와 번호 묶음을 만든다
@@ -44,3 +50,9 @@ DE-00000094 를 구현한다. 그 결정의 "Where this applies" 표에 고칠 �
 - 서브세션 하나에 카드를 맡겨 이 절차대로 메인 세션이 닫은 기록이 카드에 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
