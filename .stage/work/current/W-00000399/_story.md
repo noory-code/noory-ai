@@ -15,7 +15,7 @@ promotion: pending
 review: pending
 scope: .stage/research/claude-fit/mechanisms.md
 promotes:
-decision_refs:
+decision_refs: DE-00000098
 ---
 
 # W-00000399 Stage 의 통제 장치와 그것이 담은 가정을 목록으로 만든다
