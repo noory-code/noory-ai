@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Move an executor or reviewer to the venue's next model when a usage limit stops one (W-00000386).
+  New settings `model_fallbacks` (per venue, model groups that share one usage limit, in preference
+  order) and `usage_limit_patterns` (per venue, regular expressions that mark a failed run's output
+  as a usage limit) are read by `hooks/stage_model_tiers.py`. On a match, the supervised driver,
+  the unattended driver, and the close review in `close_work.py` rerun the same turn with
+  `STAGE_MODEL` set to the first model of the next unspent group; the rerun spends no attempt, and
+  each run and each fallback adds a `### Driver model` line to the work log. When every group is
+  spent the driver stops with `Outcome: blocked` and does not escalate the card or move it to
+  another venue. The audit reports invalid settings as `TIER006`; the template shows both keys
+  empty, and `docs/SCHEMA_V5.md` → `Model fallbacks on usage limits` owns the contract.
 - Read a check's output in the Windows OEM code page when it is not UTF-8. `cmd.exe` writes its own
   messages there (cp949 on Korean Windows), and `close_work.py` read them as UTF-8, so a failed
   check's message arrived as replacement characters. `hooks/stage_process.run_bounded` now captures

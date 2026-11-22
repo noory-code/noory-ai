@@ -201,6 +201,10 @@ so its variable syntax is platform-specific. When the project declares `model_ti
 has a `tier:`, the executor and the reviewer also receive `STAGE_MODEL` and `STAGE_EFFORT` for
 their own venue; write `--model "$STAGE_MODEL"` (and the effort flag) in a command to let the
 card's tier choose instead of a literal model (`docs/SCHEMA_V5.md` → `Model and effort tiers`).
+When a venue's `usage_limit_patterns` match a failed executor or reviewer run, the driver reruns
+that turn on the next unspent group in the venue's `model_fallbacks`, without spending an attempt,
+and stops with `Outcome: blocked` once every group is spent; it never moves the card to another
+venue (`docs/SCHEMA_V5.md` → `Model fallbacks on usage limits`).
 
 **The reviewer's venue must differ from the item's.** `review.reviewers` must resolve to exactly
 one reviewer whose venue is not the selected item's venue. Configure only the item's own venue and

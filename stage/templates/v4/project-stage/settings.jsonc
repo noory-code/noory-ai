@@ -37,6 +37,17 @@
   // every other kind. "lead" is for planning, instructions, and checking results, so no kind
   // routes to it by default. A person may change a card's tier; the card's value wins.
   "tier_routing": {"*": "standard"},
+  // Lists, per venue, the models the driver moves through when a usage limit stops one, in
+  // preference order. Each inner list is a group of models that share one usage limit, so a limit on
+  // one skips its whole group. The driver first runs the card tier's model, then on a usage limit
+  // reruns the same turn with $STAGE_MODEL set to the next unspent group's first model; those
+  // reruns are not attempts. Example: {"agy": [["claude-sonnet-5-5-high", "gpt-oss"],
+  // ["gemini-4-argon-medium"], ["gemini-3.8-flash"]]}. Commands must read "$STAGE_MODEL".
+  "model_fallbacks": {},
+  // Regular expressions, per venue, that mark a failed command's output as a usage limit, for
+  // example {"agy": ["RESOURCE_EXHAUSTED", "code 429"]}. Without a venue's patterns its usage limits
+  // are ordinary failures. When every group is spent the driver stops and says so.
+  "usage_limit_patterns": {},
   // Executor commands are project-specific. Put each tool's explicit model option, such as
   // --model <model>, in all executor and review command strings; do not rely on a user-home
   // default. With model_tiers, write --model "$STAGE_MODEL" and the effort flag with

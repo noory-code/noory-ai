@@ -49,6 +49,10 @@ from driver_git import (  # noqa: E402
     current_head,
     restore_item_output,
 )
+from driver_model_fallback import (  # noqa: E402
+    run_with_model_fallbacks,
+    usage_limits_exhausted,
+)
 from driver_lifecycle import (  # noqa: E402
     audit_check,
     close_via_close_work,
@@ -90,6 +94,7 @@ from driver_worklog import (  # noqa: E402
     append_driver_notice_to_work_log,
     append_failure_to_work_log,
     print_escalation,
+    print_usage_limit_blocker,
     reconcile_executor_work_log,
 )
 from driver_worktree import (  # noqa: E402
@@ -328,10 +333,14 @@ def run_unattended(
                         f"cannot prepare disposable Git index for executor: {exc}"
                     )
                     return 1
-            executor_ok, executor_evidence, _raw = run_check(
-                executor_command,
-                cmd_timeout,
-                project_root,
+            executor_run = run_with_model_fallbacks(
+                lambda run_env: run_check(
+                    executor_command, cmd_timeout, project_root, env=run_env
+                ),
+                stage_root=stage_root,
+                venue=item.venue,
+                role="executor",
+                command=executor_command,
                 env=executor_environment(
                     item,
                     project_root,
@@ -340,7 +349,10 @@ def run_unattended(
                     executor_index if index_path is not None else None,
                     items=items,
                 ),
+                log_path=log_path,
             )
+            executor_ok = executor_run.ok
+            executor_evidence = executor_run.evidence
         try:
             log_after_executor = read_work_log(log_path)
             log_after_executor, executor_log_error = reconcile_executor_work_log(
@@ -552,6 +564,13 @@ def run_unattended(
                     "stopping before another turn"
                 )
                 return 1
+            if usage_limits_exhausted(executor_evidence):
+                print_usage_limit_blocker(
+                    f"executor for {item.item_id} stopped: every model group of venue "
+                    f"{item.venue} hit its usage limit; no attempt was spent "
+                    "(see the `### Driver model` lines in the work log)"
+                )
+                return 1
             if infrastructure_failed:
                 print(
                     f"[{item.item_id}] executor infrastructure failure; "
@@ -700,6 +719,7 @@ def run_unattended(
             )
             if not close_infrastructure_failure:
                 break
+            review_limits_exhausted = usage_limits_exhausted(close_out)
             try:
                 append_failure_to_work_log(
                     log_path,
@@ -727,7 +747,8 @@ def run_unattended(
             }
             write_run_state(state_path, state)
             if (
-                iteration >= limits["max_iterations"]
+                review_limits_exhausted
+                or iteration >= limits["max_iterations"]
                 or time.time() - now >= wall
             ):
                 try:
@@ -749,10 +770,16 @@ def run_unattended(
                 if not restored:
                     print_escalation(restore_error)
                     return 1
-                print_escalation(
-                    "global limit reached while retrying review infrastructure; "
-                    "item output left uncommitted for human handoff"
-                )
+                if review_limits_exhausted:
+                    print_usage_limit_blocker(
+                        "every model group of the reviewer venue hit its usage limit; "
+                        "no attempt was spent; item output left uncommitted for human handoff"
+                    )
+                else:
+                    print_escalation(
+                        "global limit reached while retrying review infrastructure; "
+                        "item output left uncommitted for human handoff"
+                    )
                 return 1
             print(
                 f"[{item.item_id}] review infrastructure failure; "

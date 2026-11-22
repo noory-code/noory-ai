@@ -146,13 +146,77 @@ costliest of their tiers.
     that file is unreadable.
   The audit joins `agent_finished` with `agent_requested` on `agent_id` to find a stated reason.
 
-`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER005`,
+`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER006`,
 listed in the `stage-audit` skill). Invalid tier settings and a current card naming an undeclared
 tier are errors. For current cards only, it warns when the latest `Model tier (JSON)` line in the
 card's work log differs from what the card's tier gives now or shows a command that does not read
 the variables, and when an `agent_finished` record differs from the tier's `claude` values. A
 model matches when the tier's model, without a trailing `[...]` qualifier, occurs in the recorded
 model id (`haiku` matches `claude-haiku-5-5`).
+
+## Model fallbacks on usage limits
+
+A venue that offers several models can stop one of them on a usage limit while the others still
+run. Two settings let the driver move to the venue's next model instead of failing the attempt or
+treating the whole venue as down. Both stand without `model_tiers`, and without them nothing below
+happens.
+
+```json
+"model_fallbacks": {
+  "agy": [
+    ["claude-sonnet-5-5-high", "gpt-oss"],
+    ["gemini-4-argon-medium"],
+    ["gemini-3.8-flash"]
+  ]
+},
+"usage_limit_patterns": {"agy": ["RESOURCE_EXHAUSTED", "code 429"]}
+```
+
+- `model_fallbacks` maps a venue name to a non-empty list of model groups in preference order.
+  A group is a non-empty list of models, written as the venue's command accepts them, that share
+  one usage limit. A model appears at most once per venue (compared case-insensitively, without a
+  trailing `[...]` qualifier).
+- `usage_limit_patterns` maps a venue name to a non-empty list of Python regular expressions,
+  matched case-sensitively against the role command's whole output. Stage hardcodes no venue's
+  wording, because each CLI words its limit differently and may change it.
+- A malformed setting is an audit error (`TIER006`); at runtime the driver then falls back for
+  no venue. `stage/hooks/stage_model_tiers.py` is the only reader of both settings.
+
+The rule applies to the executor and the independent reviewer, in the supervised driver
+(`driver_supervised.py`), the unattended driver (`driver_unattended.py`), and the close review in
+`close_work.py`. `scripts/driver_model_fallback.py` runs the turn:
+
+- A run is a usage limit when the command exits non-zero and its output matches one of its venue's
+  patterns. A passing run, or a failing run that matches no pattern, ends the turn as before.
+- The first run uses the card tier's `STAGE_MODEL` (none when the card has no tier). After a usage
+  limit the driver reruns the same turn with `STAGE_MODEL` set to the first model of the first
+  group, in list order, that holds none of the models that already hit a limit in this turn. The
+  tier's model outside every group spends no group, so the list then starts from its first group.
+- A command switches model only by reading `$STAGE_MODEL`. When the command text does not name
+  `STAGE_MODEL`, its first usage limit ends the turn as exhausted.
+- Reruns stay inside the one turn and do not count as attempts. The executor's partial output stays
+  in the working tree for the next model; a reviewer's partial verdict file is removed first.
+  The number of reruns is bounded by the number of groups.
+- When no unspent group remains, the turn ends with the line
+  `[stage: every model group hit its usage limit] ...`. That spends no attempt and does not escalate
+  the card: the supervised driver stops the round, the unattended driver discards the item's output
+  and stops the run, and a close review run by the unattended driver restores the card and stops.
+  Each prints `Outcome: blocked` with the next action to wait for the reset, add a group, or move
+  the card to another venue through a venue exception decision. Moving to another venue is never
+  automatic.
+
+For a venue either setting names, each run adds one entry to the work log, and each usage limit
+adds another:
+
+```text
+### Driver model
+Model run: executor on agy with model "claude-sonnet-5-5-high"
+
+### Driver model
+Model fallback: executor model "claude-sonnet-5-5-high" on agy hit a usage limit (matched "RESOURCE_EXHAUSTED"); rerunning with "gemini-4-argon-medium"; the rerun is not an attempt
+```
+
+A run with no `STAGE_MODEL` is shown as `"(command default)"`.
 
 ## Finished record locations
 

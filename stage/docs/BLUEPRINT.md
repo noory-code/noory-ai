@@ -63,7 +63,7 @@ flowchart TD
 
 | 가져다 쓰는 쪽 | 가져오는 모듈 |
 |---|---|
-| 검증 `close_work.py` | 드라이버 `driver_repository.py`, `driver_environment.py`, `driver_lifecycle.py` |
+| 검증 `close_work.py` | 드라이버 `driver_repository.py`, `driver_environment.py`, `driver_model_fallback.py`, `driver_lifecycle.py` |
 | 검증 `close_work.py` | 절차 `archive_work.py` |
 | 점검 `audit_stage.py`, `stage_records.py` | 관문 `stage_guard.py` |
 | 점검 `audit_stage.py` | 절차 `close_record.py` |
@@ -101,20 +101,21 @@ flowchart TD
 를 실행해서 닫는다. 그래서 드라이버의 모듈들이 `close_work.py` 에서 작업 로그, 리뷰 판정, 검사 실행 함수를
 가져다 쓴다. 여기까지는 위 그림과 같은 방향이다.
 
-반대 방향이 세 군데 있다. `close_work.py` 가 드라이버 쪽 모듈에서 아래 셋을 가져다 쓴다.
+반대 방향이 네 군데 있다. `close_work.py` 가 드라이버 쪽 모듈에서 아래 넷을 가져다 쓴다.
 
 | `close_work.py` 가 가져다 쓰는 것 | 있는 곳 | 쓰는 이유 |
 |---|---|---|
 | 저장소의 변경 경로 스냅샷 | `scripts/driver_repository.py` | 리뷰 명령이 판정 파일 말고 다른 파일을 고쳤는지 리뷰 앞뒤로 비교한다. |
 | 카드 등급의 모델과 노력 환경 변수 | `scripts/driver_environment.py` | 닫을 때의 리뷰에 리뷰어 쪽 등급의 값을 넘긴다. |
+| 사용량 한도에 걸린 모델을 다음 모델로 바꿔 다시 실행 | `scripts/driver_model_fallback.py` | 닫을 때의 리뷰도 드라이버의 리뷰와 같은 순서로 다음 모델로 넘어간다. |
 | 회고 번호 예약 | `scripts/driver_lifecycle.py` | 회고 번호를 세지 않고 카드 번호에서 얻는다. |
 
-셋 모두 드라이버 쪽에 있는 도구를 `close_work.py` 가 다시 만들지 않고 쓰는 것이다. 앞의 두 모듈은
-`close_work.py` 를 가져다 쓰지 않고, `close_work.py` 는 둘을 파일 맨 위에서 가져온다. `driver_lifecycle.py` 는
+넷 모두 드라이버 쪽에 있는 도구를 `close_work.py` 가 다시 만들지 않고 쓰는 것이다. 앞의 세 모듈은
+`close_work.py` 를 가져다 쓰지 않고, `close_work.py` 는 셋을 파일 맨 위에서 가져온다. `driver_lifecycle.py` 는
 `close_work.py` 를 가져다 쓰고, `close_work.py` 는 회고 번호를 예약하는 함수 안에서만 `driver_lifecycle.py` 를
 가져온다.
 
-세 도구를 드라이버 밖의 공용 모듈로 옮길지를 정한 결정 기록은 없다.
+네 도구를 드라이버 밖의 공용 모듈로 옮길지를 정한 결정 기록은 없다.
 
 ### 스크립트는 두 폴더에 있다
 

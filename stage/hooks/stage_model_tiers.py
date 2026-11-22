@@ -1,4 +1,5 @@
-"""Model and effort tiers: the one reader of `model_tiers` and `tier_routing`.
+"""Model and effort tiers: the one reader of `model_tiers`, `tier_routing`,
+`model_fallbacks`, and `usage_limit_patterns`.
 
 A project names tiers in `.stage/settings.json` and gives each tier the model and
 effort every venue understands, written in that venue's own vocabulary:
@@ -14,6 +15,16 @@ Declaration order is cost order: the first tier is the cheapest. Registration,
 the driver, the Agent-call hook, and the audit read tiers only through this
 module, so they always agree on what a tier means and which one costs more.
 A project without `model_tiers` gets no tier anywhere.
+
+`model_fallbacks` and `usage_limit_patterns` say what the driver does when a
+venue's model stops on a usage limit (`load_fallback_config`):
+
+    "model_fallbacks": {"agy": [["claude-sonnet-5-5-high", "gpt-oss"],
+                                ["gemini-4-argon-medium"]]},
+    "usage_limit_patterns": {"agy": ["RESOURCE_EXHAUSTED", "code 429"]}
+
+Each venue lists groups of models in preference order; one group shares one
+usage limit. Both keys stand without `model_tiers`.
 """
 
 # The hook must run wherever `python3` points on a host machine (3.9+).
@@ -23,7 +34,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 _HOOKS_DIR = str(Path(__file__).resolve().parent)
 if _HOOKS_DIR not in sys.path:
@@ -33,6 +44,8 @@ from stage_paths import read_settings  # noqa: E402
 
 MODEL_TIERS_KEY = "model_tiers"
 TIER_ROUTING_KEY = "tier_routing"
+MODEL_FALLBACKS_KEY = "model_fallbacks"
+USAGE_LIMIT_PATTERNS_KEY = "usage_limit_patterns"
 TIER_FIELD = "tier"
 VENUE_TIER_KEYS = ("model", "effort")
 WILDCARD = "*"
@@ -242,3 +255,151 @@ def registration_tier(stage_root: Path, kind: str, scale: str) -> str:
     """The tier a new card of `kind` and `scale` records, or "" for none."""
 
     return load_tier_config(stage_root).route(kind, scale)
+
+
+@dataclass(frozen=True)
+class FallbackConfig:
+    """Parsed `model_fallbacks` and `usage_limit_patterns`.
+
+    `groups[venue]` holds that venue's model groups in preference order, each a
+    tuple of models sharing one usage limit. `patterns[venue]` holds compiled
+    usage-limit patterns. A malformed setting leaves both empty and says why in
+    `errors`: readers that must not fail (the driver) then never fall back, and
+    the audit reports the errors.
+    """
+
+    groups: dict[str, tuple[tuple[str, ...], ...]] = field(default_factory=dict)
+    patterns: dict[str, tuple[re.Pattern[str], ...]] = field(default_factory=dict)
+    errors: list[str] = field(default_factory=list)
+
+    def declares(self, venue: str) -> bool:
+        """Whether either setting names `venue`."""
+
+        key = venue.strip().lower()
+        return key in self.groups or key in self.patterns
+
+    def usage_limit_match(self, venue: str, output: str) -> str:
+        """The first `venue` pattern found in `output`, or "" when none matches."""
+
+        for pattern in self.patterns.get(venue.strip().lower(), ()):
+            if pattern.search(output):
+                return pattern.pattern
+        return ""
+
+    def next_model(self, venue: str, limited: Sequence[str]) -> str:
+        """First model of the first `venue` group none of whose models hit a limit.
+
+        `limited` lists the models that already stopped on a usage limit this
+        turn; a group holding any of them is spent, because its models share the
+        limit. A model outside every group (the tier's model, or "" for the
+        command's own default) spends no group. "" means every group is spent.
+        """
+
+        spent = {model_alias(model) for model in limited if model_alias(model)}
+        for group in self.groups.get(venue.strip().lower(), ()):
+            if not any(model_alias(model) in spent for model in group):
+                return group[0]
+        return ""
+
+
+def _venue_key(raw: Any, setting: str, errors: list[str]) -> str:
+    key = raw.strip().lower() if isinstance(raw, str) else ""
+    if not key or key == WILDCARD:
+        errors.append(f"`{setting}` has an invalid venue name {raw!r}")
+        return ""
+    return key
+
+
+def _parse_fallbacks(raw: Any, errors: list[str]) -> dict[str, tuple[tuple[str, ...], ...]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        errors.append(f"`{MODEL_FALLBACKS_KEY}` must be an object of venue names")
+        return {}
+    parsed: dict[str, tuple[tuple[str, ...], ...]] = {}
+    for venue_name, groups in raw.items():
+        venue = _venue_key(venue_name, MODEL_FALLBACKS_KEY, errors)
+        if not venue:
+            continue
+        where = f"`{MODEL_FALLBACKS_KEY}.{venue_name}`"
+        if not isinstance(groups, list) or not groups:
+            errors.append(f"{where} must be a non-empty list of model groups")
+            continue
+        seen: set[str] = set()
+        venue_groups: list[tuple[str, ...]] = []
+        for index, group in enumerate(groups):
+            if (
+                not isinstance(group, list)
+                or not group
+                or any(not isinstance(model, str) or not model.strip() for model in group)
+            ):
+                errors.append(
+                    f"{where}[{index}] must be a non-empty list of non-empty model strings"
+                )
+                venue_groups = []
+                break
+            models = tuple(model.strip() for model in group)
+            repeated = sorted(model for model in models if model_alias(model) in seen)
+            if repeated or len({model_alias(model) for model in models}) != len(models):
+                errors.append(f"{where} names a model in more than one place: {list(models)}")
+                venue_groups = []
+                break
+            seen.update(model_alias(model) for model in models)
+            venue_groups.append(models)
+        if venue_groups:
+            parsed[venue] = tuple(venue_groups)
+    return parsed
+
+
+def _parse_patterns(raw: Any, errors: list[str]) -> dict[str, tuple[re.Pattern[str], ...]]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        errors.append(f"`{USAGE_LIMIT_PATTERNS_KEY}` must be an object of venue names")
+        return {}
+    parsed: dict[str, tuple[re.Pattern[str], ...]] = {}
+    for venue_name, patterns in raw.items():
+        venue = _venue_key(venue_name, USAGE_LIMIT_PATTERNS_KEY, errors)
+        if not venue:
+            continue
+        where = f"`{USAGE_LIMIT_PATTERNS_KEY}.{venue_name}`"
+        if (
+            not isinstance(patterns, list)
+            or not patterns
+            or any(not isinstance(pattern, str) or not pattern.strip() for pattern in patterns)
+        ):
+            errors.append(f"{where} must be a non-empty list of non-empty regular expressions")
+            continue
+        compiled: list[re.Pattern[str]] = []
+        for pattern in patterns:
+            try:
+                compiled.append(re.compile(pattern))
+            except re.error as exc:
+                errors.append(f"{where} has an invalid regular expression {pattern!r}: {exc}")
+                compiled = []
+                break
+        if compiled:
+            parsed[venue] = tuple(compiled)
+    return parsed
+
+
+def parse_fallback_config(settings: Any) -> FallbackConfig:
+    """Parse fallback settings from an already-loaded settings object."""
+
+    if not isinstance(settings, dict):
+        return FallbackConfig()
+    errors: list[str] = []
+    groups = _parse_fallbacks(settings.get(MODEL_FALLBACKS_KEY), errors)
+    patterns = _parse_patterns(settings.get(USAGE_LIMIT_PATTERNS_KEY), errors)
+    if errors:
+        return FallbackConfig(errors=errors)
+    return FallbackConfig(groups=groups, patterns=patterns)
+
+
+def load_fallback_config(stage_root: Path) -> FallbackConfig:
+    """Read fallback settings; unreadable settings carry nothing and no errors."""
+
+    _settings_path, data, error = read_settings(stage_root)
+    if error is not None:
+        return FallbackConfig()
+    return parse_fallback_config(data)

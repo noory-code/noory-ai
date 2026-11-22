@@ -8,6 +8,7 @@ Codes:
 - TIER004 (warning): a subagent that ran for current cards used another model or effort than
   their tier gives; a stated over-tier reason is quoted.
 - TIER005 (warning): a model-usage record line could not be read.
+- TIER006 (error): `model_fallbacks` / `usage_limit_patterns` is invalid.
 
 Only cards in the current work zone are compared: archived history is not re-judged. Without
 `model_tiers` no card may carry a tier, and nothing else is checked.
@@ -25,7 +26,12 @@ STAGE_ROOT = Path(__file__).resolve().parents[1]
 if str(STAGE_ROOT / "hooks") not in sys.path:
     sys.path.insert(0, str(STAGE_ROOT / "hooks"))
 
-from stage_model_tiers import TierConfig, model_matches, parse_tier_config  # noqa: E402
+from stage_model_tiers import (  # noqa: E402
+    TierConfig,
+    model_matches,
+    parse_fallback_config,
+    parse_tier_config,
+)
 from stage_record_paths import record_path  # noqa: E402
 
 WORK_LOG_DIR = Path(".runtime") / "driver" / "logs"
@@ -180,6 +186,8 @@ def audit_model_tiers(
 ) -> None:
     """Run every tier check; `current_cards` holds (id, tier, path) for current-zone cards."""
 
+    for message in parse_fallback_config(settings).errors:
+        error("TIER006", f"Model fallback settings are invalid: {message}.", settings_path)
     config = parse_tier_config(settings)
     for message in config.errors:
         error("TIER001", f"Model tier settings are invalid: {message}.", settings_path)
