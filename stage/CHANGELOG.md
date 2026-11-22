@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Refuse to start a card another branch already started or archived. Two sessions that had not
+  fetched each other's work did the same card (W-00000367): one started it on a branch where the
+  other had already closed and archived it. `start_work.py` now reads every fetched branch that
+  HEAD has not merged and, when one holds the card under `work/current/` or the work archive,
+  refuses and names the branch. It reads only refs already fetched and never touches the
+  network (DE-00000094).
 - Keep three sections in a retrospective: `## Decision points`, `## Context that was missing`, and
   `## Rule candidate`. Of the eight, only these were read again; `Work` and `Promotion decision`
   repeated the card, `Principles applied` repeated the decision record, `Context that helped` was
