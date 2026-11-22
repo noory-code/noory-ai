@@ -78,3 +78,4 @@ Work not done: None.
 - Checks at close 2026-11-22: 2 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`
 - Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS)
 - `.stage/operations/verification.md` 의 "Windows 동작 확인"(영어가 아닌 로캘의 실제 Windows 실행)은 아직 하지 못했다. 2026-11-22 사용자가 한국어 Windows(Python 3.14)에서 돌렸지만 그 체크아웃은 이 카드가 들어가기 전의 main 이었다(`test_release_plugin.py` 8개). #102 를 머지한 뒤 다시 돌린다.
+- 2026-11-22 사용자가 한국어 Windows(Python 3.14, main 2b3dc45e, 이 카드 포함)에서 `test_release_plugin.py` 를 돌렸고 12개가 모두 통과했다(`test_check_released_prints_utf_8_when_the_console_is_cp1252` 포함). 위의 "아직 하지 못했다"는 이 실행으로 채워졌다.

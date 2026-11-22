@@ -90,3 +90,4 @@ Work not done: Not run on Windows locally; the Windows evidence is the windows-l
 
 - Checks at close 2026-11-22: 5 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`
 - Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS)
+- 2026-11-22 사용자가 한국어 Windows(Python 3.14, main 73337b3a, 이 카드 포함)에서 돌렸다. 이 카드의 시험 `test_run_check_timeout_ends_the_whole_process_tree_in_time` 은 통과했고(`test_close_work.py` 의 실패 목록에 없다) `test_drive_parallel.py` 34개는 모두 통과했다. `test_close_work.py` 의 다른 28건은 검사 명령 `true` 가 cmd.exe 에 없어서 실패했다. 이 카드 전부터 있던 문제이고 W-00000394 가 고친다.

@@ -77,3 +77,4 @@ Work not done: A process that ignores SIGTERM at an inner level still escapes on
 
 - Checks at close 2026-11-22: 4 passed — `python3 -m unittest discover -s stage/scripts/tests -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_run_review.py -q`; `python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q`; `python3 stage/scripts/audit_stage.py --project-root .`
 - Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS, 3 PASS)
+- 2026-11-22 사용자가 한국어 Windows(Python 3.14, main ec37013b, 이 카드 포함)에서 `test_run_review.py` 와 `test_drive.py` 를 돌렸고 모두 통과했다.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Read a check's output in the Windows OEM code page when it is not UTF-8. `cmd.exe` writes its own
+  messages there (cp949 on Korean Windows), and `close_work.py` read them as UTF-8, so a failed
+  check's message arrived as replacement characters. `hooks/stage_process.run_bounded` now captures
+  bytes and decodes UTF-8 first, then the OEM code page. The close_work tests no longer use `true`
+  as a passing check: it is not a `cmd.exe` command, and on a Korean Windows host without Git's
+  POSIX tools on PATH 28 of them failed.
 - `stage/CLAUDE.md` now asks a change that adds a code file under `hooks/`, `scripts/`, or `skills/`
   (tests excepted) to add it to the blueprint's layer table in the same change. Two cards in one day added files the
   table did not list (R-00000389).
