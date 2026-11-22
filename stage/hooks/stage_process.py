@@ -11,9 +11,10 @@ that group: `taskkill /T /F` on Windows, `killpg` on POSIX. It keeps the
 `subprocess.run` contract callers already use: it returns a `CompletedProcess` with text output
 and raises `subprocess.TimeoutExpired` on timeout.
 
-Output is read as UTF-8, and a stream that is not valid UTF-8 is read in the Windows OEM code
-page instead: `cmd.exe` writes its own messages there (cp949 on Korean Windows), and reading them
-as UTF-8 turned a failed check's message into replacement characters (W-00000394).
+Output is read as UTF-8 with replacement characters for stray bytes (W-00000352). Only a stream
+whose non-ASCII bytes are mostly not UTF-8 is read in the Windows OEM code page instead: `cmd.exe`
+writes its own messages there (cp949 on Korean Windows), and reading them as UTF-8 turned a failed
+check's message into replacement characters (W-00000394).
 
 Calls nest: the driver runs close_work, which runs a review through run_review, which runs the
 reviewer, each through `run_bounded`. `taskkill /T` follows the parent chain, so on Windows the
@@ -45,20 +46,29 @@ TASKKILL_SECONDS = 10.0
 TERM_GRACE_SECONDS = 2.0
 
 
+# Read a stream in the fallback code page only when at least this share of its non-ASCII bytes
+# fails as UTF-8. A UTF-8 stream with a stray byte stays far below it; text another code page
+# wrote, where nearly every non-ASCII byte fails, stays far above it.
+FALLBACK_SHARE = 0.5
+
+
 def decode_output(data: bytes | None, fallback: str | None = None) -> str:
-    """Read a command's output as UTF-8, or in the fallback encoding when it is not UTF-8.
+    """Read a command's output as UTF-8, or in the fallback code page when it is mostly not UTF-8.
 
     The fallback defaults to the OEM code page on Windows, where `cmd.exe` writes its own
-    messages, and to UTF-8 with replacement elsewhere.
+    messages, and is unused elsewhere.
     """
 
     if not data:
         return ""
-    try:
-        return data.decode("utf-8")
-    except UnicodeDecodeError:
-        encoding = fallback or ("oem" if sys.platform == "win32" else "utf-8")
-        return data.decode(encoding, errors="replace")
+    text = data.decode("utf-8", errors="replace")
+    encoding = fallback or ("oem" if sys.platform == "win32" else None)
+    if encoding is None or "\ufffd" not in text:
+        return text
+    non_ascii = sum(1 for byte in data if byte >= 0x80)
+    if text.count("\ufffd") < FALLBACK_SHARE * non_ascii:
+        return text
+    return data.decode(encoding, errors="replace")
 TERMINATED_STATUS = 128 + 15
 
 

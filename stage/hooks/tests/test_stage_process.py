@@ -20,6 +20,15 @@ class DecodeOutputTest(unittest.TestCase):
     def test_output_that_is_not_utf_8_is_read_in_the_fallback_code_page(self) -> None:
         self.assertEqual(KOREAN, decode_output(KOREAN.encode("cp949"), fallback="cp949"))
 
+    def test_utf_8_output_with_a_stray_byte_stays_utf_8(self) -> None:
+        # W-00000352 pins this for close_work: the stray byte becomes one replacement character
+        # and the Korean text around it survives, whatever the fallback code page is.
+        data = KOREAN.encode("utf-8") + b" ok \xff\n"
+
+        for fallback in ("cp949", "cp437"):
+            with self.subTest(fallback=fallback):
+                self.assertEqual(KOREAN + " ok \ufffd\n", decode_output(data, fallback=fallback))
+
     def test_empty_output_is_an_empty_string(self) -> None:
         self.assertEqual("", decode_output(b""))
         self.assertEqual("", decode_output(None))
