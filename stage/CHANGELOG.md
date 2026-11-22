@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Say in `docs/BLUEPRINT.md` what the new code does not say about itself: `hooks/stage_process.py`
+  ends a timed-out command's whole process group and runs it without a controlling terminal on
+  POSIX, and the driver relies on `git ls-files -t`, which git calls semi-deprecated, on purpose.
+  The layer table now lists `hooks/stage_process.py`, `scripts/stage_id_blocks.py`, and
+  `scripts/subsession_brief.py`.
 - Tell sub-sessions two more things in `subsession_brief.py`. A sub-session that edited files
   outside the card's scope said so in its message but not in its commit's executor report, and the
   close review, which reads only the report, sent the card back (W-00000382). The brief now asks for
