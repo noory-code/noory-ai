@@ -306,3 +306,4 @@
 | W-00000367 | completed | [items/W-00000367/_story.md](items/W-00000367/_story.md) |
 | W-00000379 | completed | [items/W-00000379/_story.md](items/W-00000379/_story.md) |
 | W-00000378 | completed | [items/W-00000378/_story.md](items/W-00000378/_story.md) |
+| W-00000371 | completed | [items/W-00000371/_story.md](items/W-00000371/_story.md) |
