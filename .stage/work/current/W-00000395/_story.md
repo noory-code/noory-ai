@@ -2,14 +2,20 @@
 id: W-00000395
 title: 새 코드 파일은 도면 레이어 표에 넣는다는 규칙을 올린다
 kind: documentation
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 5
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/CLAUDE.md,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000395 새 코드 파일은 도면 레이어 표에 넣는다는 규칙을 올린다
@@ -40,3 +46,9 @@ Stage 에 새 코드 파일을 만드는 카드가 BLUEPRINT 레이어 표를 �
 - stage/CLAUDE.md 의 BLUEPRINT 규칙이 새 코드 파일을 레이어 표에 넣으라고 말하고 근거 회고 R-00000389 를 인용한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
