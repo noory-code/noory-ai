@@ -45,6 +45,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "hooks"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
+from stage_process import run_bounded  # noqa: E402
 from stage_record_paths import record_path  # noqa: E402
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
@@ -723,17 +724,7 @@ def run_check(
     # check's relative paths resolve the same way whatever directory close_work
     # was launched from.
     try:
-        proc = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-            cwd=str(cwd),
-            env=env,
-        )
+        proc = run_bounded(command, shell=True, timeout=timeout, cwd=cwd, env=env)
     except subprocess.TimeoutExpired:
         source = f" ({timeout_source})" if timeout_source else ""
         msg = f"$ {command}\n[TIMED OUT after {timeout}s]{source}"

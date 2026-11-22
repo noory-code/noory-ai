@@ -27,6 +27,7 @@ from drive import (  # noqa: E402
     resolve_reap_command,
 )
 from stage_paths import normalize_path_text, read_settings  # noqa: E402
+from stage_process import run_bounded  # noqa: E402
 from stage_record_paths import record_path, record_paths  # noqa: E402
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
 
@@ -582,15 +583,11 @@ def reap_after_timeout(spec: WorktreeSpec) -> str:
         }
     )
     try:
-        result = subprocess.run(
+        result = run_bounded(
             command,
             shell=True,
-            cwd=str(spec.path),
-            capture_output=True,
+            cwd=spec.path,
             env=environment,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
             timeout=REAPER_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
@@ -637,16 +634,7 @@ def run_driver(
     environment["CLAUDE_PROJECT_DIR"] = str(run_root)
     environment["PROJECT_ROOT"] = str(run_root)
     try:
-        result = subprocess.run(
-            command,
-            cwd=str(run_root),
-            capture_output=True,
-            env=environment,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=timeout,
-        )
+        result = run_bounded(command, cwd=run_root, env=environment, timeout=timeout)
     except subprocess.TimeoutExpired:
         reaper_spec = WorktreeSpec(spec.target, run_root, spec.branch)
         reaper_status = reap_after_timeout(reaper_spec)

@@ -924,6 +924,36 @@ class DriveParallelTest(unittest.TestCase):
         self.assertEqual(0, result)
         self.assertEqual(2, maximum_active)
 
+    def test_run_driver_timeout_ends_the_driver_process_tree_in_time(self) -> None:
+        # The driver starts executor and reviewer children that inherit its output pipes;
+        # the driver timeout must end them too instead of waiting for them (W-00000381).
+        module = load_module()
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        tree = Path(tmp.name) / "worktree"
+        tree.mkdir()
+        driver = Path(tmp.name) / "slow_driver.py"
+        marker = Path(tmp.name) / "survived.txt"
+        child = (
+            "import time; from pathlib import Path; time.sleep(1.5); "
+            f"Path({str(marker)!r}).write_text('x', encoding='utf-8')"
+        )
+        driver.write_text(
+            f"import subprocess, sys\nsubprocess.run([sys.executable, '-c', {child!r}])\n",
+            encoding="utf-8",
+        )
+        spec = module.WorktreeSpec("W-00000001", tree, "stage/worktree/W-00000001")
+
+        started = time.monotonic()
+        result = module.run_driver(spec, driver, timeout=1)
+        elapsed = time.monotonic() - started
+        time.sleep(max(0.0, 2.5 - elapsed))
+
+        self.assertEqual(124, result.returncode)
+        self.assertIn("driver timed out after 1 seconds", result.stderr)
+        self.assertLess(elapsed, 2.0)
+        self.assertFalse(marker.exists(), "the driver's child outlived the driver timeout")
+
     def test_run_driver_reports_timeout(self) -> None:
         module = load_module()
         tmp = tempfile.TemporaryDirectory()
@@ -971,8 +1001,8 @@ class DriveParallelTest(unittest.TestCase):
         )
 
         with mock.patch.object(
-            module.subprocess,
-            "run",
+            module,
+            "run_bounded",
             side_effect=[
                 subprocess.TimeoutExpired(["driver"], 7),
                 subprocess.CompletedProcess("reap-command", 0, "", ""),
@@ -1047,8 +1077,8 @@ class DriveParallelTest(unittest.TestCase):
         )
 
         with mock.patch.object(
-            module.subprocess,
-            "run",
+            module,
+            "run_bounded",
             side_effect=[
                 subprocess.TimeoutExpired(["driver"], 7),
                 subprocess.CompletedProcess("reap-reviewer", 0, "", ""),
@@ -1120,8 +1150,8 @@ class DriveParallelTest(unittest.TestCase):
         )
 
         with mock.patch.object(
-            module.subprocess,
-            "run",
+            module,
+            "run_bounded",
             side_effect=[
                 subprocess.TimeoutExpired(["driver"], 7),
                 subprocess.CompletedProcess("reap-reviewer", 0, "", ""),
@@ -1168,8 +1198,8 @@ class DriveParallelTest(unittest.TestCase):
         )
 
         with mock.patch.object(
-            module.subprocess,
-            "run",
+            module,
+            "run_bounded",
             side_effect=subprocess.TimeoutExpired(["driver"], 7),
         ):
             result = module.run_driver(spec, module.DRIVER, timeout=7)
@@ -1196,8 +1226,8 @@ class DriveParallelTest(unittest.TestCase):
         )
 
         with mock.patch.object(
-            module.subprocess,
-            "run",
+            module,
+            "run_bounded",
             side_effect=subprocess.TimeoutExpired(["driver"], 7),
         ):
             result = module.run_driver(spec, module.DRIVER, timeout=7)
