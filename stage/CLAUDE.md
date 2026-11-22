@@ -14,9 +14,11 @@ It owns why Stage is shaped this way — who it is for, what counts as an achiev
 only maintenance, and why choosing where to cut the work is the design. Changing a rule without reading
 it usually means re-deciding something already decided.
 
-Read [docs/BLUEPRINT.md](docs/BLUEPRINT.md) before changing code. It owns which layer a file
-belongs to and what the code does not say about itself, such as why the shared modules live in
-`hooks/`.
+Read [docs/BLUEPRINT.md](docs/BLUEPRINT.md) before changing code. It owns which layer a file belongs
+to and what the code does not say about itself, such as why the shared modules live in `hooks/`. A
+change that adds a code file under `hooks/`, `scripts/`, or `skills/` (tests excepted) adds that
+file to the blueprint's layer table in the same change (R-00000389: W-00000381 and W-00000388 both
+added files the table did not list).
 
 ## Document language
 

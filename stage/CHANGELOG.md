@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `stage/CLAUDE.md` now asks a change that adds a code file under `hooks/`, `scripts/`, or `skills/`
+  (tests excepted) to add it to the blueprint's layer table in the same change. Two cards in one day added files the
+  table did not list (R-00000389).
 - Print UTF-8 from `release_plugin.py` on every console. `--check-released` prints changelog headings
   that carry an em dash, and a Windows console's default encoding (cp1252 on the CI runner, cp949 on
   Korean Windows) wrote it as a byte a UTF-8 reader could not decode; the Windows CI jobs failed on
