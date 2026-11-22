@@ -2,14 +2,20 @@
 id: W-00000387
 title: 다른 브랜치에서 이미 시작했거나 끝난 카드는 시작하지 않는다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 5
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/scripts/start_work.py,stage/scripts/tests,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000387 다른 브랜치에서 이미 시작했거나 끝난 카드는 시작하지 않는다
@@ -43,3 +49,9 @@ DE-00000094 의 "맡은 카드 표시"를 구현한다. 2026-11-21 에 메인 �
 - 다른 브랜치에 같은 카드가 계획된 상태로만 있으면 지금처럼 시작된다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
