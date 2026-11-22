@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Print UTF-8 from `release_plugin.py` on every console. `--check-released` prints changelog headings
+  that carry an em dash, and a Windows console's default encoding (cp1252 on the CI runner, cp949 on
+  Korean Windows) wrote it as a byte a UTF-8 reader could not decode; the Windows CI jobs failed on
+  it. A test now runs the check with a cp1252 console on every OS.
 - Say in `docs/BLUEPRINT.md` what the new code does not say about itself: `hooks/stage_process.py`
   ends a timed-out command's whole process group and runs it without a controlling terminal on
   POSIX, and the driver relies on `git ls-files -t`, which git calls semi-deprecated, on purpose.

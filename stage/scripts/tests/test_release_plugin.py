@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -81,7 +82,11 @@ class ReleasePluginCliTest(unittest.TestCase):
         self,
         repository_root: Path,
         *mode: str,
+        stdout_encoding: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
+        env = None
+        if stdout_encoding is not None:
+            env = {**os.environ, "PYTHONIOENCODING": stdout_encoding}
         return subprocess.run(
             [
                 sys.executable,
@@ -96,7 +101,28 @@ class ReleasePluginCliTest(unittest.TestCase):
             encoding="utf-8",
             errors="replace",
             check=False,
+            env=env,
         )
+
+    def test_check_released_prints_utf_8_when_the_console_is_cp1252(self):
+        # A Windows runner's stdout is cp1252, which writes the heading's em dash as one
+        # byte that UTF-8 cannot read (W-00000393).
+        temporary_directory, repository_root = self.make_released_repository()
+        heading = f"## 0.54.5 — {date.today().isoformat()}"
+        with temporary_directory:
+            changelog_path = repository_root / "stage" / "CHANGELOG.md"
+            changelog = changelog_path.read_text(encoding="utf-8")
+            changelog_path.write_text(
+                changelog.replace(f"{heading}\n\n", f"{heading}\n\n- Slipped in.\n", 1),
+                encoding="utf-8",
+            )
+            self.commit_all(repository_root, "card line merged into the released section")
+
+            result = self.run_mode(repository_root, "--check-released", stdout_encoding="cp1252")
+
+        self.assertEqual(1, result.returncode, result.stderr)
+        self.assertIn(f"{heading} (released in ", result.stdout)
+        self.assertNotIn("\ufffd", result.stdout)
 
     def test_release_reopens_unreleased_section_and_updates_both_manifests(self):
         temporary_directory, repository_root = self.make_repository()
