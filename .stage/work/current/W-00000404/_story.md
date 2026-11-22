@@ -2,14 +2,21 @@
 id: W-00000404
 title: stage-orchestrate 스킬과 역할별 브리핑을 만든다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000006
-status: captured
-priority: 2
 autonomous: false
-acceptance: []
-review: not_required
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/skills,stage/scripts,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000404 stage-orchestrate 스킬과 역할별 브리핑을 만든다
@@ -42,3 +49,9 @@ scope: stage/skills,stage/scripts,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md
 - 새 클라우드 세션이 이 스킬로 오케스트레이터 역할을 맡아 진행 중인 카드와 답을 기다리는 확인을 기록과 세션 목록에서 찾아냈다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
