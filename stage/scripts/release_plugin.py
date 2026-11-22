@@ -8,8 +8,11 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
+from collections import Counter
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -36,11 +39,19 @@ def parse_args() -> argparse.Namespace:
         "plugin",
         help="Plugin directory name relative to the repository root.",
     )
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
         "--bump",
         choices=("patch", "minor", "major"),
-        required=True,
         help="Explicit semantic-version component to increment.",
+    )
+    mode.add_argument(
+        "--check-released",
+        action="store_true",
+        help=(
+            "Release nothing; list lines that released changelog sections gained after the "
+            "commit that wrote their heading, and exit 1 when there are any."
+        ),
     )
     parser.add_argument(
         "--repository-root",
@@ -301,8 +312,192 @@ def release_plugin(
     return released_version
 
 
+@dataclass(frozen=True)
+class SectionIntrusion:
+    """Lines a released section holds now that the commit writing its heading did not."""
+
+    heading: str
+    release_commit: str
+    lines: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class ReleasedSectionCheck:
+    intrusions: tuple[SectionIntrusion, ...]
+    # Release headings no commit added in a non-merge diff (uncommitted, or written while
+    # resolving a merge); they have nothing to compare against.
+    unrecorded_headings: tuple[str, ...]
+
+
+def run_git(repository_root: Path, *args: str, stdin: bytes | None = None) -> bytes:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=repository_root,
+            input=stdin,
+            capture_output=True,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        raise ReleaseError("git is not installed") from exc
+    if result.returncode != 0:
+        message = result.stderr.decode("utf-8", errors="replace").strip()
+        raise ReleaseError(f"git {args[0]} failed: {message}")
+    return result.stdout
+
+
+def release_sections(changelog: str) -> dict[str, list[str]]:
+    """Map each release heading to its body lines, without line endings."""
+
+    sections: dict[str, list[str]] = {}
+    body: list[str] | None = None
+    for raw_line in changelog.splitlines():
+        line = raw_line.rstrip("\r")
+        if line.startswith("## "):
+            body = None
+            if RELEASE_HEADING_RE.fullmatch(line) is not None and line not in sections:
+                body = sections[line] = []
+            continue
+        if body is not None:
+            body.append(line)
+    return sections
+
+
+def heading_release_commits(
+    repository_root: Path, changelog_path: str, headings: set[str]
+) -> dict[str, str]:
+    """Return, for each heading, the oldest non-merge commit whose diff added that line.
+
+    A release adds its heading and nothing else to the changelog, so that commit holds the
+    section exactly as released. Merge commits are skipped: a merge that carries a heading in
+    from the other parent did not write it.
+    """
+
+    log = run_git(
+        repository_root,
+        "log",
+        "--reverse",
+        "--no-merges",
+        "--no-renames",
+        "--no-color",
+        "--no-ext-diff",
+        "--unified=0",
+        "--format=%x00%H",
+        "-p",
+        "--",
+        changelog_path,
+    ).decode("utf-8", errors="replace")
+    commits: dict[str, str] = {}
+    commit = ""
+    for raw_line in log.splitlines():
+        line = raw_line.rstrip("\r")
+        if line.startswith("\x00"):
+            commit = line[1:]
+        elif line.startswith("+## ") and commit:
+            heading = line[1:]
+            if heading in headings and heading not in commits:
+                commits[heading] = commit
+    return commits
+
+
+def read_blobs(repository_root: Path, objects: list[str]) -> dict[str, str]:
+    """Read `<commit>:<path>` objects through one `git cat-file --batch` process."""
+
+    if not objects:
+        return {}
+    output = run_git(
+        repository_root,
+        "cat-file",
+        "--batch",
+        stdin="".join(f"{name}\n" for name in objects).encode("utf-8"),
+    )
+    contents: dict[str, str] = {}
+    offset = 0
+    for name in objects:
+        header_end = output.index(b"\n", offset)
+        header = output[offset:header_end].decode("utf-8", errors="replace").split()
+        if len(header) != 3 or header[1] != "blob":
+            raise ReleaseError(f"git cannot read {name}: {' '.join(header)}")
+        size = int(header[2])
+        start = header_end + 1
+        contents[name] = output[start : start + size].decode("utf-8", errors="replace")
+        offset = start + size + 1
+    return contents
+
+
+def check_released_sections(repository_root: Path, plugin: str) -> ReleasedSectionCheck:
+    """Compare each released section with the one its release commit wrote.
+
+    A card branch that forked before a release and adds a line to the old `## Unreleased` merges
+    without a conflict, and git can place that line under the released heading (W-00000384).
+    Blank lines are ignored; only lines with text are reported, with repeated lines counted.
+    """
+
+    if PLUGIN_NAME_RE.fullmatch(plugin) is None:
+        raise ReleaseError(f"plugin must be a repository directory name: {plugin!r}")
+    repository_root = repository_root.expanduser().resolve()
+    changelog_file = repository_root / plugin / "CHANGELOG.md"
+    try:
+        changelog = changelog_file.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise ReleaseError(f"changelog not found: {changelog_file}") from exc
+
+    changelog_path = f"{plugin}/CHANGELOG.md"
+    sections = release_sections(changelog)
+    commits = heading_release_commits(repository_root, changelog_path, set(sections))
+    released_texts = read_blobs(
+        repository_root,
+        [f"{commit}:{changelog_path}" for commit in dict.fromkeys(commits.values())],
+    )
+
+    intrusions: list[SectionIntrusion] = []
+    for heading, body in sections.items():
+        commit = commits.get(heading)
+        if commit is None:
+            continue
+        released = release_sections(released_texts[f"{commit}:{changelog_path}"])
+        remaining = Counter(line for line in released.get(heading, []) if line.strip())
+        added: list[str] = []
+        for line in body:
+            if not line.strip():
+                continue
+            if remaining[line] > 0:
+                remaining[line] -= 1
+            else:
+                added.append(line)
+        if added:
+            intrusions.append(SectionIntrusion(heading, commit, tuple(added)))
+    unrecorded = tuple(heading for heading in sections if heading not in commits)
+    return ReleasedSectionCheck(tuple(intrusions), unrecorded)
+
+
+def render_released_section_check(plugin: str, check: ReleasedSectionCheck) -> str:
+    lines: list[str] = []
+    for heading in check.unrecorded_headings:
+        lines.append(f"Not checked, no commit added this heading: {heading}")
+    if not check.intrusions:
+        lines.append(f"{plugin}/CHANGELOG.md: no released section gained lines after its release")
+        return "\n".join(lines) + "\n"
+    lines.append(
+        f"{plugin}/CHANGELOG.md: released sections gained lines after their release commit; "
+        "move them under '## Unreleased':"
+    )
+    for intrusion in check.intrusions:
+        lines.append(f"{intrusion.heading} (released in {intrusion.release_commit[:12]})")
+        lines.extend(f"+ {line}" for line in intrusion.lines)
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     args = parse_args()
+    if args.check_released:
+        try:
+            check = check_released_sections(Path(args.repository_root), args.plugin)
+        except (OSError, ReleaseError) as exc:
+            print(f"Check failed: {exc}", file=sys.stderr)
+            raise SystemExit(2) from exc
+        print(render_released_section_check(args.plugin, check), end="")
+        raise SystemExit(1 if check.intrusions else 0)
     try:
         released_version = release_plugin(
             Path(args.repository_root),

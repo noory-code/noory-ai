@@ -8,6 +8,14 @@
   every scope crossing in the report's `Decisions made:` line. It also says that checks needing
   another OS, such as Windows, belong to the main session, which opens the pull request and reads
   its CI jobs (W-00000381).
+- Find changelog lines that slipped into an already released section with
+  `python3 stage/scripts/release_plugin.py <plugin> --check-released` (W-00000392). For every
+  release heading it finds the oldest non-merge commit whose diff added that heading, reads the
+  section as that commit wrote it, and prints each non-blank line the section holds now and did not
+  then, under its heading; it exits 1 when there are any and 0 otherwise, and changes no file. A
+  merge therefore no longer needs a by-hand comparison to show that a card's line landed under the
+  released heading. A heading no commit added (uncommitted, or written while resolving a merge) is
+  listed as not checked.
 - Pin what a merge does to a changelog line when one branch released the plugin and another added
   the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
   inserts a version heading above the queued lines, so git places the card's line by its
