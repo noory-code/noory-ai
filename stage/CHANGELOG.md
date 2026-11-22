@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Tell sub-sessions two more things in `subsession_brief.py`. A sub-session that edited files
+  outside the card's scope said so in its message but not in its commit's executor report, and the
+  close review, which reads only the report, sent the card back (W-00000382). The brief now asks for
+  every scope crossing in the report's `Decisions made:` line. It also says that checks needing
+  another OS, such as Windows, belong to the main session, which opens the pull request and reads
+  its CI jobs (W-00000381).
 - Pin what a merge does to a changelog line when one branch released the plugin and another added
   the line to the old `## Unreleased` (`scripts/tests/test_changelog_union.py`). The release only
   inserts a version heading above the queued lines, so git places the card's line by its
