@@ -29,6 +29,15 @@ decision_refs:
 
 ## User value
 
+출발점이 된 글(사용자가 2026-11-23 에 준 주소):
+
+- https://www.anthropic.com/research/components-of-agent-memory
+- https://www.anthropic.com/research/managed-agents
+- https://www.anthropic.com/research/building-c-compiler
+- https://www.anthropic.com/research/harness-design-long-running-apps
+
+마일스톤은 `.stage/roadmap/milestones/M-00000006.md` 다. Stage 의 지킬 강점은 세션이 끝나도 남는 장기 기억과 결정 기록이다.
+
 
 ## Scope
 
