@@ -240,11 +240,7 @@ def allowed_lifecycle_paths(
     closed_items: list[WorkItem],
     retrospectives: list[Path],
 ) -> set[str]:
-    lifecycle = v4_lifecycle_paths()
-    exact = {
-        f".stage/{lifecycle.active_index}",
-        f".stage/{lifecycle.review_index}",
-    }
+    exact: set[str] = set()
     for item in closed_items:
         exact.add(item.path.resolve().relative_to(project_root).as_posix())
     for retrospective in retrospectives:

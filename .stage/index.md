@@ -37,11 +37,10 @@
 | 아카이브된 작업 인덱스 | `official/work/archive/index.md` |
 | 아카이브된 작업 항목 | `official/work/archive/items/` |
 | 아카이브된 회고 | `official/work/archive/retrospectives/` |
-| 진행 중 작업 | `work/active.md` |
+| 진행 중 작업 | `work/current/` 에서 `status: active` 또는 `blocked` 인 카드 |
 | 현재 작업 카드 | `work/current/` |
-| 리뷰 후보 | `work/review.md` |
+| 리뷰 후보 | `work/current/` 에서 `status: review`, `completed`, `rejected` 인 카드 |
 | 작업 회고 | `work/retrospectives/` |
-| 계획된 작업 인덱스 | `work/planned/index.md` |
 | 계획된 작업 카드 | `work/planned/` |
 | 작업 뷰 | `work/views/` |
 | 대기 중 결정 인덱스 | `decisions/index.md` |

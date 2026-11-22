@@ -16,6 +16,23 @@
   also keeps a developer's own global git settings out of the tests. This cut the suite from
   about 9,500 to 7,700 started processes; on the Windows runner it saves about 0.1 s per fixture
   repository, within the run-to-run noise of a shard.
+- Stop keeping work lists that two sessions edit at once (DE-00000091). `work/active.md`,
+  `work/review.md`, and `work/planned/index.md` restated each card's `status`, so two branches
+  that each registered, closed, or archived a card conflicted on them, and a union merge would
+  bring closed cards back. Registering, starting, escalating, closing, and archiving no longer
+  write them; the session-start "Active work" and "Review candidates" sections and
+  `archive_work.py --all-completed` read card status instead. New projects get no such files.
+  A project that still has them sees audit warning INDEX007 naming each file to delete; the
+  INDEX001-INDEX006 and BACKLOG008/BACKLOG009 checks that compared the lists with the cards no
+  longer run on schema-v5 projects, and the completion gate no longer blocks on a list row
+  without a card there. `register_work.py` and `start_work.py` drop `--owner`, which only
+  filled a list column.
+- Merge the append-only official archive indexes with `merge=union`. `init_stage.py` now adds
+  `.stage/official/**/archive/index.md merge=union` to the project's `.gitattributes` (creating it
+  when absent), so two branches that each archive a record keep both rows. Re-run `init_stage.py`
+  in an existing project to add the line; it preserves every existing file. GitHub's merge button
+  ignores `merge=union`, so a pull request that conflicts only in those files needs the base branch
+  merged into it with git first.
 - Reserve record ids on the remote. Two sessions that had not fetched each other's branches
   picked the same card or decision number, even with the fetch-then-push rule (R-00000358).
   `stage_record_ids.py`, `register_work.py`, and `manage_roadmap.py` now push a one-commit

@@ -18,14 +18,11 @@ import stage_topology  # noqa: E402
 @dataclass(frozen=True)
 class LifecyclePaths:
     planned_cards: str
-    planned_index: str
     planned_template: str
     planned_epic_template: str
     planned_story_template: str
     planned_action_template: str
     current_cards: str
-    active_index: str
-    review_index: str
     current_template: str
     current_epic_template: str
     current_story_template: str
@@ -87,14 +84,11 @@ def v4_lifecycle_paths() -> LifecyclePaths:
     archive_templates = _hierarchy_templates(archive_action_template)
     return LifecyclePaths(
         planned_cards=planned_cards,
-        planned_index=planned_zone.index_surfaces[0],
         planned_template=planned_templates[2],
         planned_epic_template=planned_templates[0],
         planned_story_template=planned_templates[1],
         planned_action_template=planned_templates[2],
         current_cards=current_cards,
-        active_index=current_zone.index_surfaces[0],
-        review_index=current_zone.index_surfaces[1],
         current_template=current_templates[2],
         current_epic_template=current_templates[0],
         current_story_template=current_templates[1],

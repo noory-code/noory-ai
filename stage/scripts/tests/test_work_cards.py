@@ -86,14 +86,16 @@ class WorkCardFlowTest(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             card = root / ".stage/work/planned/W-00000001/_story.md"
             body = card.read_text(encoding="utf-8")
-            index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
+            listed = [
+                name
+                for name in ("work/planned/index.md", "work/active.md", "work/review.md")
+                if (root / ".stage" / name).exists()
+            ]
             findings = audit_stage.Audit(root).run()
 
         self.assertIn("status: captured", body)
         self.assertIn("priority: high", body)
-        self.assertIn("(W-00000001/_story.md)", index)
-        self.assertNotIn("W-00000001", active)
+        self.assertEqual([], listed)
         self.assertEqual([], [f.code for f in findings if f.severity == "error"])
 
     def test_capture_allows_split_kind_without_decision(self):
@@ -117,8 +119,11 @@ class WorkCardFlowTest(unittest.TestCase):
             moved = root / ".stage/work/current/W-00000001/_story.md"
             body = moved.read_text(encoding="utf-8")
             gone = (root / ".stage/work/planned/W-00000001").exists()
-            index = (root / ".stage/work/planned/index.md").read_text(encoding="utf-8")
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
+            listed = [
+                name
+                for name in ("work/planned/index.md", "work/active.md", "work/review.md")
+                if (root / ".stage" / name).exists()
+            ]
             findings = audit_stage.Audit(root).run()
 
         self.assertFalse(gone)
@@ -128,8 +133,7 @@ class WorkCardFlowTest(unittest.TestCase):
         self.assertIn("verification: pending", body)
         self.assertIn("## Verification", body)
         self.assertNotIn("## Promotion decision", body)
-        self.assertNotIn("(W-00000001/_story.md)", index)
-        self.assertIn("(current/W-00000001/_story.md)", active)
+        self.assertEqual([], listed)
         self.assertEqual([], [f.code for f in findings if f.severity == "error"])
 
     def test_start_moves_the_whole_top_level_hierarchy(self):
@@ -280,7 +284,6 @@ class WorkCardFlowTest(unittest.TestCase):
                 root
                 / ".stage/work/current/W-00000001/W-00000002/W-00000003.md"
             ).read_text(encoding="utf-8")
-            review = (root / ".stage/work/review.md").read_text(encoding="utf-8")
             findings = audit_stage.Audit(root).run()
 
         self.assertEqual(0, epic.returncode, epic.stderr)
@@ -288,10 +291,6 @@ class WorkCardFlowTest(unittest.TestCase):
         self.assertEqual(0, action.returncode, action.stderr)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("\nstatus: rejected\n", moved_action)
-        self.assertIn(
-            "(current/W-00000001/W-00000002/W-00000003.md)",
-            review,
-        )
         self.assertEqual([], [f.code for f in findings if f.severity == "error"])
 
     def test_start_carries_autonomous_acceptance_from_planned_card(self):
