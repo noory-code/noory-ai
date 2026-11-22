@@ -2,13 +2,20 @@
 
 ## Unreleased
 
-- Start fewer processes in the scripts suite. Process creation is what makes the Windows shards
-  several times slower than ubuntu, and git started processes no test asked for: every commit
-  spawned `git maintenance run --auto`, and each fixture repository spent two `git config` calls
-  on an identity. The driver, land, and driver-git tests now share a throwaway global git
+- Split the Windows Stage CI suites into six jobs instead of three. A git process costs the
+  Windows runner 35-46 ms against about 1 ms on ubuntu, and a Stage script start about 170-340 ms,
+  so each of three Windows scripts shards still took 128-212 seconds while ubuntu took 23-49.
+  Windows now runs `WINDOWS_SHARD_TOTAL` (6) shards and the other OSes keep `SHARD_TOTAL` (3);
+  the workflow test expands the matrix and checks that every OS runs each shard number up to its
+  own total.
+- Start fewer git processes in the scripts suite. Every fixture commit spawned
+  `git maintenance run --auto`, and each fixture repository spent two `git config` calls on an
+  identity. The driver, land, and driver-git tests now share a throwaway global git
   configuration (`scripts/tests/git_test_config.py`) that turns automatic maintenance and signing
-  off, supplies the identity, and trims `git init`'s template to the one file tests use. It also
-  keeps a developer's own global git settings out of the tests.
+  off, supplies the identity, and trims `git init`'s template to the files tests write into. It
+  also keeps a developer's own global git settings out of the tests. This cut the suite from
+  about 9,500 to 7,700 started processes; on the Windows runner it saves about 0.1 s per fixture
+  repository, within the run-to-run noise of a shard.
 - Reserve record ids on the remote. Two sessions that had not fetched each other's branches
   picked the same card or decision number, even with the fetch-then-push rule (R-00000358).
   `stage_record_ids.py`, `register_work.py`, and `manage_roadmap.py` now push a one-commit

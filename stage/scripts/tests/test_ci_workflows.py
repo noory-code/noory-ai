@@ -42,6 +42,42 @@ def combinations(block: str) -> set[tuple[str, str]]:
     return (result - entries("exclude")) | entries("include")
 
 
+def matrix_entries(block: str, section: str) -> list[dict[str, str]]:
+    found = re.search(rf"^        {section}:\n((?:          .*\n)+)", block, re.MULTILINE)
+    if not found:
+        return []
+    entries: list[dict[str, str]] = []
+    for line in found.group(1).splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        key_value = re.match(r"^          (- |  )(\w+): (.+)$", line)
+        assert key_value, f"unparsed matrix line: {line!r}"
+        if key_value.group(1) == "- ":
+            entries.append({})
+        entries[-1][key_value.group(2)] = key_value.group(3).strip().strip('"')
+    return entries
+
+
+def expand_matrix(block: str) -> list[dict[str, str]]:
+    """Expand a matrix of list-valued keys with its exclude and include entries."""
+
+    axes: dict[str, list[str]] = {}
+    for key, values in re.findall(r"(?m)^        (\w+): \[(.*)\]$", block):
+        axes[key] = [value.strip().strip('"') for value in values.split(",")]
+    jobs: list[dict[str, str]] = [{}]
+    for key, values in axes.items():
+        jobs = [{**job, key: value} for job in jobs for value in values]
+    excluded = matrix_entries(block, "exclude")
+    jobs = [
+        job
+        for job in jobs
+        if not any(all(job.get(k) == v for k, v in entry.items()) for entry in excluded)
+    ]
+    # Every include entry in these workflows names a combination the axes do not
+    # produce, so GitHub adds each one as a job of its own.
+    return jobs + matrix_entries(block, "include")
+
+
 class CiWorkflowsTest(unittest.TestCase):
     def test_python_39_runs_on_every_os_with_ubuntu_on_the_previous_lts(self):
         for plugin in PYTHON_39_PLUGINS:
@@ -73,19 +109,27 @@ class CiWorkflowsTest(unittest.TestCase):
                 self.assertRegex(text, r"(?m)^  push:\n    branches: \[main\]\n    paths:\n")
 
 
-    def test_stage_matrix_runs_every_shard_number_up_to_the_total(self):
+    def test_stage_matrix_runs_every_shard_number_up_to_each_os_total(self):
         # A shard number the matrix drops never runs, and its tests vanish without a failure.
+        # Windows splits into more shards than the other OSes, so the guarantee holds per OS.
         text = (WORKFLOWS / "stage.yml").read_text(encoding="utf-8")
-        total = re.search(r"(?m)^  SHARD_TOTAL: (\d+)$", text)
-        shards = re.search(r"(?m)^        shard: \[(.*)\]$", text)
-        assert total and shards, "stage.yml must declare SHARD_TOTAL and matrix.shard"
-        expected = list(range(1, int(total.group(1)) + 1))
-
-        self.assertEqual(expected, [int(value) for value in shards.group(1).split(",")])
-        included = re.findall(
-            r"- os: ubuntu-24\.04\n\s+python: \"3\.9\"\n\s+shard: (\d+)", text
+        totals = dict(re.findall(r"(?m)^  (SHARD_TOTAL|WINDOWS_SHARD_TOTAL): (\d+)$", text))
+        assert set(totals) == {"SHARD_TOTAL", "WINDOWS_SHARD_TOTAL"}, totals
+        total_argument = (
+            "--total ${{ matrix.os == 'windows-latest' && env.WINDOWS_SHARD_TOTAL "
+            "|| env.SHARD_TOTAL }}"
         )
-        self.assertEqual(expected, sorted(int(value) for value in included))
+        self.assertEqual(2, text.count(total_argument))
+        self.assertNotRegex(text, r"--total \$\{\{ env\.SHARD_TOTAL \}\}")
+
+        shards_by_job: dict[tuple[str, str], set[int]] = {}
+        for job in expand_matrix(matrix_block(text)):
+            shards_by_job.setdefault((job["os"], job["python"]), set()).add(int(job["shard"]))
+        self.assertEqual(6, len(shards_by_job))
+        for (os_name, python), shards in sorted(shards_by_job.items()):
+            with self.subTest(os=os_name, python=python):
+                name = "WINDOWS_SHARD_TOTAL" if os_name == "windows-latest" else "SHARD_TOTAL"
+                self.assertEqual(set(range(1, int(totals[name]) + 1)), shards)
 
     def test_shards_together_run_every_test_exactly_once(self):
         spec = importlib.util.spec_from_file_location("unittest_shard", SHARD_SCRIPT)
@@ -100,7 +144,7 @@ class CiWorkflowsTest(unittest.TestCase):
             setattr(Sample, f"test_{index}", lambda self: None)
         tests = list(unittest.TestLoader().loadTestsFromTestCase(Sample))
         everything = sorted(test.id() for test in tests)
-        for total in (1, 2, 3, 4, 8):
+        for total in (1, 2, 3, 4, 6, 8):
             with self.subTest(total=total):
                 picked = [
                     test.id()
