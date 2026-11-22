@@ -4,7 +4,7 @@ A retrospective ends with two different kinds of sentence, and they need differe
 
 | Kind | Lives until | Goes in |
 |---|---|---|
-| The next card to run, an id to close, a thing to watch once | that card closes | `## Next changes` |
+| The next card to run, an id to close, a thing to watch once | that card closes | a planned card or a `state/` record, not the retrospective |
 | How work is done from now on, in any card | it is superseded | `## Rule candidate`, then a rule file |
 
 Writing both under one heading is what buries the second kind. A reader scanning for durable

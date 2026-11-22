@@ -110,7 +110,6 @@ from driver_lifecycle import (  # noqa: E402
     AUDIT,
     CLOSE_WORK,
     ESCALATE_WORK,
-    RETRO_SECTIONS,
     audit_check,
     close_via_close_work,
     current_card_path,
@@ -303,18 +302,6 @@ def limit_blocker(
 
 CLOSE_WORK = STAGE_ROOT / "skills" / "stage-retrospective" / "close_work.py"
 ESCALATE_WORK = STAGE_ROOT / "scripts" / "escalate_work.py"
-RETRO_SECTIONS = (
-    "Work",
-    "Decision points",
-    "Principles applied",
-    "Context that helped",
-    "Context that was missing",
-    "Next changes",
-    "Rule candidate",
-    "Promotion decision",
-)
-
-
 AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
 
 

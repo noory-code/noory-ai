@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Keep three sections in a retrospective: `## Decision points`, `## Context that was missing`, and
+  `## Rule candidate`. Of the eight, only these were read again; `Work` and `Promotion decision`
+  repeated the card, `Principles applied` repeated the decision record, `Context that helped` was
+  read by nothing, and next work belongs in a planned card or a `state/` record. The templates,
+  `operations/retrospective.md`, the retrospective skill, and the driver's machine-written
+  retrospective follow; archived retrospectives keep their older sections (DE-00000093).
 - Reserve record ids on the remote. Two sessions that had not fetched each other's branches
   picked the same card or decision number, even with the fetch-then-push rule (R-00000358).
   `stage_record_ids.py`, `register_work.py`, and `manage_roadmap.py` now push a one-commit
