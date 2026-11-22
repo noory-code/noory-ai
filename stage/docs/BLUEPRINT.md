@@ -149,6 +149,18 @@ flowchart TD
 `hooks/`, `scripts/`, `skills/` 의 코드는 패키지를 설치하지 않고 호스트의 `python3` 로 실행된다. 실행 조건은
 [hooks/README.md](../hooks/README.md)의 Portability 가 소유한다.
 
+### 세션의 역할은 코드가 아니라 첫 메시지와 스킬이 정한다
+
+Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"이라는 상태가 없다. 세션을 띄우고 목록을 읽는 것은
+플랫폼의 일이고, Stage 는 그 세션이 무엇을 하는지만 글로 준다(DE-00000099).
+
+- 오케스트레이터는 `skills/stage-orchestrate/SKILL.md` 로 역할을 받는다. 진행 상태를 적는 파일은 없다. 진행 중인
+  카드는 `.stage/work/current/` 가, 진행 중인 세션은 플랫폼의 세션 목록이 답한다.
+- 작업 세션과 검증 세션은 `scripts/subsession_brief.py` 가 카드에서 만든 첫 메시지로 역할을 받는다. `--role work`
+  는 카드가 에픽이면 그 아래 스토리를 세션 안의 서브에이전트에게 맡기고 스토리마다 커밋을 하나씩 남기게 한다.
+  `--role verify` 는 판정만 하게 하고, 판정 파일은 여전히 `close_work.py` 만 쓴다.
+- `subsession_brief.py` 는 카드를 읽기만 한다. 세션을 만들지 않고 카드나 런타임 상태를 고치지 않는다.
+
 ## 컴포넌트로 가는 길
 
 | 알고 싶은 것 | 읽을 곳 |

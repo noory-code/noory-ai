@@ -9,6 +9,10 @@ description: Run registered Stage work through an executor instead of doing it b
 this runs the work. It never creates work items, approves a decomposition, promotes official truth,
 or crosses a human-approval gate — it only carries out cards that already exist.
 
+The driver is a machine: it takes the next ready leaf by work id. It does not gather scattered
+issues, group them into cards, order them, or ask the user anything. Those judgments belong to the
+orchestrator session (`stage-orchestrate`), which may then run ready cards through this driver.
+
 ```bash
 python3 "<driver>" --project-root <project-root> <TARGET_ID>
 ```

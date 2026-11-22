@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add the `stage-orchestrate` skill and role briefs (W-00000404, DE-00000099). The skill gives one
+  session the orchestrator role: take over from the records and the platform's session list, take
+  the user's confirmations, organize work, start work and verification sessions, close and merge.
+  `stage-handoff`'s "Hand cards to cloud sub-sessions" section moved there and is now a pointer;
+  the rule for when to split is the session start-up cost rule. `subsession_brief.py` takes
+  `--role work|verify` and `--commit`: a work brief for an epic lists its stories, runs them in
+  sub-agents inside the session, and asks for one commit and one executor report per story; a
+  verify brief asks for a `PASS`/`FAIL` verdict per success criterion and forbids every change. A
+  story's work brief is unchanged. `stage-drive` states its boundary with the orchestrator, and
+  `operations/cloud-execution.md` says how to bring an epic's story commits over.
 - Move an executor or reviewer to the venue's next model when a usage limit stops one (W-00000386).
   New settings `model_fallbacks` (per venue, model groups that share one usage limit, in preference
   order) and `usage_limit_patterns` (per venue, regular expressions that mark a failed run's output
