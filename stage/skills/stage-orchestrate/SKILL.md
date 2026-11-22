@@ -49,17 +49,26 @@ handed over in a message.
    it names the copy to read: the one whose record was edited last. It also lists what waits in the
    records: `blocked` cards, `Waiting on user:` lines under a card's `## Next action`, pending
    decisions that are not decided, and open questions. Planned cards are not in progress; read
-   `.stage/work/planned/` when you organize work.
+   `.stage/work/planned/` when you organize work. Its `Project tag:` line is this project's
+   session tag; copy it wherever this skill writes `<project-tag>`.
 3. Sessions. Take your own id from `get_session`, then page the session list: `list_sessions` with
-   `limit: 100`, passing `after_id: <last_id>` while `has_more` is true.
+   `limit: 100`, passing `after_id: <last_id>` until a page returns fewer than 100 rows (the
+   response may carry no `has_more`).
 
    ```yaml
+   row_shape:
+     archived: `session_status` is `SESSION_STATUS_ARCHIVED`; `status_bucket` does not show it
+     untagged: the row has no `tags` key
    keep_a_row_when:
-     - it is not archived
-     - and: its tags include `stage-project:<repository>`, or its title names a card id from step 2
+     - it is not archived, and one of:
+       - its tags include `<project-tag>`
+       - its title names a card id from step 2
+       - its id is the `<id>` of a kept row's `stage-main-session:<id>` tag
    drop: this session's own row
-   earlier_orchestrator: a kept row tagged `stage-orchestrator`; list it apart and send it nothing
+   earlier_orchestrator: a kept row tagged `stage-orchestrator`, or kept by the third rule
    match_to_card: by the card id in the title only; the session list carries no branch
+   out_of_the_list: every other row, even one that waits on the user; a session of another
+     repository, or a device session without the project tag, belongs to no take-over here
    ```
 
 4. A kept session waits for an answer when one of these holds:
@@ -73,11 +82,32 @@ handed over in a message.
    ```
 
    Read what each one waits for from its last assistant text only: `list_events` with
-   `kinds: ["assistant"]` and `limit: 5`. For more than three waiting sessions, give the reading to
-   a sub-agent that returns one line per session.
+   `kinds: ["assistant"]` and `limit: 20`. `limit` counts events before the kind filter, so a page
+   can hold no assistant event: repeat with `before_id: <first_id>`, at most five pages. For more
+   than three waiting sessions, give the reading to a sub-agent that returns one line per session.
 5. Tell the user, in one list: each card in progress with its session, what waits in the records,
    what waits in sessions, kept sessions that match no card, and earlier orchestrators.
-6. Tag this session `stage-project:<repository>` and `stage-orchestrator` (`set_session_tags`).
+6. Take the role ("One conductor at a time").
+
+## One conductor at a time
+
+The conductor is the one session tagged `stage-orchestrator` for this project. The user names a new
+conductor by asking a session to take over; reading the take-over list is not taking the role.
+
+```yaml
+until_the_tag_moves:
+  - the new session starts no session, closes no card, and edits no record
+no_earlier_orchestrator:
+  - tag this session `<project-tag>` and `stage-orchestrator` (`set_session_tags`)
+earlier_orchestrator_answers:
+  - send it one message: this session takes the orchestrator role
+  - it does "When this session's context fills" up to the push, removes its own
+    `stage-orchestrator` tag, and answers
+  - then tag this session, and ask the user to confirm archiving the earlier one
+earlier_orchestrator_is_archived_or_does_not_answer:
+  - ask the user to confirm the transfer
+  - on yes: remove its `stage-orchestrator` tag yourself, then tag this session
+```
 
 ## Keep the records current
 
@@ -88,6 +118,8 @@ Work and verification sessions do not edit a card; you do, on your branch, and c
 on_a_session_report:
   - add to the card's `## Progress`: the date, the session id, the reported commit, and which
     success criteria the report claims
+  - add each follow-up candidate the report names as a `## Progress` line
+    `Follow-up candidate: <text>`; register them when the card closes
   - set the card's `## Next action` to the one next step
 on_a_question_for_the_user:
   - add a line `Waiting on user: <question>` under the `## Next action` of the card it belongs to
@@ -145,7 +177,7 @@ its own branch, so you hold the ids its card may need (DE-00000094).
    ```
 
    Create the session from the branch that holds the start. Title it `<W-id> work` and tag it
-   `stage-project:<repository>` and `stage-main-session:<this-session-id>`.
+   `<project-tag>` and `stage-main-session:<this-session-id>`.
 5. The session reports the branch, the commit of each card, changed paths, checks, decisions,
    scope crossings, what needs the user, and follow-up candidates. Record the report ("Keep the
    records current"), ask the user what needs the user, and send the answer back to that session.

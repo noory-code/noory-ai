@@ -115,6 +115,25 @@ def default_base(project_root: Path) -> str | None:
     return None
 
 
+def project_tag(project_root: Path) -> str:
+    """The session tag of this project: `stage-project:<owner>/<name>` from the remote's URL.
+
+    Without a remote the project folder's name stands in. An orchestrator copies
+    this line instead of spelling the repository itself, because a session whose
+    tag is spelled differently silently drops out of the take-over list.
+    """
+
+    remote = default_remote(project_root)
+    url = (git_text(project_root, "remote", "get-url", remote) or "").strip() if remote else ""
+    parts = [part for part in re.split(r"[/:\\]", url[:-4] if url.endswith(".git") else url) if part]
+    name = "/".join(parts[-2:]) if len(parts) >= 2 else project_root.name
+    return f"stage-project:{name}"
+
+
+def is_waiting(line: str) -> bool:
+    return line.lstrip("-* ").startswith(WAITING_PREFIX)
+
+
 def frontmatter_scalars(text: str) -> dict[str, str]:
     if not text.startswith("---\n"):
         return {}
@@ -213,7 +232,13 @@ def open_questions(stage_root: Path) -> list[str]:
 
 def render(project_root: Path, base: str) -> str:
     cards = started_cards(project_root, base)
-    lines = [f"Base: {base}", "", f"## Cards in progress: {len(cards)}", ""]
+    lines = [
+        f"Base: {base}",
+        f"Project tag: {project_tag(project_root)}",
+        "",
+        f"## Cards in progress: {len(cards)}",
+        "",
+    ]
     waiting: list[str] = []
     for card in cards:
         copies = card["copies"]
@@ -226,14 +251,16 @@ def render(project_root: Path, base: str) -> str:
         others = [copy["ref"] for copy in copies[1:]]  # type: ignore[index]
         if others:
             lines.append(f"  - other copies: {', '.join(f'`{ref}`' for ref in others)}")
-        actions = first["next_action"]
-        lines.append(f"  - next action: {' / '.join(actions) if actions else '(empty)'}")
+        every_line = first["next_action"]
+        actions = [line for line in every_line if not is_waiting(line)]  # type: ignore[union-attr]
+        empty = "(waiting on user, listed below)" if every_line else "(empty)"
+        lines.append(f"  - next action: {' / '.join(actions) if actions else empty}")
         if fields.get("status") == "blocked":
             waiting.append(f"{card['id']} is `blocked`: {' / '.join(actions) or '(no next action)'}")
         waiting += [
             f"{card['id']}: {line.lstrip('-* ').strip()}"
-            for line in actions
-            if line.lstrip("-* ").startswith(WAITING_PREFIX)
+            for line in every_line  # type: ignore[union-attr]
+            if is_waiting(line)
         ]
     stage_root = project_root / ".stage"
     waiting += [f"decision {entry}" for entry in open_decisions(stage_root)]

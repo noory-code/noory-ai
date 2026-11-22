@@ -96,6 +96,20 @@ class StartedCardsTest(unittest.TestCase):
         self.assertIn("status: active, verification: pending, review: pending", proc.stdout)
         self.assertIn(f"read: `{CURRENT}/W-00000001/_story.md` on `work`", proc.stdout)
         self.assertIn("next action: (empty)", proc.stdout)
+        self.assertIn(f"Project tag: stage-project:{self.root.name}", proc.stdout)
+
+    def test_the_project_tag_is_the_owner_and_name_of_the_remote(self) -> None:
+        for url in (
+            "https://github.com/acme/widgets.git",
+            "https://github.com/acme/widgets",
+            "git@github.com:acme/widgets.git",
+        ):
+            with self.subTest(url=url):
+                if "origin" in git(self.root, "remote"):
+                    git(self.root, "remote", "remove", "origin")
+                git(self.root, "remote", "add", "origin", url)
+
+                self.assertIn("Project tag: stage-project:acme/widgets\n", self.run_script().stdout)
 
     def test_a_card_the_base_branch_archived_is_dropped_from_a_stale_branch(self) -> None:
         self.branch("stale")
@@ -116,7 +130,7 @@ class StartedCardsTest(unittest.TestCase):
         self.card("W-00000001")
         self.commit("start")
         git(self.root, "checkout", "-q", "-b", "zz-orchestrator", "work")
-        self.card("W-00000001", next_action="- Waiting on user: pick A or B")
+        self.card("W-00000001", next_action="- Waiting on user: pick A or B\n- Close after the answer")
         self.commit("record the report")
         git(self.root, "checkout", "-q", "work")
         (self.root / "code.txt").write_text("later code\n", encoding="utf-8")
@@ -129,6 +143,8 @@ class StartedCardsTest(unittest.TestCase):
         self.assertIn("other copies: `work`", out)
         self.assertIn("## Waiting in the records: 1", out)
         self.assertIn("- W-00000001: Waiting on user: pick A or B", out)
+        self.assertEqual(1, out.count("pick A or B"))
+        self.assertIn("next action: - Close after the answer", out)
 
     def test_blocked_cards_open_decisions_and_questions_are_waiting(self) -> None:
         self.card("W-00000001", status="blocked", next_action="Ask which venue")

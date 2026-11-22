@@ -23,6 +23,13 @@
   in the title, counts a session that reported and waits as waiting, reads only a session's last
   assistant text, and makes the orchestrator write each report and each unanswered question onto
   the card. The work brief forbids editing the card's `## Progress` and `## Next action`.
+- Close the gaps a second take-over trial found (W-00000404). `started_cards.py` prints the
+  project's session tag (`stage-project:<owner>/<name>` from the remote's URL) so no session spells
+  it by hand, and prints a `Waiting on user:` line once. The skill keeps a session named by another
+  session's `stage-main-session:<id>` tag, names the session-list row shape (archived status,
+  missing `tags`, paging without `has_more`), gives the `list_events` fallback, says which sessions
+  stay out of the list, records follow-up candidates on the card, and adds "One conductor at a
+  time": the user names the new conductor and the `stage-orchestrator` tag moves once.
 - Move an executor or reviewer to the venue's next model when a usage limit stops one (W-00000386).
   New settings `model_fallbacks` (per venue, model groups that share one usage limit, in preference
   order) and `usage_limit_patterns` (per venue, regular expressions that mark a failed run's output
