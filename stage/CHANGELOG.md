@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Limit `release_plugin.py --check-released` to recent history with `--since <x.y.z>` (W-00000396).
+  The full check fails on this repository because older sections (0.14.0, 0.43.5, 0.49.0, 0.51.0)
+  gained lines before the check existed, so it could not run in CI. With `--since`, sections older
+  than that version are skipped and the named version is still checked; `--since 0.67.0` passes on
+  Stage today. `--since` without `--check-released`, or a version that is not `x.y.z`, exits 2.
 - Print UTF-8 from `release_plugin.py` on every console. `--check-released` prints changelog headings
   that carry an em dash, and a Windows console's default encoding (cp1252 on the CI runner, cp949 on
   Korean Windows) wrote it as a byte a UTF-8 reader could not decode; the Windows CI jobs failed on

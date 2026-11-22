@@ -54,11 +54,25 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--since",
+        metavar="VERSION",
+        help=(
+            "With --check-released: check only release sections at or after this x.y.z "
+            "version, so older history does not fail the check."
+        ),
+    )
+    parser.add_argument(
         "--repository-root",
         default=str(Path(__file__).resolve().parents[2]),
         help="Repository root. Defaults to the root containing this script.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.since is not None:
+        if not args.check_released:
+            parser.error("argument --since: only allowed with --check-released")
+        if VERSION_RE.fullmatch(args.since) is None:
+            parser.error(f"argument --since: version is not semantic x.y.z: {args.since}")
+    return args
 
 
 def load_manifest(path: Path) -> dict[str, object]:
@@ -425,8 +439,28 @@ def read_blobs(repository_root: Path, objects: list[str]) -> dict[str, str]:
     return contents
 
 
-def check_released_sections(repository_root: Path, plugin: str) -> ReleasedSectionCheck:
+def version_key(version: str) -> tuple[int, int, int]:
+    match = VERSION_RE.fullmatch(version)
+    if match is None:
+        raise ReleaseError(f"version is not semantic x.y.z: {version}")
+    major, minor, patch = (int(value) for value in match.groups())
+    return major, minor, patch
+
+
+def heading_version(heading: str) -> str:
+    match = RELEASE_HEADING_RE.fullmatch(heading)
+    if match is None:
+        raise ReleaseError(f"not a release heading: {heading}")
+    return match.group(1)
+
+
+def check_released_sections(
+    repository_root: Path, plugin: str, since: str | None = None
+) -> ReleasedSectionCheck:
     """Compare each released section with the one its release commit wrote.
+
+    With `since`, only sections whose version is at or after it are compared, so history that
+    predates the check cannot fail it (W-00000396).
 
     A card branch that forked before a release and adds a line to the old `## Unreleased` merges
     without a conflict, and git can place that line under the released heading (W-00000384).
@@ -444,6 +478,13 @@ def check_released_sections(repository_root: Path, plugin: str) -> ReleasedSecti
 
     changelog_path = f"{plugin}/CHANGELOG.md"
     sections = release_sections(changelog)
+    if since is not None:
+        floor = version_key(since)
+        sections = {
+            heading: body
+            for heading, body in sections.items()
+            if version_key(heading_version(heading)) >= floor
+        }
     commits = heading_release_commits(repository_root, changelog_path, set(sections))
     released_texts = read_blobs(
         repository_root,
@@ -497,7 +538,9 @@ def main() -> None:
     args = parse_args()
     if args.check_released:
         try:
-            check = check_released_sections(Path(args.repository_root), args.plugin)
+            check = check_released_sections(
+                Path(args.repository_root), args.plugin, since=args.since
+            )
         except (OSError, ReleaseError) as exc:
             print(f"Check failed: {exc}", file=sys.stderr)
             raise SystemExit(2) from exc
