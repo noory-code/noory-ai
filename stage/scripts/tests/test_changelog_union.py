@@ -209,25 +209,28 @@ class ChangelogUnionMergeTest(unittest.TestCase):
 
     def test_comparing_the_released_section_with_the_release_commit_finds_the_line(self) -> None:
         # The card's handling: the released section must equal the one the release commit wrote.
-        self.make_base(union=True)
-        self.add_card_line(at_top=True)
-        release_commit = self.release_on_main()
-        git(self.repository, "merge", "--no-edit", "card")
-
-        at_release = git(self.repository, "show", f"{release_commit}:stage/CHANGELOG.md").stdout
         heading = "## 0.2.0 — 2026-02-01"
-        released_lines = section(at_release, heading).splitlines(keepends=True)
-        merged_lines = section(self.merged_text(), heading).splitlines(keepends=True)
-        extra = [line for line in merged_lines if line not in released_lines]
-        self.assertEqual([CARD], extra)
+        for at_top in (True, False):
+            with self.subTest(at_top=at_top):
+                self.make_base(union=True)
+                self.add_card_line(at_top=at_top)
+                release_commit = self.release_on_main()
+                git(self.repository, "merge", "--no-edit", "card")
 
-        # Moving the extra lines back under `## Unreleased` gives the intended changelog.
-        repaired = self.merged_text().replace(CARD, "", 1)
-        repaired = repaired.replace(
-            f"## Unreleased\n\n{heading}", f"## Unreleased\n\n{CARD}\n{heading}", 1
-        )
-        self.assertEqual(INTENDED, repaired)
+                at_release = git(
+                    self.repository, "show", f"{release_commit}:stage/CHANGELOG.md"
+                ).stdout
+                released_lines = section(at_release, heading).splitlines(keepends=True)
+                merged_lines = section(self.merged_text(), heading).splitlines(keepends=True)
+                extra = [line for line in merged_lines if line not in released_lines]
+                self.assertEqual([CARD], extra)
 
+                # Moving the extra lines back under `## Unreleased` gives the intended changelog.
+                repaired = self.merged_text().replace(CARD, "", 1)
+                repaired = repaired.replace(
+                    f"## Unreleased\n\n{heading}", f"## Unreleased\n\n{CARD}\n{heading}", 1
+                )
+                self.assertEqual(INTENDED, repaired)
 
 if __name__ == "__main__":
     unittest.main()
