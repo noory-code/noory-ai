@@ -30,6 +30,11 @@ v5 (DE-00000035): move every flat work card into the single
 epic/story/action filesystem shape, remove ``parent`` frontmatter, rebuild
 index links from actual record paths, and keep the same marker+journal+abort
 failure boundary.
+
+Retired work lists (DE-00000091): ``work/active.md``, ``work/review.md``, and
+``work/planned/index.md`` restate card status and no command updates them. The
+v5 step deletes them, and a project already on v5 has any leftover copy deleted
+on the next run.
 """
 
 from __future__ import annotations
@@ -534,6 +539,26 @@ def abort(project_root: Path) -> int:
     return 1
 
 
+def remove_retired_work_lists(stage_root: Path, dry_run: bool) -> int:
+    """Delete work lists a schema-v5 project kept from before DE-00000091."""
+    leftovers = v5_migration.retired_work_lists(stage_root)
+    if not leftovers:
+        print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
+        return 0
+    if dry_run:
+        for relative in leftovers:
+            print(f"  delete .stage/{relative} (derived from card status)")
+        print("Retired work list plan complete (dry run); no files changed.")
+        return 0
+    for relative in v5_migration.remove_retired_work_lists(stage_root):
+        print(f"  delete .stage/{relative} (derived from card status)")
+    print(
+        f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; deleted "
+        f"{len(leftovers)} retired work list file(s). This command does not commit."
+    )
+    return 0
+
+
 def migrate(project_root: Path, dry_run: bool) -> int:
     stage_root = project_root / ".stage"
     if not stage_root.exists():
@@ -555,8 +580,7 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         return 1
     if type(schema_version) is int and schema_version == STAGE_SCHEMA_VERSION:
         cleanup_completed_migration_journals(stage_root)
-        print(f"Stage project already uses schema v{STAGE_SCHEMA_VERSION}; no migration needed.")
-        return 0
+        return remove_retired_work_lists(stage_root, dry_run)
     if schema_version == V4_SCHEMA_VERSION:
         return migrate_to_v5(project_root, dry_run)
 

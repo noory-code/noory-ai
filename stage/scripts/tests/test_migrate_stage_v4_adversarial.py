@@ -158,9 +158,7 @@ class MigrationAdversarialFixture(unittest.TestCase):
         actual = [
             (finding["code"], finding["path"])
             for finding in payload["findings"]
-            # INDEX007 names the v3 work lists the migration carried over for
-            # deletion: their views are derived from card status (DE-00000091).
-            if finding["code"] not in {"TEMPLATE004", "INDEX007"}
+            if finding["code"] != "TEMPLATE004"
         ]
         self.assertEqual(expected, actual)
 
@@ -173,9 +171,7 @@ class MigrationAdversarialFixture(unittest.TestCase):
         unexpected = [
             finding
             for finding in payload["findings"]
-            # INDEX007 names the v3 work lists the migration carried over for
-            # deletion: their views are derived from card status (DE-00000091).
-            if finding["code"] not in {"TEMPLATE004", "INDEX007"}
+            if finding["code"] != "TEMPLATE004"
         ]
         self.assertEqual([], unexpected)
 

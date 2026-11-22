@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Delete the retired work lists when a project migrates. `work/active.md`, `work/review.md`, and
+  `work/planned/index.md` restate card status and no command updates them since DE-00000091, yet
+  the v3-to-v4 and v4-to-v5 migrations kept them, so every migrated project drew one INDEX007
+  warning per file. The v5 step now deletes them inside its journaled transaction, so `--abort`
+  restores them, and running `migrate_stage.py` on a project already on schema v5 deletes any
+  leftover copy (`--dry-run` lists them first). The v5 step no longer rewrites links inside the
+  lists it is about to delete.
 - Hand cards to cloud sub-sessions and close them from the main session (DE-00000094). A
   sub-session's proxy refuses pushes outside its own branch, so it cannot reserve record ids on the
   remote. `stage_record_ids.py --reserve-for <W-id> --count <n> <PREFIX>` now holds a block of ids on

@@ -18,6 +18,7 @@ if str(SCRIPTS) not in sys.path:
 import stage_schema_v5_migration as migration  # noqa: E402
 import audit_stage  # noqa: E402
 import migrate_stage  # noqa: E402
+from stage_topology import RETIRED_WORK_LISTS  # noqa: E402
 
 
 def write_card(
@@ -179,14 +180,8 @@ class SchemaV5MigrationTest(unittest.TestCase):
                 (stage_root / "work/retrospectives/R-00000002.md").is_file()
             )
             self.assertFalse(archived_retro.exists())
-            self.assertIn(
-                "current/W-00000003/_epic.md",
-                (stage_root / "work/active.md").read_text(encoding="utf-8"),
-            )
-            self.assertIn(
-                "current/W-00000003/W-00000002/_story.md",
-                (stage_root / "work/review.md").read_text(encoding="utf-8"),
-            )
+            for relative in ("work/active.md", "work/review.md", "work/planned/index.md"):
+                self.assertFalse((stage_root / relative).exists(), relative)
             archive_index = (
                 stage_root / "official/work/archive/index.md"
             ).read_text(encoding="utf-8")
@@ -342,6 +337,65 @@ class SchemaV5MigrationTest(unittest.TestCase):
             self.assertFalse(
                 (stage_root / migration.MAINTENANCE_MARKER_RELATIVE).exists()
             )
+
+    def test_abort_restores_retired_work_lists_the_migration_deleted(self):
+        temporary, project_root, stage_root = self.make_project()
+        with temporary:
+            write_card(
+                stage_root / "work/current/W-00000003.md",
+                "W-00000003",
+                status="active",
+            )
+            before = migration.snapshot_tree(stage_root)
+            checked = migration.preflight(project_root, stage_root)
+            journal = migration.begin(stage_root, checked)
+            migration.relocate_work_records(stage_root, checked, journal)
+
+            self.assertEqual(
+                list(RETIRED_WORK_LISTS),
+                migration.remove_retired_work_lists(stage_root),
+            )
+            self.assertEqual(0, migration.abort(project_root, stage_root))
+            self.assertEqual(before, migration.snapshot_tree(stage_root))
+
+    def test_v5_project_with_retired_work_lists_has_them_deleted(self):
+        temporary = tempfile.TemporaryDirectory()
+        with temporary:
+            project_root = Path(temporary.name)
+            stage_root = project_root / ".stage"
+            shutil.copytree(V5_TEMPLATE_ROOT, stage_root)
+            for relative in RETIRED_WORK_LISTS:
+                (stage_root / relative).write_text("# Old list\n", encoding="utf-8")
+
+            def index007() -> set[str]:
+                return {
+                    finding.path
+                    for finding in audit_stage.Audit(project_root).run()
+                    if finding.code == "INDEX007"
+                }
+
+            self.assertEqual(
+                {f".stage/{relative}" for relative in RETIRED_WORK_LISTS}, index007()
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(0, migrate_stage.migrate(project_root, True))
+            for relative in RETIRED_WORK_LISTS:
+                self.assertTrue((stage_root / relative).is_file(), relative)
+                self.assertIn(f".stage/{relative}", output.getvalue())
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(0, migrate_stage.migrate(project_root, False))
+            for relative in RETIRED_WORK_LISTS:
+                self.assertFalse((stage_root / relative).exists(), relative)
+            self.assertIn("does not commit", output.getvalue())
+            self.assertEqual(set(), index007())
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(0, migrate_stage.migrate(project_root, False))
+            self.assertIn("no migration needed", output.getvalue())
 
     def test_pending_promotion_machinery_blocks_before_mutation(self):
         temporary, project_root, stage_root = self.make_project()
