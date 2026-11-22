@@ -3,8 +3,9 @@
 Schema v5 removes the flat work-card shape.  This module is the only reader of
 that retired shape: it snapshots the pre-migration Stage tree, installs a
 maintenance marker, moves every flat card into an epic/story/action location,
-rewrites live index links from the resulting files, refreshes the work guidance,
-and stamps the schema marker last.
+rewrites live index links from the resulting files, deletes the work list files
+that card status replaced (DE-00000091), refreshes the work guidance, and stamps
+the schema marker last.
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ if str(HOOK_ROOT) not in sys.path:
 
 from stage_paths import read_settings, write_setting_preserving_comments  # noqa: E402
 from stage_record_paths import record_paths, work_record_scale  # noqa: E402
+from stage_topology import RETIRED_WORK_LISTS  # noqa: E402
 from stage_work import parse_frontmatter  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
@@ -40,8 +42,6 @@ WORK_ROOTS = (
     "official/work/archive/items",
 )
 ARCHIVE_ROOT = "official/work/archive/items"
-CURRENT_ROOT = "work/current"
-PLANNED_ROOT = "work/planned"
 JOURNAL_RELATIVE = Path(".runtime/schema-v5-migration-journal.json")
 MAINTENANCE_MARKER_RELATIVE = Path(".runtime/schema-v5-maintenance.json")
 WORK_GUIDANCE_RELATIVES = tuple(
@@ -50,9 +50,6 @@ WORK_GUIDANCE_RELATIVES = tuple(
     for name in ("README.md", "_template.md", "_epic.md", "_story.md")
 )
 INDEX_ROOTS = {
-    Path("work/active.md"): CURRENT_ROOT,
-    Path("work/review.md"): CURRENT_ROOT,
-    Path("work/planned/index.md"): PLANNED_ROOT,
     Path("official/work/archive/index.md"): ARCHIVE_ROOT,
 }
 FRONTMATTER_FIELD_RE = re.compile(
@@ -572,7 +569,6 @@ def rewrite_indexes(stage_root: Path) -> list[str]:
             continue
         output: list[str] = []
         changed = False
-        indexed_ids: set[str] = set()
         for line in path.read_text(encoding="utf-8").splitlines(keepends=True):
             row = WORK_ROW_RE.match(line)
             if row is None:
@@ -583,7 +579,6 @@ def rewrite_indexes(stage_root: Path) -> list[str]:
             if located is None or located[0] != expected_root:
                 changed = True
                 continue
-            indexed_ids.add(item_id)
             destination = posixpath.relpath(
                 located[1].relative_to(stage_root).as_posix(),
                 relative.parent.as_posix(),
@@ -595,30 +590,31 @@ def rewrite_indexes(stage_root: Path) -> list[str]:
             updated = MARKDOWN_LINK_RE.sub(replace, line, count=1)
             changed = changed or updated != line
             output.append(updated)
-        if relative == Path("work/review.md"):
-            for item_id, (root_name, record) in sorted(locations.items()):
-                if root_name != CURRENT_ROOT or item_id in indexed_ids:
-                    continue
-                fields = parse_frontmatter(record)
-                status = str(fields.get("status") or "").strip()
-                if status not in {"review", "completed", "rejected"}:
-                    continue
-                destination = posixpath.relpath(
-                    record.relative_to(stage_root).as_posix(),
-                    relative.parent.as_posix(),
-                )
-                verification = str(fields.get("verification") or "").strip()
-                retrospective = str(fields.get("retrospective") or "").strip()
-                promotion = str(fields.get("promotion") or "").strip()
-                output.append(
-                    f"| {item_id} | {verification} | {retrospective} | "
-                    f"{promotion} | [{destination}]({destination}) |\n"
-                )
-                changed = True
         if changed:
             path.write_text("".join(output), encoding="utf-8")
             rewritten.append(relative.as_posix())
     return rewritten
+
+
+def retired_work_lists(stage_root: Path) -> list[str]:
+    """Return the work list files Stage no longer keeps that remain in the tree."""
+    return [
+        relative
+        for relative in RETIRED_WORK_LISTS
+        if (stage_root / relative).is_file() or (stage_root / relative).is_symlink()
+    ]
+
+
+def remove_retired_work_lists(stage_root: Path) -> list[str]:
+    """Delete the work list files that card status replaced (DE-00000091).
+
+    A list restates each card's ``status``; no command updates it any more, so a
+    leftover copy only misleads its reader. The audit names each one (INDEX007).
+    """
+    removed = retired_work_lists(stage_root)
+    for relative in removed:
+        (stage_root / relative).unlink()
+    return removed
 
 
 def _guidance_source(relative: Path, language: str) -> Path:
@@ -726,6 +722,8 @@ def migrate(
         for move in checked.moves:
             print(f"  move   .stage/{move.source} -> .stage/{move.destination}")
         print("  rewrite work indexes from actual record paths")
+        for relative in retired_work_lists(stage_root):
+            print(f"  delete .stage/{relative} (derived from card status)")
         print("  refresh schema-v5 work guidance and templates")
         print("  stamp  settings schema_version = 5 (marker-last)")
         print("Schema-v5 migration plan complete (dry run); no files changed.")
@@ -735,6 +733,7 @@ def migrate(
     try:
         relocate_work_records(stage_root, checked, journal)
         journal["rewritten_indexes"] = rewrite_indexes(stage_root)
+        journal["removed_work_lists"] = remove_retired_work_lists(stage_root)
         decision_index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
         journal["refreshed_decision_index"] = (
             refresh_decision_index.refresh_index(project_root)

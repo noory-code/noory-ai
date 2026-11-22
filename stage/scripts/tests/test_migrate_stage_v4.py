@@ -201,7 +201,6 @@ class V3ToV4MigrationTest(unittest.TestCase):
             self.assertTrue(
                 (stage_root / "work/current/W-00000001/_story.md").is_file()
             )
-            self.assertTrue((stage_root / "work/planned/index.md").is_file())
             self.assertTrue((stage_root / "decisions/index.md").is_file())
             self.assertTrue((stage_root / "roadmap/themes/index.md").is_file())
             self.assertTrue((stage_root / "roadmap/milestones/index.md").is_file())
@@ -218,6 +217,8 @@ class V3ToV4MigrationTest(unittest.TestCase):
                         "official/work/archive/items/",
                     )
                 )
+                and path
+                not in migrate_stage.v4_migration.stage_topology.RETIRED_WORK_LISTS
             }
             self.assertTrue(stable_destinations.issubset(result_files))
             self.assertEqual(
@@ -238,24 +239,14 @@ class V3ToV4MigrationTest(unittest.TestCase):
                 [
                     finding
                     for finding in findings
-                    if finding.code not in {"TEMPLATE004", "INDEX007"}
+                    if finding.code != "TEMPLATE004"
                 ],
             )
             self.assertIn("TEMPLATE004", {finding.code for finding in findings})
-            # The migration carries the v3 work lists over; the audit names each one
-            # for deletion because their views are now derived from card status.
-            self.assertEqual(
-                {
-                    ("warning", ".stage/work/active.md"),
-                    ("warning", ".stage/work/review.md"),
-                    ("warning", ".stage/work/planned/index.md"),
-                },
-                {
-                    (finding.severity, finding.path)
-                    for finding in findings
-                    if finding.code == "INDEX007"
-                },
-            )
+            # The v3 work lists move to work/ in v4 and are deleted in v5: their views
+            # are derived from card status (DE-00000091), so no INDEX007 remains.
+            for relative in ("work/active.md", "work/review.md", "work/planned/index.md"):
+                self.assertFalse((stage_root / relative).exists(), relative)
             self.assertIn("R100", staged)
             self.assertIn("does not commit", output.lower())
             self.assertIn("journal was removed", output)

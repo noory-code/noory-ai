@@ -95,6 +95,24 @@ of a range so another card's commits in between are left out.
 5. Copy the closed card and retrospective back to the branch and run
    `close_work.py <id>` there once more; its reconcile path refreshes the decision index.
 
+## Close a sub-session's card
+
+A card handed to a cloud sub-session (`stage-handoff`, "Hand cards to cloud sub-sessions") is closed
+by the main session, never by the sub-session (DE-00000094). The sub-session's branch starts at the
+main session's start commit, so its diff is exactly the card's change.
+
+1. `git fetch origin <sub-session-branch>`.
+2. Squash it onto the main session's branch as one commit that carries the sub-session's executor
+   report: `git merge --squash FETCH_HEAD`, then `git commit -C FETCH_HEAD`. The review receives
+   the paths of HEAD (O-00000058), so one squash commit hands the reviewer every path; no local-only
+   commit is needed.
+3. Re-run the card's checks yourself; do not trust the sub-session's transcript.
+4. Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
+   retrospective, and close with the review as in "Close" above. When the review fails, send its
+   failed criteria to the sub-session and repeat from step 1 after it pushes.
+5. Archive the card, push, and open the pull request from the main session's branch. The
+   sub-session's branch is not merged on its own.
+
 ## What this does not cover
 
 - Running Codex itself in the cloud.

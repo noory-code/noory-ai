@@ -494,7 +494,7 @@ class BacklogMigrationTest(unittest.TestCase):
                 if p.name in {"_epic.md", "_story.md"}
                 if p.parent.name.startswith("W-")
             }
-            index = (stage_root / "work" / "planned" / "index.md").read_text(encoding="utf-8")
+            index_exists = (stage_root / "work" / "planned" / "index.md").exists()
             settings = json.loads(
                 (stage_root / "settings.json").read_text(encoding="utf-8")
             )
@@ -507,8 +507,9 @@ class BacklogMigrationTest(unittest.TestCase):
         self.assertIn("Child.", bodies)
         self.assertNotIn("realized_by", bodies)
         self.assertNotIn("parent:", converted["W-00000002"])
-        self.assertNotIn("B-00000001", index)
-        self.assertIn("| W-00000001 |", index)
+        # The planned view is derived from card status, so v5 deletes the index (DE-00000091).
+        self.assertFalse(index_exists)
+        self.assertNotIn("INDEX007", {f.code for f in findings})
         self.assertEqual(migrate_stage.STAGE_SCHEMA_VERSION, settings["schema_version"])
         self.assertEqual([], [f for f in findings if f.severity == "error"])
 
