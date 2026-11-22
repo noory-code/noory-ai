@@ -80,6 +80,45 @@ release, not after each card. Observed with the Codex CLI bridge, whose per-repo
 process holds the resolved path for its lifetime; any bridge that caches a plugin path at startup
 behaves the same way. This is the bridge runtime's behavior, not something Stage can fix from here.
 
+### Hand cards to cloud sub-sessions
+
+A main session can spawn cloud sub-sessions (each in its own container and branch) and hand each
+one a started card. The delegated run above applies: the sub-session builds, the main session
+records (DE-00000094). A sub-session cannot reserve record ids on the remote, because the session
+proxy refuses pushes outside its own branch, so the main session holds the ids it may need.
+
+Split work into sub-sessions only when this holds; otherwise run the cards one after another in
+the main session, because each sub-session pays to read the same documents from the start:
+
+```yaml
+split_when:
+  - at least two cards are ready
+  - no two of them declare overlapping scope paths
+keep_in_main_session:
+  - one card, or cards whose scopes overlap
+  - a card whose success criteria need the user's choice before any building
+```
+
+Steps for the main session, per card:
+
+1. `git fetch origin`, then start the card: `start_work.py <W-id> --scope "<paths>"
+   --environment cloud --review`. `start_work.py` refuses a card another fetched branch already
+   started or archived.
+2. When the card may create records with new ids (a decision, an observation), hold a block:
+   `stage_record_ids.py --project-root . --reserve-for <W-id> --count <n> <PREFIX>`. It writes the
+   ids to the card's `reserved_ids:`; every session counts them as used once they are fetched.
+   Reserve nothing for a card that creates no records; the brief then forbids new records.
+3. Commit and push the start and the block before spawning anything.
+4. Print the brief and send it as the sub-session's first message, unedited:
+   `subsession_brief.py --project-root . <W-id> --main-session <this-session-id>
+   --branch <sub-session-branch>`. Create the sub-session from the branch that holds the start.
+5. Wait for the sub-session's report. It names the branch, head commit, changed paths, checks,
+   decisions, scope crossings, what needs the user, and follow-up candidates. Relay anything that
+   needs the user to the user, and their answer back to the sub-session.
+6. Close the card from the main session: `operations/cloud-execution.md`, "Close a sub-session's
+   card". Register the follow-up candidates yourself; the sub-session registers nothing.
+7. Archive the sub-session once its card is merged.
+
 ## Before handing off, make each open item self-carrying
 
 For every `active`/`blocked` item you are leaving, its body must answer five things the receiving

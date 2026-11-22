@@ -14,9 +14,18 @@ on to the next number. Ids already reserved there are counted too. When there is
 no remote, it cannot be reached, or it refuses the push, the id is chosen as
 before and one line on stderr says it was not reserved.
 
+A main session that hands a started card to a sub-session can also hand it a
+block of numbers (DE-00000094): `--reserve-for <W-id> --count N` picks N free ids
+and writes them to that card's `reserved_ids:` frontmatter, which every other
+session counts as used once the card is pushed and fetched. The sub-session then
+takes its next unused id from the block with `--from-card <W-id>`, so it never
+picks a number of its own.
+
 Usage:
     python3 stage/scripts/stage_record_ids.py --project-root . DE
     python3 stage/scripts/stage_record_ids.py --project-root . --no-reserve DE
+    python3 stage/scripts/stage_record_ids.py --project-root . --reserve-for W-00000001 --count 2 DE
+    python3 stage/scripts/stage_record_ids.py --project-root . --from-card W-00000001 DE
 """
 
 from __future__ import annotations
@@ -35,6 +44,7 @@ from stage_record_paths import record_paths  # noqa: E402
 PREFIX_RE = re.compile(r"^[A-Z]{1,3}$")
 RUNTIME_PART = ".runtime"
 RESERVE_REF_ROOT = "refs/stage-ids"
+RESERVED_FIELD = "reserved_ids"
 RESERVE_TIMEOUT_SECONDS = 30
 
 
@@ -66,7 +76,37 @@ def local_record_numbers(stage_root: Path, prefix: str) -> set[int]:
         except (OSError, UnicodeDecodeError):
             continue
         numbers.update(int(number) for number in pattern.findall(text))
+        numbers.update(reserved_numbers(text, prefix))
     numbers.discard(0)  # templates carry the all-zero placeholder id
+    return numbers
+
+
+def reserved_numbers(text: str, prefix: str) -> set[int]:
+    """Numbers a card's `reserved_ids:` line holds back for a sub-session."""
+
+    id_re = re.compile(rf"\b{re.escape(prefix)}-(\d{{8}})(?![\d])")
+    numbers: set[int] = set()
+    for line in re.findall(rf"^{RESERVED_FIELD}:[ \t]*(.*)$", text, re.MULTILINE):
+        numbers.update(int(number) for number in id_re.findall(line))
+    return numbers
+
+
+def record_numbers_only(stage_root: Path, prefix: str) -> set[int]:
+    """Numbers that already name a record, leaving out numbers only reserved."""
+
+    pattern = id_line_re(prefix)
+    numbers: set[int] = set()
+    if not stage_root.is_dir():
+        return numbers
+    for path in record_paths(stage_root):
+        if RUNTIME_PART in path.relative_to(stage_root).parts:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        numbers.update(int(number) for number in pattern.findall(text))
+    numbers.discard(0)
     return numbers
 
 
@@ -105,16 +145,18 @@ def branch_record_numbers(project_root: Path, prefix: str) -> dict[int, set[str]
             "-h",
             "-I",
             "-E",
-            rf"^(id:[[:space:]]*|#[[:space:]]+){prefix}-[0-9]{{8}}",
+            rf"^((id:[[:space:]]*|#[[:space:]]+){prefix}-[0-9]{{8}}|{RESERVED_FIELD}:.*{prefix}-[0-9]{{8}})",
             ref,
             "--",
             ".stage",
         )
         if code not in (0, 1):  # 1 means no match on this branch
             continue
-        for number in pattern.findall(matches):
-            if int(number):
-                found.setdefault(int(number), set()).add(ref)
+        numbers = {int(number) for number in pattern.findall(matches)}
+        numbers |= reserved_numbers(matches, prefix)
+        for number in numbers:
+            if number:
+                found.setdefault(number, set()).add(ref)
     return found
 
 
@@ -313,12 +355,63 @@ def main() -> int:
         action="store_true",
         help="Only name the next id from what this checkout sees; touch no remote.",
     )
+    parser.add_argument(
+        "--reserve-for",
+        metavar="W-ID",
+        help="Main session: hold a block of ids on this started card for its sub-session.",
+    )
+    parser.add_argument(
+        "--count", type=int, default=1, help="How many ids --reserve-for holds (default 1)."
+    )
+    parser.add_argument(
+        "--from-card",
+        metavar="W-ID",
+        help="Sub-session: name the next unused id from this card's reserved block.",
+    )
     parser.add_argument("prefix", help="Record id prefix, e.g. W, DE, or O.")
     args = parser.parse_args()
     if not PREFIX_RE.fullmatch(args.prefix):
         print(f"prefix must be 1-3 capital letters, got {args.prefix!r}", file=sys.stderr)
         return 2
+    if args.reserve_for and args.from_card:
+        print("--reserve-for and --from-card cannot be combined", file=sys.stderr)
+        return 2
     project_root = Path(args.project_root).expanduser().resolve()
+    card_id = args.reserve_for or args.from_card
+    if card_id:
+        from stage_id_blocks import (
+            CURRENT_CARDS,
+            current_card_path,
+            next_from_card,
+            reserve_block,
+        )
+
+        card = current_card_path(project_root / ".stage", card_id)
+        if card is None:
+            print(f"{card_id}: no started card in .stage/{CURRENT_CARDS.as_posix()}", file=sys.stderr)
+            return 1
+        if args.from_card:
+            record_id = next_from_card(project_root, args.prefix, card)
+            if record_id is None:
+                print(
+                    f"{card_id}: no unused {args.prefix} id left in its reserved_ids; "
+                    "ask the main session for more",
+                    file=sys.stderr,
+                )
+                return 1
+            print(record_id)
+            return 0
+        if args.count < 1:
+            print("--count must be at least 1", file=sys.stderr)
+            return 2
+        block_reserver = None if args.no_reserve else IdReserver(project_root)
+        block = reserve_block(project_root, args.prefix, args.count, card, block_reserver)
+        if block_reserver is not None:
+            notes = [block_reserver.unreserved_note(record_id) for record_id in block]
+            if any(notes):
+                print(notes[0], file=sys.stderr)
+        print(" ".join(block))
+        return 0
     reserver = None if args.no_reserve else IdReserver(project_root)
     record_id = next_record_id(project_root, args.prefix, reserver)
     if reserver is not None and reserver.unreserved_note(record_id):

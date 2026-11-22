@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Hand cards to cloud sub-sessions and close them from the main session (DE-00000094). A
+  sub-session's proxy refuses pushes outside its own branch, so it cannot reserve record ids on the
+  remote. `stage_record_ids.py --reserve-for <W-id> --count <n> <PREFIX>` now holds a block of ids on
+  a started card's `reserved_ids:`, every session counts those ids as used once the card is fetched,
+  and the sub-session takes its ids with `--from-card <W-id>`. `subsession_brief.py` prints the
+  sub-session's whole instruction from the card: what to read, the reserved ids, the rules (build,
+  commit, push, report; never start, close, or open a pull request), and the report it sends back.
+  The `stage-handoff` skill gains the main session's steps and `operations/cloud-execution.md` how
+  the main session squashes the sub-session's branch and closes the card.
 - Refuse to start a card another branch already started or archived. Two sessions that had not
   fetched each other's work did the same card (W-00000367): one started it on a branch where the
   other had already closed and archived it. `start_work.py` now reads every fetched branch that

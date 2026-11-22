@@ -14,6 +14,10 @@
 - 이 저장소의 클라우드 세션은 git 프록시가 `refs/stage-ids/` push 를 HTTP 403 으로 거절한다(W-00000378).
   클라우드 세션에서는 늘 위의 fetch/push 규칙을 지킨다.
 
+- 메인 세션이 클라우드 서브세션에 카드를 맡길 때는 서브세션이 번호를 고르지 않는다. 메인 세션이 카드를 시작하고,
+  필요한 번호를 `stage_record_ids.py --reserve-for <W-id> --count <n> <PREFIX>` 로 카드의 `reserved_ids:` 에 잡아
+  push 한 뒤 서브세션을 띄운다(DE-00000094). 절차는 `stage-handoff` 스킬의 "Hand cards to cloud sub-sessions" 에 있다.
+
 ## 이유
 
 번호를 잡지 못하면 이 체크아웃과 이미 받아 온 브랜치만 세어 번호를 고른다. 다른 세션이 등록하고 올린
