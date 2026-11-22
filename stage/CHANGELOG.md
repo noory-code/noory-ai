@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- End the whole process tree when a close check, a close review, a parallel driver, or a venue
+  reaper runs past its time limit. `subprocess.run(..., timeout=...)` kills only its direct child.
+  On Windows that child is `cmd.exe`, and the python under it kept the output pipes open, so the
+  call waited for it: a 1-second `--timeout` on a 5-second check took 5.5 seconds, and
+  `--review-timeout` likewise (W-00000381). On POSIX the call returned on time but left the
+  descendants running. `close_work.py` and `drive_parallel.py` now run these commands through
+  `hooks/stage_process.py`, which starts each in its own process group and, on timeout or
+  interrupt, ends that group (`taskkill /T /F` on Windows, `killpg` on POSIX).
 - Delete the retired work lists when a project migrates. `work/active.md`, `work/review.md`, and
   `work/planned/index.md` restate card status and no command updates them since DE-00000091, yet
   the v3-to-v4 and v4-to-v5 migrations kept them, so every migrated project drew one INDEX007
