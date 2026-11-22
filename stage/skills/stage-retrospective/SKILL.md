@@ -32,16 +32,17 @@ judges the aggregated outcome.
 
 Answer briefly.
 
-- What decision points occurred?
-- Which principles governed those decisions?
-- Which context was missing, stale, or useful?
-- What must be updated in `.stage/`?
-- Can the artifact go to `official`, or must it stay in a mutable family?
+- What decision points occurred? (`## Decision points`)
+- Which context was missing or stale? (`## Context that was missing`)
+- Should any behavior bind future work? (`## Rule candidate`)
+
+`operations/retrospective.md` owns these three sections and what the retrospective leaves to
+other records. Next work becomes a planned card or a `state/` record, not a retrospective line.
 
 ## Separate the queue from the rule
 
-`## Next changes` holds what happens next — the card to run, the id to close, the thing to watch
-once. It expires.
+What happens next — the card to run, the id to close, the thing to watch once — is not written in
+the retrospective. Register it as a planned card or a `state/` record, where it is found and closed.
 
 `## Rule candidate` holds how work is done from now on, in any card. It expires only when something
 supersedes it. Leave it empty when the work taught nothing durable, which is most of the time.
@@ -51,7 +52,7 @@ Two tests promote a candidate into a rule file, and nothing else does: **it happ
 [rule-promotion.md](rule-promotion.md) before writing the section or lifting a candidate — it owns
 the tests, where the rule goes, and why amending an existing rule usually beats adding a new one.
 
-Both headings under one name is what buried the earlier pile: 217 retrospectives carried a lesson
+Mixing the queue and the rule under one heading is what buried the earlier pile: 217 retrospectives carried a lesson
 and no rule file cited any of them.
 
 ## Output routing

@@ -39,14 +39,9 @@ AUDIT = STAGE_ROOT / "scripts" / "audit_stage.py"
 WORK_ID_RE = re.compile(r"^W-[0-9]+(?:-[A-Za-z0-9][A-Za-z0-9_-]*)?$")
 
 RETRO_SECTIONS = (
-    "Work",
     "Decision points",
-    "Principles applied",
-    "Context that helped",
     "Context that was missing",
-    "Next changes",
     "Rule candidate",
-    "Promotion decision",
 )
 
 
@@ -64,23 +59,16 @@ def write_driver_retrospective(
     # claim success — the item's Verification (stamped by close_work) is the
     # source of truth for whether acceptance and the independent review passed.
     sections = {
-        "Work": (
+        "Decision points": (
             f"{note}: 무인 드라이버가 {item.item_id}의 executor를 실행하고 결과를 커밋했다. "
-            "acceptance·독립 판정의 실제 통과 여부와 최종 완료는 항목의 Verification"
-            "(close_work가 기록)이 정본이다. 실행자의 작업 내용·이유·변경 경로 주장은 "
-            f"`{work_log_reference(item.item_id)}`가 소유한다."
+            "기계 실행이라 별도 결정은 없다. 실행자의 결정·이유·변경 경로 주장은 "
+            f"`{work_log_reference(item.item_id)}`가 소유하고, acceptance·독립 판정의 "
+            "통과 여부는 항목의 Verification(close_work가 기록)이 정본이다."
         ),
-        "Decision points": f"{note}: 기계 실행, 별도 결정 없음.",
-        "Principles applied": f"{note}: Honesty, Fail Fast, No partial completion.",
-        "Context that helped": f"{note}: 항목 acceptance가 종료를 결정적으로 판정.",
         "Context that was missing": f"{note}: 반성적 회고는 사람이 브랜치 머지 시 보완.",
-        "Next changes": f"{note}: 사람이 격리 브랜치를 검토·머지.",
         # A run cannot judge from inside whether its own behavior should bind
         # future cards, so it leaves the rule candidate to whoever merges it.
         "Rule candidate": f"{note}: 머지하는 사람이 채운다 — 이 실행이 남긴 규칙 후보가 있으면.",
-        "Promotion decision": (
-            f"{note}: 항목 Verification의 결과를 따른다(close_work가 acceptance·독립 판정 통과 시에만 completed로 스탬프)."
-        ),
     }
 
     def content_for(retro_id: str) -> str:

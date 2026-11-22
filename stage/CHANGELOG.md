@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Keep three sections in a retrospective: `## Decision points`, `## Context that was missing`, and
+  `## Rule candidate`. Of the eight, only these were read again; `Work` and `Promotion decision`
+  repeated the card, `Principles applied` repeated the decision record, `Context that helped` was
+  read by nothing, and next work belongs in a planned card or a `state/` record. The templates,
+  `operations/retrospective.md`, the retrospective skill, and the driver's machine-written
+  retrospective follow; archived retrospectives keep their older sections (DE-00000093).
 - Split the Windows Stage CI suites into six jobs instead of three. A git process costs the
   Windows runner 35-46 ms against about 1 ms on ubuntu, and a Stage script start about 170-340 ms,
   so each of three Windows scripts shards still took 128-212 seconds while ubuntu took 23-49.

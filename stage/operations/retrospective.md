@@ -4,11 +4,19 @@ This document owns the mandatory post-work retrospective.
 
 ## Gate
 
-After each task, record:
+After each task, record three sections, the only ones a later reader went back to:
 
-1. Decision points encountered.
-2. Principles used.
-3. Context that was useful.
-4. Context that was missing or stale.
-5. Updates `.stage/` needs.
-6. Whether the artifact can be promoted.
+1. `## Decision points`: the choices made and why, including options rejected.
+2. `## Context that was missing`: what was missing or stale and cost time.
+3. `## Rule candidate`: how work should be done from now on, or empty when nothing durable was
+   learned (`stage-retrospective/rule-promotion.md`).
+
+The retrospective does not repeat what other records own:
+
+- What changed: the card's `## Purpose` and the executor report.
+- Promotion: the card's `promotion:` field and `## Promotion decision`.
+- Principles cited for a decision: the decision record's `## Principles applied`.
+- Next work: a planned card, or a record under `state/` (observation, question, risk).
+
+Retrospectives archived before this contract keep their older sections and stay valid
+(DE-00000093).
