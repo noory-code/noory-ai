@@ -19,3 +19,4 @@
 | DE-00000093 | decided | [W-00000371](../official/work/archive/items/W-00000371/_story.md) | archived | [pending/DE-00000093.md](pending/DE-00000093.md) |
 | DE-00000094 | decided | [W-00000385](../official/work/archive/items/W-00000385/_story.md) | archived | [pending/DE-00000094.md](pending/DE-00000094.md) |
 | DE-00000098 | decided | [W-00000399](../official/work/archive/items/W-00000399/_story.md) | archived | [pending/DE-00000098.md](pending/DE-00000098.md) |
+| DE-00000099 | decided | [W-00000402](../work/current/W-00000402/_story.md) | active | [pending/DE-00000099.md](pending/DE-00000099.md) |
