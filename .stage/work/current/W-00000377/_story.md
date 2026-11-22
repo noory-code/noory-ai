@@ -86,6 +86,10 @@ DE-00000091 을 읽고, 세 목록을 파일로 남겨 `.gitignore` 에 넣을�
 
 ## Verification
 
+- 사용자 확인(DE-00000087, 2026-11-22, 메인 세션이 전달): 관문과 점검 규칙 변경에 "1 OK". 세 목록 파일 삭제,
+  INDEX000~INDEX006 과 BACKLOG008/BACKLOG009 삭제, INDEX007 경고 추가, v5 의 `fallback_index_blockers` 변경,
+  `--owner` 삭제를 확인했다.
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
 - `python3 -m unittest discover -s stage/hooks/tests -q`: 461 tests OK (skipped=1), origin/main(W-00000378) 병합 뒤에도 같다.
 - `python3 -m unittest discover -s stage/scripts/tests -q`: 805 tests OK (skipped=2), origin/main 병합 뒤 818 tests OK.
 - `python3 stage/scripts/audit_stage.py --project-root .`: errors=0, warnings=32 (모두 이 카드 이전부터 있던 경고).
