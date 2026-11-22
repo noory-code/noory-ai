@@ -7,12 +7,13 @@ environment: cloud
 milestone: M-00000006
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000402
+promotion: deferred
+review: passed
 scope: .stage/decisions,.stage/work
 promotes:
 decision_refs: DE-00000099
@@ -95,4 +96,21 @@ decision_refs: DE-00000099
 
 ## Progress
 
+### Executor report at close — 2026-11-22
+
+```
+What changed: Added DE-00000099 recording the session structure and every choice the user made on 2026-11-23 (orchestrator duties, discussion results as records, planning designs goals only, work session per epic with stories in sub-agents, verification judges only, session start-up cost rule, archive and pending-confirmation handling, device sessions treated like cloud, the stage-orchestrate skill name), linked it from W-00000402, refreshed the decision index, and registered planned card W-00000404 to build the skill and role briefs.
+Why: W-00000402 asks the user to choose how work sessions run; the user chose on 2026-11-23 through the discussion recorded on the card.
+Decisions made: Recorded the chosen direction as amending DE-00000094's split rule rather than replacing DE-00000094, because closing still belongs to the main session (now the orchestrator); left the skill's contents to W-00000404 under the milestone's rule that work items carry no execution design.
+Work not done: None.
+```
+
 ## Verification
+
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 성공 기준: 사용자가 2026-11-23 에 세션 구조를 내고 토론에서 하나씩 정했다. DE-00000099 에 있다. DE-00000094 의 나눌지 기준을 고치는 것도
+  DE-00000099 에 있다. 구현은 W-00000404 가 한다.
+- 커밋 2a…(브랜치)의 실행 보고가 카드 시작 이동 경로를 빠뜨려서, 경로를 바로잡은 보고로 같은 트리의 로컬 커밋을 만들어 닫았다.
+
+- Checks at close 2026-11-22: 1 passed — `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS)
