@@ -28,7 +28,7 @@ Stage 의 코드는 일곱 레이어로 나뉜다. 각 레이어는 한 가지 �
 | 기록 | 무엇을 어디에 적는가 | `templates/`, 프로젝트의 `.stage/` | [SCHEMA_V5.md](SCHEMA_V5.md), [artifacts.md](../operations/artifacts.md) |
 | 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `hooks/stage_process.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py`, `scripts/stage_id_blocks.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
 | 관문 | 지금 이 쓰기와 커밋을 허용하는가 | `hooks/hooks.json`, `hooks/stage_guard.py`, `hooks/stage_shell.py`, `hooks/stage_git.py`, `hooks/stage_runtime.py`, `hooks/stage_context.py`, `hooks/stage_roadmap_gate.py`, `hooks/stage_agent_tier.py` | [hooks/README.md](../hooks/README.md) |
-| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
+| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py`, `scripts/started_cards.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
 | 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
 | 드라이버 | 등록된 일을 사람 대신 누가 실행하는가 | `scripts/drive.py`, `scripts/drive_parallel.py`, `scripts/driver_*.py`, `scripts/land_run.py`, `scripts/import_executor_report.py` | `skills/stage-drive/SKILL.md` |
 | 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
@@ -148,6 +148,23 @@ flowchart TD
 
 `hooks/`, `scripts/`, `skills/` 의 코드는 패키지를 설치하지 않고 호스트의 `python3` 로 실행된다. 실행 조건은
 [hooks/README.md](../hooks/README.md)의 Portability 가 소유한다.
+
+### 세션의 역할은 코드가 아니라 첫 메시지와 스킬이 정한다
+
+Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"이라는 상태가 없다. 세션을 띄우고 목록을 읽는 것은
+플랫폼의 일이고, Stage 는 그 세션이 무엇을 하는지만 글로 준다(DE-00000099).
+
+- 오케스트레이터는 `skills/stage-orchestrate/SKILL.md` 로 역할을 받는다. 진행 상태를 적는 파일은 없다. 진행 중인
+  카드는 `.stage/work/current/` 가, 진행 중인 세션은 플랫폼의 세션 목록이 답한다.
+- 작업 세션과 검증 세션은 `scripts/subsession_brief.py` 가 카드에서 만든 첫 메시지로 역할을 받는다. `--role work`
+  는 카드가 에픽이면 그 아래 스토리를 세션 안의 서브에이전트에게 맡기고 스토리마다 커밋을 하나씩 남기게 한다.
+  `--role verify` 는 판정만 하게 하고, 판정 파일은 여전히 `close_work.py` 만 쓴다.
+- `subsession_brief.py` 는 카드를 읽기만 한다. 세션을 만들지 않고 카드나 런타임 상태를 고치지 않는다.
+- 새 오케스트레이터는 `scripts/started_cards.py` 한 번으로 진행 중인 카드를 얻는다. 가져온 브랜치 가운데 기본
+  브랜치에 머지되지 않은 것만 읽고, 기본 브랜치가 이미 보관한 카드는 뺀다. squash 로 머지된 브랜치는 git 이
+  머지되지 않았다고 보기 때문이다. 같은 카드가 여러 브랜치에 있으면 카드 기록을 마지막으로 고친 브랜치를 읽는다.
+  카드를 시작한 뒤에 카드 기록을 고치는 것은 오케스트레이터뿐이라서다. `start_work.py` 가 다른 브랜치에서 시작된
+  카드를 찾을 때도 이 파일의 브랜치 읽기를 쓴다.
 
 ## 컴포넌트로 가는 길
 

@@ -97,7 +97,7 @@ of a range so another card's commits in between are left out.
 
 ## Close a sub-session's card
 
-A card handed to a cloud sub-session (`stage-handoff`, "Hand cards to cloud sub-sessions") is closed
+A card handed to a cloud sub-session (`stage-orchestrate`, "Start a work session") is closed
 by the main session, never by the sub-session (DE-00000094). The sub-session's branch starts at the
 main session's start commit, so its diff is exactly the card's change.
 
@@ -112,6 +112,11 @@ main session's start commit, so its diff is exactly the card's change.
    failed criteria to the sub-session and repeat from step 1 after it pushes.
 5. Archive the card, push, and open the pull request from the main session's branch. The
    sub-session's branch is not merged on its own.
+
+A work session that built an epic leaves one commit per story, each with that story's executor
+report. Bring them over one by one instead of squashing (`git cherry-pick <story-commit>`, oldest
+first), and run steps 3 and 4 for each story at its commit. Close the stories without `--archive`,
+then close and archive the epic.
 
 ## What this does not cover
 
