@@ -325,3 +325,7 @@
 | W-00000396 | completed | [items/W-00000396/_story.md](items/W-00000396/_story.md) |
 | W-00000394 | completed | [items/W-00000394/_story.md](items/W-00000394/_story.md) |
 | W-00000386 | completed | [items/W-00000386/_story.md](items/W-00000386/_story.md) |
+| W-00000397 | completed | [items/W-00000397/_story.md](items/W-00000397/_story.md) |
+| W-00000398 | completed | [items/W-00000398/_story.md](items/W-00000398/_story.md) |
+| W-00000399 | completed | [items/W-00000399/_story.md](items/W-00000399/_story.md) |
+| W-00000402 | completed | [items/W-00000402/_story.md](items/W-00000402/_story.md) |

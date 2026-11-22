@@ -70,3 +70,4 @@
 | DE-00000074 | promoted | W-00000273 | [records/DE-00000074.md](records/DE-00000074.md) |
 | DE-00000082 | promoted | W-00000292 | [records/DE-00000082.md](records/DE-00000082.md) |
 | DE-00000088 | decided | M-00000005 | [records/DE-00000088.md](records/DE-00000088.md) |
+| DE-00000097 | decided | M-00000006 | [records/DE-00000097.md](records/DE-00000097.md) |

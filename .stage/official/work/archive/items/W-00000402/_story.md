@@ -1,0 +1,116 @@
+---
+id: W-00000402
+title: 서브세션을 기본으로 쓰고 카드에는 실행 방식을 적지 않는 일하는 방식을 정한다
+kind: design
+venue: claude
+environment: cloud
+milestone: M-00000006
+autonomous: false
+acceptance: []
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000402
+promotion: deferred
+review: passed
+scope: .stage/decisions,.stage/work
+promotes:
+decision_refs: DE-00000099
+---
+
+# W-00000402 서브세션을 기본으로 쓰고 카드에는 실행 방식을 적지 않는 일하는 방식을 정한다
+
+## Purpose
+
+메인 세션은 지휘하고 서브세션이 만들며, 카드는 목적과 성공 기준과 사용자의 선택만 담는다
+
+## Actions
+
+
+## User value
+
+사용자가 2026-11-23 에 낸 세션 구조:
+
+```text
+오래 가는 메인 (오케스트레이터) — 여러 세션이 사용자의 확인을 받는 곳
+ -> 토론 세션 — 작업과 별개로 추가 작업이나 작업 중 변경이 필요할 때 토론하고 방향을 트는 곳
+ -> 계획 세션
+ -> 작업 세션
+     ---> 작업 세션의 하위 작업들
+ -> 검증 세션
+```
+
+같은 날 메인 세션(session_018VXR6Pgir7NPX45jvBQqYs)이 확인한 사실: 그 세션 하나가 2026-11-21 부터 약 88.7 달러를 썼고 맥락이
+84만 토큰(100만 중)이었다. 같은 기간 서브세션 16개 남짓의 합은 약 55 달러였다. 사용자와의 긴 탐구와 지휘를 한 맥락에 쌓은 것이
+비용의 주된 까닭이다.
+
+사용자가 2026-11-23 에 정한 것:
+
+- 토론 세션의 결론은 결정 기록과 카드로 남기고 오케스트레이터가 기록을 읽는다.
+- 검증 세션은 판정만 한다. 카드를 닫고 머지하는 것은 오케스트레이터다. 변경이 생겼을 때 전체를 보는 쪽이 오케스트레이터라서다.
+- 세션의 일 단위는 에픽이다. 작업 세션 하나가 에픽 하나를 맡고, 그 아래 스토리는 작업 세션 안의 서브에이전트가 한다. 새 클라우드
+  세션보다 비용이 적고, 같은 작업 폴더를 써서 번호 묶음과 squash 같은 장치가 필요 없다. 스토리를 판정하는 것은 여전히 작업 세션
+  밖의 검증 세션이다.
+
+- 작업 정리(흩어진 이슈를 모으고 묶고 순서를 정하는 일)는 오케스트레이터가 한다. `drive.py` 는 준비된 카드를 번호 순서로만 골라서
+  이 일을 하지 못한다. 오케스트레이터는 흩어진 기록을 읽는 일을 서브에이전트에 맡기고 요약만 받아 맥락을 가볍게 둔다.
+- 계획 세션은 작업을 정리하는 곳이 아니라 목표를 분명히 하는 설계를 하는 곳이다. 무엇을 이룰지를 정하고 어떻게 할지는 정하지 않는다.
+
+- 작업 정리에 사람과의 대화가 필요하면 따로 정리 세션을 둘 수 있다. 세션을 만들 때마다 시작 비용(문서를 처음부터 읽는 토큰)이
+  든다는 것을 고려한다. 장기 작업이라 감당할 수 있지만 따져야 한다(사용자, 2026-11-23). 2026-11-21~23 서브세션은 하나에 약 1~4 달러였다.
+  메인 세션의 제안: 오래 걸리거나 대화가 길어지는 일, 깨끗한 맥락이 필요한 판정은 세션을 만들고, 짧게 끝나는 일은 서브에이전트로 한다.
+
+- 오케스트레이터의 맥락이 차서 세션을 아카이브해도 크게 문제 없다(사용자, 2026-11-23). git 의 Stage 기록과 세션의 대화 원본은
+  남고(`list_events` 로 읽을 수 있다), 사라지는 것은 그 세션의 작업 기억과 커밋하지 않은 파일뿐이다.
+- 진행 중인 세션과 답을 기다리는 확인은 오케스트레이터가 챙긴다(사용자, 2026-11-23). 따로 기록 파일을 두지 않고 플랫폼의 하위 세션
+  목록(`list_sessions`, 상태와 필요한 것)을 읽는다. 기기(맥북, Windows)에서 도는 세션도 클라우드 세션과 같다고 보고 따로 다루지 않는다(사용자, 2026-11-23).
+
+아직 정하지 않은 것(설계할 때 사용자에게 묻는다):
+
+- 토론 세션의 결론이 오케스트레이터에 어떻게 가는가. 메인 세션의 제안: 결정 기록과 카드로 남기고 오케스트레이터는 기록을 읽는다.
+- "오래 가는"이 역할인가 프로세스인가. 메인 세션의 제안: 역할은 이어지고 프로세스는 맥락이 정한 크기를 넘으면 기록에서 다시 띄운다.
+- 검증 세션은 판정만 하는가 닫기까지 하는가. 메인 세션의 제안: 판정만 하고 닫기와 머지는 오케스트레이터가 한다(DE-00000094 와 맞춤).
+- 세션 사이 소통: 메시지 대신 Stage 기록을 공용 게시판으로 쓰는 방법(C 컴파일러 글, 장기 실행 하네스 글).
+- 카드마다 작업 세션과 검증 세션이 따로 뜨는 비용. 검증을 묶어서 할지.
+
+
+## Scope
+
+### Included
+
+
+### Excluded
+
+
+## Risks
+
+
+## Success criteria
+
+- 사용자가 일하는 방식의 설계안을 보고 하나를 골랐고 그 결정이 결정 기록에 있다(DE-00000094 의 나눌지 기준을 고치는 것 포함)
+
+## Next action
+
+## Related truth
+
+## Progress
+
+### Executor report at close — 2026-11-22
+
+```
+What changed: Added DE-00000099 recording the session structure and every choice the user made on 2026-11-23 (orchestrator duties, discussion results as records, planning designs goals only, work session per epic with stories in sub-agents, verification judges only, session start-up cost rule, archive and pending-confirmation handling, device sessions treated like cloud, the stage-orchestrate skill name), linked it from W-00000402, refreshed the decision index, and registered planned card W-00000404 to build the skill and role briefs.
+Why: W-00000402 asks the user to choose how work sessions run; the user chose on 2026-11-23 through the discussion recorded on the card.
+Decisions made: Recorded the chosen direction as amending DE-00000094's split rule rather than replacing DE-00000094, because closing still belongs to the main session (now the orchestrator); left the skill's contents to W-00000404 under the milestone's rule that work items carry no execution design.
+Work not done: None.
+```
+
+## Verification
+
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 성공 기준: 사용자가 2026-11-23 에 세션 구조를 내고 토론에서 하나씩 정했다. DE-00000099 에 있다. DE-00000094 의 나눌지 기준을 고치는 것도
+  DE-00000099 에 있다. 구현은 W-00000404 가 한다.
+- 커밋 2a…(브랜치)의 실행 보고가 카드 시작 이동 경로를 빠뜨려서, 경로를 바로잡은 보고로 같은 트리의 로컬 커밋을 만들어 닫았다.
+
+- Checks at close 2026-11-22: 1 passed — `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS)

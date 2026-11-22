@@ -25,7 +25,11 @@ import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
 import refresh_decision_index  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
-from stage_record_ids import IdReserver  # noqa: E402
+from stage_record_ids import (  # noqa: E402
+    IdReserver,
+    branch_record_numbers,
+    local_record_numbers,
+)
 from stage_paths import (  # noqa: E402
     ACTIVE_TOPOLOGY_V4,
     active_topology,
@@ -173,10 +177,20 @@ def _create_atomic(
     content_for: Callable[[str], str],
     project_root: Path,
 ) -> str:
-    # Ids reserved on the remote by sessions this checkout has not fetched count
-    # too (DE-00000092); next_artifact_id keeps only the prefix's counter family.
+    # Numbers a started card holds back in `reserved_ids:` (DE-00000094), records on
+    # other local or remote-tracking branches, and ids reserved on the remote by
+    # sessions this checkout has not fetched (DE-00000092) all count as used, as
+    # stage_record_ids.py counts them; next_artifact_id keeps only the prefix's
+    # counter family.
+    taken = local_record_numbers(project_root / ".stage", prefix) | set(
+        branch_record_numbers(project_root, prefix)
+    )
     reserver = IdReserver(project_root)
-    existing_ids = existing_ids + sorted(reserver.remote_ids())
+    existing_ids = (
+        existing_ids
+        + [f"{prefix}-{number:08d}" for number in sorted(taken)]
+        + sorted(reserver.remote_ids())
+    )
     candidate = stage_topology.next_artifact_id(prefix, existing_ids)
     for _ in range(1000):
         path = directory / f"{candidate}.md"
