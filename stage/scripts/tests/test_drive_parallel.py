@@ -17,12 +17,14 @@ from pathlib import Path
 from unittest import mock
 
 from driver_test_environment import sanitize_current_driver_test_environment
+from git_test_config import isolate_git_config
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive_parallel.py"
 HOOKS = SCRIPT.parent.parent / "hooks"
 
 sanitize_current_driver_test_environment()
+isolate_git_config()
 
 
 def load_module():
@@ -55,8 +57,6 @@ class DriveParallelTest(unittest.TestCase):
         root = Path(tmp.name) / "project"
         root.mkdir()
         git(root, "init", "-q")
-        git(root, "config", "user.email", "t@example.com")
-        git(root, "config", "user.name", "Tester")
         (root / "seed.txt").write_text("seed", encoding="utf-8")
         git(root, "add", "seed.txt")
         git(root, "commit", "-q", "-m", "seed")
