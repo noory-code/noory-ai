@@ -7,7 +7,6 @@ on:
     paths:
       - ".agents/**"
       - ".claude-plugin/**"
-      - "avatar/**"
       - "evonest/**"
       - "flutter-cask/**"
       - "pencil_m3_flutter/**"
@@ -20,7 +19,6 @@ on:
     paths:
       - ".agents/**"
       - ".claude-plugin/**"
-      - "avatar/**"
       - "evonest/**"
       - "flutter-cask/**"
       - "pencil_m3_flutter/**"

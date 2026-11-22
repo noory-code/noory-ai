@@ -9,7 +9,7 @@ from pathlib import Path
 
 WORKFLOWS = Path(__file__).resolve().parents[3] / ".github" / "workflows"
 SHARD_SCRIPT = WORKFLOWS.parent / "scripts" / "unittest_shard.py"
-PYTHON_39_PLUGINS = ("stage", "avatar", "plainly")
+PYTHON_39_PLUGINS = ("stage", "plainly")
 
 
 def matrix_block(text: str) -> str:

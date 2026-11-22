@@ -10,8 +10,8 @@ from handoff_sources import PacketError
 
 
 def validate_config(config: object) -> dict:
-    if not isinstance(config, dict) or set(config) - {"distill", "avatar"}:
-        raise PacketError("E_PRODUCERS_INVALID: expected distill and/or avatar settings")
+    if not isinstance(config, dict) or set(config) - {"distill"}:
+        raise PacketError("E_PRODUCERS_INVALID: expected distill settings")
     for name, item in config.items():
         if not isinstance(item, dict):
             raise PacketError("E_PRODUCERS_INVALID: each producer must be an object")
@@ -20,24 +20,20 @@ def validate_config(config: object) -> dict:
                 or not all(isinstance(arg, str) and arg and "\0" not in arg for arg in argv)
                 or not Path(argv[0]).is_absolute()):
             raise PacketError("E_PRODUCERS_INVALID: argv must start with an absolute executable")
-        location = "db" if name == "distill" else "home"
-        if location in item and (not isinstance(item[location], str) or not item[location].strip()):
-            raise PacketError(f"E_PRODUCERS_INVALID: {location} must be a non-empty path")
+        if "db" in item and (not isinstance(item["db"], str) or not item["db"].strip()):
+            raise PacketError("E_PRODUCERS_INVALID: db must be a non-empty path")
     return config
 
 
 def command(name: str, config: dict, project: str, refs: list[str] | None = None) -> list[str]:
+    if name != "distill":
+        raise PacketError(f"E_PRODUCERS_INVALID: unknown producer {name}")
     argv = list(config["argv"])
-    if name == "distill":
-        argv += ["criteria", "current" if refs is None else "check", "--project", project]
-        if refs is not None:
-            argv += ["--refs", ",".join(refs)]
-        if "db" in config:
-            argv += ["--db", config["db"]]
-    else:
-        if "home" in config:
-            argv += ["--home", config["home"]]
-        argv += ["export"] if refs is None else ["check", "--refs", ",".join(refs)]
+    argv += ["criteria", "current" if refs is None else "check", "--project", project]
+    if refs is not None:
+        argv += ["--refs", ",".join(refs)]
+    if "db" in config:
+        argv += ["--db", config["db"]]
     return argv
 
 
@@ -57,7 +53,7 @@ def snapshot(name: str, config: dict, project: str, root: Path) -> dict:
         data = invoke(command(name, config, project), root)
         if data.get("schema") != "criteria-snapshot/1" or data.get("producer") != name:
             raise ValueError("unknown snapshot schema or producer")
-        expected = {"kind": "project", "key": project} if name == "distill" else {"kind": "personal", "key": "personal"}
+        expected = {"kind": "project", "key": project}
         if data.get("scope") != expected:
             raise PacketError("E_SCOPE_MISMATCH: snapshot belongs to another scope")
         if (not isinstance(data.get("generation"), int) or isinstance(data["generation"], bool)
@@ -66,8 +62,7 @@ def snapshot(name: str, config: dict, project: str, root: Path) -> dict:
             raise ValueError("incomplete snapshot metadata")
         ids = set()
         for item in data["criteria"]:
-            prefix = "CR" if name == "distill" else "PC"
-            match = re.fullmatch(rf"{name}:({prefix}-[0-9a-f]{{12}})@([1-9][0-9]*)", item.get("ref", ""))
+            match = re.fullmatch(rf"{name}:(CR-[0-9a-f]{{12}})@([1-9][0-9]*)", item.get("ref", ""))
             if match is None:
                 raise ValueError("invalid criterion ref")
             if match.group(1) in ids:
@@ -75,8 +70,7 @@ def snapshot(name: str, config: dict, project: str, root: Path) -> dict:
             ids.add(match.group(1))
             if not isinstance(item.get("origin"), dict) or not isinstance(item.get("statement"), str):
                 raise ValueError("criterion has no statement or source")
-            allowed = "user_stated" if name == "distill" else "user_confirmed"
-            if item.get("confirmation") != allowed or item["origin"].get("actor") != "user":
+            if item.get("confirmation") != "user_stated" or item["origin"].get("actor") != "user":
                 raise ValueError("snapshot contains an unconfirmed criterion")
         return data
     except PacketError:

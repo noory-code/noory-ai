@@ -20,16 +20,12 @@ Each `argv` is an array; its first element must be an absolute executable path o
   "distill": {
     "argv": ["/absolute/path/to/uv", "run", "--directory", "/path/to/distill", "python", "-m", "distill"],
     "db": "/path/to/criteria.db"
-  },
-  "avatar": {
-    "argv": ["/absolute/path/to/python3", "/path/to/avatar/scripts/avatar.py"],
-    "home": "/path/to/avatar-data"
   }
 }
 ```
 
 Use Windows paths for Windows. Spaces remain part of an argument. Commands run with no shell
-and a 30-second timeout. `db` and `home` are optional; when omitted, the producer uses its own
+and a 30-second timeout. `db` is optional; when omitted, the producer uses its own
 default. No snapshot-file input is accepted. An omitted producer is marked as not queried.
 
 ## Evidence in Progress
