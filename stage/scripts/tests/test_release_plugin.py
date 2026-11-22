@@ -356,6 +356,68 @@ class ReleasePluginCliTest(unittest.TestCase):
         self.assertIn("no released section gained lines after its release", result.stdout)
         self.assertNotIn("Not checked", result.stdout)
 
+    def make_twice_released_repository_with_an_old_intrusion(
+        self,
+    ) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+        temporary_directory, repository_root = self.make_released_repository()
+        changelog_path = repository_root / "stage" / "CHANGELOG.md"
+        changelog = changelog_path.read_text(encoding="utf-8")
+        changelog_path.write_text(
+            changelog.replace("## Unreleased\n\n", "## Unreleased\n\n- Second release.\n\n", 1),
+            encoding="utf-8",
+        )
+        self.commit_all(repository_root, "queue the second release")
+        released = self.run_cli(repository_root, "patch")
+        self.assertEqual(0, released.returncode, released.stderr)
+        self.commit_all(repository_root, "release stage 0.54.6")
+        old_heading = f"## 0.54.5 — {date.today().isoformat()}"
+        changelog = changelog_path.read_text(encoding="utf-8")
+        changelog_path.write_text(
+            changelog.replace(f"{old_heading}\n\n", f"{old_heading}\n\n- Old slip.\n", 1),
+            encoding="utf-8",
+        )
+        self.commit_all(repository_root, "historical line in the older released section")
+        return temporary_directory, repository_root
+
+    def test_check_released_since_skips_sections_older_than_the_version(self):
+        temporary_directory, repository_root = (
+            self.make_twice_released_repository_with_an_old_intrusion()
+        )
+        with temporary_directory:
+            unbounded = self.run_mode(repository_root, "--check-released")
+            bounded = self.run_mode(repository_root, "--check-released", "--since", "0.54.6")
+
+        self.assertEqual(1, unbounded.returncode, unbounded.stderr)
+        self.assertIn("+ - Old slip.", unbounded.stdout)
+        self.assertEqual(0, bounded.returncode, bounded.stdout + bounded.stderr)
+        self.assertIn("no released section gained lines after its release", bounded.stdout)
+        self.assertNotIn("Old slip", bounded.stdout)
+
+    def test_check_released_since_still_checks_the_named_version(self):
+        temporary_directory, repository_root = (
+            self.make_twice_released_repository_with_an_old_intrusion()
+        )
+        with temporary_directory:
+            result = self.run_mode(repository_root, "--check-released", "--since", "0.54.5")
+
+        self.assertEqual(1, result.returncode, result.stderr)
+        self.assertIn(f"## 0.54.5 — {date.today().isoformat()} (released in ", result.stdout)
+        self.assertIn("+ - Old slip.", result.stdout)
+
+    def test_since_requires_check_released_and_a_semantic_version(self):
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            before = self.snapshot_plugin(repository_root)
+            with_bump = self.run_mode(repository_root, "--bump", "patch", "--since", "0.54.4")
+            malformed = self.run_mode(repository_root, "--check-released", "--since", "0.54")
+            after = self.snapshot_plugin(repository_root)
+
+        self.assertEqual(2, with_bump.returncode)
+        self.assertIn("only allowed with --check-released", with_bump.stderr)
+        self.assertEqual(2, malformed.returncode)
+        self.assertIn("not semantic x.y.z", malformed.stderr)
+        self.assertEqual(before, after)
+
     def test_check_released_and_bump_cannot_run_together(self):
         temporary_directory, repository_root = self.make_repository()
         with temporary_directory:
