@@ -2,14 +2,21 @@
 id: W-00000382
 title: 드라이버가 저장소 상태를 볼 때 띄우는 git 프로세스를 줄인다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 7
 autonomous: false
-acceptance: []
-review: not_required
-scope: stage/scripts/driver_repository.py,stage/scripts/driver_git.py,stage/scripts/tests,stage/CHANGELOG.md
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/scripts/driver_repository.py,stage/scripts/driver_git.py,stage/scripts/driver_runstate.py,stage/scripts/land_run.py,stage/scripts/tests/test_driver_git.py,stage/scripts/tests/test_driver_repository.py,stage/scripts/tests/test_land_run.py,stage/scripts/tests/test_drive.py,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000382 드라이버가 저장소 상태를 볼 때 띄우는 git 프로세스를 줄인다
@@ -50,3 +57,9 @@ Windows 러너에서 git 프로세스 하나는 35~46ms, ubuntu 는 약 1ms 다.
 - 드라이버의 동작 시험이 바꾸기 전과 같은 수로 모두 통과한다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification

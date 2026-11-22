@@ -2,14 +2,22 @@
 id: W-00000381
 title: Windows 에서 검사와 리뷰의 시간 제한이 실제로 끊게 한다
 kind: fix
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 6
 autonomous: false
-acceptance: []
-review: not_required
-scope: stage/skills/stage-retrospective/close_work.py,stage/scripts,stage/CHANGELOG.md
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q"
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_drive_parallel.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/skills/stage-retrospective/close_work.py,stage/scripts/drive_parallel.py,stage/scripts/tests/test_close_work.py,stage/scripts/tests/test_drive_parallel.py,stage/hooks,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000381 Windows 에서 검사와 리뷰의 시간 제한이 실제로 끊게 한다
@@ -49,3 +57,9 @@ timeout 1, subTest 2개)가 ubuntu 2.23초, Windows 11.53초. `test_check_timeou
 - 드라이버 쪽에도 같은 모양(shell=True 와 timeout)이 있는지 확인한 결과가 카드에 적혀 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification

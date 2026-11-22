@@ -2,14 +2,22 @@
 id: W-00000384
 title: 릴리스와 변경 기록 줄 추가가 겹칠 때 union 병합 결과를 확인한다
 kind: qa
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 8
 autonomous: false
-acceptance: []
-review: not_required
-scope: stage/scripts/tests,stage/CHANGELOG.md
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_changelog_union.py -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/scripts/tests/test_changelog_union.py,stage/scripts/release_plugin.py,stage/CHANGELOG.md
+promotes:
+decision_refs:
+reserved_ids: DE-00000096
 ---
 
 # W-00000384 릴리스와 변경 기록 줄 추가가 겹칠 때 union 병합 결과를 확인한다
@@ -44,3 +52,9 @@ W-00000377 서브세션이 남긴 질문이다. 루트 `.gitattributes` 가 모�
 - 두 브랜치를 git 으로 합친 결과가 시험으로 고정되어 있고, 줄이 잘못된 절에 들어가면 그 처리 방법이 카드에 적혀 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
