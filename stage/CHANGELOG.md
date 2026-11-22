@@ -8,6 +8,20 @@
   read by nothing, and next work belongs in a planned card or a `state/` record. The templates,
   `operations/retrospective.md`, the retrospective skill, and the driver's machine-written
   retrospective follow; archived retrospectives keep their older sections (DE-00000093).
+- Split the Windows Stage CI suites into six jobs instead of three. A git process costs the
+  Windows runner 35-46 ms against about 1 ms on ubuntu, and a Stage script start about 170-340 ms,
+  so each of three Windows scripts shards still took 128-212 seconds while ubuntu took 23-49.
+  Windows now runs `WINDOWS_SHARD_TOTAL` (6) shards and the other OSes keep `SHARD_TOTAL` (3);
+  the workflow test expands the matrix and checks that every OS runs each shard number up to its
+  own total.
+- Start fewer git processes in the scripts suite. Every fixture commit spawned
+  `git maintenance run --auto`, and each fixture repository spent two `git config` calls on an
+  identity. The driver, land, and driver-git tests now share a throwaway global git
+  configuration (`scripts/tests/git_test_config.py`) that turns automatic maintenance and signing
+  off, supplies the identity, and trims `git init`'s template to the files tests write into. It
+  also keeps a developer's own global git settings out of the tests. This cut the suite from
+  about 9,500 to 7,700 started processes; on the Windows runner it saves about 0.1 s per fixture
+  repository, within the run-to-run noise of a shard.
 - Stop keeping work lists that two sessions edit at once (DE-00000091). `work/active.md`,
   `work/review.md`, and `work/planned/index.md` restated each card's `status`, so two branches
   that each registered, closed, or archived a card conflicted on them, and a union merge would

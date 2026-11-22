@@ -14,12 +14,14 @@ from pathlib import Path
 from unittest import mock
 
 from driver_test_environment import sanitize_current_driver_test_environment
+from git_test_config import isolate_git_config
 from python_shell_command import python_command
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "drive.py"
 
 sanitize_current_driver_test_environment()
+isolate_git_config()
 
 
 def reporting_python_command(code: str, changed_paths: list[str]) -> str:
@@ -304,8 +306,6 @@ def git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
 def initialize_git(root: Path) -> None:
     (root / ".gitignore").write_text(".stage/.runtime/\n", encoding="utf-8")
     git(root, "init", "-q")
-    git(root, "config", "user.email", "test@example.com")
-    git(root, "config", "user.name", "Stage Test")
     git(root, "commit", "--allow-empty", "-q", "-m", "base")
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "seed")

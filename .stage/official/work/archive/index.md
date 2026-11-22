@@ -308,3 +308,4 @@
 | W-00000378 | completed | [items/W-00000378/_story.md](items/W-00000378/_story.md) |
 | W-00000371 | completed | [items/W-00000371/_story.md](items/W-00000371/_story.md) |
 | W-00000377 | completed | [items/W-00000377/_story.md](items/W-00000377/_story.md) |
+| W-00000380 | completed | [items/W-00000380/_story.md](items/W-00000380/_story.md) |
