@@ -63,8 +63,7 @@ from driver_repository import (  # noqa: E402
     executor_widened_work_card_scope,
     fingerprint,
     git_index_path,
-    repository_fingerprint,
-    repository_path_snapshot,
+    repository_observation,
 )
 from driver_review import (  # noqa: E402
     infrastructure_failure,
@@ -296,8 +295,9 @@ def run_unattended(
             log_before = read_work_log(log_path)
             card_fields_before = close_owned_fields(item.path)
             pending_findings = review_verdict_failures(verdict_file)
-            repository_before = repository_fingerprint(project_root)
-            repository_paths_before = repository_path_snapshot(project_root)
+            repository_before, repository_paths_before = repository_observation(
+                project_root
+            )
             executor_changed_paths = item_state.get(
                 "executor_changed_paths",
                 [],
@@ -373,8 +373,9 @@ def run_unattended(
             print_escalation(f"cannot clear executor running role: {exc}")
             return 1
         try:
-            repository_after = repository_fingerprint(project_root)
-            repository_paths_after = repository_path_snapshot(project_root)
+            repository_after, repository_paths_after = repository_observation(
+                project_root
+            )
             current_fingerprint = fingerprint(project_root, [executor_evidence])
             changed_paths = cumulative_executor_changed_paths(
                 executor_changed_paths,

@@ -62,4 +62,9 @@ Windows 러너에서 git 프로세스 하나는 35~46ms, ubuntu 는 약 1ms 다.
 
 ## Progress
 
+- scripts 시험 전체가 띄우는 git 프로세스(Linux, `strace -f -e trace=execve`): 바꾸기 전 6,879개(시험 840개),
+  바꾼 뒤 5,330개(시험 851개, 새 시험 11개 포함). 기존 시험 840개는 바꾼 뒤에도 모두 통과한다.
+  - `rev-parse --git-path index` 1,044 → 145, `ls-files --others` 906 → 248,
+    `ls-files --cached --stage` 422 → 0 (`ls-files -t --cached --stage --others` 467 로 합침).
+
 ## Verification
