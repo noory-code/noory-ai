@@ -2,14 +2,20 @@
 id: W-00000399
 title: Stage 의 통제 장치와 그것이 담은 가정을 목록으로 만든다
 kind: planning
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000006
-status: captured
-priority: 4
 autonomous: false
 acceptance: []
-review: not_required
-scope: .stage/research,.stage/decisions
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: .stage/research/claude-fit/mechanisms.md
+promotes:
+decision_refs:
 ---
 
 # W-00000399 Stage 의 통제 장치와 그것이 담은 가정을 목록으로 만든다
@@ -41,3 +47,9 @@ scope: .stage/research,.stage/decisions
 - 사용자가 먼저 빼 볼 장치를 골랐고 그 결정이 결정 기록에 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
