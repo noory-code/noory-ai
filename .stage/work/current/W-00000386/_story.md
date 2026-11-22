@@ -2,14 +2,20 @@
 id: W-00000386
 title: 실행자 모델이 사용량 한도에 걸리면 같은 venue의 다른 모델로 넘어가는 순서를 둔다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
-review: not_required
-scope: stage/
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/hooks/stage_model_tiers.py,stage/scripts,stage/docs/SCHEMA_V5.md,stage/templates,stage/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000386 실행자 모델이 사용량 한도에 걸리면 같은 venue의 다른 모델로 넘어가는 순서를 둔다
@@ -61,3 +67,7 @@ scope: stage/
 ## Next action
 
 계획 카드로 둔다. 시작할 때 Included의 정할 것 두 가지(순서를 두는 자리, 시도 횟수에 셀지)를 먼저 정한다.
+
+## Progress
+
+## Verification
