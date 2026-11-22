@@ -12,11 +12,10 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import Any
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
-from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     hierarchy_parent_record_path,
     record_path,
@@ -158,48 +157,6 @@ def render_decision(
     return rendered.rstrip() + "\n"
 
 
-def update_active_index(
-    text: str,
-    item_id: str,
-    fields: dict[str, Any],
-    active_relative: str,
-    current_root: str,
-    record_relative: str = "",
-) -> str:
-    lines = text.splitlines()
-    found = False
-    for index, line in enumerate(lines):
-        if not line.lstrip().startswith("|"):
-            continue
-        cells = line.split("|")
-        if len(cells) >= 9 and cells[1].strip() == item_id:
-            cells[5] = " blocked "
-            lines[index] = "|".join(cells)
-            found = True
-    if not found:
-        title = str(fields.get("title") or item_id).strip()[:60]
-        kind = str(fields.get("kind") or "").strip()
-        venue = str(fields.get("venue") or "").strip()
-        item_link = relative_record_link(
-            active_relative,
-            record_relative or record_path(Path(current_root), item_id).as_posix(),
-        )
-        lines.append(
-            f"| {item_id} | {kind} | {venue} | {title} | blocked | {venue} | "
-            f"[{item_link}]({item_link}) |"
-        )
-    return "\n".join(lines) + "\n"
-
-
-def drop_index_row(text: str, item_id: str) -> str:
-    def is_item_row(line: str) -> bool:
-        cells = line.split("|")
-        return line.lstrip().startswith("|") and len(cells) > 1 and cells[1].strip() == item_id
-
-    lines = [line for line in text.splitlines() if not is_item_row(line)]
-    return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
-
-
 def main() -> int:
     args = parse_args()
     reason = args.reason.strip()
@@ -263,9 +220,7 @@ def main() -> int:
 
     template_path = stage_root / "decisions/pending/_template.md"
     decision_index_path = stage_root / refresh_decision_index.INDEX_RELATIVE
-    active_path = stage_root / paths.active_index
-    review_path = stage_root / paths.review_index
-    required = (template_path, decision_index_path, active_path)
+    required = (template_path, decision_index_path)
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         print(f"Stage escalation prerequisite missing: {', '.join(missing)}", file=sys.stderr)
@@ -288,9 +243,7 @@ def main() -> int:
         if target_path != item_path:
             records.append((target_path, target_fields))
         updated_records: list[tuple[Path, str]] = []
-        updated_active = active_path.read_text(encoding="utf-8")
         for record, record_fields in records:
-            record_id = str(record_fields.get("id") or "").strip()
             updated_record = set_field(
                 record.read_text(encoding="utf-8"), "status", "blocked"
             )
@@ -307,14 +260,6 @@ def main() -> int:
                     after="promotes",
                 )
             updated_records.append((record, updated_record))
-            updated_active = update_active_index(
-                updated_active,
-                record_id,
-                record_fields,
-                paths.active_index,
-                paths.current_cards,
-                record.relative_to(stage_root).as_posix(),
-            )
     except (OSError, ValueError) as exc:
         print(f"{args.item}: cannot prepare escalation: {exc}", file=sys.stderr)
         return 2
@@ -325,13 +270,6 @@ def main() -> int:
             handle.write(decision_text)
         for record, updated_record in updated_records:
             record.write_text(updated_record, encoding="utf-8")
-        active_path.write_text(updated_active, encoding="utf-8")
-        if review_path.exists():
-            review_text = review_path.read_text(encoding="utf-8")
-            for record, _updated_record in updated_records:
-                record_id = str(parse_frontmatter(record).get("id") or "").strip()
-                review_text = drop_index_row(review_text, record_id)
-            review_path.write_text(review_text, encoding="utf-8")
         refresh_decision_index.refresh_index(project_root)
     except (OSError, refresh_decision_index.IndexFormatError) as exc:
         print(f"{args.item}: escalation write failed: {exc}", file=sys.stderr)

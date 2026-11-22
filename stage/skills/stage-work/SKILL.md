@@ -10,7 +10,8 @@ no work item is open (`active`/`review`/`blocked`). Scope is an advisory signal:
 the selected leaf's scope passes, and the hook tells the executor to report the boundary crossing.
 Registering mid-task leaves early commits ungated (R-00000001's learning).
 
-`.stage/` itself is not governed source, so the item file and `active.md` are free to create.
+`.stage/` itself is not governed source, so the item file is free to create. No list file restates
+the card: the active, review, and planned views are derived from its `status`.
 
 ## Tell maintenance from achievement first
 

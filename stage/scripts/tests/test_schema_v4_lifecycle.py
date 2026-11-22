@@ -24,7 +24,9 @@ V4_TEMPLATE_ROOT = STAGE_ROOT / "templates" / "v4" / "project-stage"
 
 if str(HOOK_ROOT) not in sys.path:
     sys.path.insert(0, str(HOOK_ROOT))
+import stage_context  # noqa: E402
 import stage_paths  # noqa: E402
+import stage_topology  # noqa: E402
 
 
 def load_module(name: str, path: Path):
@@ -75,6 +77,21 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
         root = Path(tmp.name)
         shutil.copytree(template_root, root / ".stage")
         return tmp, root
+
+    def assert_views(
+        self, stage_root: Path, item_id: str, *, active: bool, review: bool
+    ) -> None:
+        """The card reaches the derived views by its status; no list file exists."""
+        for relative in stage_topology.RETIRED_WORK_LISTS:
+            self.assertFalse((stage_root / relative).exists(), relative)
+        active_view = stage_context.derived_work_view(
+            stage_root, ("active", "blocked"), review=False
+        )
+        review_view = stage_context.derived_work_view(
+            stage_root, ("review", "completed", "rejected"), review=True
+        )
+        self.assertEqual(active, f"| {item_id} |" in active_view, active_view)
+        self.assertEqual(review, f"| {item_id} |" in review_view, review_view)
 
     def assert_audit_clean(self, root: Path) -> None:
         result = run_cli(AUDIT, root)
@@ -133,7 +150,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
 
             self.assertFalse(first.exists())
             self.assertFalse(second.exists())
-            self.assertNotIn("W-00000001", active)
+            self.assertNotIn("W-00000001", active)  # the refused v3 project is untouched
             self.assertFalse((root / ".stage/work/current").exists())
             self.assertEqual(5, stage_paths.STAGE_SCHEMA_VERSION)
             audited = run_cli(AUDIT, root)
@@ -161,10 +178,9 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
 
             self.assertEqual(0, result.returncode, result.stderr)
             card = root / ".stage/work/current/W-00000001/_story.md"
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
             self.assertTrue(card.is_file())
             self.assertIn("milestone: M-00000008", card.read_text(encoding="utf-8"))
-            self.assertIn("(current/W-00000001/_story.md)", active)
+            self.assert_views(root / ".stage", "W-00000001", active=True, review=False)
             self.assertFalse((root / ".stage/present/work/items").exists())
             self.assert_audit_clean(root)
 
@@ -299,13 +315,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             current = stage_root / "work/current" / item_id / "_story.md"
             self.assertTrue(planned.is_file())
             self.assertFalse(current.exists())
-            self.assertIn(
-                f"({item_id}/_story.md)",
-                (stage_root / "work/planned/index.md").read_text(encoding="utf-8"),
-            )
-            self.assertNotIn(
-                item_id, (stage_root / "work/active.md").read_text(encoding="utf-8")
-            )
+            self.assert_views(stage_root, item_id, active=False, review=False)
             self.assert_audit_clean(root)
 
             started = run_cli(
@@ -316,22 +326,13 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
                 "src",
                 "--venue",
                 "codex",
-                "--owner",
-                "Codex",
             )
             self.assertEqual(0, started.returncode, started.stderr)
             self.assertFalse(planned.exists())
             self.assertTrue(current.is_file())
             current_text = current.read_text(encoding="utf-8")
             self.assertEqual(1, current_text.count("milestone: M-00000009"))
-            self.assertNotIn(
-                item_id,
-                (stage_root / "work/planned/index.md").read_text(encoding="utf-8"),
-            )
-            self.assertIn(
-                f"(current/{item_id}/_story.md)",
-                (stage_root / "work/active.md").read_text(encoding="utf-8"),
-            )
+            self.assert_views(stage_root, item_id, active=True, review=False)
             self.assert_audit_clean(root)
 
             current_text = set_frontmatter_field(
@@ -371,14 +372,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertIn("status: completed", closed_text)
             self.assertIn("verification: passed", closed_text)
             self.assertIn("v4 lifecycle check passed", closed_text)
-            self.assertNotIn(
-                item_id,
-                (stage_root / "work/active.md").read_text(encoding="utf-8"),
-            )
-            self.assertIn(
-                f"(current/{item_id}/_story.md)",
-                (stage_root / "work/review.md").read_text(encoding="utf-8"),
-            )
+            self.assert_views(stage_root, item_id, active=False, review=True)
             self.assert_audit_clean(root)
 
             archived = run_cli(ARCHIVE, root, item_id)
@@ -396,9 +390,7 @@ class SchemaLifecycleDispatchTest(unittest.TestCase):
             self.assertTrue(archived_retro.is_file())
             self.assertFalse(current.exists())
             self.assertFalse(current_retro.exists())
-            self.assertNotIn(
-                item_id, (stage_root / "work/review.md").read_text(encoding="utf-8")
-            )
+            self.assert_views(stage_root, item_id, active=False, review=False)
             self.assertIn(
                 f"| {item_id} | completed | [items/{item_id}/_story.md]",
                 (stage_root / "official/work/archive/index.md").read_text(

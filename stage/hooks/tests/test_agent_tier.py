@@ -60,7 +60,7 @@ def project(root: Path, *, tiers: dict | None = TIERS) -> Path:
     if tiers is not None:
         settings["model_tiers"] = tiers
     write(root / ".stage/settings.json", json.dumps(settings))
-    write(root / ".stage/work/active.md", "# Active\n")
+    (root / ".stage/work/current").mkdir(parents=True, exist_ok=True)
     return root
 
 

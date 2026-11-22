@@ -58,21 +58,6 @@ decision_refs:
 # {wid} Sample
 """
 
-REVIEW = (
-    "# Review Candidates\n\n"
-    "| Artifact | Verification | Retrospective | Promotion | Item |\n"
-    "|---|---|---|---|---|\n"
-    "| {wid} | passed | completed | not_applicable | [items/{wid}.md](items/{wid}.md) |\n"
-)
-
-HAND_WRITTEN_REVIEW = (
-    "# Review Candidates\n\n"
-    "| Artifact | Verification | Retrospective | Promotion | Item |\n"
-    "|---|---|---|---|---|\n"
-    "| Fix archive cleanup | passed | completed | not_applicable | "
-    "[items/{wid}.md](items/{wid}.md) |\n"
-)
-
 INDEX = (
     "# Work Archive\n\n"
     "| Work | Final status | Item |\n"
@@ -96,7 +81,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
         (stage / "present/work/retrospectives" / f"{ref}.md").write_text(
             RETRO.format(ref=ref, wid=wid), encoding="utf-8"
         )
-        (stage / "present/work/review.md").write_text(REVIEW.format(wid=wid), encoding="utf-8")
         (stage / "past/work/archive/index.md").write_text(INDEX, encoding="utf-8")
         return tmp, root
 
@@ -181,7 +165,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
 
             self.assertFalse((stage / "present/work/items/W-00000001.md").exists())
             self.assertFalse((stage / "present/work/retrospectives/R-00000001.md").exists())
-            self.assertNotIn("W-00000001", (stage / "present/work/review.md").read_text(encoding="utf-8"))
 
     def test_archiving_removes_only_the_archived_items_pending_intents(self):
         tmp, root = self.make_stage()
@@ -225,17 +208,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
             proc = run_cli(root, "--all-completed")
             self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
             self.assertTrue((root / ".stage/past/work/archive/items/W-00000001.md").exists())
-
-    def test_archives_item_with_hand_written_review_artifact(self):
-        tmp, root = self.make_stage()
-        with tmp:
-            review = root / ".stage/present/work/review.md"
-            review.write_text(HAND_WRITTEN_REVIEW.format(wid="W-00000001"), encoding="utf-8")
-
-            proc = run_cli(root, "W-00000001")
-
-            self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
-            self.assertNotIn("items/W-00000001.md", review.read_text(encoding="utf-8"))
 
     def test_refuses_non_terminal_status(self):
         tmp, root = self.make_stage(status="active")
@@ -319,13 +291,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            planned_index = stage / "work/planned/index.md"
-            planned_index.write_text(
-                planned_index.read_text(encoding="utf-8")
-                + f"| {item_id} | rejected | [Reject planned work]"
-                f"({item_id}/_story.md) |\n",
-                encoding="utf-8",
-            )
 
             proc = run_cli(root, item_id)
             self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
@@ -349,7 +314,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
             archive_index = (
                 stage / "official/work/archive/index.md"
             ).read_text(encoding="utf-8")
-            planned_index_text = planned_index.read_text(encoding="utf-8")
             planned_unit_exists = planned_unit.exists()
 
         self.assertFalse(planned_unit_exists)
@@ -357,7 +321,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertIn("terminal_disposition: rejected", archived_text)
         self.assertIn("Rejected because the premise no longer holds.", archived_text)
         self.assertIn(f"| {item_id} | rejected |", archive_index)
-        self.assertNotIn(item_id, planned_index_text)
         self.assertEqual(0, audit_proc.returncode, audit_proc.stdout + audit_proc.stderr)
         self.assertIn("Summary: errors=0", audit_proc.stdout)
 
@@ -434,17 +397,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
                 (stage / "work/retrospectives" / f"{retro_id}.md").write_text(
                     RETRO.format(ref=retro_id, wid=item_id), encoding="utf-8"
                 )
-            review_path = stage / "work/review.md"
-            review_path.write_text(
-                review_path.read_text(encoding="utf-8")
-                + f"| {action_id} | passed | completed | not_applicable | "
-                f"[current/{story_id}/{action_id}.md]"
-                f"(current/{story_id}/{action_id}.md) |\n"
-                + f"| {story_id} | passed | completed | not_applicable | "
-                f"[current/{story_id}/_story.md](current/{story_id}/_story.md) |\n",
-                encoding="utf-8",
-            )
-
             proc = run_cli(root, "--all-completed")
 
             self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
@@ -460,6 +412,38 @@ class ArchiveWorkCliTest(unittest.TestCase):
             self.assertEqual(1, len(proc.stdout.strip().splitlines()), proc.stdout)
             self.assertIn(story_id, proc.stdout)
             self.assertNotIn(action_id, proc.stdout)
+
+    def test_all_completed_reads_card_status_not_a_list_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stage = root / ".stage"
+            shutil.copytree(TEMPLATE_ROOT, stage)
+            for item_id, retro_id, status in (
+                ("W-00000001", "R-00000001", "completed"),
+                ("W-00000002", "R-00000002", "active"),
+            ):
+                unit = stage / f"work/current/{item_id}"
+                unit.mkdir(parents=True)
+                (unit / "_story.md").write_text(
+                    V5_ITEM.format(wid=item_id, ref=retro_id).replace(
+                        "status: completed", f"status: {status}"
+                    ),
+                    encoding="utf-8",
+                )
+                (stage / "work/retrospectives" / f"{retro_id}.md").write_text(
+                    RETRO.format(ref=retro_id, wid=item_id), encoding="utf-8"
+                )
+            listed = (stage / "work/review.md").exists()
+
+            proc = run_cli(root, "--all-completed")
+            archived = (stage / "official/work/archive/items/W-00000001/_story.md").is_file()
+            still_current = (stage / "work/current/W-00000002/_story.md").is_file()
+
+        self.assertFalse(listed)
+        self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+        self.assertTrue(archived)
+        self.assertTrue(still_current)
+        self.assertNotIn("W-00000002", proc.stdout)
 
     def test_v4_all_completed_archives_one_top_level_hierarchy_as_one_move_unit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -486,29 +470,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
                     RETRO.format(ref=retro_id, wid=item_id),
                     encoding="utf-8",
                 )
-            review_path = stage / "work/review.md"
-            review_path.write_text(
-                review_path.read_text(encoding="utf-8")
-                + "".join(
-                    f"| {item_id} | passed | completed | not_applicable | "
-                    f"[{path.relative_to(stage / 'work').as_posix()}]"
-                    f"({path.relative_to(stage / 'work').as_posix()}) |\n"
-                    for path, item_id, _retro_id in records
-                ),
-                encoding="utf-8",
-            )
-            active_path = stage / "work/active.md"
-            active_path.write_text(
-                active_path.read_text(encoding="utf-8")
-                + "".join(
-                    f"| {item_id} | development | codex | x | completed | codex | "
-                    f"[{path.relative_to(stage / 'work').as_posix()}]"
-                    f"({path.relative_to(stage / 'work').as_posix()}) |\n"
-                    for path, item_id, _retro_id in records
-                ),
-                encoding="utf-8",
-            )
-
             proc = run_cli(root, "--all-completed")
             audit_proc = subprocess.run(
                 [
@@ -532,8 +493,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
                     archive_unit / "W-00000002/W-00000003.md"
                 ).read_text(encoding="utf-8"),
             ]
-            active_text = (stage / "work/active.md").read_text(encoding="utf-8")
-            review_text = (stage / "work/review.md").read_text(encoding="utf-8")
             archive_index = (
                 stage / "official/work/archive/index.md"
             ).read_text(encoding="utf-8")
@@ -544,9 +503,6 @@ class ArchiveWorkCliTest(unittest.TestCase):
         self.assertTrue(
             all("terminal_disposition: accepted" in text for text in archived_texts)
         )
-        self.assertNotIn("W-00000001", active_text)
-        self.assertNotIn("W-00000002", active_text)
-        self.assertNotIn("W-00000003", review_text)
         self.assertEqual(1, archive_index.count("| W-00000001 | completed |"))
         self.assertNotIn("| W-00000002 |", archive_index)
         self.assertNotIn("| W-00000003 |", archive_index)

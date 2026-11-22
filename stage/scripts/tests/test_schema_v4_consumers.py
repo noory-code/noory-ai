@@ -171,11 +171,6 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             current_path.write_text(
                 active_card(current_id, decision_refs="DE-00000092"), encoding="utf-8"
             )
-            with (stage_root / "work" / "active.md").open("a", encoding="utf-8") as handle:
-                handle.write(
-                    f"| {current_id} | development | codex | Fixture | active | test | "
-                    f"[current/{current_id}/_story.md](current/{current_id}/_story.md) |\n"
-                )
 
             planned_id = "W-00000093"
             planned_path = (
@@ -192,13 +187,6 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            with (stage_root / "work" / "planned" / "index.md").open(
-                "a", encoding="utf-8"
-            ) as handle:
-                handle.write(
-                    f"| {planned_id} | Planned fixture | development | selected | high | | "
-                    f"[{planned_id}/_story.md]({planned_id}/_story.md) |\n"
-                )
 
             decision_path = stage_root / "decisions" / "pending" / "DE-00000092.md"
             decision_path.write_text(

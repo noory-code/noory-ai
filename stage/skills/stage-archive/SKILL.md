@@ -1,6 +1,6 @@
 ---
 name: stage-archive
-description: Archive completed or rejected Stage work items into official/work/archive/, including planned cards rejected before work started. Use this whenever review.md holds closed items to drain, a rejected card must leave the planned index, or the user asks to clean up, tidy, or archive the Stage work queue. Archiving needs only an archive intent (the archive_work.py fast path handles it) — never a new work item, a mistake that has bitten this project before.
+description: Archive completed or rejected Stage work items into official/work/archive/, including planned cards rejected before work started. Use this whenever work/current holds closed (completed or rejected) top-level cards to drain, a planned card was rejected, or the user asks to clean up, tidy, or archive the Stage work queue. Archiving needs only an archive intent (the archive_work.py fast path handles it) — never a new work item, a mistake that has bitten this project before.
 ---
 
 # Stage Archive
@@ -30,7 +30,7 @@ work being archived already has one, and a second would duplicate the record (SS
 
 A top-level item you close by hand needs no separate archive step: `close_work.py --archive`
 closes and archives it in one command (see the `stage-retrospective` skill). Use the archiver
-below for items already waiting in `work/review.md`, for driver-run items, and for rejected
+below for closed items already waiting in `work/current/`, for driver-run items, and for rejected
 planned cards.
 
 The archiver lives beside this skill (`${CLAUDE_PLUGIN_ROOT}/skills/stage-archive/archive_work.py`;
@@ -38,7 +38,7 @@ in this repo, `stage/skills/stage-archive/archive_work.py`).
 
 ```bash
 python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> W-00000001 [W-00000002 ...]
-# or archive every completed item currently in review.md:
+# or archive every top-level current card whose status is completed or rejected:
 python3 stage/skills/stage-archive/archive_work.py --project-root <project-root> --all-completed
 ```
 
@@ -84,8 +84,8 @@ python3 stage/scripts/promote_intent.py --project-root <project-root> --type arc
 Then move the top-level directory as one unit, set each contained record to `status: archived`,
 move each existing retrospective verbatim, append one top-level index row (Final status is the
 top-level `completed`/`rejected` value the `archived` overwrite erases), delete the source
-hierarchy, and remove all of its rows from `work/active.md` and `work/review.md` or from
-`work/planned/index.md`.
+hierarchy. No work list file holds a row for it: the active, review, and planned views are derived
+from card status.
 
 ## Commit
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -9,6 +10,7 @@ from pathlib import Path
 
 CLI = Path(__file__).resolve().parents[1] / "init_stage.py"
 RUNTIME_IGNORE_ENTRY = ".stage/.runtime/"
+UNION_MERGE_ENTRY = ".stage/official/**/archive/index.md merge=union"
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -146,6 +148,98 @@ class InitStageGitignoreTest(unittest.TestCase):
         ):
             with self.subTest(route=route):
                 self.assertIn(route, index)
+
+
+    def test_new_project_gets_no_work_list_files(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            present = [
+                relative
+                for relative in ("work/active.md", "work/review.md", "work/planned/index.md")
+                if (root / ".stage" / relative).exists()
+            ]
+
+        self.assertEqual([], present)
+
+
+class InitStageGitattributesTest(unittest.TestCase):
+    def make(self) -> tuple[tempfile.TemporaryDirectory, Path]:
+        tmp = tempfile.TemporaryDirectory()
+        root = Path(tmp.name)
+        (root / ".git").mkdir()
+        return tmp, root
+
+    def test_creates_gitattributes_with_the_archive_union_entry(self):
+        tmp, root = self.make()
+        with tmp:
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            content = (root / ".gitattributes").read_bytes()
+
+        self.assertEqual(f"{UNION_MERGE_ENTRY}\n".encode(), content)
+        self.assertIn("created .gitattributes", result.stdout)
+
+    def test_appends_entry_and_preserves_existing_content(self):
+        tmp, root = self.make()
+        with tmp:
+            original = b"*.png binary"
+            (root / ".gitattributes").write_bytes(original)
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            content = (root / ".gitattributes").read_bytes()
+
+        self.assertEqual(original + b"\n" + f"{UNION_MERGE_ENTRY}\n".encode(), content)
+
+    def test_rerun_keeps_one_entry(self):
+        tmp, root = self.make()
+        with tmp:
+            run(root)
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            content = (root / ".gitattributes").read_bytes()
+
+        self.assertEqual(1, content.count(b".stage/official/**/archive/index.md"))
+        self.assertIn("preserved existing", result.stdout)
+
+    def test_non_git_directory_does_not_get_gitattributes(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            exists = (root / ".gitattributes").exists()
+
+        self.assertFalse(exists)
+
+    def test_git_applies_union_to_the_archive_indexes_only(self):
+        tmp, root = self.make()
+        with tmp:
+            shutil.rmtree(root / ".git")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            result = run(root)
+            self.assertEqual(0, result.returncode, result.stderr)
+            checked = subprocess.run(
+                [
+                    "git",
+                    "check-attr",
+                    "merge",
+                    "--",
+                    ".stage/official/work/archive/index.md",
+                    ".stage/official/decisions/archive/index.md",
+                    ".stage/decisions/index.md",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=True,
+            ).stdout
+
+        self.assertIn(".stage/official/work/archive/index.md: merge: union", checked)
+        self.assertIn(".stage/official/decisions/archive/index.md: merge: union", checked)
+        self.assertIn(".stage/decisions/index.md: merge: unspecified", checked)
 
 
 if __name__ == "__main__":

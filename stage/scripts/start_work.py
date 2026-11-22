@@ -10,19 +10,18 @@ registration gate matches writes against.
 
 Usage:
     start_work.py --project-root . W-00000001 --scope "src, docs" \
-        [--venue claude] [--decision DE-00000001] [--owner claude]
+        [--venue claude] [--decision DE-00000001]
 """
 
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
-from lifecycle_paths import relative_record_link, v4_lifecycle_paths  # noqa: E402
+from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     record_path,
     record_paths,
@@ -120,7 +119,6 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Require a review (review: pending) before this item can complete.",
     )
-    parser.add_argument("--owner", default="", help="Owner shown in the active.md row.")
     parser.add_argument(
         "--autonomous",
         action="store_true",
@@ -246,15 +244,9 @@ def main() -> int:
         paths = v4_lifecycle_paths()
         planned_root = paths.planned_cards
         current_root = paths.current_cards
-        index_relative = paths.planned_index
-        active_relative = paths.active_index
-        review_relative = paths.review_index
     else:
         planned_root = Path("future", "backlog", "items").as_posix()
         current_root = Path("present", "work", "items").as_posix()
-        index_relative = Path("future", "backlog", "index.md").as_posix()
-        active_relative = Path("present", "work", "active.md").as_posix()
-        review_relative = Path("present", "work", "review.md").as_posix()
 
     source_path = record_path(stage_root / planned_root, args.item)
     if not source_path.is_file():
@@ -440,66 +432,9 @@ def main() -> int:
             build_frontmatter(child_fields) + "\n" + child_body,
         )
 
-    moved_ids = {
-        item_id
-        for record_fields, _content in started_records.values()
-        if isinstance((item_id := record_fields.get("id")), str) and item_id
-    }
     source_unit.rename(target_unit)
     for relative, (_record_fields, content) in started_records.items():
         (target_unit / relative).write_text(content, encoding="utf-8")
-
-    active_path = stage_root / active_relative
-    active_text = active_path.read_text(encoding="utf-8") if active_path.exists() else ""
-    review_path = stage_root / review_relative
-    review_text = review_path.read_text(encoding="utf-8") if review_path.exists() else ""
-    for relative, (record_fields, _content) in started_records.items():
-        record_status = (record_fields.get("status") or "").strip().lower()
-        if record_status == "rejected":
-            record_id = (record_fields.get("id") or "").strip()
-            record_link = relative_record_link(
-                review_relative,
-                (target_unit / relative).relative_to(stage_root).as_posix(),
-            )
-            if not re.search(rf"\({re.escape(record_link)}\)", review_text):
-                row = (
-                    f"| {record_id} | {record_fields.get('verification', '')} | "
-                    f"{record_fields.get('retrospective', '')} | "
-                    f"{record_fields.get('promotion', '')} | "
-                    f"[{record_link}]({record_link}) |"
-                )
-                review_text = review_text.rstrip("\n") + "\n" + row + "\n"
-            continue
-        record_id = (record_fields.get("id") or "").strip()
-        record_kind = (record_fields.get("kind") or "").strip()
-        record_venue = (record_fields.get("venue") or "").strip()
-        record_title = (record_fields.get("title") or "").strip()[:60]
-        record_link = relative_record_link(
-            active_relative, (target_unit / relative).relative_to(stage_root).as_posix()
-        )
-        if re.search(rf"\({re.escape(record_link)}\)", active_text):
-            continue
-        row = (
-            f"| {record_id} | {record_kind} | {record_venue} | {record_title} | active | "
-            f"{args.owner or record_venue} | [{record_link}]({record_link}) |"
-        )
-        active_text = active_text.rstrip("\n") + "\n" + row + "\n"
-    active_path.write_text(active_text, encoding="utf-8")
-    review_path.write_text(review_text, encoding="utf-8")
-
-    index_path = stage_root / index_relative
-    if index_path.exists():
-        lines = index_path.read_text(encoding="utf-8").splitlines()
-        kept = [
-            line
-            for line in lines
-            if not (
-                line.lstrip().startswith("|")
-                and any(line.lstrip().startswith(f"| {item_id} |") for item_id in moved_ids)
-            )
-        ]
-        if len(kept) != len(lines):
-            index_path.write_text("\n".join(kept) + "\n", encoding="utf-8")
 
     print(f"{args.item}: started (moved to {current_root}, status active)")
     return 0

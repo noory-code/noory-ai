@@ -10,12 +10,6 @@ CLI = Path(__file__).resolve().parents[2] / "skills" / "stage-work" / "register_
 SKILL = CLI.parent / "SKILL.md"
 START_CLI = Path(__file__).resolve().parents[1] / "start_work.py"
 
-ACTIVE = (
-    "# Active Work\n\n"
-    "| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-)
-
 BACKLOG_WITH_TRAILING_SECTION = (
     "# Backlog Index\n\n"
     "## Current backlog\n\n"
@@ -98,7 +92,6 @@ class RegisterWorkTest(unittest.TestCase):
         (root / ".stage/work/current").mkdir(parents=True)
         (root / ".stage/work/planned").mkdir(parents=True)
         (root / ".stage/official/work/archive/items").mkdir(parents=True)
-        (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
         (root / ".stage/settings.json").write_text(
             '{"schema_version": 5}\n', encoding="utf-8"
         )
@@ -182,10 +175,8 @@ class RegisterWorkTest(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("venue derived from venue_routing: design -> claude", result.stdout)
             item = story_path(root, "current", "W-00000001").read_text(encoding="utf-8")
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
 
         self.assertIn("venue: claude", item)
-        self.assertIn("| claude |", active)
 
     def test_unrouted_kind_keeps_empty_venue(self):
         tmp, root = self.make()
@@ -304,7 +295,7 @@ class RegisterWorkTest(unittest.TestCase):
         self.assertNotIn("derived", result.stdout)
         self.assertNotIn("policy exception", result.stdout)
 
-    def test_auto_id_and_link_row(self):
+    def test_auto_id_writes_only_the_card(self):
         tmp, root = self.make()
         with tmp:
             proc = run(root, "--title", "Do a thing", "--kind", "feature", "--scope", "stage/x", "--venue", "claude")
@@ -314,11 +305,8 @@ class RegisterWorkTest(unittest.TestCase):
             body = item.read_text(encoding="utf-8")
             self.assertIn("id: W-00000001", body)
             self.assertIn("kind: feature", body)
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
-            self.assertIn(
-                "[current/W-00000001/_story.md](current/W-00000001/_story.md)",
-                active,
-            )
+            # The active view is derived from card status (DE-00000091).
+            self.assertFalse((root / ".stage/work/active.md").exists())
 
     def commit_card_on_other_branch(self, root: Path, card_id: str, ref: str) -> None:
         def git(*args: str) -> None:
@@ -410,7 +398,7 @@ class RegisterWorkTest(unittest.TestCase):
 
         self.assertEqual(0, first.returncode, first.stderr)
         self.assertEqual(0, again.returncode, again.stderr)
-        self.assertIn("already exists; index reconciled", again.stdout)
+        self.assertIn("already exists", again.stdout)
 
     def test_top_level_action_is_refused_with_story_first_guidance(self):
         tmp, root = self.make()
@@ -883,73 +871,25 @@ class RegisterWorkTest(unittest.TestCase):
             run(root, "--title", "A", "--kind", "chore", "--scope", "x")
             self.assertTrue(story_path(root, "current", "W-00000006").exists())
 
-    def test_reruns_reconcile_index_not_duplicate(self):
+    def test_rerun_keeps_the_card_and_writes_no_list(self):
         tmp, root = self.make()
         with tmp:
             run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
-            # Drop the row, then a re-run with same id must re-add exactly one.
-            (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
-            proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
+            card = story_path(root, "current", "W-00000001")
+            card.write_text(card.read_text(encoding="utf-8") + "\nAuthored.\n", encoding="utf-8")
+            proc = run(root, "--title", "B", "--kind", "chore", "--scope", "x", "--id", "W-00000001")
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            active = (root / ".stage/work/active.md").read_text(encoding="utf-8")
-            self.assertEqual(active.count("[current/W-00000001/_story.md]"), 1)
+            body = card.read_text(encoding="utf-8")
+            listed = (root / ".stage/work/active.md").exists()
 
-    def test_active_row_is_inserted_before_trailing_sections(self):
+        self.assertIn("already exists", proc.stdout)
+        self.assertIn("Authored.", body)
+        self.assertFalse(listed)
+
+    def test_backlog_capture_leaves_a_stale_index_file_untouched(self):
         tmp, root = self.make()
         with tmp:
-            active_path = root / ".stage/work/active.md"
-            active_path.write_text(
-                ACTIVE + "\n## Status values\n\n- `active`: work in progress.\n",
-                encoding="utf-8",
-            )
-
-            proc = run(root, "--title", "A", "--kind", "chore", "--scope", "x")
-            self.assertEqual(proc.returncode, 0, proc.stderr)
-            active = active_path.read_text(encoding="utf-8")
-
-        self.assertLess(active.index("| W-00000001 |"), active.index("## Status values"))
-
-    def test_backlog_row_is_inserted_after_empty_table_header(self):
-        tmp, root = self.make()
-        with tmp:
-            backlog = root / ".stage/work/planned"
-            backlog.mkdir(parents=True, exist_ok=True)
-            empty_index = BACKLOG_WITH_TRAILING_SECTION.replace(
-                "| W-00000001 | Existing | chore | captured | low |  | "
-                "[W-00000001.md](W-00000001.md) |\n",
-                "",
-            )
-            index_path = backlog / "index.md"
-            index_path.write_text(empty_index, encoding="utf-8")
-
-            proc = run(
-                root,
-                "--backlog",
-                "--title",
-                "First work",
-                "--kind",
-                "fix",
-                "--scope",
-                "",
-            )
-            self.assertEqual(proc.returncode, 0, proc.stderr)
-            index = index_path.read_text(encoding="utf-8")
-
-        separator = index.index("|---|---|---|---|---|---|---|")
-        new_row = index.index("| W-00000001 | First work |")
-        trailing_section = index.index("## Status values")
-        self.assertLess(separator, new_row)
-        self.assertLess(new_row, trailing_section)
-
-    def test_backlog_row_is_inserted_before_trailing_sections(self):
-        tmp, root = self.make()
-        with tmp:
-            backlog = root / ".stage/work/planned"
-            backlog.mkdir(parents=True, exist_ok=True)
-            (backlog / "W-00000001.md").write_text(
-                "---\nid: W-00000001\n---\n", encoding="utf-8"
-            )
-            index_path = backlog / "index.md"
+            index_path = root / ".stage/work/planned/index.md"
             index_path.write_text(BACKLOG_WITH_TRAILING_SECTION, encoding="utf-8")
 
             proc = run(
@@ -965,11 +905,7 @@ class RegisterWorkTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             index = index_path.read_text(encoding="utf-8")
 
-        existing_row = index.index("| W-00000001 | Existing |")
-        new_row = index.index("| W-00000002 | New work |")
-        trailing_section = index.index("## Status values")
-        self.assertLess(existing_row, new_row)
-        self.assertLess(new_row, trailing_section)
+        self.assertEqual(BACKLOG_WITH_TRAILING_SECTION, index)
 
     def test_repeated_scope_keeps_every_path(self):
         tmp, root = self.make()

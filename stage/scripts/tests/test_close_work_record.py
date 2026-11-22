@@ -40,16 +40,6 @@ Hand-written note.
 
 See R.
 """
-ACTIVE = (
-    "# Active Work\n\n| Work | Kind | Venue | Purpose | Status | Owner | Item |\n"
-    "|---|---|---|---|---|---|---|\n"
-    "| W-00000001 | chore | codex | x | active | Claude | "
-    "[current/W-00000001/_story.md](current/W-00000001/_story.md) |\n"
-)
-REVIEW = (
-    "# Review Candidates\n\n| Artifact | Verification | Retrospective | Promotion | Item |\n"
-    "|---|---|---|---|---|\n"
-)
 
 
 def reviewer_command(verdicts: list[str]) -> str:
@@ -97,8 +87,6 @@ class CloseRecordTest(unittest.TestCase):
         (stage / "work/retrospectives/R-00000001.md").write_text(
             "---\nid: R-00000001\nwork_item: W-00000001\n---\n", encoding="utf-8"
         )
-        (stage / "work/active.md").write_text(ACTIVE, encoding="utf-8")
-        (stage / "work/review.md").write_text(REVIEW, encoding="utf-8")
         settings: dict[str, object] = {"schema_version": 5}
         if review_command is not None:
             settings["review"] = {

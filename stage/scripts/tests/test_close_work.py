@@ -43,12 +43,6 @@ See R.
 ## Promotion decision
 """
 
-ACTIVE = (
-    "# Active Work\n\n| Work | Kind | Venue | Purpose | Status | Owner | Item |\n|---|---|---|---|---|---|---|\n"
-    "| W-00000001 | chore | claude | x | active | Claude | [current/W-00000001/_story.md](current/W-00000001/_story.md) |\n"
-)
-REVIEW = "# Review Candidates\n\n| Artifact | Verification | Retrospective | Promotion | Item |\n|---|---|---|---|---|\n"
-
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -143,8 +137,6 @@ class CloseWorkTest(unittest.TestCase):
         )
         if with_ref_file and ref:
             (root / ".stage/work/retrospectives" / f"{ref}.md").write_text("---\nid: R\n---\n", encoding="utf-8")
-        (root / ".stage/work/active.md").write_text(ACTIVE, encoding="utf-8")
-        (root / ".stage/work/review.md").write_text(REVIEW, encoding="utf-8")
         (root / ".stage/settings.json").write_text('{"schema_version": 5}\n', encoding="utf-8")
         return tmp, root
 
@@ -516,8 +508,9 @@ class CloseWorkTest(unittest.TestCase):
             self.assertIn("status: completed", item)
             self.assertIn("verification: passed", item)
             self.assertIn("print('ok')", item)  # evidence embedded
-            self.assertNotIn("W-00000001", (root / ".stage/work/active.md").read_text(encoding="utf-8"))
-            self.assertIn("[current/W-00000001/_story.md]", (root / ".stage/work/review.md").read_text(encoding="utf-8"))
+            # The review view is derived from the card's status (DE-00000091).
+            self.assertFalse((root / ".stage/work/active.md").exists())
+            self.assertFalse((root / ".stage/work/review.md").exists())
 
     def test_missing_lifecycle_field_fails_without_closing(self):
         tmp, root = self.make()
