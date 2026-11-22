@@ -2,14 +2,21 @@
 id: W-00000385
 title: 메인 세션이 서브세션에 일과 번호 묶음을 나눠 주는 방법을 설계한다
 kind: design
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 6
 autonomous: false
 acceptance: []
-review: not_required
-scope: .stage/decisions
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000385
+promotion: deferred
+review: passed
+scope: .stage/decisions,.stage/work
+promotes:
+decision_refs: DE-00000094
 ---
 
 # W-00000385 메인 세션이 서브세션에 일과 번호 묶음을 나눠 주는 방법을 설계한다
@@ -58,3 +65,25 @@ scope: .stage/decisions
 - 고른 방법을 구현하는 카드가 계획된 카드로 등록되어 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+### Executor report at close — 2026-11-22
+
+```
+What changed: Added DE-00000094 (sub-sessions only build; the main session starts cards, hands out record-number blocks, refuses cards already active or archived on another branch, receives a fixed report, and closes and merges), linked it from W-00000385, refreshed the decision index, and registered planned implementation cards W-00000387 (start_work refuses a card active or archived on another fetched branch) and W-00000388 (handoff procedure, report format, main-session close, and number blocks).
+Why: The user chose the recommended option on 2026-11-22 after comparing it with letting sub-sessions close their own cards; the 2026-11-21 run of three sub-sessions relied on hand-written prompts for numbering, reporting, merge order, and closing.
+Decisions made: Split implementation into two cards because the start_work check is small and useful on its own while the procedure and number blocks need design of where the blocks are recorded; left the exact place where number blocks are recorded to W-00000388, requiring only that other sessions count them after fetch.
+Work not done: None.
+```
+
+## Verification
+
+- 환경은 `cloud` 다. 닫기 리뷰는 같은 모델의 리뷰이고 교차 venue 리뷰가 아니다.
+- 성공 기준 1: 사용자가 2026-11-22 에 "서브세션은 만들기만, 닫기는 메인 세션" 안을 골랐다("추천대로 갑시다"). DE-00000094 에 있다.
+- 성공 기준 2: 구현 카드 W-00000387(다른 브랜치의 카드 검사)과 W-00000388(절차와 번호 묶음)이 계획된 카드로 있다.
+
+- Checks at close 2026-11-22: 1 passed — `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-22 by claude_review_companion: approved (1 PASS, 2 PASS)
