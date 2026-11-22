@@ -16,6 +16,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -232,6 +234,66 @@ def fill_missing_tier(
     return fields
 
 
+def git_lines(project_root: Path, *args: str) -> list[str] | None:
+    """Run one git command; return its NUL- or newline-separated output, or None on failure."""
+
+    try:
+        proc = subprocess.run(
+            ["git", *args], cwd=str(project_root), capture_output=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if proc.returncode != 0:
+        return None
+    text = os.fsdecode(proc.stdout)
+    separator = "\0" if "\0" in text else "\n"
+    return [line for line in text.split(separator) if line]
+
+
+def started_on_other_branches(
+    project_root: Path, item_id: str, roots: dict[str, str]
+) -> dict[str, str]:
+    """Name each fetched branch that already started or archived this card.
+
+    Two sessions that never fetched each other started the same card (W-00000367):
+    one on a branch where the other had already closed and archived it. Only
+    branches HEAD has not merged are read; a merged branch's state is already in
+    this checkout, so a card it started and this checkout planned again stays
+    startable. `roots` maps a card location under the project root (for example
+    `.stage/work/current`) to the state reported for it. This reads only refs
+    already fetched; it never touches the network.
+    """
+
+    refs = git_lines(
+        project_root,
+        "for-each-ref",
+        "--no-merged=HEAD",
+        "--format=%(refname:short)",
+        "refs/heads",
+        "refs/remotes",
+    )
+    if not refs:
+        return {}
+    found: dict[str, str] = {}
+    for ref in refs:
+        if ref.endswith("/HEAD"):
+            continue
+        paths = git_lines(
+            project_root, "ls-tree", "-r", "-z", "--name-only", ref, "--", *roots
+        )
+        for path in paths or ():
+            parts = Path(path).parts
+            if item_id in parts or Path(path).stem == item_id:
+                state = next(
+                    (label for root, label in roots.items() if path.startswith(root + "/")),
+                    "",
+                )
+                if state:
+                    found[ref] = state
+                    break
+    return found
+
+
 def main() -> int:
     args = parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
@@ -244,9 +306,11 @@ def main() -> int:
         paths = v4_lifecycle_paths()
         planned_root = paths.planned_cards
         current_root = paths.current_cards
+        archive_root = paths.archive_cards
     else:
         planned_root = Path("future", "backlog", "items").as_posix()
         current_root = Path("present", "work", "items").as_posix()
+        archive_root = Path("past", "work", "archive", "items").as_posix()
 
     source_path = record_path(stage_root / planned_root, args.item)
     if not source_path.is_file():
@@ -275,6 +339,22 @@ def main() -> int:
         target_path = target_unit
     if target_unit.exists():
         print(f"{args.item}: already exists in {current_root}", file=sys.stderr)
+        return 1
+    other_branches = started_on_other_branches(
+        project_root,
+        args.item,
+        {
+            (Path(".stage") / current_root).as_posix(): "started",
+            (Path(".stage") / archive_root).as_posix(): "archived",
+        },
+    )
+    if other_branches:
+        detail = ", ".join(f"{ref} ({state})" for ref, state in sorted(other_branches.items()))
+        print(
+            f"refusing: {args.item} is already started on another branch: {detail}. "
+            "Merge that branch, or delete it if the work was abandoned, before starting here.",
+            file=sys.stderr,
+        )
         return 1
     if not args.scope.strip() or args.scope.strip() == ".":
         print(f"{args.item}: --scope must declare the paths this work owns", file=sys.stderr)
