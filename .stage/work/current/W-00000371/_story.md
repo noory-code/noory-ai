@@ -15,7 +15,7 @@ promotion: pending
 review: pending
 scope: .stage/decisions,.stage/work,stage/operations/retrospective.md,stage/templates
 promotes:
-decision_refs:
+decision_refs: DE-00000093
 ---
 
 # W-00000371 회고에 남길 칸을 정한다
