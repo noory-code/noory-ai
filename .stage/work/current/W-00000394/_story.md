@@ -2,14 +2,20 @@
 id: W-00000394
 title: 한국어 Windows 에서 close_work 시험과 검사 출력이 깨지지 않게 한다
 kind: fix
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000005
-status: captured
-priority: 4
 autonomous: false
 acceptance: []
-review: not_required
-scope: stage/hooks/stage_process.py,stage/skills/stage-retrospective/close_work.py,stage/scripts/tests/test_close_work.py,stage/scripts/tests/test_stage_process.py,stage/CHANGELOG.md,.stage/official/work/archive/items/W-00000381/_story.md,.stage/official/work/archive/items/W-00000391/_story.md,.stage/official/work/archive/items/W-00000393/_story.md
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
+scope: stage/hooks/stage_process.py,stage/skills/stage-retrospective/close_work.py,stage/scripts/tests/test_close_work.py,stage/hooks/tests/test_stage_process.py,stage/scripts/tests/test_stage_process.py,stage/CHANGELOG.md,.stage/official/work/archive/items/W-00000381/_story.md,.stage/official/work/archive/items/W-00000391/_story.md,.stage/official/work/archive/items/W-00000393/_story.md
+promotes:
+decision_refs:
 ---
 
 # W-00000394 한국어 Windows 에서 close_work 시험과 검사 출력이 깨지지 않게 한다
@@ -42,3 +48,9 @@ scope: stage/hooks/stage_process.py,stage/skills/stage-retrospective/close_work.
 - W-00000381, W-00000391, W-00000393 의 Verification 에 2026-11-22 한국어 Windows 실행 결과가 적혀 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
