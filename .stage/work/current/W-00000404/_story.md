@@ -50,10 +50,7 @@ decision_refs:
 
 ## Next action
 
-남은 두 질문의 답을 받고 닫는다. 세 번째 성공 기준은 두 번째 시험에서 관찰했다.
-
-- Waiting on user: 검증 세션의 판정이 `close_work.py` 의 닫기 리뷰를 대체하는가, 둘 다 두는가? (추천: 둘 다 두고 W-00000401 에서 정한다)
-- Waiting on user: 세션 태그 `stage-project:<repository>` 와 `stage-orchestrator` 를 새 규약으로 써도 되는가?
+닫고 PR #107 을 머지한다.
 
 ## Related truth
 
@@ -64,5 +61,11 @@ decision_refs:
 - 2026-11-22 작업 세션이 29e2cf9 로 A–K 를 고쳤다(`started_cards.py` 추가). 메인 세션에서 scripts 907, hooks 467 통과.
 - 2026-11-22 작업 세션이 159f03c 로 남은 여덟 가지를 고쳤다. 메인 세션에서 scripts 908, hooks 467 통과, PR #107 의 CI 30개 통과.
 - 2026-11-22 사용자가 지휘자 교체 규칙을 승인했다("네 이대로 가죠"): 새 지휘자는 사용자가 지명하고, 이전 세션이 답이 없으면 사용자 확인 뒤 새 세션이 그 태그를 뗀다.
+- 2026-11-22 사용자가 세션 태그 `stage-project:<owner>/<repository>` 와 `stage-orchestrator` 를 승인했다("네 그대로 쓰죠").
+- 2026-11-22 사용자가 검증 세션의 판정과 닫기 리뷰를 둘 다 두고, 하나로 합칠지는 W-00000401 에서 정하기로 했다("네 추천대로 가죠"). 그때까지 검증 세션은 에픽에만 띄우고 스토리는 닫기 리뷰만 받는다.
+- Follow-up candidate: `close_work.py` 가 검증 세션의 판정을 받아들이게 한다 (W-00000401 에서 다룬다).
+- Follow-up candidate: 토론 세션과 계획 세션의 브리핑을 생성한다.
+- Follow-up candidate: 에픽을 닫는 길(스토리별 cherry-pick)을 실제 에픽으로 해 본다.
+- Follow-up candidate: 몇 번 쓴 뒤 stage-orchestrate 스킬(235줄)에서 줄일 수 있는 지시를 찾는다.
 
 ## Verification
