@@ -24,8 +24,6 @@
     current card, so `### Current work hierarchy` no longer repeats a card with no parent and no
     child, and names a card inside a tree by id and status only. With one flat card the section
     is gone.
-## 0.68.0 — 2026-11-23
-
 - Make the text a session starts with an index derived from the records, and bound it
   (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
   rules every time; it named no decision, and a cloud session received none of it.
@@ -58,7 +56,6 @@
     retrospectives are newer than the list), that it writes only
     `.stage/state/rule-candidates.md`, and that it proposes promotions and makes none. The
     session index shows the list's candidates and says when a consolidation is due.
-
 - Make the close reviewer judge by running, and keep how it judged on the card (W-00000408,
   DE-00000101). A reviewer could approve from the executor's account alone: the Claude stand-in
   could run only `python3 -m unittest`, and whether anything was run was buried in a reason
@@ -97,6 +94,9 @@
   `operations/review.md` defines each count, and `operations/cloud-execution.md` tells the main
   session to commit a rejected review line and keep the work log between attempts so the counts
   survive a cloud close.
+
+## 0.68.0 — 2026-11-23
+
 - Close the gaps the first full conducting run filled by hand (W-00000406, O-00000061).
   `started_cards.py` now lists every open observation and, newest first, the sessions whose
   commits changed a card record, so a new orchestrator finds follow-up candidates and the earlier
