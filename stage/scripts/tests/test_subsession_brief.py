@@ -252,7 +252,7 @@ class SubsessionBriefTest(unittest.TestCase):
                 self.assertEqual(0, proc.returncode, proc.stderr)
                 head, index = proc.stdout.split("\n## Session index\n", 1)
                 self.assertIn("- DE-00000007 Choice", index)
-                self.assertIn("W-00000002 Build it [active]", index)
+                self.assertIn("| W-00000002 | Build it |", index)
                 # The same function the hook calls, so the two cannot drift apart.
                 self.assertTrue(
                     index.rstrip("\n").endswith(stage_context.session_index(self.root)), index

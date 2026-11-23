@@ -19,7 +19,6 @@ from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_record_paths import (  # noqa: E402
     hierarchy_parent_record_path,
     record_path,
-    record_paths,
     work_record_scale,
 )
 from stage_paths import (  # noqa: E402
@@ -29,10 +28,10 @@ from stage_paths import (  # noqa: E402
 )
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
 import refresh_decision_index  # noqa: E402
+from stage_record_ids import used_numbers  # noqa: E402
 
 
 ESCALATABLE_STATUSES = {"active", "review"}
-DECISION_ID_RE = re.compile(r"^DE-(\d+)(?:-.*)?\.md$")
 SECTION_HEADINGS = (
     "Question",
     "Options",
@@ -84,14 +83,12 @@ def set_or_insert_field(text: str, name: str, value: str, *, after: str) -> str:
 
 
 def next_decision_id(stage_root: Path) -> str:
-    highest = 0
-    for relative in ("decisions/pending", "official/decisions/records"):
-        root = stage_root / relative
-        for path in record_paths(root, pattern="DE-*.md") if root.exists() else ():
-            match = DECISION_ID_RE.fullmatch(path.name)
-            if match:
-                highest = max(highest, int(match.group(1)))
-    return f"DE-{highest + 1:08d}"
+    """The next free decision id, counted as every other id picker counts (`used_numbers`).
+
+    Escalation runs inside a driver round, so it reserves nothing on the remote.
+    """
+
+    return f"DE-{max(used_numbers(stage_root.parent, 'DE'), default=0) + 1:08d}"
 
 
 def replace_section(text: str, heading: str, body: str) -> str:

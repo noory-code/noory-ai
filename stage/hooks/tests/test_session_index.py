@@ -110,7 +110,7 @@ class SessionContextLimitTest(SessionIndexFixture):
         context = stage_context.session_context(self.root)
 
         self.assertLessEqual(len(context), LIMIT)
-        self.assertIn("W-00000900 The card in progress", context)
+        self.assertIn("| W-00000900 | The card in progress |", context)
         self.assertIn("### Active work", context)
         listed = [line.split()[1] for line in context.splitlines() if line.startswith("- DE-")]
         self.assertTrue(listed)

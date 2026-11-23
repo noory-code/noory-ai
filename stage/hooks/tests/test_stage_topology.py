@@ -219,20 +219,17 @@ class StageTopologyTests(unittest.TestCase):
         policy, number = stage_topology.parse_artifact_id("W-123")
         self.assertEqual("W", policy.prefix)
         self.assertEqual(123, number)
-        # Each artifact type counts its own sequence: a question ignores sibling
-        # observations, and a milestone ignores sibling themes (DE-00000012).
+        # Each artifact type counts its own sequence (DE-00000012): the only prefixes that
+        # share a counter are a decision's two. Numbers are picked from
+        # `scripts/stage_record_ids.used_numbers`, which reads these families.
+        families: dict[str, set[str]] = {}
+        for prefix, other in stage_topology.ARTIFACT_PREFIXES.items():
+            families.setdefault(other.counter_family, set()).add(prefix)
         self.assertEqual(
-            "Q-00000004",
-            stage_topology.next_artifact_id("Q", ["O-00000009", "Q-003", "W-99999999"]),
-        )
-        self.assertEqual(
-            "M-00000003",
-            stage_topology.next_artifact_id("M", ["TH-00000007", "M-00000002"]),
+            [{"D", "DE"}], [members for members in families.values() if len(members) > 1]
         )
         with self.assertRaises(ValueError):
             stage_topology.parse_artifact_id("W-12")
-        with self.assertRaises(ValueError):
-            stage_topology.next_artifact_id("D", [])
 
     def test_decision_references_keep_de_identity_and_resolve_legacy_d(self):
         current = stage_topology.resolve_artifact_reference("DE-00000009")

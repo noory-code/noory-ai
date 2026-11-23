@@ -241,5 +241,31 @@ class MigrateStageTest(unittest.TestCase):
         self.assertEqual(before, after)
 
 
+class BacklogConversionIdTest(unittest.TestCase):
+    def test_a_converted_backlog_item_takes_the_number_after_every_v3_card(self):
+        with tempfile.TemporaryDirectory() as name:
+            stage_root = Path(name) / ".stage"
+            for relative in (
+                "present/work/items/W-012.md",
+                "past/work/archive/items/W-0030.md",
+                "future/backlog/items/W-00000007.md",
+            ):
+                path = stage_root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("# A v3 card without an id line\n", encoding="utf-8")
+            backlog = stage_root / "future/backlog/items/B-0001.md"
+            backlog.write_text(
+                "---\nid: B-0001\nstatus: captured\n---\n\n# B-0001 Later\n", encoding="utf-8"
+            )
+
+            self.assertEqual(31, migrate_stage.next_work_number(stage_root))
+            with redirect_stdout(io.StringIO()):
+                migrate_stage.migrate_backlog(stage_root, False)
+            converted = stage_root / "future/backlog/items/W-00000031.md"
+            text = converted.read_text(encoding="utf-8") if converted.is_file() else ""
+
+        self.assertIn("id: W-00000031", text)
+
+
 if __name__ == "__main__":
     unittest.main()

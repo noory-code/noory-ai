@@ -102,6 +102,51 @@ class DerivedWorkViewTest(unittest.TestCase):
         self.assertNotIn("### Active work", context)
         self.assertNotIn("### Review candidates", context)
 
+    def test_a_card_without_parent_or_child_is_carried_once(self):
+        tmp, root, stage_root = self.make_stage()
+        with tmp:
+            write_card(stage_root, "W-00000001", "Running card", "active")
+            write_card(stage_root, "W-00000003", "Closed card", "completed")
+            context = stage_context.session_context(root)
+
+        self.assertEqual(context.count("Running card"), 1)
+        self.assertEqual(context.count("Closed card"), 1)
+        self.assertEqual(context.count("W-00000001 "), 1)
+        self.assertNotIn("### Current work hierarchy", context)
+
+    def test_a_tree_names_its_cards_by_id_and_the_tables_carry_the_titles(self):
+        tmp, root, stage_root = self.make_stage()
+        with tmp:
+            epic = stage_root / "work" / "current" / "W-00000001"
+            (epic / "W-00000002").mkdir(parents=True)
+            for path, item_id, title in (
+                (epic / "_epic.md", "W-00000001", "The epic"),
+                (epic / "W-00000002" / "_story.md", "W-00000002", "The story"),
+            ):
+                path.write_text(
+                    f"---\nid: {item_id}\ntitle: {title}\nkind: development\n"
+                    "venue: claude\nstatus: active\nverification: pending\n"
+                    "retrospective: pending\npromotion: pending\n---\n",
+                    encoding="utf-8",
+                )
+            write_card(stage_root, "W-00000005", "Alone", "active")
+            context = stage_context.session_context(root)
+
+        hierarchy = section(context, "Current work hierarchy")
+        self.assertIn("- W-00000001 [active]\n  - W-00000002 [active]", hierarchy)
+        self.assertNotIn("W-00000005", hierarchy)
+        for title in ("The epic", "The story", "Alone"):
+            self.assertEqual(context.count(title), 1, title)
+        self.assertIn("The story", section(context, "Active work"))
+
+    def test_the_tree_alone_still_names_every_card_with_its_title(self):
+        tmp, _root, stage_root = self.make_stage()
+        with tmp:
+            write_card(stage_root, "W-00000001", "Running card", "active")
+            hierarchy = stage_context.work_hierarchy_view(stage_root)
+
+        self.assertIn("- W-00000001 Running card [active]", hierarchy)
+
     def test_a_pipe_in_a_title_does_not_break_the_table(self):
         tmp, _root, stage_root = self.make_stage()
         with tmp:

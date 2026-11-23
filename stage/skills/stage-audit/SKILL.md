@@ -113,3 +113,4 @@ These checks run only when `.stage/settings.json` declares `model_tiers` or a ca
 | `TIER004` | A subagent that ran for current cards used another model or effort than their tier gives; a stated over-tier reason is quoted (warning). |
 | `TIER005` | A model-usage record line could not be read and was skipped (warning). |
 | `TIER006` | `model_fallbacks` or `usage_limit_patterns` is invalid (error). Checked even without `model_tiers` (`docs/SCHEMA_V5.md` → `Model fallbacks on usage limits`). |
+| `TIER007` | `model_fallbacks` names a venue, and `executors.<venue>` or `review.reviewers.<venue>` does not contain `STAGE_MODEL`, so that command cannot switch model (warning). Checked even without `model_tiers`. |

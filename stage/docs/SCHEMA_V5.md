@@ -147,7 +147,7 @@ costliest of their tiers.
     that file is unreadable.
   The audit joins `agent_finished` with `agent_requested` on `agent_id` to find a stated reason.
 
-`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER006`,
+`audit_stage.py` checks tiers through `scripts/audit_model_tier.py` (codes `TIER001`–`TIER007`,
 listed in the `stage-audit` skill). Invalid tier settings and a current card naming an undeclared
 tier are errors. For current cards only, it warns when the latest `Model tier (JSON)` line in the
 card's work log differs from what the card's tier gives now or shows a command that does not read
@@ -194,7 +194,9 @@ The rule applies to the executor and the independent reviewer, in the supervised
   group, in list order, that holds none of the models that already hit a limit in this turn. The
   tier's model outside every group spends no group, so the list then starts from its first group.
 - A command switches model only by reading `$STAGE_MODEL`. When the command text does not name
-  `STAGE_MODEL`, its first usage limit ends the turn as exhausted.
+  `STAGE_MODEL`, its first usage limit ends the turn as exhausted. The audit warns about it before
+  a run (`TIER007`): for each venue in `model_fallbacks`, when `executors.<venue>` or
+  `review.reviewers.<venue>` is set and does not contain `STAGE_MODEL`.
 - Reruns stay inside the one turn and do not count as attempts. The executor's partial output stays
   in the working tree for the next model; a reviewer's partial verdict file is removed first.
   The number of reruns is bounded by the number of groups.

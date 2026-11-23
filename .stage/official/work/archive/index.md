@@ -337,3 +337,4 @@
 | W-00000405 | completed | [items/W-00000405/_story.md](items/W-00000405/_story.md) | 뺀 장치의 하중을 커밋된 기록으로 잴 수 있게 한다 |
 | W-00000408 | completed | [items/W-00000408/_story.md](items/W-00000408/_story.md) | 닫기 리뷰어가 실행해서 판정하고 판정 방법이 카드에 남는다 |
 | W-00000409 | completed | [items/W-00000409/_story.md](items/W-00000409/_story.md) | 세션의 맨 위 층이 기록에서 만든 색인을 싣는다 |
+| W-00000410 | completed | [items/W-00000410/_story.md](items/W-00000410/_story.md) | 지난 카드들의 보고에 남은 작은 고침 넷을 넣는다 |

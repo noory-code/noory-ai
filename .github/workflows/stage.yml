@@ -92,3 +92,19 @@ jobs:
           printf '{"hook_event_name":"SessionStart","cwd":"."}' \
             | python hooks/stage_guard.py SessionStart \
             | grep -q "Stage"
+
+  # A card branch that forked before a release can merge its changelog line under the released
+  # heading without a conflict. The check reads each release commit, so it needs the whole
+  # history; it is one job of its own so the test matrix keeps its shallow checkout.
+  # --since names the first release after the last section that already carries such a line.
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Released changelog sections are unchanged
+        run: python stage/scripts/release_plugin.py stage --check-released --since 0.67.0

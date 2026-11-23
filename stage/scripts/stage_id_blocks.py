@@ -18,13 +18,12 @@ from pathlib import Path
 from stage_record_ids import (
     RESERVED_FIELD,
     IdReserver,
-    branch_record_numbers,
     git_output,
     id_line_re,
-    local_record_numbers,
     record_numbers_only,
     record_paths,
     reserved_numbers,
+    used_numbers,
 )
 
 CURRENT_CARDS = Path("work", "current")
@@ -79,11 +78,7 @@ def reserve_block(
 ) -> list[str]:
     """Pick `count` free ids after every used one and hold them on the card."""
 
-    used = local_record_numbers(project_root / ".stage", prefix) | set(
-        branch_record_numbers(project_root, prefix)
-    )
-    if reserver is not None:
-        used |= reserver.remote_numbers(prefix)
+    used = used_numbers(project_root, prefix, reserver)
     number = (max(used) + 1) if used else 1
     block: list[str] = []
     for _ in range(count + 1000):

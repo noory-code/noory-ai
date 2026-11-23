@@ -12,7 +12,6 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 _HOOKS_DIR = str(Path(__file__).resolve().parent)
 if _HOOKS_DIR not in sys.path:
@@ -619,26 +618,6 @@ def parse_artifact_id(artifact_id: str) -> tuple[ArtifactPrefix, int]:
     if match is None:
         raise ValueError(f"invalid Stage artifact id: {artifact_id}")
     return ARTIFACT_PREFIXES[match.group(1)], int(match.group(2))
-
-
-def next_artifact_id(prefix: str, existing_ids: Iterable[str]) -> str:
-    """Mint the next 8-digit id using the prefix's family-local counter."""
-
-    try:
-        policy = ARTIFACT_PREFIXES[prefix]
-    except KeyError as exc:
-        raise ValueError(f"unknown Stage artifact prefix: {prefix}") from exc
-    if not policy.mintable:
-        raise ValueError(f"Stage artifact prefix {prefix} is legacy-resolve-only")
-    values = []
-    for artifact_id in existing_ids:
-        try:
-            candidate, number = parse_artifact_id(artifact_id)
-        except ValueError:
-            continue
-        if candidate.counter_family == policy.counter_family:
-            values.append(number)
-    return f"{prefix}-{max(values, default=0) + 1:08d}"
 
 
 def resolve_artifact_reference(artifact_id: str) -> ArtifactReference:
