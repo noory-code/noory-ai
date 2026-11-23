@@ -272,6 +272,7 @@ class Audit:
         self.audit_retrospective_identities(graph)
         self.audit_orphan_records(graph)
         self.audit_pending_decision_index()
+        self.audit_official_decision_titles()
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_record_archive_indexes(graph)
@@ -892,6 +893,25 @@ class Audit:
             self.error(
                 "DECISION004",
                 "Pending-decision index differs from pending records or their work cards; run "
+                "`python3 stage/scripts/refresh_decision_index.py --project-root .`.",
+                index_path,
+            )
+
+    def audit_official_decision_titles(self) -> None:
+        """The official decision index names each decision by its record's title (DE-00000100)."""
+
+        if self.topology != ACTIVE_TOPOLOGY_V4:
+            return
+        index_path = self.stage_root / refresh_decision_index.OFFICIAL_INDEX_RELATIVE
+        try:
+            existing = index_path.read_bytes().decode("utf-8")
+        except (OSError, UnicodeDecodeError):
+            return
+        if refresh_decision_index.render_official_index(self.stage_root, existing) != existing:
+            self.error(
+                "DECISION005",
+                "Official decision index lacks a title, or carries one that differs from its "
+                "record's heading; run "
                 "`python3 stage/scripts/refresh_decision_index.py --project-root .`.",
                 index_path,
             )

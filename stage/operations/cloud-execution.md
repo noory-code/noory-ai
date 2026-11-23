@@ -51,6 +51,76 @@ with a `not reserved on the remote` line; fetch before registering and push righ
   `git diff --name-only` with the card's `scope`.
 - The shared work log does not exist, so write the `### Executor report` in the
   commit body. Keep each field on one line; the importer also joins wrapped lines.
+- The SessionStart text does not exist either. A session started with
+  `scripts/subsession_brief.py` gets the same index at the end of its brief ("Session index").
+
+## Session index
+
+A session on the device starts with the SessionStart hook's text: Stage's standing rules and an
+index made from the records (DE-00000100). A cloud session has no hook, so
+`subsession_brief.py` ends every brief with that index, built by the same function
+(`hooks/stage_context.py`, `session_index`).
+
+| The index carries | One line is | Read the body at |
+|---|---|---|
+| what is being done now | an active milestone, a current card, an open observation, an open question, a selected planned card | the record the line names |
+| decisions | a decision's id and title, newest first | `.stage/decisions/pending/<id>.md` or `.stage/official/decisions/records/<id>.md` |
+| where rules live | the path of a project instruction file or a `.stage/operations/` file | that file |
+| rule candidates | a candidate from `.stage/state/rule-candidates.md` with how often it was seen | that list, then the retrospectives it cites |
+| how to find a record | where decision bodies and retrospectives are | — |
+
+The index never carries a record's body. A title says the topic and not what was chosen, so open
+the record before relying on it.
+
+```yaml
+limit:
+  hook_text: 10000 characters, the rules and the index together
+  brief: 10000 characters, the brief and the index together
+over_the_limit:
+  never_shortened: what is being done now, and the rules or the brief itself
+  shortened_in_this_order:
+    - decision titles, from the oldest
+    - rule candidates, from the end of the list
+    - the previous session's handoff
+    - the list of project instruction files
+    - the list of `.stage/operations/` files
+  each_shortened_block: keeps one line `…<n> <what> not shown — read <where>`
+  if_still_over: the end of the text is cut and its last line says so
+```
+
+The limit is a first value taken from the size the text had when it was chosen, not from a
+measurement. When decision titles start to be left out, that is the reason to look at the number
+and the order again (DE-00000100, "Follow-up").
+
+## Sessions on the card
+
+A card's `## Sessions` section names each session that worked on it, so a later reader can open
+that session's transcript. The main session writes the line when it records the session's report;
+a session that works alone on the device writes its own.
+
+```markdown
+## Sessions
+
+- session_01AbC… — work — 2026-11-23 — opened from the index: DE-00000094, DE-00000100
+- session_01XyZ… — verify — 2026-11-24 — opened from the index: none
+```
+
+```yaml
+one_line_per_session:
+  - the session id as the platform prints it; `unknown` when the host gives the session none
+  - its role: `work`, `verify`, `orchestrator`, `discussion`, `planning`, or `consolidation`
+  - the date it reported
+  - "opened from the index: <ids>": the records the session says it opened because the session
+    index listed them, copied from its report; `none` when it opened none; `not reported` when
+    the report does not say
+```
+
+The last item is the only record of whether a session used the lines it was given. It is the
+session's own account, not a measurement.
+
+What the line does not give: a transcript the platform no longer keeps, a session that ran on
+another device, and a run by another executor (codex, agy) cannot be read from this id. Keeping
+the raw work log in a committed place is a separate matter and is not decided here.
 
 ## Import the report
 
@@ -118,6 +188,8 @@ main session's start commit, so its diff is exactly the card's change.
    `git fetch origin <sub-session-branch>` and compare `git rev-parse FETCH_HEAD` with the
    reported commit. When they differ, the sub-session pushed after its report: ask it which
    commit to review, and restart this step with its answer.
+   Add the sub-session's line to the card's `## Sessions` ("Sessions on the card") in the same
+   commit that records its report.
 2. Squash it onto the main session's branch as one commit that carries the sub-session's executor
    report: `git merge --squash FETCH_HEAD`, then commit with a message of your own. Its subject
    is `<type>(<scope>): <the card's whole change> (<W-id>)`; the last commit of the sub-session's

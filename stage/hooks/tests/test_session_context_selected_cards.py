@@ -66,19 +66,6 @@ class SelectedPlannedCardViewTest(unittest.TestCase):
         self.assertIn("W-00000002 Selected story", context)
         self.assertNotIn("Captured story", context)
 
-    def test_the_lifecycle_view_counts_folder_cards_as_planned(self):
-        tmp, root = self.make_fixture()
-        with tmp:
-            stage_root = root / ".stage"
-            story = stage_root / "work" / "planned" / "W-00000002" / "_story.md"
-            story.parent.mkdir(parents=True)
-            story.write_text(card("W-00000002", "Captured story", "captured"), encoding="utf-8")
-
-            view = stage_context.derived_lifecycle_view(stage_root)
-
-        self.assertIn("W-00000002", view)
-        self.assertNotIn("planned — none", view)
-
     def test_the_card_template_at_the_planned_root_is_never_listed(self):
         tmp, root = self.make_fixture()
         with tmp:

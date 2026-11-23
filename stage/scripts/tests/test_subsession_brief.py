@@ -240,6 +240,49 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn("- W-00000002 Build it (`active`)", out)
         self.assertIn(f"\n- {self.SESSION_ONLY}\n", out)
 
+    def test_the_brief_ends_with_the_index_the_session_start_hook_gives(self) -> None:
+        self.card()
+        sys.path.insert(0, str(SCRIPTS.parent / "hooks"))
+        import stage_context
+
+        for role_args in ([], ["--role", "verify", "--criterion", "The suite passes"]):
+            with self.subTest(role=role_args):
+                proc = brief(self.root, "W-00000002", "--branch", "claude/w2", *role_args)
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                head, index = proc.stdout.split("\n## Session index\n", 1)
+                self.assertIn("- DE-00000007 Choice", index)
+                self.assertIn("W-00000002 Build it [active]", index)
+                # The same function the hook calls, so the two cannot drift apart.
+                self.assertTrue(
+                    index.rstrip("\n").endswith(stage_context.session_index(self.root)), index
+                )
+                self.assertNotIn("## Stage context", proc.stdout)
+        # The work session reports which lines it used: the only record of the index's use.
+        self.assertIn(
+            "- the ids of the records you opened because the session index below listed them",
+            brief(self.root, "W-00000002").stdout,
+        )
+
+    def test_the_brief_with_its_index_stays_within_the_hook_limit(self) -> None:
+        self.card()
+        for number in range(100, 500):
+            write(
+                self.root / f".stage/official/decisions/records/DE-{number:08d}.md",
+                f"---\nid: DE-{number:08d}\nstatus: promoted\n---\n\n"
+                f"# DE-{number:08d} A decision with a reasonably long title, number {number}\n",
+            )
+
+        proc = brief(self.root, "W-00000002", "--branch", "claude/w2")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertLessEqual(len(proc.stdout), 10_000)
+        self.assertIn("- DE-00000499 ", proc.stdout)
+        self.assertNotIn("- DE-00000100 ", proc.stdout)
+        self.assertIn("older decisions not shown — read", proc.stdout)
+        # The brief's own rules are never what gets shortened.
+        self.assertIn("Then wait, and push no commit until the main session answers", proc.stdout)
+
     def test_an_unknown_role_is_refused(self) -> None:
         self.card()
 

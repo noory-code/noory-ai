@@ -307,7 +307,7 @@ class RoadmapCliTest(RoadmapFixture):
             )
             self.assertNotIn("DE-00000001", decision_index)
             self.assertIn(
-                "| DE-00000001 | decided | M-00000001 | "
+                "| DE-00000001 | Pursue M-00000001 Stable release | decided | M-00000001 | "
                 "[records/DE-00000001.md](records/DE-00000001.md) |",
                 (root / ".stage/official/decisions/index.md").read_text(
                     encoding="utf-8"

@@ -194,7 +194,7 @@ class CloseMilestoneCliTest(ClosureFixture):
                 (root / ".stage/decisions/index.md").read_text(encoding="utf-8"),
             )
             self.assertIn(
-                "| DE-00000002 | decided | M-00000001 |",
+                "| DE-00000002 | Close M-00000001 Stable release | decided | M-00000001 |",
                 (root / ".stage/official/decisions/index.md").read_text(
                     encoding="utf-8"
                 ),

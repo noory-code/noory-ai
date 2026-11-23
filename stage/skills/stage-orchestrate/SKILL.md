@@ -15,6 +15,7 @@ this skill. Every other session receives its role in its first message.
 | Planning | designs what to achieve, never how | a first message you write |
 | Work | builds one top-level card; an epic's stories run in sub-agents inside it | `subsession_brief.py --role work` |
 | Verification | observes the success criteria only a whole session can observe, and changes nothing; it is not the gate on closing | `subsession_brief.py --role verify` |
+| Consolidation | groups the retrospectives' rule candidates into one list and proposes which to promote; edits no retrospective, decision, or rule file | a first message you write ("Start a consolidation session") |
 
 ```yaml
 orchestrator_does:
@@ -133,6 +134,10 @@ Work and verification sessions do not edit a card; you do, on your branch, and c
 on_a_session_report:
   - add to the card's `## Progress`: the date, the session id, the reported commit, and which
     success criteria the report claims
+  - add the session's line to the card's `## Sessions`:
+    `- <session id> — <role> — <date> — opened from the index: <ids the report names | none | not reported>`
+    (`operations/cloud-execution.md`, "Sessions on the card"); add the section above
+    `## Progress` when an older card has none
   - add each follow-up candidate the report names as a `## Progress` line
     `Follow-up candidate: <text>`; register them when the card closes
   - set the card's `## Next action` to the one next step
@@ -254,6 +259,39 @@ on_observation:
     then: ask the user, and relay the answer to the session that needs it
   - if: every named criterion held
     then: close the card; the close review still judges every criterion
+```
+
+## Start a consolidation session
+
+Rule candidates pile up in retrospectives, one card at a time, and nobody sees them together.
+A consolidation session reads them all from a clean context and writes one list
+(DE-00000100). [rule-promotion.md](../stage-retrospective/rule-promotion.md), "Consolidating
+candidates", owns the list's place and format; this section owns when to start the session and
+what its first message must say.
+
+```yaml
+start_one_when:
+  - a milestone is about to be closed: before the closing decision is written
+  - the session index says `A consolidation session is due`: 20 or more retrospectives are newer
+    than the list's `through:` id
+  - the list does not exist yet and the index counts retrospectives that state a candidate
+start_none_when:
+  - a consolidation session of this project is already open
+first_message_must_say:
+  - read `<stage-plugin-root>/skills/stage-retrospective/rule-promotion.md` first
+  - read every retrospective newer than the list's `through:` id, and the list itself; with no
+    list, read every retrospective that has a `## Rule candidate` section
+  - write only `.stage/state/rule-candidates.md`, on its own branch, and push
+  - do not edit a retrospective, a decision record, a rule file, a skill, or a card
+  - do not promote anything: mark a candidate `proposed: promote` and stop there
+  - report the branch, the commit, how many candidates were grouped, and each proposal
+title_and_tags: title `rule candidates consolidation`; the same two tags as a work session
+on_its_report:
+  - merge the list through a card of kind `chore` that you register and close
+  - show the user each `proposed: promote` line with the retrospectives it cites; the user
+    chooses which become rules
+  - for each one the user chooses: register a card that amends the rule file; the consolidation
+    session does not write it
 ```
 
 ## Close and merge

@@ -104,17 +104,40 @@ def set_or_insert_frontmatter_field(
     return inserted
 
 
+def with_title_column(index_text: str) -> str:
+    """Give a three-column work-archive table its fourth header cell, the title.
+
+    An index made before rows carried a title (DE-00000100) keeps its old rows as they
+    are; only the header and the separator gain a cell, so the titles on new rows render.
+    """
+    lines = index_text.split("\n")
+    for position in range(len(lines) - 1):
+        header, separator = lines[position].strip(), lines[position + 1].strip()
+        if not (header.startswith("|") and re.fullmatch(r"\|(?:\s*:?-{3,}:?\s*\|)+", separator)):
+            continue
+        if header.count("|") == 4 and separator.count("|") == 4:
+            title = "제목" if header.split("|")[1].strip() == "작업" else "Title"
+            lines[position] = f"{header} {title} |"
+            lines[position + 1] = f"{separator}---|"
+        break
+    return "\n".join(lines)
+
+
 def append_index_row(
     index_text: str,
     item_id: str,
     final_status: str,
     item_link: str | None = None,
+    title: str = "",
 ) -> str:
+    """Add the archived item's row; the title is the last cell so a reader finds it by topic."""
+
     link = item_link or record_path(Path("items"), item_id).as_posix()
-    row = f"| {item_id} | {final_status} | [{link}]({link}) |"
+    title_cell = " ".join(title.split()).replace("|", "\\|") or "—"
+    row = f"| {item_id} | {final_status} | [{link}]({link}) | {title_cell} |"
     if re.search(rf"\|\s*{re.escape(item_id)}\s*\|", index_text):
         return index_text  # idempotent
-    body = index_text.rstrip("\n")
+    body = with_title_column(index_text).rstrip("\n")
     return f"{body}\n{row}\n"
 
 
@@ -472,6 +495,7 @@ def archive_one(
             item_id,
             root_status,
             archived_link,
+            frontmatter_field(root_text, "title"),
         ),
         encoding="utf-8",
     )

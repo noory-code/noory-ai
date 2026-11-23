@@ -65,6 +65,42 @@ INDEX = (
 )
 
 
+sys.path.insert(0, str(CLI_PATH.parent))
+import archive_work  # noqa: E402
+
+
+class ArchiveIndexRowTest(unittest.TestCase):
+    def test_a_new_row_ends_with_the_title_and_an_old_header_gains_the_column(self):
+        text = archive_work.append_index_row(
+            INDEX + "| W-00000001 | completed | [a](a) |\n",
+            "W-00000002",
+            "rejected",
+            "items/W-00000002/_story.md",
+            "Give the index | a title",
+        )
+
+        self.assertEqual(
+            "# Work Archive\n\n"
+            "| Work | Final status | Item | Title |\n"
+            "|---|---|---|---|\n"
+            "| W-00000001 | completed | [a](a) |\n"
+            "| W-00000002 | rejected | [items/W-00000002/_story.md](items/W-00000002/_story.md) "
+            "| Give the index \\| a title |\n",
+            text,
+        )
+        # A header that already has the column is not widened again.
+        again = archive_work.append_index_row(text, "W-00000003", "completed", "c", "")
+        self.assertIn("| Work | Final status | Item | Title |\n|---|---|---|---|\n", again)
+        self.assertTrue(again.endswith("| W-00000003 | completed | [c](c) | — |\n"))
+
+    def test_a_korean_header_gains_a_korean_title_cell(self):
+        text = archive_work.append_index_row(
+            "| 작업 | Final status | 항목 |\n|---|---|---|\n", "W-00000001", "completed", "a", "제목"
+        )
+
+        self.assertTrue(text.startswith("| 작업 | Final status | 항목 | 제목 |\n|---|---|---|---|\n"))
+
+
 class ArchiveWorkCliTest(unittest.TestCase):
     def make_stage(self, status: str = "completed", retro: str = "completed") -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()

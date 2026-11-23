@@ -718,6 +718,31 @@ class StageAuditTest(unittest.TestCase):
 
         self.assertEqual([], findings)
 
+    def test_official_decision_index_without_a_current_title_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.init_stage(root)
+            record = root / ".stage/official/decisions/records/DE-00000001.md"
+            record.parent.mkdir(parents=True, exist_ok=True)
+            record.write_text(
+                "---\nid: DE-00000001\nstatus: promoted\n---\n\n# DE-00000001 Where it lives\n",
+                encoding="utf-8",
+            )
+            index = root / ".stage/official/decisions/index.md"
+            index.write_text(
+                "# Decisions\n\n| Decision | Title | Status | Owner | Link |\n|---|---|---|---|---|\n"
+                "| DE-00000001 | Something else | promoted | user | "
+                "[records/DE-00000001.md](records/DE-00000001.md) |\n",
+                encoding="utf-8",
+            )
+
+            stale = finding_codes(audit_stage.Audit(root).run())
+            audit_stage.refresh_decision_index.refresh_official_titles(root)
+            current = finding_codes(audit_stage.Audit(root).run())
+
+        self.assertIn("DECISION005", stale)
+        self.assertNotIn("DECISION005", current)
+
     def append_archive_index(self, root: Path, item_id: str, final: str) -> None:
         path = root / ".stage" / "official" / "work" / "archive" / "index.md"
         try:

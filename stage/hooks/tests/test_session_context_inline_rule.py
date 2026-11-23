@@ -35,8 +35,8 @@ class InlineInterpreterRuleContextTest(unittest.TestCase):
 
             context = stage_context.session_context(root)
 
-        # The derived lifecycle view exists only on the current topology branch.
-        self.assertIn("### Lifecycle view (derived, read-only)", context)
+        # The milestone table exists only on the current topology branch.
+        self.assertIn("### Active milestones (decision-derived)", context)
         self.rule_line(context)
 
     def test_legacy_topology_states_the_same_rule(self):
@@ -49,7 +49,7 @@ class InlineInterpreterRuleContextTest(unittest.TestCase):
             current = stage_context.session_context(current_root)
             legacy = stage_context.session_context(legacy_root)
 
-        self.assertNotIn("### Lifecycle view (derived, read-only)", legacy)
+        self.assertNotIn("### Active milestones (decision-derived)", legacy)
         self.assertEqual(self.rule_line(legacy), self.rule_line(current))
 
     def test_rule_names_what_is_refused_and_what_to_use_instead(self):

@@ -16,6 +16,11 @@ its role through its first message instead of a skill:
 This prints the session's whole instruction from the card, so the main session never
 writes the rules into a prompt by hand. Paste stdout as the session's first message.
 
+Either brief ends with the session index a SessionStart hook gives a session on the
+device (DE-00000100): Stage hooks do not run in a cloud session, so the brief is the
+only way that session learns which decisions and rule candidates exist. The index is
+shortened so the whole brief stays within the hook's limit.
+
 Usage:
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
         --main-session session_0123 --branch claude/w1-feature
@@ -39,6 +44,8 @@ from stage_id_blocks import current_card_path  # noqa: E402
 from stage_record_ids import RESERVED_FIELD  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_work import WORK_FINAL_STATUSES, parse_frontmatter, parse_string_list  # noqa: E402
+import stage_context  # noqa: E402
+from stage_memory_index import SESSION_CONTEXT_CHAR_LIMIT  # noqa: E402
 
 ROLES = ("work", "verify")
 LIFECYCLE_RULE = (
@@ -51,6 +58,7 @@ REPORT_ITEMS = (
     "checks run and their results",
     "decisions made",
     "paths changed outside the card's scope, and why",
+    "the ids of the records you opened because the session index below listed them, or `none`",
     "anything that needs the user's confirmation",
     "follow-up work candidates (do not register them)",
 )
@@ -60,6 +68,26 @@ OBSERVATION_ITEMS = (
     "for each criterion one of `held`, `did not hold`, or `could not observe` with the reason",
     "anything that needs the user's confirmation",
 )
+
+
+SESSION_INDEX_INTRO = (
+    "",
+    "## Session index",
+    "",
+    "Stage hooks do not run in this session. This is the index a SessionStart hook gives a",
+    "session on the device, made from the records when this brief was written: one line per",
+    "record, never its content. When a line bears on your work, open the record it names.",
+)
+
+
+def with_session_index(project_root: Path, lines: list[str]) -> str:
+    """The brief followed by the SessionStart index, the whole within the hook's limit."""
+
+    brief = "\n".join(lines) + "\n"
+    intro = "\n".join(SESSION_INDEX_INTRO) + "\n"
+    room = SESSION_CONTEXT_CHAR_LIMIT - len(brief) - len(intro) - 1
+    index = stage_context.session_index(project_root, room) if room > 0 else ""
+    return brief + intro + index + "\n" if index else brief
 
 
 def stage_path(project_root: Path, relative: str) -> str:
@@ -382,7 +410,7 @@ def build_brief(
         lines = verify_brief(project_root, card, fields, main_session, branch, commit, criteria)
     else:
         lines = work_brief(project_root, card, fields, main_session, branch)
-    return "\n".join(lines) + "\n"
+    return with_session_index(project_root, lines)
 
 
 def main() -> int:
