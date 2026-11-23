@@ -33,7 +33,7 @@ class RefreshDecisionIndexTest(unittest.TestCase):
             (
                 f"---\nid: {decision_id}\nwork_item: {item_id}\nstatus: decided\n"
                 "authorizes: venue_exception\n---\n"
-                f"# {decision_id}\n"
+                f"# {decision_id} Title of {decision_id[-1]} | piped\n"
             ),
             encoding="utf-8",
         )
@@ -74,23 +74,111 @@ class RefreshDecisionIndexTest(unittest.TestCase):
         self.assertIn("사람이 쓴 설명이다.", rendered)
         self.assertIn("## 남겨 둘 절\n\n이 내용은 지우지 않는다.", rendered)
         self.assertIn(
-            "| 결정 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |",
+            "| 결정 | 제목 | 결정 상태 | 소유 항목 | 소유 항목 상태 | 링크 |\n|---|---|---|---|---|---|\n",
             rendered,
         )
         self.assertIn(
-            "| DE-00000001 | decided | "
+            "| DE-00000001 | Title of 1 \\| piped | decided | "
             "[W-00000001](../work/current/W-00000001/_story.md) | "
             "active | [pending/DE-00000001.md](pending/DE-00000001.md) |",
             rendered,
         )
         self.assertIn(
-            "| DE-00000002 | decided | "
+            "| DE-00000002 | Title of 2 \\| piped | decided | "
             "[W-00000002](../official/work/archive/items/W-00000002/_story.md) | "
             "archived | [pending/DE-00000002.md](pending/DE-00000002.md) |",
             rendered,
         )
         self.assertNotIn("효력", rendered)
         self.assertLess(rendered.index("DE-00000001"), rendered.index("DE-00000002"))
+
+    def write_official(self, root: Path, decision_id: str, title: str) -> None:
+        path = root / ".stage/official/decisions/records" / f"{decision_id}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            f"---\nid: {decision_id}\nstatus: promoted\n---\n\n# {decision_id} {title}\n",
+            encoding="utf-8",
+        )
+
+    def pending_index(self, root: Path) -> None:
+        index = root / ".stage/decisions/index.md"
+        index.parent.mkdir(parents=True, exist_ok=True)
+        index.write_text(
+            "| Decision | Decision status | Owner record | Owner status | Link |\n"
+            "|---|---|---|---|---|\n",
+            encoding="utf-8",
+        )
+
+    def test_gives_the_official_index_a_title_column_and_keeps_hand_written_cells(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.pending_index(root)
+            self.write_official(root, "DE-00000001", "Where records live")
+            self.write_official(root, "DE-00000002", "Who closes | a card")
+            official = root / ".stage/official/decisions/index.md"
+            official.write_text(
+                "# 결정\n\n본문은 `records/`에 있다.\n\n"
+                "| 결정 | 상태 | 소유자 | 링크 |\n|---|---|---|---|\n"
+                "| DE-00000001 | promoted | 사용자 | [records/DE-00000001.md](records/DE-00000001.md) |\n"
+                "| DE-00000002 | decided | W-00000009 | [r](records/DE-00000002.md) |\n"
+                "| DE-00000003 | promoted | 사용자 | [gone](records/DE-00000003.md) |\n\n"
+                "## 손으로 쓴 절\n",
+                encoding="utf-8",
+            )
+
+            first = self.run_cli(root)
+            rendered = official.read_text(encoding="utf-8")
+            second = self.run_cli(root)
+            again = official.read_text(encoding="utf-8")
+
+        self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+        self.assertIn("Official decision titles refreshed", first.stdout)
+        self.assertEqual(
+            "# 결정\n\n본문은 `records/`에 있다.\n\n"
+            "| 결정 | 제목 | 상태 | 소유자 | 링크 |\n|---|---|---|---|---|\n"
+            "| DE-00000001 | Where records live | promoted | 사용자 | "
+            "[records/DE-00000001.md](records/DE-00000001.md) |\n"
+            "| DE-00000002 | Who closes \\| a card | decided | W-00000009 | "
+            "[r](records/DE-00000002.md) |\n"
+            "| DE-00000003 | — | promoted | 사용자 | [gone](records/DE-00000003.md) |\n\n"
+            "## 손으로 쓴 절\n",
+            rendered,
+        )
+        self.assertIn("Official decision titles already current", second.stdout)
+        self.assertEqual(rendered, again)
+
+    def test_a_changed_heading_replaces_the_stale_official_title(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.pending_index(root)
+            self.write_official(root, "DE-00000001", "New heading")
+            official = root / ".stage/official/decisions/index.md"
+            official.write_text(
+                "| Decision | Title | Status | Owner | Link |\n|---|---|---|---|---|\n"
+                "| DE-00000001 | Old heading | promoted | user | [r](records/DE-00000001.md) |\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_cli(root)
+            rendered = official.read_text(encoding="utf-8")
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("| DE-00000001 | New heading | promoted | user |", rendered)
+        self.assertNotIn("Old heading", rendered)
+
+    def test_an_official_index_without_a_decision_table_is_left_alone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.pending_index(root)
+            official = root / ".stage/official/decisions/index.md"
+            official.parent.mkdir(parents=True)
+            before = "# Custom\n\n| Name | Note |\n|---|---|\n| Keep | Me |\n"
+            official.write_text(before, encoding="utf-8")
+
+            result = self.run_cli(root)
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual(before, official.read_text(encoding="utf-8"))
 
     def test_refuses_an_unrecognized_table_without_changing_the_file(self):
         with tempfile.TemporaryDirectory() as tmp:

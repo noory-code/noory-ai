@@ -137,8 +137,8 @@ class CardSectionsTest(unittest.TestCase):
         for heading in (*ACHIEVEMENT_ONLY, *RETROSPECTIVE_COPIES):
             self.assertNotIn(heading, found)
         self.assertEqual(
-            ["## Purpose", "## Actions", "## Scope", "## Success criteria", "## Progress",
-             "## Verification"],
+            ["## Purpose", "## Actions", "## Scope", "## Success criteria", "## Sessions",
+             "## Progress", "## Verification"],
             found,
         )
         self.assertIn("\nmaintenance: true\n", card)
@@ -159,8 +159,8 @@ class CardSectionsTest(unittest.TestCase):
             ["## Purpose", "## Actions", "## Scope", "## Success criteria"], headings(planned)
         )
         self.assertEqual(
-            ["## Purpose", "## Actions", "## Scope", "## Success criteria", "## Progress",
-             "## Verification"],
+            ["## Purpose", "## Actions", "## Scope", "## Success criteria", "## Sessions",
+             "## Progress", "## Verification"],
             headings(current),
         )
         self.assertIn("\nmaintenance: true\n", current)

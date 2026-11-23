@@ -24,7 +24,6 @@ from stage_paths import (  # noqa: E402  (after sys.path bootstrap)
 )
 import stage_topology  # noqa: E402
 import stage_roadmap  # noqa: E402
-from stage_record_paths import record_paths  # noqa: E402
 from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     ACTIVE_VIEW_STATUSES,
     REVIEW_VIEW_STATUSES,
@@ -35,6 +34,20 @@ from stage_work import (  # noqa: E402  (after sys.path bootstrap)
     stage_completion_blockers,
 )
 from stage_runtime import latest_session_summaries  # noqa: E402  (after sys.path bootstrap)
+from stage_memory_index import (  # noqa: E402,F401  (helpers stay importable from here)
+    SESSION_CONTEXT_CHAR_LIMIT,
+    SESSION_CONTEXT_LINE_LIMIT,
+    Block,
+    bounded_record_line,
+    decision_roots,
+    decision_title_lines,
+    find_lines,
+    fit_blocks,
+    id_sort_key,
+    record_files,
+    rule_candidate_lines,
+    RULE_CANDIDATE_LIST,
+)
 
 
 def read_if_exists(path: Path, limit: int = 1400) -> str:
@@ -55,8 +68,6 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
     return kept + f"\n…{dropped} more lines truncated — read `{location}` in full"
 
 
-LIFECYCLE_VIEW_RECORD_LIMIT = 3
-
 # States the inline-interpreter gate (`stage_shell.interpreter_inline_stage_write`) at session
 # start. Without it a session learns the rule only from the denial and pays a refused call to
 # find out.
@@ -66,64 +77,6 @@ INLINE_INTERPRETER_RULE_LINE = (
     "the hook cannot see what such code writes. Use Write/Edit, or put the code in a script "
     "file and run it by name."
 )
-
-
-def lifecycle_view_record_ids(
-    directory: Path, limit: int = LIFECYCLE_VIEW_RECORD_LIMIT
-) -> tuple[list[str], int]:
-    """Return a bounded artifact-ID sample and total from one registry scan root."""
-
-    records: list[str] = []
-    for path in record_files(directory):
-        if path.name.lower() == "index.md":
-            continue
-        fields = parse_frontmatter(path)
-        record_id = fields.get("id") or path.stem
-        if re.fullmatch(r"(?:DE|TH|[WRDOQAKMP])-\d{3,}", record_id) is None:
-            continue
-        records.append(record_id)
-    return records[:limit], len(records)
-
-
-def derived_lifecycle_view(stage_root: Path) -> str:
-    """Render a read-only v4 lifecycle summary from registry context scan roots."""
-
-    grouped: dict[str, list[str]] = {
-        lifecycle: [] for lifecycle in stage_topology.LIFECYCLE_STATES
-    }
-    roadmap: list[str] = []
-    for root in stage_topology.scan_roots("context"):
-        resolved = stage_topology.resolve_zone(root)
-        if resolved is None:
-            continue
-        _family, zone = resolved
-        if zone.resolver_policy == "derived-view":
-            continue
-        record_ids, total = lifecycle_view_record_ids(stage_root / root)
-        if not total:
-            continue
-        suffix = f" (+{total - len(record_ids)} more)" if total > len(record_ids) else ""
-        summary = f"`{root}`: {', '.join(record_ids)}{suffix}"
-        if zone.lifecycle_state in grouped:
-            grouped[zone.lifecycle_state].append(summary)
-        elif zone.resolver_policy == "decision-chain":
-            roadmap.append(summary)
-
-    lines = ["### Lifecycle view (derived, read-only)"]
-    for lifecycle in stage_topology.LIFECYCLE_STATES:
-        entries = grouped[lifecycle]
-        if entries:
-            detail = "; ".join(entries)
-        elif lifecycle == "official":
-            detail = f"none under `{stage_topology.OFFICIAL_ROOT}/`"
-        else:
-            detail = "none"
-        lines.append(f"- {lifecycle} — {detail}")
-    if roadmap:
-        lines.append(
-            "- roadmap (decision-derived lifecycle) — " + "; ".join(roadmap)
-        )
-    return "\n".join(lines)
 
 
 def active_milestone_table(stage_root: Path) -> str:
@@ -234,12 +187,7 @@ def session_context(workspace_root: Path) -> str:
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
         # The stage-init session itself must still see host instructions.
-        return (
-            "## Stage\n"
-            "This project has no `.stage/`. If the Stage harness applies to this project, "
-            "create the artifact structure first with `stage-init`."
-            + consumer_context_section(workspace_root, pre_init=True)
-        )
+        return pre_init_context(workspace_root)
 
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         current_work = stage_topology.card_location_for_status("active")
@@ -341,10 +289,38 @@ def session_context(workspace_root: Path) -> str:
             "(`## Purpose`, `## Verification`, ...)."
         )
 
-    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        parts.append("\n" + derived_lifecycle_view(stage_root))
-        parts.append("\n" + active_milestone_table(stage_root))
-        parts.append("\n" + work_hierarchy_view(stage_root))
+    # The rules above are the same every session; the index below is derived from the
+    # records each time and is what the limit shortens (DE-00000100).
+    head = "\n".join(parts)
+    index = session_index(workspace_root, SESSION_CONTEXT_CHAR_LIMIT - len(head) - 1)
+    return f"{head}\n{index}" if index else head[:SESSION_CONTEXT_CHAR_LIMIT]
+
+
+def _fixed_block(heading: str, body: str) -> Block:
+    return Block(heading, [body] if body else [])
+
+
+def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT) -> str:
+    """The index a session starts with, in at most `limit` characters (DE-00000100).
+
+    One line per record and no bodies, derived from the records on every call. The
+    SessionStart hook appends it to its rules and `scripts/subsession_brief.py` appends it
+    to a cloud session's brief, so both kinds of session start from the same index.
+
+    What the session is doing now is never shortened. Over the limit, lines go in this
+    order, each block leaving one line that counts what it left out and names where to read
+    it: decision titles from the oldest, then rule candidates, then the previous session's
+    handoff, then the two lists of rule files.
+    """
+    stage_root = workspace_root / ".stage"
+    if not stage_root.exists():
+        return ""
+    v4 = active_topology(stage_root) == ACTIVE_TOPOLOGY_V4
+
+    blocks: list[Block] = []
+    if v4:
+        blocks.append(_fixed_block("", "\n" + active_milestone_table(stage_root)))
+        blocks.append(_fixed_block("", "\n" + work_hierarchy_view(stage_root)))
         snippets: list[tuple[str, str]] = [
             ("Active work", derived_work_view(stage_root, ACTIVE_VIEW_STATUSES, review=False)),
             (
@@ -361,38 +337,78 @@ def session_context(workspace_root: Path) -> str:
     # does not derive from the records themselves, and reading it through a
     # character cap is what dropped the newest observations. The derived list
     # replaces it rather than duplicating it.
-    observations = open_observation_lines(stage_root)
-    if observations:
-        parts.append("\n### Open observations\n" + "\n".join(observations))
+    blocks.append(Block("### Open observations", open_observation_lines(stage_root)))
     for title, body in snippets:
-        if body:
-            parts.append(f"\n### {title}\n{body}")
-
-    consumer_section = consumer_context_section(workspace_root)
-    if consumer_section:
-        parts.append(consumer_section)
-
-    operations_section = project_operations_context_section(workspace_root)
-    if operations_section:
-        parts.append(operations_section)
-
-    questions = open_question_lines(stage_root)
-    if questions:
-        parts.append("\n### Open questions\n" + "\n".join(questions))
-    backlog = selected_backlog_lines(stage_root)
-    if backlog:
-        parts.append("\n### Selected backlog\n" + "\n".join(backlog))
+        blocks.append(_fixed_block(f"### {title}", body))
+    blocks.append(Block("### Open questions", open_question_lines(stage_root)))
+    blocks.append(Block("### Selected backlog", selected_backlog_lines(stage_root)))
 
     recent_bodies = [
         body
         for body in (read_if_exists(path) for path in latest_session_summaries(stage_root))
         if body
     ]
-    if recent_bodies:
-        heading = "Most recent session" if len(recent_bodies) == 1 else "Most recent sessions (concurrent)"
-        parts.append(f"\n### {heading}\n" + "\n\n".join(recent_bodies))
+    heading = "Most recent session" if len(recent_bodies) == 1 else "Most recent sessions (concurrent)"
+    blocks.append(
+        Block(
+            f"### {heading}",
+            recent_bodies,
+            shed=3,
+            noun="session handoffs",
+            read_at="`.stage/.runtime/sessions/`",
+            separator="\n\n",
+        )
+    )
 
-    return "\n".join(parts)
+    decisions = decision_title_lines(stage_root)
+    candidates, candidate_status = rule_candidate_lines(stage_root)
+    if decisions or candidates or candidate_status:
+        blocks.append(Block("### Finding a record", tail=find_lines(stage_root)))
+    blocks.append(
+        Block(
+            "### Decisions (titles only, newest first)",
+            decisions,
+            shed=1,
+            noun="older decisions",
+            read_at=" and ".join(f"`.stage/{root}/`" for root in decision_roots(stage_root)),
+        )
+    )
+
+    consumer = consumer_context_lines(workspace_root, stage_root=stage_root)
+    if consumer:
+        blocks.append(
+            Block(
+                "### Project instructions (host-defined)",
+                consumer,
+                tail=[consumer_context_directive(stage_root)],
+                shed=4,
+                noun="instruction sources",
+                read_at="the project root and each package directory",
+            )
+        )
+    operations = project_operations_lines(workspace_root)
+    if operations:
+        blocks.append(
+            Block(
+                "### Project operations (project-defined)",
+                operations,
+                tail=[PROJECT_OPERATIONS_DIRECTIVE],
+                shed=5,
+                noun="operation files",
+                read_at="`.stage/operations/`",
+            )
+        )
+    blocks.append(
+        Block(
+            "### Rule candidates (not yet rules)",
+            candidates,
+            tail=candidate_status,
+            shed=2,
+            noun="candidates",
+            read_at=f"`.stage/{RULE_CANDIDATE_LIST}`",
+        )
+    )
+    return fit_blocks(blocks, limit)
 
 
 # Host-project instruction sources, relative to the workspace root. Stage
@@ -412,23 +428,21 @@ CONSUMER_CONTEXT_DIRS: tuple[str, ...] = (
 CONSUMER_CONTEXT_MAX_LINES = 10
 
 
-def project_operations_context_section(workspace_root: Path) -> str:
+PROJECT_OPERATIONS_DIRECTIVE = (
+    "- Read the applicable files in full when planning and executing; "
+    "this list carries names only."
+)
+
+
+def project_operations_lines(workspace_root: Path) -> list[str]:
     """List project-owned operation files without copying their contents."""
 
     operations_root = workspace_root / ".stage" / "operations"
     try:
         files = sorted(entry for entry in operations_root.iterdir() if entry.is_file())
     except OSError:
-        return ""
-    if not files:
-        return ""
-    lines = [f"- `{entry.relative_to(workspace_root).as_posix()}`" for entry in files]
-    return (
-        "\n### Project operations (project-defined)\n"
-        + "\n".join(lines)
-        + "\n- Read the applicable files in full when planning and executing; "
-        "this list carries names only."
-    )
+        return []
+    return [f"- `{entry.relative_to(workspace_root).as_posix()}`" for entry in files]
 
 
 def agents_instruction_file(directory: Path) -> str | None:
@@ -609,74 +623,49 @@ CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT = (
 )
 
 
-def consumer_context_section(workspace_root: Path, pre_init: bool = False) -> str:
-    stage_root = None if pre_init else workspace_root / ".stage"
-    consumer = consumer_context_lines(workspace_root, stage_root=stage_root)
-    if not consumer:
-        return ""
-    if pre_init:
-        directive = CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT
-    elif stage_root is not None and active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        question_root = stage_topology.resolve_artifact_reference(
-            "Q-00000000"
-        ).candidate_paths[0].rsplit("/", 1)[0]
-        directive = (
-            "- Consult these when planning and executing — they are project norms, "
-            "not optional reading. Root-level sources bind everywhere; a source inside "
-            "a package directory binds work under that subtree only; within a source, "
-            "honor its own applicability (a path-scoped rule or a trigger-scoped skill "
-            "applies only per its own declaration). If an applicable instruction contradicts "
-            "observed reality or Stage truth, do not silently deviate or silently obey: "
-            f"register the conflict as an open question (`{question_root}/`) with your proposed "
-            "correction and ask the user to fix the instruction."
-        )
-    else:
-        directive = CONSUMER_CONTEXT_DIRECTIVE
+def consumer_context_directive(stage_root: Path) -> str:
+    """How a session uses the listed instruction sources, naming this topology's question folder."""
+
+    if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
+        return CONSUMER_CONTEXT_DIRECTIVE
+    question_root = stage_topology.resolve_artifact_reference(
+        "Q-00000000"
+    ).candidate_paths[0].rsplit("/", 1)[0]
     return (
-        "\n### Project instructions (host-defined)\n"
-        + "\n".join(consumer)
-        + "\n"
-        + directive
+        "- Consult these when planning and executing — they are project norms, "
+        "not optional reading. Root-level sources bind everywhere; a source inside "
+        "a package directory binds work under that subtree only; within a source, "
+        "honor its own applicability (a path-scoped rule or a trigger-scoped skill "
+        "applies only per its own declaration). If an applicable instruction contradicts "
+        "observed reality or Stage truth, do not silently deviate or silently obey: "
+        f"register the conflict as an open question (`{question_root}/`) with your proposed "
+        "correction and ask the user to fix the instruction."
     )
 
 
+def pre_init_context(workspace_root: Path) -> str:
+    """What a session sees before `stage-init`: the notice and the host instructions."""
+
+    text = (
+        "## Stage\n"
+        "This project has no `.stage/`. If the Stage harness applies to this project, "
+        "create the artifact structure first with `stage-init`."
+    )
+    consumer = consumer_context_lines(workspace_root)
+    if not consumer:
+        return text
+    block = Block(
+        "### Project instructions (host-defined)",
+        consumer,
+        tail=[CONSUMER_CONTEXT_DIRECTIVE_PRE_INIT],
+        shed=1,
+        noun="instruction sources",
+        read_at="the project root and each package directory",
+    )
+    return text + "\n" + fit_blocks([block], SESSION_CONTEXT_CHAR_LIMIT - len(text) - 1)
+
+
 SESSION_CONTEXT_RECORD_LIMIT = 3
-SESSION_CONTEXT_LINE_LIMIT = 160
-
-
-def id_sort_key(item_id: str) -> tuple[int, str]:
-    """Numeric ID portion first: lexical order misranks variable-width IDs
-    (Q-999 would outrank Q-1000)."""
-    match = re.search(r"(\d+)", item_id)
-    return (int(match.group(1)) if match else -1, item_id)
-
-
-def bounded_record_line(
-    item_id: str, title: str, suffix: str, limit: int = SESSION_CONTEXT_LINE_LIMIT
-) -> str:
-    """One bounded line per injected record — the budget caps size, not just
-    count. Overlength truncates the TITLE while reserving the suffix: the
-    `(blocks: ...)` / `(priority: ...)` linkage is the actionable part."""
-    prefix = f"- {item_id} ".rstrip() + (" " if title or suffix else "")
-    title = " ".join(title.split())
-    room = max(8, limit - len(prefix) - len(suffix))
-    if len(title) > room:
-        title = title[: room - 1] + "…"
-    return (prefix + title + suffix).rstrip()
-
-
-def record_files(directory: Path) -> list[Path]:
-    """Individual record files of an artifact family (skips readme/template files).
-
-    `record_paths` owns which underscore files are records: it drops the
-    templates at the family root and keeps the `_epic.md` and `_story.md`
-    cards inside hierarchy folders.
-    """
-    try:
-        files = record_paths(directory)
-    except OSError:
-        return []
-    return [path for path in files if path.name.lower() != "readme.md"]
 
 
 def question_is_answered(path: Path) -> bool:

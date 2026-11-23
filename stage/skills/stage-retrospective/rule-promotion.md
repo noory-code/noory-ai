@@ -34,7 +34,8 @@ judging whether a behavior should bind future work is not something the run can 
 A candidate is promoted when **either** holds. Both are countable; neither asks the writer whether
 the lesson felt important.
 
-**It happened twice.** Search the archived retrospectives for the same behavior. The second
+**It happened twice.** Read the consolidated list first when it exists ("Consolidating
+candidates"), then search the retrospectives newer than it for the same behavior. The second
 occurrence is the evidence — the first could be one card's circumstance, the second is structure.
 This is the project's AHA principle applied to behavior instead of code.
 
@@ -45,6 +46,55 @@ caught it anyway" is.
 
 Nothing else promotes. A candidate that meets neither test stays a candidate, and the next
 occurrence promotes it.
+
+## Consolidating candidates
+
+One retrospective sees one card. Whether a behavior happened twice is only visible across all of
+them, so a separate session reads them together and keeps one list (DE-00000100). The
+`stage-orchestrate` skill owns when that session is started ("Start a consolidation session"):
+before a milestone is closed, and when 20 or more retrospectives are newer than the list.
+
+The list is `.stage/state/rule-candidates.md`. The session index shows its candidates to every
+session, one line each, and counts the retrospectives newer than its `through:` id.
+
+```markdown
+---
+through: R-00000399
+---
+# Rule candidates
+
+- **Count every place a contract lands, not only the call sites.** (seen 2: R-00000200,
+  R-00000311) — proposed: promote
+- **Name the session that did the work on the card.** (seen 1: R-00000390) — proposed: hold
+```
+
+```yaml
+list_format:
+  through: the id of the newest retrospective the session read; required
+  one_candidate: one top-level bullet; a wrapped line is indented
+  each_bullet_carries:
+    - the behavior as one imperative sentence
+    - "seen <n>: <R-ids>": every retrospective that states it, so a reader can open the evidence
+    - "proposed: promote" when one of the two tests above holds, else "proposed: hold"
+  leave_out: a candidate a rule file already states; name that rule file in the session's report
+grouping:
+  - if: two retrospectives name the same behavior in different words
+    then: one bullet that cites both
+  - if: it is unclear whether two candidates are the same behavior
+    then: keep two bullets; a wrong merge turns one occurrence into a promotion
+```
+
+What the consolidation session does not do:
+
+| It does not | Because |
+|---|---|
+| edit a retrospective or a decision record | they are the source; the list is derived from them and cites them |
+| edit a rule file, a skill, or `operations/` | promotion is a person's choice, carried out by a card |
+| drop a candidate because it looks unimportant | only the two tests promote, and only a stated rule removes a candidate from the list |
+| decide that a `proposed: promote` line is now a rule | it proposes; the orchestrator shows the proposal to the user |
+
+The list replaces no retrospective. A bullet without its `R-` ids cannot be checked, and a reader
+who doubts a bullet opens the retrospectives it cites.
 
 ## Where the rule goes
 

@@ -590,6 +590,7 @@ class TemplateV4Test(unittest.TestCase):
         }
         lifecycle_only = (
             "## Related truth",
+            "## Sessions",
             "## Progress",
             "## Verification",
         )

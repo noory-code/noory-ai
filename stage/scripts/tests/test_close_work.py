@@ -305,8 +305,8 @@ class CloseWorkTest(unittest.TestCase):
         index.write_text(
             (
                 "# Pending decisions\n\n"
-                "| Decision | Decision status | Owner record | Owner status | Link |\n"
-                "|---|---|---|---|---|\n"
+                "| Decision | Title | Decision status | Owner record | Owner status | Link |\n"
+                "|---|---|---|---|---|---|\n"
             ),
             encoding="utf-8",
         )

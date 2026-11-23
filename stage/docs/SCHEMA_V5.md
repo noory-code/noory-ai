@@ -46,7 +46,8 @@ Scale determines the remaining planning questions:
 | Action | `Source` names what produced the indivisible step, and `Dependencies` names what it waits for. |
 
 A current record keeps the same questions as its planned counterpart. It additionally carries
-`Related truth`, `Progress`, and `Verification`, which are filled as execution advances. The
+`Related truth`, `Sessions`, `Progress`, and `Verification`, which are filled as execution
+advances (`Sessions`: `operations/cloud-execution.md`, "Sessions on the card"). The
 retrospective and the promotion decision are owned by the retrospective file; a card carries no
 section for either. Record-section headings are machine tokens and remain English for every
 project language.

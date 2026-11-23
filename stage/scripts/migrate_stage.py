@@ -632,6 +632,7 @@ def migrate(project_root: Path, dry_run: bool) -> int:
         v4_migration.save_journal(stage_root, journal)
         v4_migration.create_v4_indexes(stage_root, settings, journal)
         refresh_decision_index.refresh_index(project_root)
+        refresh_decision_index.refresh_official_titles(project_root)
         # Compatibility migrations above may have narrowly edited routing rows.
         # Rebuild the already-recognized topology patch from that current index so
         # those edits are not overwritten by the preflight snapshot.

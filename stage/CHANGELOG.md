@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+- Make the text a session starts with an index derived from the records, and bound it
+  (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
+  rules every time; it named no decision, and a cloud session received none of it.
+  - **Session index.** After the standing rules, SessionStart now lists every binding decision
+    as its id and title, newest first, the open rule candidates, and where to find a record's
+    body. The lifecycle view (the three lowest ids of each folder) is gone. No line carries a
+    record's body.
+  - **Limit.** The whole text is at most 10,000 characters. Over it, decision titles go first,
+    from the oldest, then rule candidates, the previous session's handoff, and the two lists of
+    rule files; each shortened block keeps one line that counts what was left out and names
+    where to read it. What the session is doing now is never shortened. The number is a first
+    value, not a measurement.
+  - **Cloud brief.** `subsession_brief.py` ends both briefs with the same index, built by the
+    same function, and keeps the brief with its index within the same limit. A work session now
+    also reports which records it opened because the index listed them.
+  - **Decision indexes carry titles.** `refresh_decision_index.py` renders a `Title` column in
+    the pending-decision index and fills a `Title` column in the hand-written official decision
+    index from each record's heading, leaving the other cells alone. Run it once after
+    upgrading: the audit reports a pending index in the old shape (`DECISION004`) and an
+    official index with a missing or stale title (`DECISION005`, new).
+  - **Work archive rows carry titles.** `archive_work.py` writes the card's title as the last
+    cell of a new archive-index row and widens a three-column header. Rows written earlier keep
+    three cells; nothing rewrites them.
+  - **Sessions on the card.** A started card has a `## Sessions` section: one line per session
+    with its id, role, date, and the records it says it opened from the index
+    (`operations/cloud-execution.md`). `start_work.py` adds the section and the current-card
+    templates carry it.
+  - **Rule-candidate consolidation.** `rule-promotion.md` and the `stage-orchestrate` skill say
+    when a consolidation session is started (before a milestone is closed, and when 20 or more
+    retrospectives are newer than the list), that it writes only
+    `.stage/state/rule-candidates.md`, and that it proposes promotions and makes none. The
+    session index shows the list's candidates and says when a consolidation is due.
+
 - Make the close reviewer judge by running, and keep how it judged on the card (W-00000408,
   DE-00000101). A reviewer could approve from the executor's account alone: the Claude stand-in
   could run only `python3 -m unittest`, and whether anything was run was buried in a reason
