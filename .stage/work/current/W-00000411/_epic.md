@@ -65,6 +65,8 @@ decision_refs:
 
 ## Progress
 
+- 2026-11-23 W-00000415 의 작업 세션이 규칙 후보 목록이 생기면 색인에서 결정 제목이 모두 밀려난다고 보고했다(82건이 실리지 않음). 지휘 세션이 W-00000413 에 성공 기준 하나를 더하고 작업 세션에 전했다.
+
 - 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 d192365b 에서 카드를 등록해 시작하고 작업 세션 session_018VXR6PwLBPzLD6Y92UC31m (`claude/w411-procedure-and-evidence`)를 띄웠다. 번호 묶음은 잡지 않았다.
 
 
