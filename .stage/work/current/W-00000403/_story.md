@@ -49,8 +49,16 @@ decision_refs:
 
 ## Next action
 
+작업 세션 session_018VXR6PA9aonbDLPim8LtfB 의 보고를 받아 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+
+- Waiting on user: 둘째 성공 기준은 B11 을 뺀 뒤에 돈 카드가 있어야 채워진다. 뺀 뒤 카드 몇 장을 보고 비교하면 이 카드를 닫는가?
+
 ## Related truth
 
+- DE-00000098
+
 ## Progress
+
+- 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 99f82735 에서 카드를 시작하고 작업 세션 session_018VXR6PA9aonbDLPim8LtfB (`claude/w403-drop-execution-instructions`)를 띄웠다. 번호 묶음은 잡지 않았다.
 
 ## Verification
