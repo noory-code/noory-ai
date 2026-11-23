@@ -19,13 +19,20 @@ What still holds the reviewer back, and what does not:
 - A shell command can write project files. `close_work.py` and the supervised driver
   compare the repository around every review command, this one included, and fail a
   review that changed anything but its verdict (`close_work.reject_review_writes`).
+  At close a file that was changed and restored fails the review too, and a write to a
+  file Git ignores is told to the person who closes (`review_containment.py`).
 - `DENIED_COMMANDS` refuses the commands that publish or record a change (`git push`,
   `git commit`). Claude Code matches these rules against each command of a compound
   line, but a command hidden inside another program (`sh -c`, a script) is not seen:
   the rules stop a mistake, not a determined reviewer.
-- Nothing here sees a change outside the repository (another checkout, the home
-  folder, a remote service). DE-00000101 chose this weakness knowingly; one observed
-  case is its stated reason to revisit the choice.
+- Nothing here stops a read or a change outside the repository (another checkout, the
+  home folder, a remote service). The reviewer's tool calls are written to
+  `$STAGE_REVIEW_TOOL_CALLS_FILE`, and the close tells the person which of them name
+  the session record folder (`~/.claude`) or GitHub. A change outside the repository
+  is still unseen; DE-00000101 chose this weakness knowingly, and one observed case is
+  its stated reason to revisit the choice.
+- `REVIEWER_RULES` is added to every prompt, so a reviewer knows what fails its review
+  before it tidies up after its own commands.
 
 The project's own Claude reviewer command runs through this script as well, so both
 review paths share these permissions.
@@ -37,14 +44,29 @@ Usage (from the project root):
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path, PurePath
+from typing import IO, Iterable
 
 MODEL_ENV = "STAGE_CLAUDE_REVIEW_MODEL"
 DEFAULT_MODEL = "opus[1m]"
+# `review_containment.TOOL_CALLS_ENV`; this script imports nothing from the plugin.
+TOOL_CALLS_ENV = "STAGE_REVIEW_TOOL_CALLS_FILE"
+REVIEWER_RULES = (
+    "\n\nRules of this review, checked after you finish:\n"
+    "- The repository is compared before and after you. If one of your commands, or the "
+    "tests it runs, changes a project file, leave the file as it is and name it in that "
+    "criterion's reason. Do not restore it (`git checkout`, `git restore`, `git stash`, "
+    "copying a backup over it) and do not delete what your commands created: a restored "
+    "file fails the review.\n"
+    "- Judge from this checkout. Do not read the session record folder (`~/.claude`) or "
+    "GitHub (`gh`, api.github.com); the commands you run are recorded. When a criterion "
+    "can only be judged from there, its method is `unable`.\n"
+)
 
 
 def absolute_rule_path(path: PurePath) -> str:
@@ -96,7 +118,8 @@ def claude_command(
     verdict_file = environ.get("STAGE_REVIEW_VERDICT_FILE", "")
     if not verdict_file:
         raise ValueError("STAGE_REVIEW_VERDICT_FILE is required")
-    command = [claude, "-p"]
+    # stream-json prints every tool call; `run_reviewer` turns it back into the answer.
+    command = [claude, "-p", "--output-format", "stream-json", "--verbose"]
     changed_paths = environ.get("STAGE_CHANGED_PATHS_FILE", "")
     if changed_paths:
         command += ["--add-dir", str(Path(changed_paths).parent)]
@@ -114,9 +137,85 @@ def claude_command(
         *denied_rules(platform),
         # These options take several values; `--` ends them before the prompt.
         "--",
-        argv[-1],
+        argv[-1] + REVIEWER_RULES,
     ]
     return command
+
+
+def tool_calls(event: dict[str, object]) -> list[dict[str, object]]:
+    """The tool calls one `assistant` event of the stream carries."""
+
+    message = event.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    return [
+        {"id": block.get("id", ""), "tool": block.get("name", ""), "input": block.get("input")}
+        for block in (content if isinstance(content, list) else [])
+        if isinstance(block, dict) and block.get("type") == "tool_use"
+    ]
+
+
+def relay_stream(lines: Iterable[str], record: IO[str] | None, out: IO[str]) -> None:
+    """Print the reviewer's answer from a stream-json run and record its tool calls.
+
+    Each call is written as it is seen, so a reviewer stopped at its time limit leaves
+    the calls it made. The last record line says the record is whole and names the calls
+    the host refused. A line that is not a stream event is printed as it came.
+    """
+
+    def write(entry: dict[str, object]) -> None:
+        if record is not None:
+            record.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            record.flush()
+
+    answered = False
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            event = None
+        if not isinstance(event, dict):
+            out.write(line if line.endswith("\n") else line + "\n")
+            continue
+        if event.get("type") == "assistant":
+            for call in tool_calls(event):
+                write(call)
+        elif event.get("type") == "result":
+            answered = True
+            result = event.get("result")
+            if isinstance(result, str) and result:
+                out.write(result.rstrip("\n") + "\n")
+            denials = event.get("permission_denials")
+            write(
+                {
+                    "complete": True,
+                    "denied": [
+                        denial.get("tool_use_id", "")
+                        for denial in (denials if isinstance(denials, list) else [])
+                        if isinstance(denial, dict)
+                    ],
+                }
+            )
+    if not answered:
+        out.write("claude_review_companion: the reviewer ended without a result event\n")
+    out.flush()
+
+
+def run_reviewer(command: list[str], environ: dict[str, str]) -> int:
+    record_path = environ.get(TOOL_CALLS_ENV, "")
+    record = open(record_path, "a", encoding="utf-8") if record_path else None
+    try:
+        process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, text=True, encoding="utf-8", errors="replace"
+        )
+        assert process.stdout is not None
+        # The caller reads this as UTF-8; a locale-encoded stream could not hold every character.
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        relay_stream(process.stdout, record, sys.stdout)
+        return process.wait()
+    finally:
+        if record is not None:
+            record.close()
 
 
 def main(argv: list[str]) -> int:
@@ -124,12 +223,13 @@ def main(argv: list[str]) -> int:
     if claude is None:
         print("claude_review_companion: `claude` is not on PATH", file=sys.stderr)
         return 127
+    environ = dict(os.environ)
     try:
-        command = claude_command(argv, dict(os.environ), claude)
+        command = claude_command(argv, environ, claude)
     except ValueError as exc:
         print(f"claude_review_companion: {exc}", file=sys.stderr)
         return 2
-    return subprocess.run(command).returncode
+    return run_reviewer(command, environ)
 
 
 if __name__ == "__main__":

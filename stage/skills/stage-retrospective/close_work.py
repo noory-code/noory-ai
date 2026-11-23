@@ -74,7 +74,7 @@ from stage_work import (  # noqa: E402
     split_scope,
 )
 from worktree_guard import ORDER_CONTRACT, dirty_paths_in_scope  # noqa: E402
-from driver_repository import changed_repository_paths, repository_path_snapshot  # noqa: E402
+from driver_repository import changed_repository_paths  # noqa: E402
 from driver_environment import (  # noqa: E402
     EFFORT_ENV,
     MODEL_ENV,
@@ -82,6 +82,7 @@ from driver_environment import (  # noqa: E402
 )
 from driver_model_fallback import run_with_model_fallbacks  # noqa: E402
 import audit_stage  # noqa: E402
+import review_containment  # noqa: E402
 import review_material  # noqa: E402
 import work_load  # noqa: E402
 import refresh_decision_index  # noqa: E402
@@ -473,11 +474,18 @@ def review_record_line(path: Path, reviewer: str, day: str) -> str:
     return f"- Review at close {day} by {one_line(reviewer)}: {outcome} ({marks})"
 
 
-def record_rejected_review(item_path: Path, verdict_path: Path, reviewer: str) -> bool:
-    """Leave a rejecting verdict on the still-open card; False when there was none."""
+def record_rejected_review(
+    item_path: Path, verdict_path: Path, reviewer: str, traces_line: str = ""
+) -> bool:
+    """Leave a rejecting verdict on the still-open card; False when there was none.
+
+    `traces_line` is that review's `- Reviewer traces at close` line, written after it.
+    """
 
     try:
         line = review_record_line(verdict_path, reviewer, date.today().isoformat())
+        if traces_line:
+            line += f"\n{traces_line}"
         text = item_path.read_text(encoding="utf-8")
         item_path.write_text(
             append_to_section(text, "Verification", line), encoding="utf-8"
@@ -485,6 +493,12 @@ def record_rejected_review(item_path: Path, verdict_path: Path, reviewer: str) -
     except (OSError, RuntimeError, ValueError):
         return False
     return True
+
+
+def traces_record_line(traces: list[review_containment.ReviewTraces]) -> str:
+    """The card line for what the review at this close left, or "" when it left nothing."""
+
+    return traces[-1].record_line(date.today().isoformat()) if traces else ""
 
 
 def review_failure_note(recorded: bool) -> str:
@@ -848,12 +862,15 @@ def run_close_review(
     *,
     review_commits: list[str] | None = None,
     check_output: str = "",
+    traces: list[review_containment.ReviewTraces] | None = None,
 ) -> tuple[bool, str]:
     """Run one review at close and return whether it passed and, if not, why.
 
     `review_commits` names the commits whose paths the reviewer reads (default: HEAD).
     `check_output` is the `### Checks at close` section appended to the work log before
     the review, so the reviewer sees what the checks printed.
+    `traces` receives what the review left that does not fail it (ignored files written,
+    commands naming records outside the repository); each is also printed as a WARNING.
 
     Raises RuntimeError when the review material or the repository snapshots
     cannot be prepared; a failed snapshot after the review removes the verdict.
@@ -872,7 +889,9 @@ def run_close_review(
             Path(environment["STAGE_WORK_LOG_PATH"]), check_output
         )
         verdict_file = Path(environment["STAGE_REVIEW_VERDICT_FILE"])
-        before = repository_path_snapshot(project_root)
+        tool_calls_file = Path(review_tmp) / "tool-calls.jsonl"
+        environment[review_containment.TOOL_CALLS_ENV] = str(tool_calls_file)
+        before = review_containment.review_snapshot(project_root)
         item = item_from_fields(item_path, parse_frontmatter(item_path), GATE_FIELD_DEFAULTS)
         reviewer_venue = resolve_independent_reviewer_venue(
             load_review_config(project_root / ".stage"), item.venue
@@ -895,13 +914,23 @@ def run_close_review(
         )
         ok, block = review_run.ok, review_run.evidence
         try:
-            after = repository_path_snapshot(project_root)
+            after = review_containment.review_snapshot(project_root)
         except RuntimeError as exc:
             verdict_file.unlink(missing_ok=True)
             raise RuntimeError(f"cannot inspect the repository after review: {exc}") from exc
-    verdict_error = reject_review_writes(
-        project_root, before, after, verdict_file
-    ) or review_verdict_error(verdict_file)
+        left = review_containment.review_traces(before, after, tool_calls_file)
+    for warning in left.warnings():
+        print(f"{item_id}: WARNING {warning}", file=sys.stderr)
+    if traces is not None:
+        traces.append(left)
+    # Both are reported together: a review can leave one file changed and restore another.
+    write_errors = [
+        reject_review_writes(project_root, before.paths, after.paths, verdict_file),
+        review_containment.reject_restored_files(project_root, before, after, verdict_file),
+    ]
+    verdict_error = "\n".join(error for error in write_errors if error) or review_verdict_error(
+        verdict_file
+    )
     if not ok or verdict_error:
         detail = f"\n{verdict_error}" if verdict_error else ""
         return False, f"{block}{detail}"
@@ -1190,6 +1219,7 @@ def main() -> int:
     # and an approving reviewer-owned JSON verdict.
     review_passed = False
     reviewer = ""
+    review_traces: list[review_containment.ReviewTraces] = []
     check_output = review_material.check_output_section(
         check_results, date.today().isoformat()
     )
@@ -1221,6 +1251,7 @@ def main() -> int:
                 args.review_timeout,
                 review_commits=args.review_commit,
                 check_output=check_output,
+                traces=review_traces,
             )
         except RuntimeError as exc:
             print(
@@ -1234,7 +1265,10 @@ def main() -> int:
         )
         if not passed:
             recorded = record_rejected_review(
-                item_path, review_verdict_path(stage_root, work_item.item_id), reviewer
+                item_path,
+                review_verdict_path(stage_root, work_item.item_id),
+                reviewer,
+                traces_record_line(review_traces),
             )
             print(
                 f"{args.item}: independent review did not pass; "
@@ -1261,6 +1295,7 @@ def main() -> int:
                 args.review_timeout,
                 review_commits=args.review_commit,
                 check_output=check_output,
+                traces=review_traces,
             )
         except RuntimeError as exc:
             print(
@@ -1271,7 +1306,10 @@ def main() -> int:
         reviewer = reviewer_label(review_command)
         if not passed:
             recorded = record_rejected_review(
-                item_path, review_verdict_path(stage_root, work_item.item_id), reviewer
+                item_path,
+                review_verdict_path(stage_root, work_item.item_id),
+                reviewer,
+                traces_record_line(review_traces),
             )
             print(
                 f"{args.item}: review did not pass; {review_failure_note(recorded)}:\n{detail}",
@@ -1294,6 +1332,9 @@ def main() -> int:
             )
             return 1
         evidence += f"\n{review_line}"
+        traces_line = traces_record_line(review_traces)
+        if traces_line:
+            evidence += f"\n{traces_line}"
     log_path = work_log_path(stage_root, work_item.item_id)
     try:
         log_text = read_work_log(log_path) if log_path.is_file() else ""

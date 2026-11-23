@@ -135,6 +135,69 @@ reviewer decides which criteria need a run. DE-00000101 chose this knowingly; a 
 claims to have seen what its named command cannot show is the stated reason to add a check of
 the tool calls.
 
+## What the close sees of the reviewer
+
+A reviewer that may run any shell command can also do what a judgment should not rest on. The
+close looks for it after every review command it runs (`skills/stage-retrospective/review_containment.py`,
+W-00000416). The supervised driver's reviews between rounds get the first row only.
+
+| What the reviewer, or the code its commands run, does | What the close does |
+|---|---|
+| leaves a tracked or untracked file changed, created, or deleted | fails the review, removes the verdict, names the paths |
+| changes such a file and puts the earlier content back (`git checkout`, `git restore`, `git stash`, writing the same bytes) | fails the review, removes the verdict, names the paths |
+| writes, creates, or deletes a file Git ignores | passes or fails as the verdict says; prints a `WARNING` with the paths and writes the traces line on the card |
+| runs a command, or calls a file tool, whose text names the session record folder (`~/.claude`, `$HOME/.claude`, the home folder's absolute path, `$CLAUDE_CONFIG_DIR`) or GitHub (`gh <subcommand>`, `api.github.com`) | the same: a `WARNING` with the commands, and the traces line |
+
+```yaml
+restored_file:
+  seen_by: the file's inode, modified time, and change time differ although its content is the same
+  why_it_fails: a reviewer that restores a file hides what its commands or the tests wrote (W-00000413)
+  also_fails: anything else that rewrites a repository file during the review, for example an
+    editor that saves an unchanged file
+ignored_file:
+  seen_by: its mode, size, or modified time differ, or it appeared or went away; content is not read
+  not_compared: `.stage/.runtime/`, where the verdict, the work log, and the driver's state are written
+  why_it_does_not_fail: test runs write caches (`__pycache__`, `.pytest_cache`, build output) into
+    ignored folders, and those cannot be told from a write that matters
+outside_record:
+  seen_by: the text of each tool call the reviewer command wrote to `$STAGE_REVIEW_TOOL_CALLS_FILE`,
+    one JSON object per line; `scripts/claude_review_companion.py` writes it from the reviewer's
+    stream. A call the host refused is left out.
+  why_it_does_not_fail: the text is matched, not the act; a command that searches the project for
+    the string `~/.claude` is named too. The person who closes reads the commands and decides.
+  when_the_record_is_cut_short: a `WARNING` says the record is incomplete
+card_line: "- Reviewer traces at close <date>: ignored files written <n> (<paths>); commands naming
+  <what> <n>; tool-call record incomplete" — only the parts that apply, on the line after that
+  review's `- Review at close` line; no line when the review left none of them
+when_you_see_a_warning:
+  - if: the ignored paths are caches of the commands the reviewer ran
+    then: nothing to do
+  - if: an ignored path is a setting, a secret, or an input of the checks
+    then: inspect it, put it back, and close again; the verdict was reached on a changed input
+  - if: a command read session records or GitHub and a criterion's reason rests on what it read
+    then: that criterion was not judged from the checkout; close again, or record an observation
+```
+
+The Claude stand-in also adds these rules to every prompt (`REVIEWER_RULES`): leave a changed file
+in place and name it, do not restore it, and do not read the session record folder or GitHub.
+
+Not held back, and not seen:
+
+| What | Why |
+|---|---|
+| a change outside the repository: another checkout, the home folder, a temporary folder, a remote service | the comparison lists the repository's files only. DE-00000101 accepted this; one observed case is its stated reason to be revisited. |
+| a read of an outside record by a command inside a script file, through `cd` into the folder, or through a path built at run time | only the text of the reviewer's own tool calls is matched |
+| any outside read by a reviewer command that writes no tool-call record (Codex, a project's own command) | the close has nothing to read; it prints no warning for a missing record |
+| reads of the remote through Git (`git fetch`, `git ls-remote`) and of any site other than `api.github.com` | they are not in the matched list |
+| a change inside `.git` (a stash, a ref, a fetched object) or inside `.stage/.runtime/` | neither is in the comparison |
+| a restore that also sets the file's times back. On POSIX the change time cannot be set, so this needs a changed clock; on Windows a tool that restores the modified time in place is not seen | the restore is seen through the file's identity and times only |
+| `git push` or `git commit` inside another program (`sh -c`, a script) | the deny rules match the reviewer's own command line (W-00000408) |
+
+Stopping these reads instead of naming them needs the reviewer's shell to be narrowed: an OS
+sandbox that hides the home folder and the network, which is not available on every host Stage
+supports, or a home folder of the reviewer's own, which takes its credentials away. DE-00000101
+widened the shell, so this document names the reads and does not stop them.
+
 A criterion that only a whole session can observe (a new cloud session takes a role and does
 something) is observed by a verification session before the close (`stage-orchestrate`, "Start a
 verification session"). The orchestrator writes that observation on the card's `## Verification`,
@@ -190,6 +253,9 @@ fails, and a missing or malformed verdict leave the card unchanged.
   last `- Review at close` line by `method`. That line is the verdict the close rests on; an
   earlier line is a round that sent the work back. `no review` means the card closed without a
   review, and `not recorded` that the line was written before verdicts named a method.
+- A review that left traces adds `- Reviewer traces at close <date>: ...` after its review line
+  ("What the close sees of the reviewer"). The paths are on the card; the commands are printed at
+  close and are not copied.
 - The reviewer's reasons and report are not copied onto the card. They stay in the
   work log (`.stage/.runtime/driver/logs/<work-id>.md`), which is not committed.
 - Reviews that the drivers run between rounds are recorded in the work log only.
