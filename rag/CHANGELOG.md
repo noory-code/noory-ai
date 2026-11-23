@@ -10,6 +10,10 @@
   an f-string for the clamped Cypher path length, `IncompatibleSnapshotError` for the snapshot
   exception, an explicit error when SQLite reports no inserted chunk id, and a typed
   `build_fastmcp()`.
+- Limit the server to Python 3.11–3.13 (`requires-python = ">=3.11,<3.14"`). kuzu 0.11.3, the
+  latest kuzu release on PyPI, ships no Python 3.14 wheel for Windows or macOS, so uv on a machine
+  with only Python 3.14 tried to build kuzu from source and failed; uv now selects or downloads
+  Python 3.13 and installs the wheel.
 
 All notable changes to this plugin are documented here.
 

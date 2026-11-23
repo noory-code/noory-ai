@@ -55,7 +55,7 @@ codex plugin add rag@noory-ai
 | **Windows (PowerShell)** | `powershell -c "irm https://astral.sh/uv/install.ps1 \| iex"` (or `winget install --id=astral-sh.uv -e`) |
 | **Linux** | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 
-- Python 3.11+ is managed automatically by uv
+- Python 3.11–3.13 is managed automatically by uv
 - About 500MB of disk (dependencies + embedding model)
 
 ### Recommended: MCP timeout env
