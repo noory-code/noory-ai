@@ -1,12 +1,13 @@
 """A review may change no repository file but its verdict.
 
-Permission rules stop a Claude reviewer's own Write, Edit, and shell redirections,
-but code that `python3 -m unittest` imports and runs is not a tool call and can
-write anywhere; a Codex reviewer may write directly. `close_work.run_close_review`
-compares the repository around any review command. These tests give it a reviewer
-command that runs a real unittest process, so the check is exercised at import,
-setUp, and test-body time without calling a model. The supervised driver's copy
-of the check is covered in `test_drive.py`.
+Permission rules stop a Claude reviewer's own Write and Edit calls, but the reviewer
+may run any shell command (DE-00000101): a redirection writes a file, and so does
+code that `python3 -m unittest` imports and runs; a Codex reviewer may write
+directly. `close_work.run_close_review` compares the repository around any review
+command. These tests give it a reviewer command that runs a real unittest process,
+so the check is exercised at import, setUp, and test-body time without calling a
+model, and one that writes a project file from its own shell command. The
+supervised driver's copy of the check is covered in `test_drive.py`.
 
 `LiveReviewerWriteProbeTest` runs the real `claude` CLI through both Claude review
 paths and is skipped unless STAGE_LIVE_REVIEW_PROBE=1, because it needs
@@ -39,7 +40,9 @@ ITEM_ID = "W-00000001"
 CARD_RELATIVE = f".stage/work/current/{ITEM_ID}/_story.md"
 VERDICT_RELATIVE = f".stage/.runtime/driver/verdicts/{ITEM_ID}.json"
 APPROVED = {
-    "criteria": [{"criterion": "probe", "verdict": "PASS", "reason": "probe"}],
+    "criteria": [
+        {"criterion": "probe", "verdict": "PASS", "method": "ran", "reason": "probe"}
+    ],
     "approved": True,
 }
 
@@ -85,8 +88,8 @@ def probe_module(at_import: str = "", in_setup: str = "", in_body: str = "") -> 
 
 
 def unittest_reviewer(exit_status: int | None = None) -> str:
-    """A reviewer that runs the project's tests, as `Bash(python3 -m unittest:*)`
-    lets a Claude reviewer do, then writes an approving verdict."""
+    """A reviewer that runs the project's tests, as the `Bash` rule lets a Claude
+    reviewer do, then writes an approving verdict."""
 
     status = "proc.returncode" if exit_status is None else str(exit_status)
     return python_command(
@@ -96,6 +99,18 @@ def unittest_reviewer(exit_status: int | None = None) -> str:
         "open(os.environ['STAGE_REVIEW_VERDICT_FILE'], 'w', encoding='utf-8').write("
         f"json.dumps({APPROVED!r}))\n"
         f"raise SystemExit({status})\n"
+    )
+
+
+def shell_writing_reviewer(relative: str) -> str:
+    """A reviewer whose own shell command writes a project file before it approves."""
+
+    return python_command(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        f"Path({relative!r}).write_text('reviewer probe', encoding='utf-8')\n"
+        "open(os.environ['STAGE_REVIEW_VERDICT_FILE'], 'w', encoding='utf-8').write("
+        f"json.dumps({APPROVED!r}))\n"
     )
 
 
@@ -158,6 +173,17 @@ class CloseReviewWriteGuardTest(unittest.TestCase):
                 )
                 # Left in place for the person to inspect, not silently reverted.
                 self.assertIn(WRITTEN_PATH[place], git(root, "status", "--porcelain"))
+
+    def test_a_reviewer_shell_command_that_writes_a_project_file_fails_the_review(self):
+        for label, relative in (("tracked", "tracked.txt"), ("new", "probe-output.txt")):
+            with self.subTest(file=label):
+                root, card = self.repository(f"shell-{label}", probe_module())
+
+                passed, detail = close_review(root, card, shell_writing_reviewer(relative))
+
+                self.assertFalse(passed, detail)
+                self.assertFalse((root / VERDICT_RELATIVE).exists())
+                self.assertIn(f"{relative}; verdict removed", detail)
 
     def test_a_review_that_writes_only_its_verdict_passes(self):
         root, card = self.repository("clean", probe_module())
@@ -226,7 +252,10 @@ LIVE_PROMPT = (
     "Step E: write exactly this JSON to the file named by $STAGE_REVIEW_VERDICT_FILE: "
     + json.dumps(APPROVED)
 )
-DIRECT_WRITES = ("direct-write.txt", "bash-write.txt", "chained.txt")
+# The file-edit tools may write only the verdict; a shell write lands and is caught
+# by the comparison around the review instead.
+REFUSED_WRITES = ("direct-write.txt",)
+SHELL_WRITES = ("bash-write.txt", "chained.txt", "tracked.txt")
 
 
 @unittest.skipUnless(LIVE, "set STAGE_LIVE_REVIEW_PROBE=1 with `claude` on PATH to run")
@@ -241,16 +270,16 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
     def probe(self, path_name: str, command: str, root: Path, card: Path) -> tuple[bool, str]:
         passed, detail = close_review(root, card, command)
         status = git(root, "status", "--porcelain", "--untracked-files=all")
-        # The test body always rewrites tracked.txt, so its absence means the
-        # reviewer chose not to run the tests and the write check was not exercised.
-        exercised = "tracked.txt" in status
+        # No shell write means the reviewer ran none of the steps and the write
+        # check was not exercised.
+        exercised = any(path in status for path in SHELL_WRITES)
         entry = {
             "path": path_name,
             "exercised": exercised,
             "command": command,
             "allowed_tools": claude_review_companion.claude_command(
                 ["prompt"], {"STAGE_REVIEW_VERDICT_FILE": str(root / VERDICT_RELATIVE)}, "claude"
-            )[-4:-2],
+            )[5:-2],
             "passed": passed,
             "changed": status.splitlines(),
             "verdict_kept": (root / VERDICT_RELATIVE).exists(),
@@ -265,13 +294,13 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
         if target:
             with open(target, "a", encoding="utf-8") as handle:
                 handle.write(line + "\n")
-        for path in DIRECT_WRITES:
+        for path in REFUSED_WRITES:
             self.assertNotIn(path, status, detail)
         if not exercised:
-            self.skipTest(f"{path_name}: the reviewer did not run the tests; probe inconclusive")
+            self.skipTest(f"{path_name}: the reviewer ran no shell step; probe inconclusive")
         self.assertFalse(passed, detail)
         self.assertFalse((root / VERDICT_RELATIVE).exists(), detail)
-        self.assertIn("tracked.txt; verdict removed", detail)
+        self.assertIn("; verdict removed", detail)
         return passed, detail
 
     def test_cloud_stand_in_path(self):

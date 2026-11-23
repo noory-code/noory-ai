@@ -52,6 +52,10 @@ Two tests promote a candidate into a rule file, and nothing else does: **it happ
 [rule-promotion.md](rule-promotion.md) before writing the section or lifting a candidate — it owns
 the tests, where the rule goes, and why amending an existing rule usually beats adding a new one.
 
+A closing session does not gather candidates across retrospectives. A separate consolidation
+session does, into `.stage/state/rule-candidates.md`, and it only proposes
+([rule-promotion.md](rule-promotion.md), "Consolidating candidates").
+
 Mixing the queue and the rule under one heading is what buried the earlier pile: 217 retrospectives carried a lesson
 and no rule file cited any of them.
 
@@ -140,6 +144,11 @@ commit at `HEAD`, and the archiver refuses while a path inside the item's scope 
 | The item sits under an epic or a story | `--archive` is refused before any check runs. Close it without the flag; it is archived with its top-level item. |
 | The close succeeds and archiving fails | The command exits non-zero, names the cause, and leaves the item completed in `work/current/`. Fix the cause, then run `archive_work.py` or rerun the same command. |
 | The item is already completed | Rerunning with `--archive` refreshes the decision index and archives it. |
+
+Every close also writes a `- Load at close` line into `## Verification`: attempts, review FAIL
+rounds, repeated findings, driver rounds, and driver failures, counted from the work log and the
+card. `operations/review.md` owns the line's format and `stage/scripts/work_load.py` prints the
+counts of closed cards as a table.
 
 The drivers close without `--archive`: their landing step commits the closed card from
 `work/current/`, so a driver-run item still waits there, completed, until it is archived.

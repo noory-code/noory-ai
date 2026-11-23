@@ -78,8 +78,11 @@ FRONTMATTER_ORDER = (
 )
 # The retrospective file owns the retrospective and the promotion decision; a card
 # carries no copy of them.
+# `## Sessions` names the sessions that worked on the card, so their transcripts can be read
+# again (DE-00000100; `operations/cloud-execution.md`, "Sessions on the card").
 RECORD_SECTIONS = (
     "## Related truth",
+    "## Sessions",
     "## Progress",
     "## Verification",
 )

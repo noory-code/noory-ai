@@ -261,7 +261,7 @@ next free number, writes the card, and updates the owning index:
   | `action` | `## Source` and `## Dependencies` — what produced the indivisible step and what it waits for |
 
   A current card keeps those same questions and adds only the lifecycle sections that execution
-  fills: `## Related truth`, `## Progress`, and `## Verification`. The retrospective and the
+  fills: `## Related truth`, `## Sessions`, `## Progress`, and `## Verification`. The retrospective and the
   promotion decision live in the retrospective file, not on the card. Capturing a card for later
   (`--backlog`) does not exempt it. A card that
   leaves its questions empty is a note, and whoever picks it up will invent the missing answer.

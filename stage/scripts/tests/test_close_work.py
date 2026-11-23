@@ -74,7 +74,7 @@ def approving_reviewer_command(command: str) -> str:
         "    handle.write('\\n### Reviewer report\\n' + report)\n"
         "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
         "    json.dumps({'criteria': [{'criterion': 'criterion', "
-        "'verdict': 'PASS', 'reason': 'test reviewer inspected the inputs'}], "
+        "'verdict': 'PASS', 'method': 'ran', 'reason': 'test reviewer inspected the inputs'}], "
         "'approved': True}), encoding='utf-8')\n"
         "print(verdict)"
     )
@@ -94,7 +94,7 @@ def rejecting_reviewer_command(command: str) -> str:
         "    handle.write('\\n### Reviewer report\\n' + proc.stdout + proc.stderr)\n"
         "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
         "    json.dumps({'criteria': [{'criterion': 'criterion', "
-        "'verdict': 'FAIL', 'reason': 'test reviewer rejected the work'}], "
+        "'verdict': 'FAIL', 'method': 'ran', 'reason': 'test reviewer rejected the work'}], "
         "'approved': False}), encoding='utf-8')\n"
     )
 
@@ -305,8 +305,8 @@ class CloseWorkTest(unittest.TestCase):
         index.write_text(
             (
                 "# Pending decisions\n\n"
-                "| Decision | Decision status | Owner record | Owner status | Link |\n"
-                "|---|---|---|---|---|\n"
+                "| Decision | Title | Decision status | Owner record | Owner status | Link |\n"
+                "|---|---|---|---|---|---|\n"
             ),
             encoding="utf-8",
         )
@@ -994,7 +994,7 @@ class CloseWorkTest(unittest.TestCase):
                 encoding="utf-8"
             )
             self.assertIn(
-                f"- Review at close {date.today().isoformat()} by reviewer: approved (1 PASS)",
+                f"- Review at close {date.today().isoformat()} by reviewer: approved (1 PASS ran)",
                 item,
             )
             self.assertIn(
@@ -1012,9 +1012,9 @@ class CloseWorkTest(unittest.TestCase):
                 "from pathlib import Path\n"
                 "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps({"
                 "'criteria': ["
-                "{'criterion': 'Archive keeps evidence files', 'verdict': 'PASS', "
+                "{'criterion': 'Archive keeps evidence files', 'verdict': 'PASS', 'method': 'ran', "
                 "'reason': 'test_archive_work covers each file kind'}, "
-                "{'criterion': 'Docs match the code', 'verdict': 'PASS', "
+                "{'criterion': 'Docs match the code', 'verdict': 'PASS', 'method': 'ran', "
                 "'reason': 'review.md names the ``` fenced block'}"
                 "], 'approved': True}), encoding='utf-8')"
             )
@@ -1032,7 +1032,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         self.assertIn(
             f"- Review at close {date.today().isoformat()} by reviewer: "
-            "approved (1 PASS, 2 PASS)",
+            "approved (1 PASS ran, 2 PASS ran)",
             item,
         )
         self.assertNotIn("test_archive_work covers each file kind", item)
@@ -1255,7 +1255,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("CRITERIA VERDICT:", log)
         self.assertIn("APPROVED", log)
         self.assertNotIn("CRITERIA VERDICT:", item)
-        self.assertIn(": approved (1 PASS)", item)
+        self.assertIn(": approved (1 PASS ran)", item)
 
     def test_review_without_verdict_file_blocks_even_on_zero_exit(self):
         tmp, root = self.make(review="pending")
@@ -1337,7 +1337,7 @@ class CloseWorkTest(unittest.TestCase):
                 "encoding='utf-8'); "
                 "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text("
                 "json.dumps({'criteria': [{'criterion': 'success criterion', "
-                "'verdict': 'PASS', 'reason': 'satisfied'}], "
+                "'verdict': 'PASS', 'method': 'ran', 'reason': 'satisfied'}], "
                 "'approved': True}), encoding='utf-8'); "
                 "print('APPROVED')"
             )
@@ -1365,11 +1365,13 @@ class CloseWorkTest(unittest.TestCase):
                             {
                                 "criterion": "criterion one",
                                 "verdict": "PASS",
+                                "method": "ran",
                                 "reason": "complete",
                             },
                             {
                                 "criterion": "criterion two",
                                 "verdict": "FAIL",
+                                "method": "read",
                                 "reason": "missing regression",
                             },
                         ],
@@ -1695,19 +1697,104 @@ class CloseWorkTest(unittest.TestCase):
 
             self.assertEqual("", close_work.close_owned_fields_error(card, before))
 
+    def test_a_narrow_re_review_keeps_the_method_of_each_round(self):
+        load_close_module()
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import driver_review
+
+        def entry(criterion, verdict, method):
+            return {"criterion": criterion, "verdict": verdict, "method": method, "reason": "r"}
+
+        previous = {
+            "criteria": [entry("kept", "PASS", "read"), entry("fixed", "FAIL", "unable")],
+            "approved": False,
+        }
+        current = {"criteria": [entry("fixed", "PASS", "ran")], "approved": True}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "verdict.json"
+
+            self.assertEqual("", driver_review.merge_narrow_review_verdict(previous, current, path))
+            merged, error = driver_review.load_driver_review_verdict(path)
+
+            self.assertEqual("", error)
+            self.assertEqual(
+                [("kept", "read", 1), ("fixed", "ran", 2)],
+                [
+                    (item["criterion"], item["method"], item["reviewed_in_round"])
+                    for item in merged["criteria"]
+                ],
+            )
+            self.assertEqual("", driver_review.review_verdict_error(path))
+
+            # A verdict carried from before the method key cannot be merged.
+            del previous["criteria"][0]["method"]
+            error = driver_review.merge_narrow_review_verdict(previous, current, path)
+            self.assertIn("the previous verdict has no `method`", error)
+            self.assertIn("kept", error)
+
+    def test_a_rejection_names_the_criteria_the_reviewer_could_not_judge(self):
+        close_work = load_close_module()
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        import driver_review
+
+        raw = {
+            "criteria": [
+                {"criterion": "a", "verdict": "PASS", "method": "ran", "reason": "r"},
+                {"criterion": "b", "verdict": "FAIL", "method": "unable", "reason": "r"},
+                {"criterion": "c", "verdict": "FAIL", "method": "ran", "reason": "r"},
+            ],
+            "approved": False,
+        }
+        expected = (
+            "review verdict did not approve the work item: the reviewer could not gather "
+            "evidence for criterion 2 (method `unable`)"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "verdict.json"
+            path.write_text(json.dumps(raw), encoding="utf-8")
+
+            self.assertEqual(expected, close_work.review_verdict_error(path))
+            self.assertEqual(expected, driver_review.review_verdict_error(path))
+
     def test_close_and_driver_share_one_verdict_validation(self):
         close_work = load_close_module()
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         import driver_review
 
-        def entry(criterion="c", verdict="PASS", reason="r", **extra):
-            return {"criterion": criterion, "verdict": verdict, "reason": reason, **extra}
+        def entry(criterion="c", verdict="PASS", reason="r", method="ran", **extra):
+            entry = {"criterion": criterion, "verdict": verdict, "method": method}
+            return {**entry, "reason": reason, **extra}
+
+        def without_method():
+            entry_without = entry()
+            del entry_without["method"]
+            return entry_without
 
         first_round = {
             "valid": ({"criteria": [entry()], "approved": True}, ""),
             "extra key": (
                 {"criteria": [entry(note="x")], "approved": True},
-                "each review criterion must contain exactly `criterion`, `verdict`, and `reason`",
+                "each review criterion must contain exactly `criterion`, `verdict`, "
+                "`method`, and `reason`",
+            ),
+            "no method": (
+                {"criteria": [without_method()], "approved": True},
+                "each review criterion must contain exactly `criterion`, `verdict`, "
+                "`method`, and `reason`",
+            ),
+            "unknown method": (
+                {"criteria": [entry(method="guessed")], "approved": True},
+                "review criterion method must be `ran`, `read`, or `unable`",
+            ),
+            "read is a method": ({"criteria": [entry(method="read")], "approved": True}, ""),
+            "unable and failed": (
+                {"criteria": [entry(verdict="FAIL", method="unable")], "approved": False},
+                "",
+            ),
+            "unable and passed": (
+                {"criteria": [entry(method="unable")], "approved": True},
+                "a review criterion whose method is `unable` must be `FAIL`: "
+                "evidence the reviewer did not gather is not a pass",
             ),
             "duplicate": (
                 {"criteria": [entry(), entry()], "approved": True},
@@ -1780,7 +1867,7 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn(": approved (1 PASS)", item)
+        self.assertIn(": approved (1 PASS ran)", item)
         self.assertIn("committed review material", log)
 
     def test_autonomous_review_receives_close_owned_committed_path_list(self):
@@ -1805,7 +1892,7 @@ class CloseWorkTest(unittest.TestCase):
             ).read_text(encoding="utf-8")
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertIn(": approved (1 PASS)", item)
+        self.assertIn(": approved (1 PASS ran)", item)
         self.assertIn("committed review material", log)
 
     def test_failed_json_verdict_refuses(self):
@@ -1961,7 +2048,7 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("status: completed", item)
         self.assertIn("review: passed", item)
         self.assertIn(
-            f"- Review at close {date.today().isoformat()} by claude: approved (1 PASS)",
+            f"- Review at close {date.today().isoformat()} by claude: approved (1 PASS ran)",
             item,
         )
         self.assertNotIn("test reviewer inspected the inputs", item)

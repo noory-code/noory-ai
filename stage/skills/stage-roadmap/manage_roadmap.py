@@ -138,10 +138,23 @@ def _chain_decision_target(stage_root: Path) -> tuple[Path, str, Path]:
     )
 
 
-def _chain_decision_row(decision_id: str, milestone_id: str) -> str:
-    return (
-        f"| {decision_id} | decided | {milestone_id} | "
-        f"[records/{decision_id}.md](records/{decision_id}.md) |"
+def _add_chain_decision_row(
+    stage_root: Path, records_index: Path, decision_id: str, milestone_id: str
+) -> None:
+    """Index a chain decision in the official decision index, title cell included.
+
+    The title column is brought up to date first, so the new row has the same cells as the
+    rows above it in an index written before the column existed (DE-00000100).
+    """
+    refresh_decision_index.refresh_official_titles(stage_root.parent)
+    title = refresh_decision_index.title_cell(
+        records_index.parent / "records" / f"{decision_id}.md", decision_id
+    )
+    _ensure_index_row(
+        records_index,
+        decision_id,
+        f"| {decision_id} | {title} | decided | {milestone_id} | "
+        f"[records/{decision_id}.md](records/{decision_id}.md) |",
     )
 
 
@@ -436,9 +449,7 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
         stage_root.parent,
     )
     _append_decision_ref(milestone_path, decision_id)
-    _ensure_index_row(
-        records_index, decision_id, _chain_decision_row(decision_id, args.milestone)
-    )
+    _add_chain_decision_row(stage_root, records_index, decision_id, args.milestone)
     refresh_decision_index.refresh_index(stage_root.parent)
     print(f"{args.milestone}: pursuit active via {decision_id}")
     return 0
@@ -498,9 +509,7 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         stage_root.parent,
     )
     _append_decision_ref(milestone_path, decision_id)
-    _ensure_index_row(
-        records_index, decision_id, _chain_decision_row(decision_id, args.milestone)
-    )
+    _add_chain_decision_row(stage_root, records_index, decision_id, args.milestone)
     refresh_decision_index.refresh_index(stage_root.parent)
     print(
         f"{args.milestone}: closed via {decision_id} "

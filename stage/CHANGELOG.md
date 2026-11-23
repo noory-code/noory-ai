@@ -4,6 +4,77 @@
 
 ## 0.68.0 — 2026-11-23
 
+- Make the text a session starts with an index derived from the records, and bound it
+  (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
+  rules every time; it named no decision, and a cloud session received none of it.
+  - **Session index.** After the standing rules, SessionStart now lists every binding decision
+    as its id and title, newest first, the open rule candidates, and where to find a record's
+    body. The lifecycle view (the three lowest ids of each folder) is gone. No line carries a
+    record's body.
+  - **Limit.** The whole text is at most 10,000 characters. Over it, decision titles go first,
+    from the oldest, then rule candidates, the previous session's handoff, and the two lists of
+    rule files; each shortened block keeps one line that counts what was left out and names
+    where to read it. What the session is doing now is never shortened. The number is a first
+    value, not a measurement.
+  - **Cloud brief.** `subsession_brief.py` ends both briefs with the same index, built by the
+    same function, and keeps the brief with its index within the same limit. A work session now
+    also reports which records it opened because the index listed them.
+  - **Decision indexes carry titles.** `refresh_decision_index.py` renders a `Title` column in
+    the pending-decision index and fills a `Title` column in the hand-written official decision
+    index from each record's heading, leaving the other cells alone. Run it once after
+    upgrading: the audit reports a pending index in the old shape (`DECISION004`) and an
+    official index with a missing or stale title (`DECISION005`, new).
+  - **Work archive rows carry titles.** `archive_work.py` writes the card's title as the last
+    cell of a new archive-index row and widens a three-column header. Rows written earlier keep
+    three cells; nothing rewrites them.
+  - **Sessions on the card.** A started card has a `## Sessions` section: one line per session
+    with its id, role, date, and the records it says it opened from the index
+    (`operations/cloud-execution.md`). `start_work.py` adds the section and the current-card
+    templates carry it.
+  - **Rule-candidate consolidation.** `rule-promotion.md` and the `stage-orchestrate` skill say
+    when a consolidation session is started (before a milestone is closed, and when 20 or more
+    retrospectives are newer than the list), that it writes only
+    `.stage/state/rule-candidates.md`, and that it proposes promotions and makes none. The
+    session index shows the list's candidates and says when a consolidation is due.
+
+- Make the close reviewer judge by running, and keep how it judged on the card (W-00000408,
+  DE-00000101). A reviewer could approve from the executor's account alone: the Claude stand-in
+  could run only `python3 -m unittest`, and whether anything was run was buried in a reason
+  sentence.
+  - **Verdict contract (breaking).** Every criterion in the verdict file now carries `method`:
+    `ran`, `read`, or `unable`. `close_work.py` and the drivers reject a verdict without it, and a
+    `PASS` whose method is `unable`. A criterion the reviewer could not gather evidence for is
+    `FAIL` with method `unable`, and the close fails naming its number. Update every review
+    command in a project's `.stage/settings.json`: the comment above `review` in
+    `templates/v4/project-stage/settings.jsonc` holds the sentences to copy. A run resumed across
+    this change needs a new run, because its carried verdict has no method.
+  - **Card record.** The `- Review at close` line carries each criterion's method:
+    `approved (1 PASS ran, 2 PASS read)`.
+  - **Review prompts.** This repository's review commands and the template say that a criterion
+    whose evidence the reviewer did not see itself is `FAIL`, and ask for a command of the
+    reviewer's own choosing instead of a repeat of the checks `close_work.py` already ran.
+  - **Stand-in reviewer.** `scripts/claude_review_companion.py` lets the reviewer run any shell
+    command, so it can run a card's checks such as `audit_stage.py` and its own probes. Its
+    file-edit tools still write only the verdict file, `git push` and `git commit` are denied,
+    and the comparison of the repository around the review still fails a review that changed a
+    project file. A change outside the repository is not seen; `operations/cloud-execution.md`
+    says so.
+  - **Verification sessions.** A verification session is no longer the gate on closing. The
+    `stage-orchestrate` skill starts one only for a success criterion that only a whole session
+    can observe, and `subsession_brief.py --role verify` now requires each such criterion with
+    `--criterion` and asks for an observation, which the orchestrator writes on the card's
+    `## Verification` for the close reviewer to read.
+- Keep what a card took to land on the card itself (W-00000405). Attempts, failed review rounds,
+  and driver failures were visible only in the shared work log, which is not committed, so a
+  session without that log could not tell whether a removed control had been carrying load.
+  `close_work.py` now writes a `- Load at close` line into `## Verification`: attempts, review
+  FAIL rounds, repeated findings, driver rounds, and driver failures with the timed-out count,
+  plus one line per driver failure reason. The new `scripts/work_load.py` owns the counting and
+  prints the counts of closed cards as a Markdown table (`--closed-since <date>` or card ids);
+  a card closed before the line existed shows its rejected reviews and `not recorded` elsewhere.
+  `operations/review.md` defines each count, and `operations/cloud-execution.md` tells the main
+  session to commit a rejected review line and keep the work log between attempts so the counts
+  survive a cloud close.
 - Close the gaps the first full conducting run filled by hand (W-00000406, O-00000061).
   `started_cards.py` now lists every open observation and, newest first, the sessions whose
   commits changed a card record, so a new orchestrator finds follow-up candidates and the earlier

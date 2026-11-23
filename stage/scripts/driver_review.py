@@ -25,7 +25,11 @@ for import_dir in (
     if str(import_dir) not in sys.path:
         sys.path.insert(0, str(import_dir))
 
-from close_work import load_review_verdict, normalize_review_verdict  # noqa: E402
+from close_work import (  # noqa: E402
+    load_review_verdict,
+    normalize_review_verdict,
+    rejection_error,
+)
 from driver_model_fallback import USAGE_LIMITS_EXHAUSTED_MARKER  # noqa: E402
 
 
@@ -96,9 +100,7 @@ def review_verdict_error(path: Path) -> str:
     verdict, error = load_driver_review_verdict(path)
     if error:
         return error
-    if verdict is None or verdict["approved"] is not True:
-        return "review verdict did not approve the work item"
-    return ""
+    return rejection_error(verdict)
 
 
 def review_verdict_failures(path: Path) -> list[str]:
@@ -169,6 +171,20 @@ def merge_narrow_review_verdict(
         for entry in previous_criteria
         if isinstance(entry, dict)
     ]
+    carried_without_method = [
+        entry["criterion"]
+        for entry in previous_criteria
+        if isinstance(entry, dict)
+        and entry.get("criterion") not in current_by_criterion
+        and "method" not in entry
+    ]
+    if carried_without_method:
+        return (
+            "the previous verdict has no `method` for criteria this round did not judge: "
+            + ", ".join(str(criterion) for criterion in carried_without_method)
+            + "; start a new run so every criterion is judged again"
+        )
+
     current_round = max(
         round_number
         for round_number in prior_rounds
@@ -185,6 +201,7 @@ def merge_narrow_review_verdict(
                 {
                     "criterion": criterion,
                     "verdict": previous_entry["verdict"],
+                    "method": previous_entry["method"],
                     "reason": previous_entry["reason"],
                     "reviewed_in_round": previous_entry.get(
                         "reviewed_in_round", 1
@@ -196,6 +213,7 @@ def merge_narrow_review_verdict(
             {
                 "criterion": criterion,
                 "verdict": current_entry["verdict"],
+                "method": current_entry["method"],
                 "reason": current_entry["reason"],
                 "reviewed_in_round": current_round,
             }

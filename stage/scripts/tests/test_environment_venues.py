@@ -149,7 +149,7 @@ class EnvironmentVenuePolicyTest(unittest.TestCase):
 
 
 class ClaudeReviewCompanionTest(unittest.TestCase):
-    def test_allows_only_the_verdict_file_and_unittest_with_the_prompt_last(self):
+    def test_allows_verdict_edits_and_any_shell_command_with_the_prompt_last(self):
         with tempfile.TemporaryDirectory() as tmp:
             verdict = Path(tmp) / "verdict.json"
             command = claude_review_companion.claude_command(
@@ -173,7 +173,12 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
                 "opus[1m]",
                 "--allowedTools",
                 f"Edit({rule})",
-                "Bash(python3 -m unittest:*)",
+                "Bash",
+                "--disallowedTools",
+                "Bash(git push)",
+                "Bash(git push:*)",
+                "Bash(git commit)",
+                "Bash(git commit:*)",
                 "--",
                 "Review the card.",
             ],
@@ -182,22 +187,33 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("--permission-mode", command)
         self.assertFalse(any(part.startswith("Write(") for part in command))
+        # Only the verdict file is open to the file-edit tools.
+        self.assertEqual(1, sum(part.startswith("Edit(") for part in command))
 
-    def test_windows_also_allows_unittest_through_the_powershell_tool(self):
-        def allowed(platform: str) -> list[str]:
+    def test_windows_also_allows_and_denies_through_the_powershell_tool(self):
+        def rules(platform: str) -> tuple[list[str], list[str]]:
             command = claude_review_companion.claude_command(
                 ["Review."], {"STAGE_REVIEW_VERDICT_FILE": "/v.json"}, "claude", platform
             )
-            return command[command.index("--allowedTools") + 1 : command.index("--")]
+            allow, deny = command.index("--allowedTools"), command.index("--disallowedTools")
+            return command[allow + 1 : deny], command[deny + 1 : command.index("--")]
 
-        # A Bash(...) rule does not cover the PowerShell tool Claude Code offers on Windows.
-        self.assertEqual(
-            ["Bash(python3 -m unittest:*)", "PowerShell(python3 -m unittest:*)"],
-            allowed("win32")[1:],
-        )
+        # A Bash rule does not cover the PowerShell tool Claude Code offers on Windows.
+        allowed, denied = rules("win32")
+        self.assertTrue(allowed[0].startswith("Edit("))
+        self.assertEqual(["Bash", "PowerShell"], allowed[1:])
+        for command in claude_review_companion.DENIED_COMMANDS:
+            for tool in ("Bash", "PowerShell"):
+                self.assertIn(f"{tool}({command})", denied)
+                self.assertIn(f"{tool}({command}:*)", denied)
         for platform in ("linux", "darwin"):
-            self.assertEqual(["Bash(python3 -m unittest:*)"], allowed(platform)[1:])
-        self.assertTrue(allowed("win32")[0].startswith("Edit("))
+            allowed, denied = rules(platform)
+            self.assertEqual(["Bash"], allowed[1:])
+            self.assertFalse(any(rule.startswith("PowerShell") for rule in denied))
+
+    def test_the_reviewer_may_not_publish_or_record_a_change(self):
+        self.assertIn("git push", claude_review_companion.DENIED_COMMANDS)
+        self.assertIn("git commit", claude_review_companion.DENIED_COMMANDS)
 
     def test_the_verdict_rule_is_absolute_on_posix_and_on_a_windows_drive(self):
         rule = claude_review_companion.absolute_rule_path

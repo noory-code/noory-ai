@@ -8,17 +8,25 @@ its role through its first message instead of a skill:
 - `--role work` (default): the session builds the card, commits, pushes, and reports.
   When the card is an epic, its stories run in sub-agents inside that session and
   each story gets its own commit.
-- `--role verify`: the session judges the card's success criteria and reports a
-  verdict. It changes nothing; closing and merging stay with the main session.
+- `--role verify`: the session observes the success criteria that only a whole
+  session can observe, named with `--criterion`, and reports what it saw. It changes
+  nothing and is not the gate on closing (DE-00000101): the main session writes the
+  observation on the card's `## Verification`, where the close reviewer reads it.
 
 This prints the session's whole instruction from the card, so the main session never
 writes the rules into a prompt by hand. Paste stdout as the session's first message.
+
+Either brief ends with the session index a SessionStart hook gives a session on the
+device (DE-00000100): Stage hooks do not run in a cloud session, so the brief is the
+only way that session learns which decisions and rule candidates exist. The index is
+shortened so the whole brief stays within the hook's limit.
 
 Usage:
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
         --main-session session_0123 --branch claude/w1-feature
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
-        --main-session session_0123 --branch claude/w1-feature --role verify --commit <sha>
+        --main-session session_0123 --branch claude/w1-feature --role verify --commit <sha> \
+        --criterion "<a success criterion copied from the card>"
 """
 
 from __future__ import annotations
@@ -36,6 +44,8 @@ from stage_id_blocks import current_card_path  # noqa: E402
 from stage_record_ids import RESERVED_FIELD  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_work import WORK_FINAL_STATUSES, parse_frontmatter, parse_string_list  # noqa: E402
+import stage_context  # noqa: E402
+from stage_memory_index import SESSION_CONTEXT_CHAR_LIMIT  # noqa: E402
 
 ROLES = ("work", "verify")
 LIFECYCLE_RULE = (
@@ -48,17 +58,36 @@ REPORT_ITEMS = (
     "checks run and their results",
     "decisions made",
     "paths changed outside the card's scope, and why",
+    "the ids of the records you opened because the session index below listed them, or `none`",
     "anything that needs the user's confirmation",
     "follow-up work candidates (do not register them)",
 )
-VERDICT_ITEMS = (
-    "each success criterion copied exactly, `PASS` or `FAIL`, and a one-line reason that names the "
-    "command you ran and what it showed, or says that you did not run it",
-    "`approved: true` when every criterion passes, otherwise `approved: false`",
-    "checks run and their results",
-    "changed paths the executor report leaves out, and paths outside the scope it does not name",
+OBSERVATION_ITEMS = (
+    "each criterion above copied exactly, then every command or action you took for it and what "
+    "it showed",
+    "for each criterion one of `held`, `did not hold`, or `could not observe` with the reason",
     "anything that needs the user's confirmation",
 )
+
+
+SESSION_INDEX_INTRO = (
+    "",
+    "## Session index",
+    "",
+    "Stage hooks do not run in this session. This is the index a SessionStart hook gives a",
+    "session on the device, made from the records when this brief was written: one line per",
+    "record, never its content. When a line bears on your work, open the record it names.",
+)
+
+
+def with_session_index(project_root: Path, lines: list[str]) -> str:
+    """The brief followed by the SessionStart index, the whole within the hook's limit."""
+
+    brief = "\n".join(lines) + "\n"
+    intro = "\n".join(SESSION_INDEX_INTRO) + "\n"
+    room = SESSION_CONTEXT_CHAR_LIMIT - len(brief) - len(intro) - 1
+    index = stage_context.session_index(project_root, room) if room > 0 else ""
+    return brief + intro + index + "\n" if index else brief
 
 
 def stage_path(project_root: Path, relative: str) -> str:
@@ -91,6 +120,25 @@ def story_cards(card: Path) -> list[Path]:
         path
         for path in record_paths(card.parent)
         if path.name == "_story.md" and path.parent.parent == card.parent
+    ]
+
+
+def success_criteria_text(card: Path) -> str:
+    """A card's `## Success criteria` section with every run of whitespace as one space."""
+
+    text = card.read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^## Success criteria[ \t]*\n(.*?)(?=^## |\Z)", text)
+    return " ".join((match.group(1) if match else "").split())
+
+
+def unknown_criteria(card: Path, criteria: list[str]) -> list[str]:
+    """The given criteria that neither the card nor one of an epic's stories states."""
+
+    stated = [success_criteria_text(path) for path in (card, *story_cards(card))]
+    return [
+        criterion
+        for criterion in criteria
+        if not criterion.split() or not any(" ".join(criterion.split()) in text for text in stated)
     ]
 
 
@@ -145,8 +193,8 @@ def work_brief(
         lines = [
             f"You are a work session of the main session `{main_session}`. You build one Stage epic;",
             "its stories run in sub-agents inside this session. The main session started the epic and",
-            "will close and merge it, and a separate verification session judges each story",
-            "(DE-00000094, DE-00000099).",
+            "will close and merge it, and the close review judges each story",
+            "(DE-00000094, DE-00000099, DE-00000101).",
         ]
     else:
         lines = [
@@ -253,12 +301,12 @@ def verify_brief(
     main_session: str,
     branch: str,
     commit: str,
+    criteria: list[str],
 ) -> list[str]:
     item_id = str(fields.get("id") or "").strip()
     scope = str(fields.get("scope") or "").strip()
-    acceptance = list(parse_string_list(fields.get("acceptance")))
     stories = story_cards(card)
-    unit = "one Stage epic, story by story" if stories else "one Stage card"
+    unit = "one Stage epic" if stories else "one Stage card"
     where = f"branch `{branch}`" if branch else "the branch you were created from"
     if commit:
         change = f"The change is commit `{commit}` on {where}."
@@ -268,9 +316,13 @@ def verify_brief(
         )
 
     lines = [
-        f"You are a verification session of the main session `{main_session}`. You judge {unit};",
-        "you change nothing. A work session built it, and the main session closes and merges it",
-        "(DE-00000099).",
+        f"You are a verification session of the main session `{main_session}`. For {unit} you",
+        "observe what only a whole session can observe; you change nothing. A work session built",
+        "it, and the main session closes and merges it (DE-00000099).",
+        "",
+        "You are not the gate on closing (DE-00000101). The main session writes what you observed",
+        "on the card's `## Verification`; the close reviewer reads it there and judges every",
+        "success criterion.",
         "",
         f"## Card: {item_id} {str(fields.get('title') or '').strip()}".rstrip(),
         "",
@@ -289,43 +341,39 @@ def verify_brief(
     ]
     if stories:
         lines += ["", "## Stories", "", *story_lines(project_root, stories)]
-        lines += ["", "Judge each story on its own commit, then the epic's own success criteria."]
     lines += [
         "",
-        "## What to judge",
+        "## What to observe",
         "",
         change,
         "",
-        "- Read the `### Executor report` in that commit's body (`git log -1 --format=%B <commit>`).",
-        "- Open every path in its `Changed paths (JSON):` line, and compare that line with",
-        "  `git show --name-only --format= <commit>`.",
-        "- Judge every item under the card's `## Success criteria`. When a criterion asks for a",
-        "  command to be run or a behavior to be observed, run or observe it yourself; the work",
-        "  session's transcript is a claim.",
-        "- Judge whether `Decisions made:` names every changed path outside the scope, and why.",
-    ]
-    if acceptance:
-        lines += ["", "Run these checks yourself:", *[f"- `{command}`" for command in acceptance]]
-    lines += [
+        "Only a session that does the thing itself can judge these success criteria:",
+        "",
+        *[f"- {' '.join(criterion.split())}" for criterion in criteria],
+        "",
+        "- Do what each criterion describes yourself, in this session. The work session's",
+        "  transcript and the `### Executor report` in the commit body are claims.",
+        "- Keep each command or action and what it showed; the main session copies them onto the",
+        "  card.",
+        "- Leave the card's other success criteria alone: the close reviewer judges them.",
         "",
         "## Rules",
         "",
-        "- Do not edit, commit, or push anything. When a check writes files, restore the working",
+        "- Do not edit, commit, or push anything. When a command writes files, restore the working",
         "  tree (`git status --short` prints nothing) before you report.",
-        "- Do not fix what you find. A failed criterion goes into your verdict.",
+        "- Do not fix what you find. A criterion that did not hold goes into your observation.",
         LIFECYCLE_RULE,
-        "- Do not write a review verdict file; `close_work.py` owns it.",
+        "- Do not write a review verdict file; the close reviewer owns it.",
         "- Do not open or merge a pull request.",
-        "- Checks that must run on another OS (for example Windows) are not yours to run: say which",
-        "  ones in your verdict.",
+        "- What must be observed on another OS (for example Windows) is not yours to observe: say",
+        "  which criteria in your observation.",
         "",
-        "## Verdict",
+        "## Observation",
         "",
-        f"Send the main session `{main_session}` one message"
-        f"{' per story, and one for the epic,' if stories else ''} with:",
-        *[f"- {item}" for item in VERDICT_ITEMS],
+        f"Send the main session `{main_session}` one message with:",
+        *[f"- {item}" for item in OBSERVATION_ITEMS],
         "",
-        "Then wait. The main session answers with a new commit to judge or a user decision.",
+        "Then wait. The main session answers with a new commit to observe or a user decision.",
     ]
     return lines
 
@@ -337,6 +385,7 @@ def build_brief(
     branch: str,
     role: str = "work",
     commit: str = "",
+    criteria: list[str] | None = None,
 ) -> str:
     if role not in ROLES:
         raise LookupError(f"{role}: unknown role; use one of {', '.join(ROLES)}")
@@ -345,10 +394,23 @@ def build_brief(
         raise LookupError(f"{item_id}: no started card in .stage/work/current; start it first")
     fields = parse_frontmatter(card)
     if role == "verify":
-        lines = verify_brief(project_root, card, fields, main_session, branch, commit)
+        criteria = criteria or []
+        if not criteria:
+            raise LookupError(
+                "a verification session is started only for success criteria that only a whole "
+                "session can observe (DE-00000101): name each with --criterion, copied from the "
+                "card. The close review judges every other criterion without one"
+            )
+        unknown = unknown_criteria(card, criteria)
+        if unknown:
+            raise LookupError(
+                f"{item_id}: not under `## Success criteria` of the card or its stories: "
+                + "; ".join(repr(criterion) for criterion in unknown)
+            )
+        lines = verify_brief(project_root, card, fields, main_session, branch, commit, criteria)
     else:
         lines = work_brief(project_root, card, fields, main_session, branch)
-    return "\n".join(lines) + "\n"
+    return with_session_index(project_root, lines)
 
 
 def main() -> int:
@@ -364,15 +426,33 @@ def main() -> int:
         "--role",
         choices=ROLES,
         default="work",
-        help="work: build the card (an epic runs its stories in sub-agents). verify: judge only.",
+        help=(
+            "work: build the card (an epic runs its stories in sub-agents). "
+            "verify: observe the --criterion items only."
+        ),
     )
-    parser.add_argument("--commit", default="", help="Verify role: the commit to judge.")
+    parser.add_argument("--commit", default="", help="Verify role: the commit to observe.")
+    parser.add_argument(
+        "--criterion",
+        action="append",
+        default=[],
+        help=(
+            "Verify role, repeatable and required: a success criterion, copied from the card or "
+            "one of its stories, that only a whole session can observe."
+        ),
+    )
     parser.add_argument("item", help="The started card's W-id.")
     args = parser.parse_args()
     project_root = Path(args.project_root).expanduser().resolve()
     try:
         brief = build_brief(
-            project_root, args.item, args.main_session, args.branch, args.role, args.commit
+            project_root,
+            args.item,
+            args.main_session,
+            args.branch,
+            args.role,
+            args.commit,
+            args.criterion,
         )
     except LookupError as exc:
         print(str(exc), file=sys.stderr)

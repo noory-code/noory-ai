@@ -75,6 +75,52 @@ executed verdict, never a hand-typed claim. Set the requirement with
 `register_work.py --review`, and close with `close_work.py` (not by editing
 frontmatter).
 
+## How the reviewer judges
+
+The reviewer judges by running, not by reading the executor's account (DE-00000101). Every
+criterion in the verdict names its `method`:
+
+| `method` | Meaning | Allowed verdict |
+|---|---|---|
+| `ran` | the reviewer ran a command or observed the behavior itself | `PASS` or `FAIL` |
+| `read` | the reviewer read files or records | `PASS` or `FAIL` |
+| `unable` | the reviewer could not gather the evidence the criterion needs | `FAIL` only |
+
+```yaml
+reviewer_rules:
+  - if: the reviewer did not see a criterion's evidence itself
+    then: the criterion is FAIL; the executor report, the work log, and code comments are claims
+  - if: a criterion asks for a command result or observed behavior
+    then: method is ran, from at least one command the reviewer chose itself; its reason names the command and what it showed
+  - if: a criterion states a fact of the records (a decision exists, a document says something)
+    then: method is read
+  - if: the reviewer could not run what a criterion needs
+    then: method is unable and the verdict is FAIL
+close_work_rules:
+  - if: a criterion has no method, or a method other than ran, read, unable
+    then: the verdict is invalid and the close fails
+  - if: a criterion is PASS with method unable
+    then: the verdict is invalid and the close fails
+  - if: a criterion is FAIL with method unable
+    then: the close fails and names that criterion's number; the rejection line goes on the card
+```
+
+`close_work.py` runs the card's stored `acceptance` checks before the review. Running one of them
+again on the same tree shows the reviewer nothing new, so the review commands ask for a probe of
+the reviewer's own instead.
+
+The method is what the reviewer reports about itself. `close_work.py` does not read the
+reviewer's tool calls, so it cannot tell a reviewer that wrote `ran` without running, and the
+reviewer decides which criteria need a run. DE-00000101 chose this knowingly; a verdict that
+claims to have seen what its named command cannot show is the stated reason to add a check of
+the tool calls.
+
+A criterion that only a whole session can observe (a new cloud session takes a role and does
+something) is observed by a verification session before the close (`stage-orchestrate`, "Start a
+verification session"). The orchestrator writes that observation on the card's `## Verification`,
+and the reviewer judges the criterion from it with method `read`. The verification session does
+not decide the close.
+
 ## What close writes on the card
 
 `close_work.py` completes the card only after every check and any required review
@@ -95,20 +141,39 @@ fails, and a missing or malformed verdict leave the card unchanged.
   Check output is not copied onto the card.
 - Each review that `close_work.py` runs and that returns a valid verdict adds one
   line to `## Verification`, whether it approved or rejected:
-  `- Review at close <date> by <reviewer>: <approved|rejected> (1 PASS, 2 FAIL, ...)`.
-  The numbers follow the verdict's criterion order. `<reviewer>` is the reviewing
+  `- Review at close <date> by <reviewer>: <approved|rejected> (1 PASS ran, 2 FAIL read, ...)`.
+  The numbers follow the verdict's criterion order, and each carries that criterion's verdict
+  and `method`. A line written before the `method` key existed has the verdict only.
+  `<reviewer>` is the reviewing
   venue for an autonomous item; otherwise it is the review command's `--label`, or the
   file name of the `STAGE_CODEX_COMPANION` override when that replaced a `codex`
   label, or `reviewer` when the command names none. Counting the `rejected` lines of
-  archived cards gives the number of reviews at close that sent work back.
+  archived cards gives the number of reviews at close that sent work back; counting the
+  `ran`, `read`, and `unable` marks gives how the reviewers judged.
+- `## Verification` gains the card's load, counted by `scripts/work_load.py` from the work log
+  and the card as they stand at close:
+  `- Load at close <date>: attempts <n>, review FAIL rounds <n>, repeated findings <n|unknown>, driver rounds <n>, driver failures <n> (timed out <n>)`,
+  followed by one `  - Driver failure: <role> — <reason>` line per driver failure.
+
+  | Count | Counted from |
+  |---|---|
+  | `review FAIL rounds` | the larger of: executor reports in the work log with a non-empty `Review dispositions (JSON):`; `rejected` review lines already on the card |
+  | `attempts` | the larger of: `### Executor report` sections in the work log; `review FAIL rounds` + 1 |
+  | `repeated findings` | adjacent answered rounds in the work log that share a `finding`; `unknown` when the work log holds fewer answered rounds than `review FAIL rounds` |
+  | `driver rounds` | `### Driver commands` sections in the work log; `0` means no driver ran the card from this checkout |
+  | `driver failures` | `### Driver failure` sections in the work log; `timed out` counts those whose `Reason:` contains `timed out` |
+
+  `python3 stage/scripts/work_load.py --project-root . --closed-since <YYYY-MM-DD>` prints these
+  counts for closed cards as a Markdown table with a totals row. A card closed before this line
+  existed shows its `rejected` review lines and `not recorded` in the other columns.
 - The reviewer's reasons and report are not copied onto the card. They stay in the
   work log (`.stage/.runtime/driver/logs/<work-id>.md`), which is not committed.
 - Reviews that the drivers run between rounds are recorded in the work log only.
 
-The executor report lines and the criteria live on the card because the work
-log and the verdict file sit under `.stage/.runtime/`, which is not committed.
-The card is the only durable record of what the executor decided and what the
-passing review checked.
+The executor report lines, the criteria with their methods, and the load counts live on the card because
+the work log and the verdict file sit under `.stage/.runtime/`, which is not committed.
+The card is the only durable record of what the executor decided, what the
+passing review checked and how, and what the card took to land.
 
 ## Cross-venue review
 

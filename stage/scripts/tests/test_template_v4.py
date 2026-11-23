@@ -223,10 +223,14 @@ class TemplateV4Test(unittest.TestCase):
             if sys.platform == "win32":
                 # C:/dir/file is matched as /c/dir/file.
                 rule_path = "/" + rule_path[0].lower() + rule_path[2:]
-            shell_rules = ["Bash(python3 -m unittest:*)"]
-            if sys.platform == "win32":
-                # Claude Code offers a PowerShell tool beside Bash on Windows.
-                shell_rules.append("PowerShell(python3 -m unittest:*)")
+            # Claude Code offers a PowerShell tool beside Bash on Windows.
+            shell_tools = ["Bash", "PowerShell"] if sys.platform == "win32" else ["Bash"]
+            denied = [
+                rule
+                for tool in shell_tools
+                for command in ("git push", "git commit")
+                for rule in (f"{tool}({command})", f"{tool}({command}:*)")
+            ]
 
         self.assertEqual(
             [
@@ -237,7 +241,9 @@ class TemplateV4Test(unittest.TestCase):
                 "opus[1m]",
                 "--allowedTools",
                 f"Edit(/{rule_path})",
-                *shell_rules,
+                *shell_tools,
+                "--disallowedTools",
+                *denied,
                 "--",
             ],
             argv[:-1],
@@ -246,10 +252,26 @@ class TemplateV4Test(unittest.TestCase):
         self.assertNotIn("acceptEdits", command)
         self.assertNotIn("Write(", command)
 
-    def test_reviewers_must_say_whether_they_ran_a_criterion_that_asks_for_a_run(self):
-        rule = (
-            "For a criterion that asks for a command to be run or behavior to be observed, "
-            "say in its reason which command you ran and what it showed, or that you did not run it."
+    def test_reviewers_judge_by_running_and_name_how_they_judged(self):
+        rules = (
+            # The judgment method of every criterion (DE-00000101, 2-가).
+            "method says how you judged that criterion: ran when you ran a command or observed "
+            "the behavior yourself, read when you read files or records, unable when you could "
+            "not gather the evidence the criterion needs.",
+            # The skeptical default.
+            "A criterion whose evidence you did not see yourself is FAIL: the executor report, "
+            "the work log, and comments in the code are claims, not evidence.",
+            "A criterion that asks for a command result or observed behavior needs method ran, "
+            "and a criterion with method unable is always FAIL.",
+            # The reviewer's own probe instead of a repeat of close's checks (2-다).
+            "close_work.py runs the stored acceptance checks of the card itself, so repeating one is "
+            "not your evidence: for each criterion that needs method ran, run at least one "
+            "command you chose yourself that could show the criterion false, and say in its "
+            "reason which command you ran and what it showed.",
+            # The widened shell permission is bounded by the prompt and the write comparison.
+            "Change no file other than $STAGE_REVIEW_VERDICT_FILE, keep scratch files in the "
+            "system temp folder, and never commit or push: a review that changes the "
+            "repository fails.",
         )
         review = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))["review"]
         commands = {
@@ -267,10 +289,12 @@ class TemplateV4Test(unittest.TestCase):
         )
 
         self.assertEqual(6, len(commands))
-        for name, command in commands.items():
-            with self.subTest(name=name):
-                self.assertIn(rule, command)
-        self.assertIn(rule, template)
+        for rule in rules:
+            for name, command in commands.items():
+                with self.subTest(name=name, rule=rule):
+                    self.assertIn(rule, command)
+            with self.subTest(name="template", rule=rule):
+                self.assertIn(rule, template)
 
     def test_project_review_strengths_can_write_verdict_files(self):
         settings = json.loads(PROJECT_SETTINGS.read_text(encoding="utf-8"))
@@ -398,6 +422,7 @@ class TemplateV4Test(unittest.TestCase):
         self.assertIn('"criteria"', template_settings)
         self.assertIn('"criterion"', template_settings)
         self.assertIn('"verdict"', template_settings)
+        self.assertIn('"method":"ran|read|unable"', template_settings)
         self.assertIn('"reason"', template_settings)
         self.assertIn('"approved"', template_settings)
 
@@ -412,9 +437,10 @@ class TemplateV4Test(unittest.TestCase):
         required_fragments = (
             "$STAGE_REVIEW_VERDICT_FILE",
             "exactly the keys criteria and approved",
-            "objects with exactly the keys criterion, verdict, and reason",
+            "objects with exactly the keys criterion, verdict, method, and reason",
             "criterion and reason are non-empty one-line strings",
             "criterion values are unique",
+            "method is ran, read, or unable",
             "approved is true exactly when every criterion passes",
             "$STAGE_PREVIOUS_REVIEW_VERDICT_FILE",
             "$STAGE_REVIEW_FAILED_CRITERIA_FILE",
@@ -564,6 +590,7 @@ class TemplateV4Test(unittest.TestCase):
         }
         lifecycle_only = (
             "## Related truth",
+            "## Sessions",
             "## Progress",
             "## Verification",
         )

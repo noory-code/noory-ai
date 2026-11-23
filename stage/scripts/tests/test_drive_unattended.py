@@ -190,6 +190,7 @@ def write_review_verdict(
                     {
                         "criterion": criterion,
                         "verdict": "PASS" if passed else "FAIL",
+                        "method": "ran",
                         "reason": (
                             "criterion passed"
                             if passed
@@ -1303,6 +1304,7 @@ class UnattendedTest(unittest.TestCase):
                             {
                                 "criterion": "criterion failed",
                                 "verdict": "FAIL",
+                                "method": "ran",
                                 "reason": "the implementation is incomplete",
                             }
                         ],

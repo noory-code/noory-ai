@@ -43,7 +43,9 @@ class SubsessionBriefTest(unittest.TestCase):
             self.root / ".stage/work/current" / where,
             "---\nid: W-00000002\ntitle: Build it\nstatus: active\nscope: src/\n"
             "acceptance:\n  - \"python3 -m unittest -q\"\n"
-            f"decision_refs: DE-00000007\n{extra}---\n\n# W-00000002 Build it\n",
+            f"decision_refs: DE-00000007\n{extra}---\n\n# W-00000002 Build it\n\n"
+            "## Success criteria\n\n- The suite passes\n"
+            "- A new cloud session takes the role\n  and reports back\n\n## Progress\n\n- Not a criterion\n",
         )
 
     def test_a_card_with_reserved_ids_tells_the_sub_session_how_to_take_them(self) -> None:
@@ -122,7 +124,8 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertEqual(0, proc.returncode, proc.stderr)
         out = proc.stdout
         self.assertIn("work session of the main session `session_main`. You build one Stage epic", out)
-        self.assertIn("(DE-00000094, DE-00000099)", out)
+        self.assertIn("the close review judges each story\n(DE-00000094, DE-00000099, DE-00000101)", out)
+        self.assertNotIn("verification session", out)
         self.assertIn(
             "- W-00000002 Build it (`active`): `.stage/work/current/W-00000001/W-00000002/_story.md`",
             out,
@@ -145,37 +148,77 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertNotIn("## Stories", out)
         self.assertIn("Write the `### Executor report` in the body of your last commit", out)
 
-    def test_a_verify_brief_judges_and_changes_nothing(self) -> None:
+    SESSION_ONLY = "A new cloud session takes the role and reports back"
+
+    def test_a_verify_brief_observes_the_named_criteria_and_changes_nothing(self) -> None:
         self.card("reserved_ids: DE-00000008\n")
 
         proc = brief(
-            self.root, "W-00000002", "--role", "verify", "--branch", "claude/w2", "--commit", "abc1234"
+            self.root, "W-00000002", "--role", "verify", "--branch", "claude/w2",
+            "--commit", "abc1234", "--criterion", self.SESSION_ONLY,
         )
 
         self.assertEqual(0, proc.returncode, proc.stderr)
         out = proc.stdout
-        self.assertIn("verification session of the main session `session_main`. You judge one Stage card", out)
-        self.assertIn("you change nothing", out)
+        self.assertIn("verification session of the main session `session_main`. For one Stage card", out)
+        self.assertIn("observe what only a whole session can observe; you change nothing", out)
         self.assertIn("the main session closes and merges it", out)
         self.assertIn("The change is commit `abc1234` on branch `claude/w2`.", out)
         self.assertIn("`.stage/work/current/W-00000002/_story.md`", out)
         self.assertIn("`.stage/decisions/pending/DE-00000007.md`", out)
-        self.assertIn("Judge every item under the card's `## Success criteria`", out)
-        self.assertIn("Run these checks yourself:\n- `python3 -m unittest -q`", out)
+        self.assertIn(f"\n- {self.SESSION_ONLY}\n", out)
+        self.assertNotIn("- The suite passes", out)
         self.assertIn("Do not edit, commit, or push anything", out)
         self.assertIn("Do not write a review verdict file", out)
         self.assertIn("Do not run `start_work.py`, `register_work.py`, `close_work.py`", out)
-        self.assertIn("`PASS` or `FAIL`", out)
-        self.assertIn("`approved: true` when every criterion passes", out)
+        self.assertIn("`held`, `did not hold`, or `could not observe`", out)
         self.assertIn("Send the main session `session_main` one message with:", out)
         self.assertNotIn("## Record ids", out)
         self.assertNotIn("--from-card", out)
         self.assertNotIn("Commit and push only to your own branch", out)
 
+    def test_a_verify_brief_says_the_session_is_not_the_gate_on_closing(self) -> None:
+        self.card()
+
+        out = brief(
+            self.root, "W-00000002", "--role", "verify", "--criterion", self.SESSION_ONLY
+        ).stdout
+
+        self.assertIn("You are not the gate on closing (DE-00000101).", out)
+        self.assertIn("writes what you observed\non the card's `## Verification`", out)
+        self.assertIn("the close reviewer reads it there and judges every\nsuccess criterion", out)
+        self.assertIn("Leave the card's other success criteria alone", out)
+        # The session reports observations, not a verdict that decides the close.
+        for verdict_word in ("`PASS`", "`FAIL`", "approved:", "Run these checks yourself"):
+            self.assertNotIn(verdict_word, out)
+
+    def test_a_verify_brief_is_refused_without_a_session_only_criterion(self) -> None:
+        self.card()
+
+        proc = brief(self.root, "W-00000002", "--role", "verify", "--commit", "abc1234")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertEqual("", proc.stdout)
+        self.assertIn("only a whole session can observe (DE-00000101)", proc.stderr)
+        self.assertIn("--criterion", proc.stderr)
+
+    def test_a_verify_brief_refuses_a_criterion_the_card_does_not_state(self) -> None:
+        self.card()
+
+        for criterion in ("The reviewer is happy", "Not a criterion", " "):
+            with self.subTest(criterion=criterion):
+                proc = brief(self.root, "W-00000002", "--role", "verify", "--criterion", criterion)
+
+                self.assertEqual(1, proc.returncode)
+                self.assertEqual("", proc.stdout)
+                self.assertIn("not under `## Success criteria`", proc.stderr)
+
     def test_a_verify_brief_without_a_commit_finds_the_card_by_id_in_the_log(self) -> None:
         self.card()
 
-        out = brief(self.root, "W-00000002", "--role", "verify").stdout
+        out = brief(
+            self.root, "W-00000002", "--role", "verify", "--criterion", self.SESSION_ONLY
+        ).stdout
 
         self.assertIn(
             "The change is on the branch you were created from: for each card, the last commit "
@@ -183,15 +226,62 @@ class SubsessionBriefTest(unittest.TestCase):
             out,
         )
 
-    def test_a_verify_brief_for_an_epic_judges_each_story(self) -> None:
+    def test_a_verify_brief_for_an_epic_takes_a_criterion_from_a_story(self) -> None:
         self.epic()
 
-        out = brief(self.root, "W-00000001", "--role", "verify", "--branch", "claude/w1").stdout
+        proc = brief(
+            self.root, "W-00000001", "--role", "verify", "--branch", "claude/w1",
+            "--criterion", self.SESSION_ONLY,
+        )
 
-        self.assertIn("You judge one Stage epic, story by story", out)
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        out = proc.stdout
+        self.assertIn("For one Stage epic you", out)
         self.assertIn("- W-00000002 Build it (`active`)", out)
-        self.assertIn("Judge each story on its own commit, then the epic's own success criteria.", out)
-        self.assertIn("one message per story, and one for the epic, with:", out)
+        self.assertIn(f"\n- {self.SESSION_ONLY}\n", out)
+
+    def test_the_brief_ends_with_the_index_the_session_start_hook_gives(self) -> None:
+        self.card()
+        sys.path.insert(0, str(SCRIPTS.parent / "hooks"))
+        import stage_context
+
+        for role_args in ([], ["--role", "verify", "--criterion", "The suite passes"]):
+            with self.subTest(role=role_args):
+                proc = brief(self.root, "W-00000002", "--branch", "claude/w2", *role_args)
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                head, index = proc.stdout.split("\n## Session index\n", 1)
+                self.assertIn("- DE-00000007 Choice", index)
+                self.assertIn("W-00000002 Build it [active]", index)
+                # The same function the hook calls, so the two cannot drift apart.
+                self.assertTrue(
+                    index.rstrip("\n").endswith(stage_context.session_index(self.root)), index
+                )
+                self.assertNotIn("## Stage context", proc.stdout)
+        # The work session reports which lines it used: the only record of the index's use.
+        self.assertIn(
+            "- the ids of the records you opened because the session index below listed them",
+            brief(self.root, "W-00000002").stdout,
+        )
+
+    def test_the_brief_with_its_index_stays_within_the_hook_limit(self) -> None:
+        self.card()
+        for number in range(100, 500):
+            write(
+                self.root / f".stage/official/decisions/records/DE-{number:08d}.md",
+                f"---\nid: DE-{number:08d}\nstatus: promoted\n---\n\n"
+                f"# DE-{number:08d} A decision with a reasonably long title, number {number}\n",
+            )
+
+        proc = brief(self.root, "W-00000002", "--branch", "claude/w2")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertLessEqual(len(proc.stdout), 10_000)
+        self.assertIn("- DE-00000499 ", proc.stdout)
+        self.assertNotIn("- DE-00000100 ", proc.stdout)
+        self.assertIn("older decisions not shown — read", proc.stdout)
+        # The brief's own rules are never what gets shortened.
+        self.assertIn("Then wait, and push no commit until the main session answers", proc.stdout)
 
     def test_an_unknown_role_is_refused(self) -> None:
         self.card()

@@ -358,7 +358,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                     self.assertIn("plugin requires v5", reason)
                     self.assertIn("stage-migrate", reason)
 
-    def test_v4_context_renders_registry_derived_lifecycle_view(self):
+    def test_v4_context_indexes_binding_decisions_from_registry_roots(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             stage_root = root / ".stage"
@@ -372,46 +372,39 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
                 "official/proposals/archive/P-00000111.md": "P-00000111",
                 "official/state/archive/O-00000112.md": "O-00000112",
                 "roadmap/milestones/M-00000105.md": "M-00000105",
-                "work/current/W-00000106.md": "W-00000106",
-                "work/current/W-00000107.md": "W-00000107",
-                "work/current/W-00000108.md": "W-00000108",
                 "work/current/W-00000109.md": "W-00000109",
             }
             for relative, record_id in records.items():
                 path = stage_root / relative
-                path.write_text(f"# {record_id} Lifecycle fixture\n", encoding="utf-8")
+                path.write_text(f"# {record_id} Index fixture\n", encoding="utf-8")
 
             context = stage_context.session_context(root)
 
-        self.assertIn("### Lifecycle view (derived, read-only)", context)
-        self.assertIn("- planned — `work/planned`: W-00000101", context)
-        self.assertIn(
-            "`work/current`: W-00000102, W-00000106, W-00000107 (+2 more)", context
-        )
-        lifecycle_view = context.split(
-            "### Lifecycle view (derived, read-only)\n", 1
-        )[1].split("### Current work hierarchy\n", 1)[0]
-        self.assertNotIn("W-00000109", lifecycle_view)
+        self.assertNotIn("Lifecycle view", context)
         self.assertIn("- W-00000109 W-00000109 [active]", context)
-        self.assertIn("`decisions/pending`: DE-00000103", context)
-        self.assertIn("`official/decisions/archive`: DE-00000110", context)
-        self.assertIn("`official/decisions/records`: DE-00000104", context)
-        self.assertIn("`official/proposals/archive`: P-00000111", context)
-        self.assertIn("`official/state/archive`: O-00000112", context)
+        decisions = context.split("### Decisions (titles only, newest first)\n", 1)[1].split(
+            "\n\n", 1
+        )[0]
+        self.assertEqual(
+            ["- DE-00000104 Index fixture", "- DE-00000103 Index fixture"],
+            decisions.splitlines(),
+        )
         self.assertIn(
-            "- roadmap (decision-derived lifecycle) — "
-            "`roadmap/milestones`: M-00000105",
+            "`.stage/decisions/pending/<id>.md` or `.stage/official/decisions/records/<id>.md`",
             context,
         )
+        # A closed decision no longer binds work, and other families are not decisions.
+        for absent in ("DE-00000110", "P-00000111", "O-00000112"):
+            self.assertNotIn(absent, context)
 
-    def test_v3_context_does_not_render_v4_lifecycle_view(self):
+    def test_v3_context_does_not_render_the_v4_index(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shutil.copytree(V3_TEMPLATE_ROOT, root / ".stage")
 
             context = stage_context.session_context(root)
 
-        self.assertNotIn("Lifecycle view (derived, read-only)", context)
+        self.assertNotIn("### Decisions", context)
         self.assertIn(
             "`past` is official, `present` is in progress, `future` is planned", context
         )

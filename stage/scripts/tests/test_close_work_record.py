@@ -42,12 +42,22 @@ See R.
 """
 
 
-def reviewer_command(verdicts: list[str]) -> str:
-    """A reviewer that reports once and writes one criterion per given verdict."""
+def reviewer_command(verdicts: list[str], methods: list[str] | None = None) -> str:
+    """A reviewer that reports once and writes one criterion per given verdict.
 
+    A passing criterion is judged by `ran` and a failing one by `read` unless
+    `methods` names each criterion's method.
+    """
+
+    methods = methods or ["ran" if verdict == "PASS" else "read" for verdict in verdicts]
     criteria = [
-        {"criterion": f"criterion {number}", "verdict": verdict, "reason": "LONG REASON TEXT"}
-        for number, verdict in enumerate(verdicts, 1)
+        {
+            "criterion": f"criterion {number}",
+            "verdict": verdict,
+            "method": method,
+            "reason": "LONG REASON TEXT",
+        }
+        for number, (verdict, method) in enumerate(zip(verdicts, methods), 1)
     ]
     payload = json.dumps(
         {"criteria": criteria, "approved": all(v == "PASS" for v in verdicts)}
@@ -156,7 +166,7 @@ class CloseRecordTest(unittest.TestCase):
         lines = [line for line in card.splitlines() if line.startswith("- Review at close")]
         self.assertEqual(1, len(lines), card)
         self.assertIn(f"- Review at close {TODAY} by ", lines[0])
-        self.assertIn(": approved (1 PASS, 2 PASS)", lines[0])
+        self.assertIn(": approved (1 PASS ran, 2 PASS ran)", lines[0])
         self.assertNotIn("LONG REASON TEXT", card)
         self.assertNotIn("### Review at close", card)
         self.assertIn("review: passed", card)
@@ -170,12 +180,58 @@ class CloseRecordTest(unittest.TestCase):
         self.assertEqual(1, proc.returncode)
         lines = [line for line in card.splitlines() if line.startswith("- Review at close")]
         self.assertEqual(1, len(lines), card)
-        self.assertIn(": rejected (1 PASS, 2 FAIL)", lines[0])
+        self.assertIn(": rejected (1 PASS ran, 2 FAIL read)", lines[0])
         self.assertIn("status: active", card)
         self.assertIn("verification: pending", card)
         self.assertIn("review: pending", card)
         self.assertNotIn("- Checks at close", card)
         self.assertNotIn("LONG REASON TEXT", card)
+
+    def test_each_criterion_method_lands_on_the_card(self):
+        tmp, root = self.make(
+            review="pending",
+            review_command=reviewer_command(["PASS", "PASS"], ["ran", "read"]),
+        )
+        with tmp:
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(": approved (1 PASS ran, 2 PASS read)", card)
+
+    def test_a_criterion_the_reviewer_could_not_run_fails_the_close(self):
+        tmp, root = self.make(
+            review="pending",
+            review_command=reviewer_command(["PASS", "FAIL"], ["read", "unable"]),
+        )
+        with tmp:
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn(
+            "the reviewer could not gather evidence for criterion 2 (method `unable`)",
+            proc.stdout + proc.stderr,
+        )
+        self.assertIn(": rejected (1 PASS read, 2 FAIL unable)", card)
+        self.assertIn("status: active", card)
+        self.assertIn("review: pending", card)
+
+    def test_a_pass_the_reviewer_could_not_run_is_no_verdict_at_all(self):
+        tmp, root = self.make(
+            review="pending", review_command=reviewer_command(["PASS"], ["unable"])
+        )
+        with tmp:
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn(
+            "a review criterion whose method is `unable` must be `FAIL`",
+            proc.stdout + proc.stderr,
+        )
+        self.assertNotIn("- Review at close", card)
+        self.assertIn("status: active", card)
 
     def test_rejections_accumulate_so_the_repository_counts_them(self):
         tmp, root = self.make(review="pending", review_command=reviewer_command(["FAIL"]))
@@ -191,8 +247,50 @@ class CloseRecordTest(unittest.TestCase):
             card = self.card(root)
 
         self.assertEqual(0, proc.returncode, proc.stderr)
-        self.assertEqual(2, card.count(": rejected (1 FAIL)"))
-        self.assertEqual(1, card.count(": approved (1 PASS)"))
+        self.assertEqual(2, card.count(": rejected (1 FAIL read)"))
+        self.assertEqual(1, card.count(": approved (1 PASS ran)"))
+
+    def test_close_records_the_load_of_a_card_with_no_work_log(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            f"- Load at close {TODAY}: attempts 1, review FAIL rounds 0, repeated findings 0, "
+            "driver rounds 0, driver failures 0 (timed out 0)\n",
+            card,
+        )
+        self.assertLess(card.index("- Checks at close"), card.index("- Load at close"))
+
+    def test_load_counts_earlier_rejections_and_the_uncommitted_work_log(self):
+        tmp, root = self.make(review="pending", review_command=reviewer_command(["FAIL"]))
+        with tmp:
+            run(root, "W-00000001", "--check", python_command("print('ok')"))
+            log = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            with log.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    "\n### Driver commands\nExecutor command: \"x\"\n"
+                    "\n### Driver failure\nRole: executor\n"
+                    "Reason: executor timed out after 900s\nOutput:\n\n```text\nSECRET OUTPUT\n```\n"
+                )
+            settings = root / ".stage/settings.json"
+            config = json.loads(settings.read_text(encoding="utf-8"))
+            config["review"]["strengths"]["standard"] = reviewer_command(["PASS"])
+            settings.write_text(json.dumps(config), encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            f"- Load at close {TODAY}: attempts 2, review FAIL rounds 1, "
+            "repeated findings unknown, driver rounds 1, driver failures 1 (timed out 1)\n"
+            "  - Driver failure: executor — executor timed out after 900s\n",
+            card,
+        )
+        self.assertNotIn("SECRET OUTPUT", card)
 
     def test_review_line_names_the_label_of_the_review_command(self):
         command = reviewer_command(["PASS"])
