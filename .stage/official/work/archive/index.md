@@ -339,3 +339,4 @@
 | W-00000409 | completed | [items/W-00000409/_story.md](items/W-00000409/_story.md) | 세션의 맨 위 층이 기록에서 만든 색인을 싣는다 |
 | W-00000410 | completed | [items/W-00000410/_story.md](items/W-00000410/_story.md) | 지난 카드들의 보고에 남은 작은 고침 넷을 넣는다 |
 | W-00000415 | completed | [items/W-00000415/_story.md](items/W-00000415/_story.md) | 쌓인 규칙 후보를 처음으로 한 목록에 묶는다 |
+| W-00000411 | completed | [items/W-00000411/_epic.md](items/W-00000411/_epic.md) | 지휘와 닫기 절차, 리뷰 증거에 남은 빈 곳을 메운다 |
