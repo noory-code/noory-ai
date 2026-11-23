@@ -29,7 +29,7 @@ Stage 의 코드는 일곱 레이어로 나뉜다. 각 레이어는 한 가지 �
 | 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `hooks/stage_process.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py`, `scripts/stage_id_blocks.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
 | 관문 | 지금 이 쓰기와 커밋을 허용하는가 | `hooks/hooks.json`, `hooks/stage_guard.py`, `hooks/stage_shell.py`, `hooks/stage_git.py`, `hooks/stage_runtime.py`, `hooks/stage_context.py`, `hooks/stage_memory_index.py`, `hooks/stage_roadmap_gate.py`, `hooks/stage_agent_tier.py` | [hooks/README.md](../hooks/README.md) |
 | 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/refresh_index_titles.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py`, `scripts/started_cards.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
-| 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `skills/stage-retrospective/review_material.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py`, `scripts/work_load.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
+| 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `skills/stage-retrospective/review_material.py`, `skills/stage-retrospective/review_containment.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py`, `scripts/work_load.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
 | 드라이버 | 등록된 일을 사람 대신 누가 실행하는가 | `scripts/drive.py`, `scripts/drive_parallel.py`, `scripts/driver_*.py`, `scripts/land_run.py`, `scripts/import_executor_report.py` | `skills/stage-drive/SKILL.md` |
 | 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/audit_close_evidence.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
 
@@ -178,7 +178,13 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
   담고, 그 검사는 `close_work.py` 의 `normalize_review_verdict` 한 곳에 있어 드라이버도 같은 규칙을 쓴다.
   대역 리뷰어(`scripts/claude_review_companion.py`)는 셸 명령을 무엇이든 실행할 수 있고, 파일 편집 도구로는
   판정 파일만 쓸 수 있다. 리뷰가 저장소 파일을 바꿨는지는 권한이 아니라 리뷰 앞뒤의 비교
-  (`reject_review_writes`)가 잡는다. 저장소 밖의 변경은 잡지 못한다.
+  (`reject_review_writes`)가 잡는다. 닫을 때의 비교(`review_containment.py`)는 세 가지를 더 본다(W-00000416).
+  고쳤다가 되돌린 파일은 내용이 같아도 파일의 시각과 번호가 달라져 있어 리뷰가 실패한다. git 이 무시하는 파일에
+  쓴 것과, 세션 기록 폴더(`~/.claude`)나 GitHub 를 가리키는 리뷰어의 명령은 리뷰를 실패시키지 않고 닫는
+  사람에게 알리고 카드에 한 줄로 남긴다. 캐시에 쓰는 것과 폴더 이름만 적은 명령이 진짜와 구별되지 않아서다.
+  명령은 대역 리뷰어가 남기는 도구 호출 기록에서 읽으므로 그 기록을 남기지 않는 리뷰어 명령(codex)에서는 볼 수 없다.
+  저장소 밖의 변경은 여전히 잡지 못한다. 막은 것과 못 막는 것의 목록은
+  [review.md](../operations/review.md) 의 "What the close sees of the reviewer" 에 있다.
 - `subsession_brief.py` 는 카드를 읽기만 한다. 세션을 만들지 않고 카드나 런타임 상태를 고치지 않는다.
 - 규칙 후보를 모으는 정리 세션은 `--role consolidation` 브리핑으로 역할을 받는다. 오케스트레이터가 마일스톤을
   닫기 전과 새 회고가 20건 쌓였을 때 띄우고, 그 세션은 `.stage/state/rule-candidates.md` 만 쓴다. 회고, 결정,
@@ -214,8 +220,10 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
   제목은 한 건도 실리지 않았다(W-00000413). 지금 하는 일과 규칙 문장은 덜어내지
   않는다. 덜어낸 조각은 몇 건을 덜어냈고 어디서 읽는지를 한 줄로 남긴다. 덜어낼 것이 없는데도 넘으면 끝을 자르고
   마지막 줄에 그렇다고 적는다.
-- 10,000자는 잰 값이 아니다. 정할 때의 크기(6,484자)에서 역산한 처음 값이다. 규칙 문장이 3,400자쯤을 쓰기
-  때문에 후보가 모두 빠진 뒤에도 결정이 늘면 오래된 제목부터 빠진다. 규칙 문장을 줄일지는 이 장치가 정하지 않는다.
+- 10,000자는 잰 값이 아니다. 정할 때의 크기(6,484자)에서 역산한 처음 값이다. 규칙 문장과 색인이 한 상한을
+  나눠 쓰므로 규칙 문장의 한 글자는 색인이 못 싣는 한 글자다. 그래서 규칙 문장은 세션이 첫 도구 호출 전에 알아야
+  하는 것만 한 줄씩 싣고(`standing_rule_lines()`), 훅의 거부 문구나 스킬이나 운영 문서가 이미 말하는 것은 그 자리를
+  가리키기만 한다. 3,400자쯤이던 것을 1,400자쯤으로 줄였고(W-00000417), 결정이 더 늘면 다시 오래된 제목부터 빠진다.
 - 결정 색인 파일에도 제목 칸이 있다. `scripts/refresh_decision_index.py` 가 대기 중 결정 색인을 통째로 만들고,
   손으로 쓰는 공식 결정 색인에서는 제목 칸만 기록의 제목으로 채운다. 감사의 `DECISION005` 가 제목이 없거나 기록과
   다른 공식 색인을 잡는다. 작업 보관 색인의 줄은 `archive_work.py` 가 보관할 때 제목을 끝 칸에 적는다.

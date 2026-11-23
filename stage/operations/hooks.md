@@ -4,9 +4,11 @@ This document owns the Stage hook rules.
 
 ## Rules
 
-- `SessionStart` injects the Stage context and completion gates: the standing rules and an
-  index derived from the records, within 10,000 characters (`cloud-execution.md`, "Session
-  index").
+- `SessionStart` injects the Stage context: the standing rules and an index derived from the
+  records, within 10,000 characters (`cloud-execution.md`, "Session index"). The standing rules
+  carry only what a session needs before its first tool call; they share the limit with the
+  index, so a rule that a refusal, a skill, or an operations document states is named, not
+  repeated (`hooks/README.md`).
 - `PreToolUse` blocks likely rule violations and routes purpose context when a call carries a
   signal.
 - `PostToolUse` completes two-phase intent reservations after the tool actually ran (never blocks).

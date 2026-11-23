@@ -235,6 +235,10 @@ class TemplateV4Test(unittest.TestCase):
         self.assertEqual(
             [
                 "-p",
+                # The stand-in reads every tool call from this stream (W-00000416).
+                "--output-format",
+                "stream-json",
+                "--verbose",
                 "--add-dir",
                 str(review_tmp),
                 "--model",

@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+- Shorten the standing rules a session starts with so the index keeps its decision titles
+  (W-00000417, DE-00000100). The rules and the index share one 10,000-character limit, and the
+  rules are never shortened, so each of their sentences displaced a decision title.
+  - The `## Stage context` block is six lines instead of fifteen: in this repository 1,384
+    characters, down from 3,373. With five cards in progress and 39 rule candidates, all 82
+    decision titles are listed; before, six to nineteen of them were left out.
+  - Removed, because another place already says it: the space-axis sentence and the artifact
+    map (`.stage/index.md`, `operations/artifacts.md`), the six principle summaries (the
+    project's principle catalog), and the venue exception and `split` rules (the `stage-work`
+    and `stage-handoff` skills, and `register_work.py`'s refusal). The two write-gate sentences
+    are one line that leaves the command to the hook's refusal.
+  - Removed, because it was wrong: "cite the governing principles in every … retrospective".
+    A retrospective has had no such section since DE-00000093.
+  - Kept, shorter: the inline-interpreter refusal, the routing table with how each venue
+    runs, and the document language.
+  - What the hooks refuse, and the text of each refusal, is unchanged. The limit is unchanged.
+
+- Make the close see a reviewer that puts the tree back or reads records outside the
+  repository (W-00000416, DE-00000101).
+  - **A restored file fails the review.** `close_work.py` now compares each tracked and untracked
+    file's identity and times as well as its content. A file a review changed and restored
+    (`git checkout`, `git restore`, `git stash`, the same bytes written back) has its old content
+    and new times: the close removes the verdict and names the file. Before, a reviewer that
+    tidied up after the tests it ran passed the comparison (W-00000413).
+  - **Writes to ignored files are told.** The comparison lists the files Git ignores, without
+    `.stage/.runtime/`, by size and modified time. A review that wrote, created, or deleted one is
+    not failed, because test runs write caches there; the close prints a `WARNING` with the paths.
+  - **Reads of session records and GitHub are told.** `claude_review_companion.py` runs the
+    reviewer with `--output-format stream-json`, prints its answer as before, and writes each
+    tool call to `$STAGE_REVIEW_TOOL_CALLS_FILE`. The close prints a `WARNING` with the calls whose
+    text names `~/.claude` or GitHub (`gh`, `api.github.com`), leaving out calls the host refused.
+    A reviewer command that writes no such record is not checked.
+  - **One card line.** A review that left any of these adds
+    `- Reviewer traces at close <date>: ...` after its `- Review at close` line, on a passed and
+    on a rejected review.
+  - **The reviewer is told first.** The stand-in ends every prompt with the rules the close
+    checks: leave a changed file in place and name it, do not restore it, and do not read
+    `~/.claude` or GitHub.
+  - `operations/review.md`, "What the close sees of the reviewer", lists what is failed, what is
+    told, and what is still not seen: changes outside the repository, reads hidden in a script,
+    and reviewer commands that write no tool-call record. The reads are named and not stopped,
+    because stopping them needs the reviewer's shell narrowed.
 - Write down the paths an orchestrator made up by hand while conducting eight cards and a
   release (W-00000412, O-00000061).
   - **A session prints its own brief.** `subsession_brief.py --first-message` prints a short

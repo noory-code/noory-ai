@@ -167,6 +167,9 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
             [
                 "claude",
                 "-p",
+                "--output-format",
+                "stream-json",
+                "--verbose",
                 "--add-dir",
                 str(Path(tmp) / "review-x"),
                 "--model",
@@ -180,7 +183,7 @@ class ClaudeReviewCompanionTest(unittest.TestCase):
                 "Bash(git commit)",
                 "Bash(git commit:*)",
                 "--",
-                "Review the card.",
+                "Review the card." + claude_review_companion.REVIEWER_RULES,
             ],
             command,
         )

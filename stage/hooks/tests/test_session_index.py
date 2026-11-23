@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import tempfile
@@ -16,6 +17,7 @@ if str(HOOK_ROOT) not in sys.path:
 
 import stage_context  # noqa: E402
 import stage_memory_index  # noqa: E402
+import stage_paths  # noqa: E402
 from stage_memory_index import Block, fit_blocks  # noqa: E402
 
 
@@ -286,6 +288,54 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
             self.assertIn("- …39 candidates not shown — read `.stage/state/rule-candidates.md`", context)
         else:
             self.assertEqual(82, len(listed))
+
+    def test_five_active_cards_and_thirty_nine_candidates_keep_every_decision_title(self):
+        """W-00000417: the standing rules were cut so that this state fits."""
+        settings_path, settings, error = stage_paths.read_settings(self.stage_root)
+        self.assertIsNone(error)
+        settings["language"] = "ko"
+        settings["venue_routing"] = {
+            kind: "codex"
+            for kind in (
+                "planning", "design", "documentation", "development", "fix",
+                "qa", "ops", "release", "chore", "feature",
+            )
+        }
+        settings_path.write_text(json.dumps(settings), encoding="utf-8")
+        self.write_decisions(82)
+        for number in range(901, 906):
+            folder = self.stage_root / "work" / "current" / f"W-{number:08d}"
+            folder.mkdir(parents=True)
+            (folder / "_story.md").write_text(
+                card(f"W-{number:08d}", "A card in progress whose title runs to a usual length"),
+                encoding="utf-8",
+            )
+        for name in ("CLAUDE.md", "AGENTS.md"):
+            (self.root / name).write_text("# Instructions\n", encoding="utf-8")
+        self.write_candidates(39, promote_every=5)
+
+        context = stage_context.session_context(self.root)
+
+        self.assertLessEqual(len(context), LIMIT)
+        self.assertNotIn("older decisions not shown", context)
+        listed = [line for line in context.splitlines() if line.startswith("- DE-")]
+        self.assertEqual(82, len(listed))
+        self.assertEqual(5, sum(line.startswith("| W-000009") for line in context.splitlines()))
+
+    def test_the_standing_rules_stay_short(self):
+        """Every character of the rules is one the index cannot use (W-00000417)."""
+        settings_path, settings, error = stage_paths.read_settings(self.stage_root)
+        self.assertIsNone(error)
+        settings["language"] = "ko"
+        settings["venue_routing"] = {"design": "claude", "development": "codex"}
+        settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+        rules = stage_context.session_context(self.root).split("\n\n### ", 1)[0]
+
+        self.assertTrue(rules.startswith("## Stage context\n"))
+        self.assertLessEqual(len(rules), 1_500, rules)
+        for line in rules.splitlines()[1:]:
+            self.assertTrue(line.startswith("- "), line)
 
     def test_the_candidates_left_out_first_are_the_hold_ones(self):
         self.write_decisions(3)

@@ -179,7 +179,8 @@ not committed.
 
    | What could go wrong | What holds it |
    |---|---|
-   | a shell command, or code the tests run, writes a project file | `close_work.py` compares the repository before and after every review command: when any file other than the verdict changed, it removes the verdict, names the paths, and fails the close review. Inspect and discard those changes before closing again. |
+   | a shell command, or code the tests run, writes a project file | `close_work.py` compares the repository before and after every review command: when any file other than the verdict changed, or was changed and restored, it removes the verdict, names the paths, and fails the close review. Inspect and discard those changes before closing again. |
+   | the reviewer writes a file Git ignores, or reads the session record folder (`~/.claude`) or GitHub | `close_work.py` prints a `WARNING` and writes a `- Reviewer traces at close` line on the card; the review is not failed. `operations/review.md`, "What the close sees of the reviewer", says what to do with it and what is not seen. |
    | the reviewer commits or pushes | the stand-in denies `git push` and `git commit`, alone or inside a compound command line. A command hidden inside another program (`sh -c`, a script) is not seen. |
    | the reviewer changes something outside the repository (another checkout, the home folder, a remote service) | nothing. DE-00000101 accepted this weakness; when you see one case, record an observation, because it is that decision's stated reason to be revisited. |
 4. State on the card's `## Verification` that the close review was a same-model

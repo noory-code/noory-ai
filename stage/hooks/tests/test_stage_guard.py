@@ -241,7 +241,7 @@ class StageGuardTest(unittest.TestCase):
 
         output = result["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "SessionStart")
-        self.assertIn("Global time axis", output["additionalContext"])
+        self.assertIn("## Stage context", output["additionalContext"])
 
     def test_schema_v5_maintenance_marker_only_denies_governed_project_mutations(self):
         for schema_version in (3, 4, 5):

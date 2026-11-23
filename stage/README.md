@@ -60,7 +60,7 @@ Stage creates a `.stage/` directory inside the project and connects three axes.
 
 Stage ships one hook set in `hooks/` that both Claude Code and Codex execute (Codex auto-discovers the same `hooks/hooks.json` from the installed plugin).
 
-- `SessionStart`: injects the current Stage context, core principles, and the artifact map.
+- `SessionStart`: injects Stage's standing rules and an index derived from the records (`hooks/README.md`).
 - `PreToolUse`: blocks `.stage` destruction, unregistered governed-file modification, hierarchy violations, and `official/` modification without a promotion intent; reminds once per question to derive answers from purpose and principles first.
 - `PostToolUse`: completes two-phase intent reservations after the tool actually ran (never blocks).
 - `SubagentStop`: records the model and effort each subagent actually ran with (never blocks).
