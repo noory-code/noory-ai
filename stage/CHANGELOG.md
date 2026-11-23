@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- Write down the paths an orchestrator made up by hand while conducting eight cards and a
+  release (W-00000412, O-00000061).
+  - **A session prints its own brief.** `subsession_brief.py --first-message` prints a short
+    first message that names the role and the same command without that flag; the session runs
+    it in its own checkout and reads its brief. A brief with its session index runs up to 10000
+    characters, more than a first message carries well. `stage-orchestrate` no longer says to
+    paste the brief; pasting stays as the path for a host that cannot run the script.
+  - **Briefs for three more roles.** `--role discussion` and `--role planning` take `--topic`
+    and an optional started card; `--role consolidation` takes no card. The names are the ones
+    a card's `## Sessions` line uses. The three sessions write no card and no decision record:
+    they report, and the orchestrator registers. `stage-orchestrate` no longer carries the
+    consolidation session's rules; the brief does.
+  - **Second import after a rejected close review.** `operations/cloud-execution.md` says the
+    first squash commit stays, how to resolve the second squash's conflicts with the
+    sub-session's files, how to confirm the code equals the sub-session's branch, and that the
+    report is imported with one `--commit` per squash commit.
+  - **Merging a card that waits for the user's machine.** The same document says when code may
+    merge while its card stays open, that no close review runs before that merge, what is
+    written on the card and in the observation that collects deferred checks, and how the
+    card closes when the user's check arrives.
+  - **Observation on the card before the close.** Before closing a card that had a verification
+    session, the main session confirms the `- Observed` line is on the card.
+  - The repository's release procedure (root `CLAUDE.md`, "Plugin Changes") says to merge the
+    default branch immediately before creating the release commit, and not after it.
+  - `stage-orchestrate` is 320 lines, down from 322.
+
 ## 0.69.0 — 2026-11-23
 
 - Put four small fixes left in earlier cards' reports into the code and CI (W-00000410).

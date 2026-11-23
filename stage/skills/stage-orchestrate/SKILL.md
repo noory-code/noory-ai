@@ -6,16 +6,16 @@ description: Take the orchestrator role for a Stage project — the one session 
 # Stage Orchestrate
 
 One session conducts; every other session has one role (DE-00000099). Only the orchestrator loads
-this skill. Every other session receives its role in its first message.
+this skill. Every other session gets its role from a generated brief ("Give a session its brief").
 
-| Session | Does | Gets its role from |
+| Session | Does | `--role` |
 |---|---|---|
-| Orchestrator | takes the user's confirmations, organizes work, starts sessions, tracks progress, closes and merges cards | this skill |
-| Discussion | a long talk with the user about new work or a change of direction; ends in decision records and cards | a first message you write |
-| Planning | designs what to achieve, never how | a first message you write |
-| Work | builds one top-level card; an epic's stories run in sub-agents inside it | `subsession_brief.py --role work` |
-| Verification | observes the success criteria only a whole session can observe, and changes nothing; it is not the gate on closing | `subsession_brief.py --role verify` |
-| Consolidation | groups the retrospectives' rule candidates into one list and proposes which to promote; edits no retrospective, decision, or rule file | a first message you write ("Start a consolidation session") |
+| Orchestrator | takes the user's confirmations, organizes work, starts sessions, tracks progress, closes and merges cards | none: this skill |
+| Discussion | a long talk with the user about new work or a change of direction; reports what the user chose and the cards it proposes | `discussion` |
+| Planning | designs what to achieve, never how; reports the cards it proposes | `planning` |
+| Work | builds one top-level card; an epic's stories run in sub-agents inside it | `work` |
+| Verification | observes the success criteria only a whole session can observe, and changes nothing; it is not the gate on closing | `verify` |
+| Consolidation | groups the retrospectives' rule candidates into one list and proposes which to promote; edits no retrospective, decision, or rule file | `consolidation` |
 
 ```yaml
 orchestrator_does:
@@ -29,6 +29,8 @@ orchestrator_does_not:
   - read scattered records itself (a sub-agent reads them and returns a summary)
   - design how a card is executed; a card carries purpose, success criteria, and the user's choices
   - keep a state file about sessions; the records and the session list are the state
+  - leave gathering, grouping, ordering, or asking the user to `drive.py` (`stage-drive`): it only
+    runs, in id order, cards that are registered, ready, and carry acceptance checks
 ```
 
 ## Take over from the records
@@ -44,18 +46,14 @@ handed over in a message.
    python3 <stage-plugin-root>/scripts/started_cards.py --project-root .
    ```
 
-   It lists every started card (any status, so `review` and `completed` cards that are not archived
-   yet are included) on HEAD, the default branch, and each fetched branch the default branch has
-   not merged, and drops cards the default branch archived. When a card sits on several branches
-   it names the copy to read: the one whose record was edited last. It also lists what waits in the
-   records: `blocked` cards, `Waiting on user:` lines under a card's `## Next action`, pending
-   decisions that are not decided, and open questions. `## Open observations` lists every open
-   observation; follow-up candidates that are not cards yet live there. `## Sessions that
-   committed card records` lists, newest first, the sessions whose commits registered, started,
-   closed, or archived a card; it is empty on a host that writes no session id into commit
-   messages. Planned cards are not in progress; read `.stage/work/planned/` when you organize
-   work. Its `Project tag:` line is this project's session tag; copy it wherever this skill
-   writes `<project-tag>`.
+   It lists every started card (any status) on HEAD, the default branch, and each fetched branch
+   the default branch has not merged, minus cards the default branch archived, and names the copy
+   to read when a card sits on several branches. It also lists what waits in the records
+   (`blocked` cards, `Waiting on user:` lines, undecided pending decisions, open questions),
+   `## Open observations` (follow-up candidates that are not cards yet live there), and
+   `## Sessions that committed card records`, newest first (empty on a host that writes no session
+   id into commit messages). Planned cards are not listed; read `.stage/work/planned/` when you
+   organize work. Copy its `Project tag:` line wherever this skill writes `<project-tag>`.
 3. Sessions. Take your own id from `get_session`, then page the session list: `list_sessions` with
    `limit: 100`, passing `after_id: <last_id>` until a page returns fewer than 100 rows (the
    response may carry no `has_more`).
@@ -134,9 +132,8 @@ Work and verification sessions do not edit a card; you do, on your branch, and c
 on_a_session_report:
   - add to the card's `## Progress`: the date, the session id, the reported commit, and which
     success criteria the report claims
-  - add the session's line to the card's `## Sessions`:
-    `- <session id> — <role> — <date> — opened from the index: <ids the report names | none | not reported>`
-    (`operations/cloud-execution.md`, "Sessions on the card"); add the section above
+  - add the session's line to the card's `## Sessions`, in the format
+    `operations/cloud-execution.md`, "Sessions on the card", owns; add the section above
     `## Progress` when an older card has none
   - add each follow-up candidate the report names as a `## Progress` line
     `Follow-up candidate: <text>`; register them when the card closes
@@ -153,20 +150,19 @@ on_the_answer:
 Gather what is scattered (observations, questions, retrospective rule candidates, follow-up
 candidates in session reports), group it into cards, and order the cards. A sub-agent reads; you
 register with `stage-work`. Ask the user for a missing purpose or success criterion; do not invent
-one. When organizing takes a long talk with the user, start a discussion session for it and read
-its records afterward.
+one. When organizing takes a long talk with the user, start a discussion session for it ("Start a
+discussion or planning session").
 
 ```yaml
 when_the_user_sets_an_order_among_planned_cards:
   - add a line `Order: <before or after which card>, set by the user on <date>` under the
     `## Next action` of each planned card the order names, and commit and push
 when_registering_from_a_cloud_session:
-  - run `git fetch origin "+refs/heads/*:refs/remotes/origin/*"` before each `register_work.py`
-  - if: its output has a `not reserved on the remote` line (the proxy refused the
-      `refs/stage-ids/<id>` push)
-    then: the id was chosen from fetched refs only. Commit and push the new card before
-      registering the next one or starting any session, so the next fetch sees the id.
   - register from this session only; no other session of this project registers cards
+  - run `git fetch origin "+refs/heads/*:refs/remotes/origin/*"` before each `register_work.py`
+  - if: its output has a `not reserved on the remote` line
+    then: commit and push the new card before registering the next one or starting any session,
+      so the next fetch sees the id (`operations/cloud-execution.md`, "Register or start")
 ```
 
 ## Session or sub-agent
@@ -189,6 +185,33 @@ never:
   - a work session for a card whose success criteria need the user's choice before any building
 ```
 
+## Give a session its brief
+
+`subsession_brief.py` prints a role's whole instruction from the records; write no role's rules
+into a message by hand. A brief ends with the session index, and the two together run up to
+10000 characters, more than a first message carries well. So the session prints its own brief:
+
+```bash
+python3 <stage-plugin-root>/scripts/subsession_brief.py --project-root . [<W-id>] \
+  --main-session <this-session-id> --role <role> [--branch <branch>] [<options>] --first-message
+```
+
+```yaml
+first_message:
+  - if: the session's checkout or host holds the Stage plugin's scripts
+    then: send that command's output, unedited. It names the role and the same command without
+      `--first-message`; the session runs it in its own checkout and reads its brief.
+  - else: run the command without `--first-message` and send its output, unedited
+tags: `<project-tag>` and `stage-main-session:<this-session-id>` on every session you create
+```
+
+| `--role` | `<W-id>` | Options | Create the session from | Title |
+|---|---|---|---|---|
+| `work` | the started card | `--branch <its own branch>` | the branch that holds the start | `<W-id> work` |
+| `verify` | the started card | `--branch <work branch>`, `--criterion` per criterion, `--commit <sha>` (omit for an epic) | the work session's branch | `<W-id> verify` |
+| `discussion`, `planning` | none, or a started card the talk is about | `--topic "<one sentence>"` | your pushed branch | `<topic> discussion`, `<topic> planning` |
+| `consolidation` | none | `--branch <its own branch>` | your pushed branch | `rule candidates consolidation` |
+
 ## Start a work session
 
 A cloud session cannot reserve record ids on the remote, because its proxy refuses pushes outside
@@ -202,18 +225,19 @@ its own branch, so you hold the ids its card may need (DE-00000094).
    ids to the card's `reserved_ids:`. Reserve nothing for a card that creates no records; the
    brief then forbids new records.
 3. Commit and push the start and the block before creating the session.
-4. Print the brief and send it as the session's first message, unedited:
+4. Create the session and give it its brief ("Give a session its brief", `--role work`). Record
+   its report ("Keep the records current"), ask the user what the report says needs the user, and
+   send the answer back to that session.
 
-   ```bash
-   python3 <stage-plugin-root>/scripts/subsession_brief.py --project-root . <W-id> \
-     --main-session <this-session-id> --branch <session-branch>
-   ```
+## Start a discussion or planning session
 
-   Create the session from the branch that holds the start. Title it `<W-id> work` and tag it
-   `<project-tag>` and `stage-main-session:<this-session-id>`.
-5. The session reports the branch, the commit of each card, changed paths, checks, decisions,
-   scope crossings, what needs the user, and follow-up candidates. Record the report ("Keep the
-   records current"), ask the user what needs the user, and send the answer back to that session.
+```yaml
+on_its_report:
+  - the session wrote no record. From the report, write each decision the user made
+    (`stage-decision`) and register each proposed card (`stage-work`), with the user's words
+  - if: a proposed card's purpose or success criterion has no user's words behind it
+    then: ask the user before registering the card
+```
 
 ## Start a verification session
 
@@ -231,43 +255,30 @@ start_a_verification_session:
     then: start none; close the card, for an epic too
 ```
 
-Create it from the work session's branch, title it `<W-id> verify`, and give it the same two tags
-as a work session. Pass each criterion with `--criterion`, copied from the card; the script
-refuses a verify brief without one, and one whose text the card and its stories do not state.
-
-```bash
-python3 <stage-plugin-root>/scripts/subsession_brief.py --project-root . <W-id> \
-  --main-session <this-session-id> --role verify --branch <work-session-branch> --commit <sha> \
-  --criterion "<success criterion copied from the card>"
-```
-
-For an epic, omit `--commit`: the brief lists the stories, and the session finds each card's
-change by the commit that names its id. The session answers, per named criterion, what it did,
-what it observed, and one of `held`, `did not hold`, or `could not observe`.
+Give it its brief with `--role verify` ("Give a session its brief"). Copy each `--criterion` from
+the card: the script refuses a verify brief without one, and one whose text the card and its
+stories do not state.
 
 ```yaml
 on_observation:
   - always: add to the card's `## Verification`, on your branch, one line per criterion —
       `- Observed <date> by verification session <session-id> at <commit>: <criterion> — <held|did not hold|could not observe>; <what the session did and saw>`
       — then commit and push. The close reviewer reads this line; an observation left only in
-      the session's message does not reach it.
+      the session's message does not reach it. When no rule below applies, close the card.
   - if: a criterion did not hold
     then: send it and what was observed to the work session, and ask the verification session again after the new commit
   - if: a criterion could not be observed
     then: ask the user how to judge it; the close reviewer fails a criterion it has no evidence for
   - if: the observation names something only the user can decide
     then: ask the user, and relay the answer to the session that needs it
-  - if: every named criterion held
-    then: close the card; the close review still judges every criterion
 ```
 
 ## Start a consolidation session
 
-Rule candidates pile up in retrospectives, one card at a time, and nobody sees them together.
-A consolidation session reads them all from a clean context and writes one list
-(DE-00000100). [rule-promotion.md](../stage-retrospective/rule-promotion.md), "Consolidating
-candidates", owns the list's place and format; this section owns when to start the session and
-what its first message must say.
+A consolidation session reads every retrospective's rule candidates from a clean context and
+writes one list (DE-00000100). [rule-promotion.md](../stage-retrospective/rule-promotion.md),
+"Consolidating candidates", owns the list's place and format; the brief owns what the session may
+write; this section owns when to start it and what follows its report.
 
 ```yaml
 start_one_when:
@@ -277,15 +288,6 @@ start_one_when:
   - the list does not exist yet and the index counts retrospectives that state a candidate
 start_none_when:
   - a consolidation session of this project is already open
-first_message_must_say:
-  - read `<stage-plugin-root>/skills/stage-retrospective/rule-promotion.md` first
-  - read every retrospective newer than the list's `through:` id, and the list itself; with no
-    list, read every retrospective that has a `## Rule candidate` section
-  - write only `.stage/state/rule-candidates.md`, on its own branch, and push
-  - do not edit a retrospective, a decision record, a rule file, a skill, or a card
-  - do not promote anything: mark a candidate `proposed: promote` and stop there
-  - report the branch, the commit, how many candidates were grouped, and each proposal
-title_and_tags: title `rule candidates consolidation`; the same two tags as a work session
 on_its_report:
   - merge the list through a card of kind `chore` that you register and close
   - show the user each `proposed: promote` line with the retrospectives it cites; the user
@@ -299,7 +301,9 @@ on_its_report:
 Close from this session: `operations/cloud-execution.md`, "Close a sub-session's card". Its first
 step tells the work session that the review starts and that it pushes nothing more until you
 answer. Register the follow-up candidates yourself; other sessions register nothing. Archive a
-session once its card is merged.
+session once its card is merged. The same document owns the second import after a rejected close
+review ("Import again after a rejected close review") and merging code while its card stays open
+for a check on the user's machine ("Merge a card that waits for the user's machine").
 
 ## When this session's context fills
 
@@ -308,12 +312,6 @@ Check "Keep the records current" for every card in progress: every reported resu
 `Waiting on user:` line or a question record. Commit and push, tell the user, and archive this
 session. The next orchestrator starts at "Take over from the records". The git records and each
 session's transcript remain; this session's working memory does not.
-
-## Boundary with the driver
-
-`drive.py` (`stage-drive`) picks the next ready leaf by work id and runs it; it never gathers,
-groups, orders, or asks the user. Use it for cards that are already registered, ready, and carry
-acceptance checks; decide what those cards are, and in what order, here.
 
 ## Verify
 

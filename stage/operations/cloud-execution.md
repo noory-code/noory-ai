@@ -109,6 +109,7 @@ a session that works alone on the device writes its own.
 one_line_per_session:
   - the session id as the platform prints it; `unknown` when the host gives the session none
   - its role: `work`, `verify`, `orchestrator`, `discussion`, `planning`, or `consolidation`
+    (`orchestrator` aside, the `--role` values of `subsession_brief.py`)
   - the date it reported
   - "opened from the index: <ids>": the records the session says it opened because the session
     index listed them, copied from its report; `none` when it opened none; `not reported` when
@@ -202,12 +203,23 @@ main session's start commit, so its diff is exactly the card's change.
    (`stage-orchestrate`, "Start a verification session"), its observation is on the card's
    `## Verification` before this step, committed on the main session's branch. The close review
    is the only gate; no verification session has to pass first.
+
+   ```yaml
+   before_closing:
+     - if: the card's `## Sessions` has a `verify` line
+       then: confirm `## Verification` has a `- Observed ... by verification session <that id>`
+         line for each criterion that session was given. When one is missing, write it from the
+         session's observation and commit it first: the reviewer fails a criterion it has no
+         evidence for, and an observation left in a session's message does not reach it.
+   ```
+
    Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
    retrospective, link it on the card, and close with the review as in "Close" above. When the
    review fails, commit the card with its new `rejected` review line on the main session's
    branch, keep `.stage/.runtime/driver/logs/<W-id>.md` in place, send the failed criteria to the
-   sub-session, and repeat from step 1 after it pushes. The close that passes counts the rejected
-   lines and the reports in that log into the card's `- Load at close` line.
+   sub-session, and repeat from step 1 after it pushes ("Import again after a rejected close
+   review"). The close that passes counts the rejected lines and the reports in that log into the
+   card's `- Load at close` line.
 5. Archive the card, push, and open the pull request from the main session's branch. The
    sub-session's branch is not merged on its own.
 
@@ -215,6 +227,77 @@ A work session that built an epic leaves one commit per story, each with that st
 report. Bring them over one by one instead of squashing (`git cherry-pick <story-commit>`, oldest
 first), and run steps 3 and 4 for each story at its commit. Close the stories without `--archive`,
 then close and archive the epic.
+
+### Import again after a rejected close review
+
+The main session's branch already holds the first squash commit and, above it, the commit that
+records the `rejected` line. The sub-session's branch holds the first change and the fix as its
+own commits, so the second `git merge --squash FETCH_HEAD` conflicts in every file both attempts
+changed (W-00000410: six files).
+
+```yaml
+first_squash_commit:
+  - leave it where it is: do not reset, revert, amend, or rebase it. The branch is pushed, and
+    the commit that records the `rejected` line stands on it.
+second_squash:
+  - run `git merge --squash FETCH_HEAD` as in step 2
+  - if: a path conflicts and the sub-session's branch changed it
+    then: take the sub-session's file whole — `git checkout FETCH_HEAD -- <path>`
+  - if: a path conflicts and it is a `.stage/` record the main session wrote
+    then: keep the main session's file — `git checkout HEAD -- <path>`
+  - confirm the code equals the sub-session's branch before committing:
+    `git diff FETCH_HEAD -- <the card's scope paths and every path the report lists>`
+    prints nothing. When it prints a difference, the squash is wrong: resolve again, do not commit.
+  - commit as in step 2. The body is the newest report, whose `Changed paths (JSON)` lists every
+    path of both attempts.
+then:
+  - step 3 as before
+  - import with one `--commit` per squash commit, oldest first ("Import the report"):
+    `import_executor_report.py <W-id> --commit <first-squash> --commit HEAD`
+  - the review receives the paths of HEAD, which are the paths the second attempt changed; the
+    first attempt's paths are in the imported report
+  - the retrospective keeps its id: commit it together with the `rejected` line, and rewrite it
+    to cover both attempts before the second close
+```
+
+### Merge a card that waits for the user's machine
+
+A success criterion that only the user's machine can show (another OS, an installed plugin, a
+device) cannot be judged from a cloud session, and the close review fails a criterion it has no
+evidence for. Such a card's code may be merged while the card stays open (W-00000372,
+W-00000407).
+
+```yaml
+take_this_path_when:
+  - every criterion still open after step 3 names something only the user's machine can show
+  - and the user has said to merge without waiting for that check
+otherwise:
+  - if: the user has not said so
+    then: ask the user: wait for the check, or merge with the card open
+  - if: an open criterion can be judged by a command the reviewer can run
+    then: this path does not apply; close as in step 4
+before_the_merge:
+  - steps 1 to 3 as written
+  - no close review runs, and no report is imported, no retrospective is written, and the card
+    is not closed or archived: it stays in `.stage/work/current/` with its status unchanged
+written_on_the_card:
+  - under `## Progress` — which checks the main session re-ran at the squash commit, and the
+    sentence `This change was merged without a close review.`
+  - under `## Next action` — one line per open criterion:
+    `Waiting on user: <what to run or look at, and on which machine> (<which criterion>)`
+written_outside_the_card:
+  - one unchecked line per open criterion, with the card id, in the project's open observation
+    that collects checks deferred to the user's machine; open that observation when none exists
+    (this repository's is O-00000062)
+then: step 5 without archiving — push and open the pull request with the card still open
+when_the_users_check_arrives:
+  - write it on the card's `## Verification`: the date, the machine, the command or action, and
+    what it showed; remove the `Waiting on user:` line and check the observation's line
+  - close from a worktree at the squash commit as in step 4; that close review is the card's
+    first, and it judges every criterion
+  - if: the check shows a criterion does not hold
+    then: the card goes back to a work session; its fix merges through a new pull request
+```
 
 ## What this does not cover
 
