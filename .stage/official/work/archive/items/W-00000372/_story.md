@@ -6,11 +6,12 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000372
-promotion: pending
+promotion: not_applicable
 review: not_required
 scope: stage/CHANGELOG.md,stage/.claude-plugin,stage/.codex-plugin
 promotes:
@@ -95,3 +96,6 @@ decision_refs:
 - 릴리스 전 Mac 에서 `python3 -m unittest discover -s stage/hooks/tests -q` 는 480개가 통과했고(1개 건너뜀),
   `python3 -m unittest discover -s stage/scripts/tests -q` 는 945개가 통과했다(2개 건너뜀).
   `python3 stage/scripts/audit_stage.py` 는 errors=0 이었다.
+
+- Checks at close 2026-11-23: 2 passed — `claude plugin list | grep -A1 "stage@noory-ai" | grep -q "Version: 0.69.0"`; `python3 stage/scripts/release_plugin.py stage --check-released --since 0.67.0`
+- Load at close 2026-11-23: attempts 1, review FAIL rounds 0, repeated findings 0, driver rounds 0, driver failures 0 (timed out 0)
