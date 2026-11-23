@@ -16,7 +16,7 @@ promotion: pending
 review: pending
 scope: .stage/research/review-judgment,.stage/decisions/pending/DE-00000101.md
 promotes:
-decision_refs:
+decision_refs: DE-00000101
 reserved_ids: DE-00000101
 ---
 
