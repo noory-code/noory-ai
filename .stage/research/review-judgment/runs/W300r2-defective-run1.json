@@ -1,0 +1,52 @@
+{
+  "case": "W300r2-defective",
+  "card": "W-00000300",
+  "version": "defective",
+  "commit": "99555d02",
+  "report_commit": "99555d02",
+  "run": 1,
+  "reviewer_checkout": "36f63ef3b7049bd94cb211c3c5669c44ad8807ef",
+  "executor_report_in_log": true,
+  "changed_paths": 14,
+  "seconds": 191,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다",
+        "verdict": "FAIL",
+        "method": "ran",
+        "reason": "In a scratch clone I set CLOSE_OWNED_FIELDS to drop status and retrospective_ref and ran test_close_work.py, which still passed (OK); the driver tests in test_drive.py and test_drive_unattended.py only ever change verification, so no test shows that a driver rejects changes to the status or retrospective_ref inputs; separately, the latest report's Decisions made never reports that stage/scripts/tests/test_drive_unattended.py lies outside the card's declared scope, which breaks the scope-boundary reporting contract."
+      },
+      {
+        "criterion": "실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "I read stage-drive SKILL.md lines 262-264, SCHEMA_V4.md lines 273-275, settings.jsonc lines 32-34, and both claude and codex executor prompts in .stage/settings.json; each says executors do not edit status, verification, review, retrospective, or retrospective_ref and that the driver rejects and restores an attempt that does."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "The review is not approved: criterion 1 fails and criterion 2 passes. I wrote the verdict to `.stage/.runtime/driver/verdicts/W-00000300.json`, and `git status` shows the repository is otherwise unchanged.\n\n**Criterion 1 (tests confirm the driver rejects changes to all five fields): FAIL**, for two reasons.\n- **Two of the five fields are never tested.** In a scratch copy of the repo, I removed `status` and `retrospective_ref` from the list of fields the driver protects. `test_close_work.py` still passed. All three driver tests, old and new, only ever change `verification`. So no test would catch the driver missing a change to `status` or `retrospective_ref`.\n- **A scope crossing was not reported.** This attempt changed `stage/scripts/tests/test_drive_unattended.py`, which is not in the card's declared scope. The contract says a crossing like that must be named in `Decisions made:`. The latest report doesn't mention it, and `Work not done:` says \"None\". Attempt 1's report said \"none beyond the card's scope\", but this one says nothing.\n\nThe code fix itself looks right. Both drivers now check and restore the fields on every attempt, and the field error is added to any earlier failure reason instead of replacing it. Both new driver tests pass, but only with `verification` as the changed field.\n\n**Criterion 2 (contract documents and executor prompts say the same thing): PASS.** I read the drive skill, `SCHEMA_V4.md`, the settings template and both executor prompts in `.stage/settings.json`. Each says executors must not edit those five fields and that the driver rejects and restores an attempt that does.\n\nTo pass, the next attempt needs tests that change each of the five fields, run through at least one driver. Its `Decisions made:` also needs to report the `test_drive_unattended.py` scope crossing.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1; cat repo/.stage/work/current/W-00000300/_story.md; echo ======; cat repo/.stage/.runtime/driver/logs/W-00000300.md; echo =====; cat review-input/changed-paths.json; ls review-input; cd repo; git status --short; git log --oneline | head -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo; git show --stat HEAD ccbd6903 | cat; git show HEAD -- stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py | cat",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo; grep -n -i \"scope\\|Decisions made\\|Work not done\\|purpose\" stage/skills/stage-drive/SKILL.md | head -60; grep -n \"verification\\|retrospective_ref\\|close_work\" stage/skills/stage-drive/SKILL.md stage/docs/SCHEMA_V4.md stage/templates/v4/project-stage/settings.jsonc .stage/settings.json | head -40",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo; sed -n 258,268p stage/skills/stage-drive/SKILL.md; sed -n 268,278p stage/docs/SCHEMA_V4.md; sed -n 28,36p stage/templates/v4/project-stage/settings.jsonc; python3 -m unittest discover -s stage/scripts/tests -p 'test_drive*.py' 2>&1 | tail -3; python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py 2>&1 | tail -3; grep -n \"close_owned\\|verification: passed\\|card_field\" stage/scripts/tests/test_drive.py stage/scripts/tests/test_drive_unattended.py | head -30",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo; git show HEAD -- stage/scripts/tests/ | cat; grep -n \"CLOSE_OWNED\\|def close_owned\" -A3 stage/skills/stage-retrospective/close_work.py | head -30",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo; tail -3 /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W300r2-defective-run1-repo/9d4e008e-9dba-43f2-a700-dc4d940dadb2/tasks/besf2lq9q.output; grep -n \"close_owned\" -A30 stage/scripts/tests/test_close_work.py | grep -n \"status\\|review\\|retrospective\\|verification\" | head -20; grep -n \"close-owned\\|close_owned\" stage/scripts/tests/test_drive.py stage/scripts/tests/test_drive_unattended.py",
+    "cd /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W300r2-defective-run1-repo/9d4e008e-9dba-43f2-a700-dc4d940dadb2/scratchpad && rm -rf mut && git clone -q /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r2-defective-run1/repo mut && cd mut && sed -i 's/^CLOSE_OWNED_FIELDS = .*/CLOSE_OWNED_FIELDS = (\"verification\", \"review\", \"retrospective\")/' stage/skills/stage-retrospective/close_work.py && grep -n \"^CLOSE_OWNED_FIELDS\" stage/skills/stage-retrospective/close_work.py && python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py 2>&1 | tail -2 && python3 -m unittest -k close_owned discover -s stage/scripts/tests -p 'test_drive*.py' 2>&1 | tail -3; grep -rn \"retrospective_ref\\|'status'\" stage/scripts/tests/test_close_work.py | grep -i \"owned\\|->\" | head",
+    "python3 - <<'EOF'\nimport json\nc=[\n {\"criterion\":\"실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다\",\n  \"verdict\":\"FAIL\",\"method\":\"ran\",\n  \"reason\":\"In a scratch clone I set CLOSE_OWNED_FIELDS to drop status and retrospective_ref and ran test_close_work.py, which still passed (OK); the driver tests in test_drive.py and test_drive_unattended.py only ever change verification, so no test shows that a driver rejects changes to the status or retrospective_ref inputs; separately, the latest report's Decisions made never reports that stage/scripts/tests/test_drive_unattended.py lies outside the card's declared scope, which breaks the scope-boundary reporting contract.\"},\n {\"criterion\":\"실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다\",\n  \"verdict\":\"PASS\",\"method\":\"read\",\n  \"reason\":\"I read stage-drive SKILL.md lines 262-264, SCHEMA_V4.md lines 273-275, settings.jsonc lines 32-34, and both claude and codex executor prompts in .stage/settings.json; each says executors do not edit status, verification, review, retrospective, or retrospective_ref and that the driver rejects and restores an attempt that does.\"}\n]\njson.dump({\"criteria\":c,\"approved\":False},open(\".stage/.runtime/driver/verdicts/W-00000300.json\",\"w\"),ensure_ascii=False,indent=2)\nEOF\npython3 -c \"import json;print(json.load(open('.stage/.runtime/driver/verdicts/W-00000300.json'))['approved'])\"; git status --short"
+  ],
+  "tokens": {
+    "input": 18,
+    "cache_creation": 32744,
+    "cache_read": 433748,
+    "output": 4810
+  }
+}

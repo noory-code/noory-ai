@@ -1,0 +1,55 @@
+{
+  "case": "W382-defective",
+  "card": "W-00000382",
+  "version": "defective",
+  "commit": "af0af805",
+  "report_commit": "af0af805",
+  "run": 1,
+  "reviewer_checkout": "36f63ef3b7049bd94cb211c3c5669c44ad8807ef",
+  "executor_report_in_log": true,
+  "changed_paths": 8,
+  "seconds": 627,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "scripts 시험 전체에서 띄우는 git 프로세스 수가 바꾸기 전보다 줄었고 그 수가 카드에 적혀 있다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Ran the scripts suite under `strace -f -e trace=execve` on git-archive copies of HEAD~1 and HEAD: 6,973 git execs before vs 5,402 after (the card's 6,879 → 5,330 differs slightly but points the same way), and the card's ## Progress records the counts."
+      },
+      {
+        "criterion": "드라이버의 동작 시험이 바꾸기 전과 같은 수로 모두 통과한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Ran `python3 -m unittest discover -s stage/scripts/tests` on both trees: before, 846 tests OK (2 skipped); after, 857 tests OK (2 skipped), so the 846 existing tests plus the 11 new ones all pass."
+      },
+      {
+        "criterion": "Executor report follows the purpose and scope-boundary reporting contract in Decisions made and Work not done",
+        "verdict": "FAIL",
+        "method": "read",
+        "reason": "The commit changes stage/scripts/driver_supervised.py and driver_unattended.py, which are outside the card's declared scope, but Decisions made never says it crossed the scope or why; Work not done also proposes more work in out-of-scope driver_unattended.py without marking it as out of scope."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I did not approve W-00000382. Both success criteria pass, but the executor report fails the scope-boundary reporting contract.\n\n- **Fewer git processes, with the count on the card: PASS (ran).** I ran the full scripts test suite under strace on copies of the code from before and after the change. It started 6,973 git processes before and 5,402 after. The card's own figures (6,879 → 5,330) are slightly different but show the same drop, and the card records them under Progress.\n- **Same driver tests all pass: PASS (ran).** Before the change, 846 tests pass with 2 skipped. After it, 857 pass with 2 skipped: the 846 existing tests plus 11 new ones.\n- **Scope-boundary reporting: FAIL (read).** The change edits `driver_supervised.py` and `driver_unattended.py`, which are not in the card's declared scope. \"Decisions made\" never says the work went outside that scope or why. \"Work not done\" also suggests more changes to `driver_unattended.py` without saying that file is outside the scope.\n\nThe verdict file is at `.stage/.runtime/driver/verdicts/W-00000382.json` with `approved: false`. That is the only file I wrote in the repository. The copies of the code I tested are in `/tmp/tmp.1IDsIbdczs`.\nWarning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run1; cat repo/.stage/work/current/W-00000382/_story.md; echo ======; cat review-input/changed-paths.json; echo =====; cat repo/.stage/.runtime/driver/logs/W-00000382.md; ls repo/.stage/.runtime/driver/verdicts/ 2>&1; git -C repo status --short | head",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run1/repo; git status --short; git log --oneline -3; git diff --stat HEAD; git diff HEAD -- stage/scripts/driver_git.py stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py stage/CHANGELOG.md",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run1/repo; git show --stat HEAD | cat; git show HEAD -- stage/scripts/driver_git.py stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py stage/CHANGELOG.md | cat",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run1/repo; which strace; S=$(mktemp -d); echo $S; for r in HEAD HEAD~1; do d=$S/$(echo $r|tr '~' _); mkdir -p $d; git archive $r | tar -x -C $d; (cd $d && git init -q && git add -A && git -c user.email=a@b -c user.name=x commit -qm base); done; ls $S",
+    "S=/tmp/tmp.1IDsIbdczs; for r in HEAD HEAD_1; do (cd $S/$r && strace -f -qq -e trace=execve -e signal=none -o $S/$r.strace python3 -m unittest discover -s stage/scripts/tests 2>&1 | tail -3 > $S/$r.out) & done; wait; for r in HEAD HEAD_1; do echo == $r; cat $S/$r.out; grep -E 'execve\\(\"[^\"]*/git\"' $S/$r.strace | grep -v ENOENT | wc -l; done"
+  ],
+  "tokens": {
+    "input": 14,
+    "cache_creation": 21188,
+    "cache_read": 291519,
+    "output": 3364
+  }
+}

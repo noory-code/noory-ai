@@ -1,0 +1,52 @@
+{
+  "case": "W393-final",
+  "card": "W-00000393",
+  "version": "final",
+  "commit": "e463dc97",
+  "report_commit": "e463dc97",
+  "run": 1,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 3,
+  "seconds": 45,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "표준 출력이 cp1252 일 때 --check-released 가 버전 제목을 그대로 출력하는 시험이 있고, 고치기 전에는 실패하고 지금은 통과한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "In temp git-archive copies I ran pytest on test_release_plugin.py: at HEAD all 12 tests pass; with release_plugin.py restored from HEAD~1, test_check_released_prints_utf_8_when_the_console_is_cp1252 fails because stdout shows '## 0.54.5 � 2026-11-23' instead of the em-dash heading."
+      },
+      {
+        "criterion": "PR 의 windows-latest 잡이 통과한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Queried the GitHub REST API: PR #102 head 9400655d contains e463dc97 (it adds only the close-and-archive commit), and every windows-latest check run on it, including shards 6 for 3.9 and 3.12, is completed/success."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "Both success criteria pass, so I approved W-00000393. The verdict is written to `.stage/.runtime/driver/verdicts/W-00000393.json`, and I changed no other repository file.\n\n- **The cp1252 test fails before the fix and passes after it (PASS, ran).** I ran the tests in temporary copies of the repo, not in the repo itself. At the current commit, all 12 tests in `test_release_plugin.py` pass. With `release_plugin.py` put back to its previous version, the new test fails: the output shows `## 0.54.5 � 2026-11-23`, with the em dash replaced by a broken character.\n- **The PR's windows-latest jobs pass (PASS, ran).** The local repo has no remote and `gh` isn't logged in, so I used GitHub's public API. PR #102's latest commit is the fix plus one commit that only closes and archives the card. Every windows-latest job on that commit succeeded, including the two shard-6 jobs that had failed before.\n\n**Reporting contract:** followed. \"Decisions made:\" gives two scoped choices with reasons:\n- Switch both output streams (stdout and stderr) to UTF-8.\n- Reproduce the bug with `PYTHONIOENCODING` so every OS's CI catches it, rather than writing a Windows-only test.\n\nBoth serve the card's purpose and stay within its three files, which match the changed paths. \"Work not done: None\" holds, since nothing in scope was left out.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1; cat repo/.stage/work/current/W-00000393/_story.md; echo ----; cat review-input/changed-paths.json; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000393.md; ls review-input repo/.stage/.runtime/driver/",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1/repo; git status --short; git log --oneline -5; git branch -a; git diff HEAD --stat; git diff HEAD -- stage/scripts/release_plugin.py stage/CHANGELOG.md; git diff HEAD -- stage/scripts/tests/test_release_plugin.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1/repo; git show e463dc97 --stat; git show e463dc97 -- stage/scripts/release_plugin.py stage/CHANGELOG.md stage/scripts/tests/test_release_plugin.py; git remote -v",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1/repo; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W393-final-run1-repo/8940b9c6-c7e4-4db1-abd1-78bc05ac25e2/scratchpad; rm -rf $S/after $S/before; mkdir -p $S/after $S/before; git archive HEAD stage | tar -x -C $S/after; git archive HEAD stage | tar -x -C $S/before; git show HEAD~1:stage/scripts/release_plugin.py > $S/before/stage/scripts/release_plugin.py; cd $S/after && python3 -m pytest -q stage/scripts/tests/test_release_plugin.py 2>&1 | tail -5; cd $S/before && python3 -m pytest -q stage/scripts/tests/test_release_plugin.py -k cp1252 2>&1 | tail -15",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1/repo; git remote -v; gh pr list --state all --search e463dc97 2>&1 | head; gh pr view 102 --json headRefOid,statusCheckRollup 2>&1 | head -c 3000",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W393-final-run1/repo; grep -rhoE \"github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\" --include=*.md --include=*.json . 2>/dev/null | sort | uniq -c | sort -rn | head -5; gh auth status 2>&1 | head -3",
+    "gh pr view 102 -R noory-code/noory-ai --json headRefOid,statusCheckRollup 2>&1 | head -c 1500; echo; curl -s https://api.github.com/repos/noory-code/noory-ai/pulls/102 | head -c 400",
+    "cd $(mktemp -d); curl -s https://api.github.com/repos/noory-code/noory-ai/pulls/102 > pr.json; python3 -I -c \"import json;d=json.load(open('pr.json'));print(d['state'],d['head']['sha'],d['head']['ref'])\"; SHA=$(python3 -I -c \"import json;print(json.load(open('pr.json'))['head']['sha'])\"); curl -s \"https://api.github.com/repos/noory-code/noory-ai/commits/$SHA/check-runs?per_page=100\" > cr.json; python3 -I -c \"\nimport json;d=json.load(open('cr.json'))\nfor r in d.get('check_runs',[]): print(r['name'],r['status'],r['conclusion'])\nprint(d.get('message'))\"; curl -s \"https://api.github.com/repos/noory-code/noory-ai/pulls/102/commits?per_page=100\" | python3 -I -c \"import json,sys;[print(c['sha'][:8],c['commit']['message'].splitlines()[0]) for c in json.load(sys.stdin)]\" | tail -5"
+  ],
+  "tokens": {
+    "input": 20,
+    "cache_creation": 20949,
+    "cache_read": 421731,
+    "output": 3975
+  }
+}

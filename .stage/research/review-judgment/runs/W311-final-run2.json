@@ -1,0 +1,57 @@
+{
+  "case": "W311-final",
+  "card": "W-00000311",
+  "version": "final",
+  "commit": "b05185fe",
+  "report_commit": "b05185fe",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 6,
+  "seconds": 48,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "Edit·Write 호출의 세션 transcript 경로, 출력을 버리는 /dev/null, OS 임시 폴더 안 경로, 환경에서 펼칠 수 있는 셸 변수로 시작하는 임시 경로가 범위 넘음으로 알려지지 않는다는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Read test_scope_report_leaves_out_paths_the_call_does_not_change (covers all four kinds) and ran my own probe via handle_event: Edit with transcript_path, 'ls 2> /dev/null', 'echo > /tmp/foo.txt', Write /tmp/zz/a.txt and cp to \"${MYTMP}/x\" all returned allow with an empty systemMessage; unittest suite ran 262 OK."
+      },
+      {
+        "criterion": "범위 밖 프로젝트 파일과 작업 폴더 밖의 다른 경로는 여전히 범위 넘음으로 알려지고, .stage 쓰기를 막는 게이트는 그대로라는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Tests test_scope_report_still_names_real_crossings, the cwd test and the .stage gate test with transcript_path exist; my probe showed Edit README.md, 'echo > docs/a.md', Write /etc/stagefoo, '> /home/u/f.txt' and /dev/../etc/x each reported as crossings, and a Bash write to .stage/past/canon/principles.md beside transcript_path was denied; the diff leaves gate code untouched apart from collect_explicit_paths reading tool_input."
+      },
+      {
+        "criterion": "Executor report follows the purpose and scope-boundary reporting contract",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "Decisions made gives the report-only exclusions, workspace-relative resolution and 'out-of-scope paths changed: none', which matches changed-paths.json and the card scope exactly; Work not done is None, and the diff meets the purpose with no remaining work."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "W-00000311 passes on both success criteria, and the executor's report followed the reporting contract. I wrote the verdict to `.stage/.runtime/driver/verdicts/W-00000311.json` with `approved: true`. No repository files changed: `git status` is clean.\n\n- **Paths that are no longer reported (PASS, ran):** the new test covers all four kinds of path named in the criterion. I also ran my own inputs through `handle_event`, and none of these produced a scope-crossing line:\n  - an Edit call carrying a `transcript_path`\n  - `ls 2> /dev/null`\n  - `echo > /tmp/foo.txt`\n  - a Write to `/tmp/zz/a.txt`\n  - a copy to `\"${MYTMP}/x\"`, where `MYTMP` is set to the system temp folder\n- **Real crossings are still reported and the `.stage` gate holds (PASS, ran):** these were all still reported as crossings:\n  - an Edit of `README.md`\n  - `echo > docs/a.md`\n  - a Write to `/etc/stagefoo`\n  - a write to `/home/u/f.txt`\n  - `/dev/../etc/x`\n\n  A shell write to `.stage/past/canon/principles.md` that also carried a `transcript_path` was still denied. The gate code itself is untouched; the only shared change is that `collect_explicit_paths` now reads just the tool input.\n- **Reporting contract (PASS, read):** \"Decisions made\" explains the choices and says \"out-of-scope paths changed: none\". That matches both `changed-paths.json` and the card's scope exactly. \"Work not done: None\" is accurate.\n\nThe project's full test suite also passed (262 tests, 1 skipped). I added the reporting-contract judgement as a third entry in the verdict file, alongside the card's two success criteria.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2; cat repo/.stage/work/current/W-00000311/_story.md; echo ----; cat review-input/changed-paths.json; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000311.md; ls review-input",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; git status --short; git log --oneline -3; git diff HEAD --stat; git diff HEAD -- stage/hooks/stage_guard.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; git diff 8d727759 HEAD --stat; git diff 8d727759 HEAD -- stage/hooks/stage_guard.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; git diff 8d727759 HEAD -- stage/hooks/tests/ stage/operations/hooks.md stage/CHANGELOG.md .stage/state",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; grep -n \"collect_explicit_paths\\|def tool_input\" -A3 stage/hooks/stage_guard.py | head -40; python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q 2>&1 | tail -3",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W311-final-run2-repo/bbfc2439-edc6-4757-9e5c-76c95716cbea/scratchpad; mkdir -p $S; cat > $S/probe.py <<'EOF'\nimport sys, os, tempfile, unittest\nfrom pathlib import Path\nsys.path.insert(0, \"stage/hooks/tests\"); sys.path.insert(0, \"stage/hooks\")\nimport test_stage_guard as T\nfrom test_stage_guard import stage_guard, decision, message, reason\nclass P(T.StageGuardTest):\n    def test_probe(self):\n        with tempfile.TemporaryDirectory() as tmp:\n            root = Path(tmp); self.write_purpose_reminder_fixture(root)\n            def run(p):\n                p = {\"cwd\": str(root), \"session_id\": \"s\", **p}\n                r = stage_guard.handle_event(\"pre-tool-use\", p)\n                return decision(r), message(r)\n            os.environ[\"MYTMP\"] = tempfile.gettempdir()\n            cases = {\n              \"edit+transcript\": {\"transcript_path\": \"/root/.claude/x.jsonl\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"stage/hooks/y.py\",\"old_string\":\"a\",\"new_string\":\"b\"}},\n              \"devnull2\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"ls 2> /dev/null\"}},\n              \"tmpfoo\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo hi > /tmp/foo.txt\"}},\n              \"TMPDIR braced\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'cp a \"${MYTMP}/x\"'}},\n              \"Write /tmp\": {\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/tmp/zz/a.txt\",\"content\":\"x\"}},\n              \"outside proj file\": {\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"README.md\",\"old_string\":\"a\",\"new_string\":\"b\"}},\n              \"bash outside proj\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo x > docs/a.md\"}},\n              \"etc\": {\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/etc/stagefoo\",\"content\":\"x\"}},\n              \"home\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo x > /home/u/f.txt\"}},\n              \"dotdot escape into tmp?\": {\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/dev/../etc/x\",\"content\":\"x\"}},\n            }\n            for k,v in cases.items(): print(k, \"=>\", run(v))\n            # stage gate\n            self.write_work_item(root, status=\"completed\", verification=\"passed\", retrospective=\"completed\", promotion=\"approved\")\n            r = stage_guard.handle_event(\"pre-tool-use\", {\"cwd\":str(root),\"tool_name\":\"Bash\",\"transcript_path\":\"/tmp/t.jsonl\",\"tool_input\":{\"command\":\"echo x > .stage/past/canon/principles.md\"}})\n            print(\"gate bash\", decision(r), reason(r)[:80])\nunittest.main(argv=[\"x\",\"P.test_probe\"], verbosity=0)\nEOF\npython3 $S/probe.py 2>&1 | tail -20",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run2/repo; cat > .stage/.runtime/driver/verdicts/W-00000311.json <<'EOF'\n{\"criteria\": [\n {\"criterion\": \"Edit·Write 호출의 세션 transcript 경로, 출력을 버리는 /dev/null, OS 임시 폴더 안 경로, 환경에서 펼칠 수 있는 셸 변수로 시작하는 임시 경로가 범위 넘음으로 알려지지 않는다는 것을 테스트가 확인한다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"Read test_scope_report_leaves_out_paths_the_call_does_not_change (covers all four kinds) and ran my own probe via handle_event: Edit with transcript_path, 'ls 2> /dev/null', 'echo > /tmp/foo.txt', Write /tmp/zz/a.txt and cp to \\\"${MYTMP}/x\\\" all returned allow with an empty systemMessage; unittest suite ran 262 OK.\"},\n {\"criterion\": \"범위 밖 프로젝트 파일과 작업 폴더 밖의 다른 경로는 여전히 범위 넘음으로 알려지고, .stage 쓰기를 막는 게이트는 그대로라는 것을 테스트가 확인한다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"Tests test_scope_report_still_names_real_crossings, the cwd test and the .stage gate test with transcript_path exist; my probe showed Edit README.md, 'echo > docs/a.md', Write /etc/stagefoo, '> /home/u/f.txt' and /dev/../etc/x each reported as crossings, and a Bash write to .stage/past/canon/principles.md beside transcript_path was denied; the diff leaves gate code untouched apart from collect_explicit_paths reading tool_input.\"},\n {\"criterion\": \"Executor report follows the purpose and scope-boundary reporting contract\", \"verdict\": \"PASS\", \"method\": \"read\", \"reason\": \"Decisions made gives the report-only exclusions, workspace-relative resolution and 'out-of-scope paths changed: none', which matches changed-paths.json and the card scope exactly; Work not done is None, and the diff meets the purpose with no remaining work.\"}\n], \"approved\": true}\nEOF\npython3 -c \"import json;d=json.load(open('.stage/.runtime/driver/verdicts/W-00000311.json'));print(len(d['criteria']),d['approved'])\"; git status --short"
+  ],
+  "tokens": {
+    "input": 16,
+    "cache_creation": 23194,
+    "cache_read": 336830,
+    "output": 4443
+  }
+}

@@ -15,6 +15,11 @@ Usage:
 Prints one Markdown table row per closed card and a totals row. A card closed
 before the line existed shows its rejected reviews, which were already recorded,
 and `not recorded` elsewhere.
+
+The last three columns count how the card's last review at close judged its criteria
+(`ran`, `read`, `unable`; `operations/review.md`, "How the reviewer judges"), read from
+the `- Review at close` line. `no review` means the card closed without a review, and
+`not recorded` that its review line was written before verdicts named a method.
 """
 
 from __future__ import annotations
@@ -44,6 +49,18 @@ _DISPOSITIONS_RE = re.compile(r"(?m)^Review dispositions \(JSON\):[ \t]*\r?\n([^
 _REVIEW_LINE_RE = re.compile(
     r"(?m)^- Review at close (\d{4}-\d{2}-\d{2}) by [^:\r\n]+: (approved|rejected)\b"
 )
+# One mark of a review line: `<criterion number> <PASS|FAIL> <method>`. A line written before
+# verdicts carried `method` has `<number> <PASS|FAIL>` only and matches nothing here.
+_REVIEW_FULL_LINE_RE = re.compile(
+    r"(?m)^- Review at close \d{4}-\d{2}-\d{2} by [^:\r\n]+: (?:approved|rejected) "
+    r"\(([^)\r\n]*)\)[ \t]*\r?$"
+)
+_METHOD_MARK_RE = re.compile(r"^\d+ (?:PASS|FAIL) (ran|read|unable)$")
+REVIEW_METHODS = ("ran", "read", "unable")
+NO_REVIEW = "no review"
+# `import_executor_report.py` ends an imported report with this line: the distinct commits
+# it was given, one per attempt.
+ATTEMPT_COMMITS_RE = re.compile(r"(?m)^Attempt commits: (\d+)\b")
 _CHECKS_LINE_RE = re.compile(r"(?m)^- Checks at close (\d{4}-\d{2}-\d{2}):")
 _LOAD_LINE_RE = re.compile(
     r"(?m)^- Load at close (\d{4}-\d{2}-\d{2}): attempts (\d+), review FAIL rounds (\d+), "
@@ -108,6 +125,37 @@ def rejected_reviews(card_text: str) -> int:
     return sum(1 for match in _REVIEW_LINE_RE.finditer(card_text) if match.group(2) == "rejected")
 
 
+def imported_attempts(reports: list[str]) -> int:
+    """The largest `Attempt commits:` count among executor reports; 0 when none carries one."""
+
+    counts = [
+        int(match.group(1))
+        for body in reports
+        for match in ATTEMPT_COMMITS_RE.finditer(body)
+    ]
+    return max(counts, default=0)
+
+
+def review_methods(card_text: str) -> Optional[dict[str, int]]:
+    """How the card's last review at close judged: criteria per method.
+
+    The last `- Review at close` line is the verdict the close rests on (an earlier line
+    is a round that sent the work back). Returns None when the card has no review line,
+    and an empty dict when that line was written before verdicts named a method.
+    """
+    lines = _REVIEW_FULL_LINE_RE.findall(card_text)
+    if not lines:
+        return None
+    marks = [_METHOD_MARK_RE.match(mark.strip()) for mark in lines[-1].split(",")]
+    if not marks or any(mark is None for mark in marks):
+        return {}
+    counts = dict.fromkeys(REVIEW_METHODS, 0)
+    for mark in marks:
+        assert mark is not None
+        counts[mark.group(1)] += 1
+    return counts
+
+
 def count_load(log_text: str, card_text: str) -> Load:
     """Count a card's load from its work log (may be empty) and its own text.
 
@@ -137,8 +185,9 @@ def count_load(log_text: str, card_text: str) -> Load:
         reasons.append(f"{role} — {reason}"[:MAX_REASON_CHARS])
     return Load(
         # Each rejected review is followed by one more attempt, and the closing
-        # attempt counts even when no executor reported it.
-        attempts=max(len(reports), fail_rounds + 1),
+        # attempt counts even when no executor reported it. A squashed cloud card has
+        # one imported report for all its attempts; that report names their commits.
+        attempts=max(len(reports), fail_rounds + 1, imported_attempts(reports)),
         review_fail_rounds=fail_rounds,
         repeated_findings=repeated,
         driver_rounds=len(_sections(log_text, "Driver commands")),
@@ -195,14 +244,34 @@ COLUMNS = (
     "Driver rounds",
     "Driver failures",
     "Timed out",
+    "Ran",
+    "Read",
+    "Unable",
 )
+LOAD_COLUMNS = 6
+
+
+def method_cells(card_text: str) -> list[str]:
+    methods = review_methods(card_text)
+    if methods is None:
+        return [NO_REVIEW] * len(REVIEW_METHODS)
+    if not methods:
+        return [NOT_RECORDED] * len(REVIEW_METHODS)
+    return [str(methods[method]) for method in REVIEW_METHODS]
 
 
 def card_row(item_id: str, card_text: str) -> list[str]:
     recorded = parse_load_record(card_text)
     day = close_date(card_text)
     if recorded is None:
-        return [item_id, day, NOT_RECORDED, str(rejected_reviews(card_text))] + [NOT_RECORDED] * 4
+        return [
+            item_id,
+            day,
+            NOT_RECORDED,
+            str(rejected_reviews(card_text)),
+            *[NOT_RECORDED] * (LOAD_COLUMNS - 2),
+            *method_cells(card_text),
+        ]
     _day, load = recorded
     repeated = UNKNOWN if load.repeated_findings is None else str(load.repeated_findings)
     return [
@@ -214,6 +283,7 @@ def card_row(item_id: str, card_text: str) -> list[str]:
         str(load.driver_rounds),
         str(load.driver_failures),
         str(load.timeouts),
+        *method_cells(card_text),
     ]
 
 

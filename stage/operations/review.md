@@ -109,6 +109,26 @@ close_work_rules:
 again on the same tree shows the reviewer nothing new, so the review commands ask for a probe of
 the reviewer's own instead.
 
+What those checks printed reaches the reviewer through the work log, which every review command
+reads (`$STAGE_WORK_LOG_PATH`). Before the review command starts, `close_work.py` appends one
+`### Checks at close` section (`skills/stage-retrospective/review_material.py`):
+
+```yaml
+checks_at_close_section:
+  holds: each passed check's command and the end of its output, in the order run
+  bound_per_check: the last 60 lines and 6000 bytes
+  bound_per_close: 30000 bytes of output; with more than five checks each gets an equal share
+  when_cut: one line says how many earlier lines were left out
+  output_lines: indented by four spaces, so a line of output is never read as a work-log heading
+    or a report field
+  written_when: a review runs at this close; a card that needs no review gets no section
+  not_written: on the card, which keeps the commands only
+```
+
+The reviewer reads the paths the HEAD commit changed. `close_work.py --review-commit <rev>`
+(repeatable) hands it the paths of the named commits instead, for a card whose code is not in
+HEAD (O-00000058); `close_work.py` warns when the default list holds only `.stage/` paths.
+
 The method is what the reviewer reports about itself. `close_work.py` does not read the
 reviewer's tool calls, so it cannot tell a reviewer that wrote `ran` without running, and the
 reviewer decides which criteria need a run. DE-00000101 chose this knowingly; a verdict that
@@ -158,7 +178,7 @@ fails, and a missing or malformed verdict leave the card unchanged.
   | Count | Counted from |
   |---|---|
   | `review FAIL rounds` | the larger of: executor reports in the work log with a non-empty `Review dispositions (JSON):`; `rejected` review lines already on the card |
-  | `attempts` | the larger of: `### Executor report` sections in the work log; `review FAIL rounds` + 1 |
+  | `attempts` | the largest of: `### Executor report` sections in the work log; `review FAIL rounds` + 1; the count in an imported report's `Attempt commits: <n> (...)` line, which `import_executor_report.py` writes from its `--commit` arguments |
   | `repeated findings` | adjacent answered rounds in the work log that share a `finding`; `unknown` when the work log holds fewer answered rounds than `review FAIL rounds` |
   | `driver rounds` | `### Driver commands` sections in the work log; `0` means no driver ran the card from this checkout |
   | `driver failures` | `### Driver failure` sections in the work log; `timed out` counts those whose `Reason:` contains `timed out` |
@@ -166,6 +186,10 @@ fails, and a missing or malformed verdict leave the card unchanged.
   `python3 stage/scripts/work_load.py --project-root . --closed-since <YYYY-MM-DD>` prints these
   counts for closed cards as a Markdown table with a totals row. A card closed before this line
   existed shows its `rejected` review lines and `not recorded` in the other columns.
+  The table's last three columns, `Ran`, `Read`, and `Unable`, count the criteria of the card's
+  last `- Review at close` line by `method`. That line is the verdict the close rests on; an
+  earlier line is a round that sent the work back. `no review` means the card closed without a
+  review, and `not recorded` that the line was written before verdicts named a method.
 - The reviewer's reasons and report are not copied onto the card. They stay in the
   work log (`.stage/.runtime/driver/logs/<work-id>.md`), which is not committed.
 - Reviews that the drivers run between rounds are recorded in the work log only.

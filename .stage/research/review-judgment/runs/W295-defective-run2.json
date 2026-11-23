@@ -1,0 +1,46 @@
+{
+  "case": "W295-defective",
+  "card": "W-00000295",
+  "version": "defective",
+  "commit": "639f2b6b",
+  "report_commit": "639f2b6b",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 7,
+  "seconds": 74,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "프로젝트의 claude 리뷰 명령과 대역 리뷰어가 판정 파일 하나에만 쓰기를, 변경 경로 파일 폴더에 읽기를, unittest 실행만을 허락하고 프로젝트 파일 편집 권한을 주지 않는다는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "In throwaway git-archive copies I mutated the project reviewers.claude command (reverted to the old flagless command, added --dangerously-skip-permissions, widened Edit(/verdict) to bare Edit) and the stand-in (added a bare Edit rule, added --permission-mode acceptEdits); test_template_v4.py failed on each project-command mutant and test_environment_venues.py on each stand-in mutant, while both pass on HEAD, and driver_supervised.py/driver_environment.py always pass a resolved absolute verdict path so the /$STAGE_REVIEW_VERDICT_FILE rule becomes an absolute // rule; the executor report's Decisions made matches the diff and Work not done: None is consistent with the card scope, which covers all seven changed paths."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I approved W-00000295. Its one success criterion passes.\n\n**The criterion:** I judged it by running commands. Both acceptance test files pass on the current commit. To see whether the new tests would catch a bad change, I broke copies of the code outside the repo in five ways, and a test failed every time:\n- **Project reviewer command:** going back to the old command with no permission flags, adding `--dangerously-skip-permissions`, and widening `Edit(/verdict)` to a plain `Edit` each made `test_template_v4.py` fail.\n- **Stand-in reviewer (`claude_review_companion.py`):** adding a plain `Edit` rule and adding `--permission-mode acceptEdits` each made `test_environment_venues.py` fail.\n\nThe project command's write rule is `/$STAGE_REVIEW_VERDICT_FILE`, which only works as an absolute path if the variable holds one. Both driver scripts that set it, `driver_supervised.py` and `driver_environment.py`, pass a full absolute path, so the rule holds.\n\n**Reporting contract:** followed. The \"Decisions made\" field matches the diff: one verdict file is allowed rather than a folder, `//` makes the rule absolute, `--` ends the flag lists before the prompt, and Bash is limited to `python3 -m unittest`. \"Work not done: None\" fits too, because all seven changed paths are inside the card's scope list.\n\nOne small gap I didn't count against it: the tests check the arguments passed to `claude`, not what a real `claude` session actually blocks. The only evidence of real blocking is the executor's own session experiment.\n\nThe verdict is in `.stage/.runtime/driver/verdicts/W-00000295.json`. I changed nothing else in the repository; `git status` is clean.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2; cat repo/.stage/work/current/W-00000295/_story.md; echo ======; cat review-input/changed-paths.json; echo =====; ls review-input; ls repo/.stage/.runtime/driver/verdicts/ 2>&1",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; cat .stage/.runtime/driver/logs/W-00000295.md; ls .stage/.runtime/driver/; git status --short; git log --oneline -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; git show 639f2b6b --stat; git show 639f2b6b -- .stage/settings.json stage/scripts/claude_review_companion.py stage/templates stage/operations stage/CHANGELOG.md",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; git show 639f2b6b -- stage/scripts/tests/",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; ls -a .claude 2>&1; cat .claude/settings.json 2>&1 | head -50; grep -rn \"STAGE_REVIEW_VERDICT_FILE\" --include=*.py stage/scripts | grep -v tests | head -20",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; sed -n 505,535p stage/scripts/driver_supervised.py; sed -n 55,75p stage/scripts/driver_environment.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; python3 -m unittest discover -s stage/scripts/tests -p test_environment_venues.py -q 2>&1 | tail -3; python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q 2>&1 | tail -3",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W295-defective-run2/repo; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W295-defective-run2-repo/0266b92e-74bb-4ea4-a80e-1aba6c51b300/scratchpad; rm -rf $S/m; mkdir -p $S/m\nrun(){ name=$1; rm -rf $S/m/$name; git worktree list >/dev/null; mkdir $S/m/$name; git archive HEAD | tar -x -C $S/m/$name; (cd $S/m/$name && python3 - \"$2\" <<'EOF'\nimport sys,re,json,pathlib\nmode=sys.argv[1]\ns=pathlib.Path('.stage/settings.json'); t=s.read_text()\nc=pathlib.Path('stage/scripts/claude_review_companion.py'); ct=c.read_text()\nif mode=='old': t=t.replace('claude -p --add-dir \\\\\"$(dirname \\\\\"$STAGE_CHANGED_PATHS_FILE\\\\\")\\\\\" --model \\'opus[1m]\\' --allowedTools \\\\\"Write(/$STAGE_REVIEW_VERDICT_FILE)\\\\\" \\\\\"Edit(/$STAGE_REVIEW_VERDICT_FILE)\\\\\" \\\\\"Bash(python3 -m unittest:*)\\\\\" -- ','claude -p --model \\'opus[1m]\\' ')\nif mode=='skip': t=t.replace(\"claude -p --add-dir\",\"claude -p --dangerously-skip-permissions --add-dir\")\nif mode=='wide': t=t.replace('Edit(/$STAGE_REVIEW_VERDICT_FILE)','Edit')\nif mode=='compedit': ct=ct.replace('f\"Edit({verdict_rule})\",','f\"Edit({verdict_rule})\", \"Edit\",')\nif mode=='compperm': ct=ct.replace('\"--\",','\"--permission-mode\", \"acceptEdits\", \"--\",')\nassert t!=s.read_text() or ct!=c.read_text(), mode\ns.write_text(t); c.write_text(ct)\nEOF\npython3 -m unittest discover -s stage/scripts/tests -p 'test_template_v4.py' -q 2>&1 | tail -1; python3 -m unittest discover -s stage/scripts/tests -p 'test_environment_venues.py' -q 2>&1|tail -1); }\nfor m in old skip wide compedit compperm; do echo \"== $m\"; run $m $m; done; git status --short"
+  ],
+  "tokens": {
+    "input": 18,
+    "cache_creation": 29567,
+    "cache_read": 414223,
+    "output": 5469
+  }
+}

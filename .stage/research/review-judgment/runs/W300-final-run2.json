@@ -1,0 +1,57 @@
+{
+  "case": "W300-final",
+  "card": "W-00000300",
+  "version": "final",
+  "commit": "5d1c05a1",
+  "report_commit": "5d1c05a1",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 14,
+  "seconds": 150,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "In a scratch clone the close_owned tests pass; deleting status, retrospective_ref, or review from CLOSE_OWNED_FIELDS made test_close_work fail; blanking the close_owned_fields_error call in both drivers made the supervised (3) and unattended (1) driver tests fail; and my own change of the supervised driver test from adding verification to setting status: completed was also rejected with the card restored."
+      },
+      {
+        "criterion": "실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "At HEAD, both executor prompts in .stage/settings.json, the settings.jsonc template, stage-drive SKILL.md, and SCHEMA_V4.md name the same five fields and say executors do not edit them and the driver rejects and restores the attempt; test_template_v4 also passes."
+      },
+      {
+        "criterion": "Executor report follows the purpose and scope-boundary reporting contract",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "Decisions made restates every decision still in effect from all three attempt commits (ccbd6903, 99555d02, 5d1c05a1) and reports the one out-of-scope path, test_drive_unattended.py; Work not done: None matches the work; and Changed paths equals the union of the attempt diffs and changed-paths.json."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "W-00000300 is approved: all three criteria pass. I wrote the verdict to `.stage/.runtime/driver/verdicts/W-00000300.json`, and `git status` shows no other change in the repo.\n\nThere was no earlier failed-criteria verdict to narrow the review to, so I judged both success criteria. I added a third criterion for the reporting contract.\n\n1. **The driver rejects edits to the five card fields (pass, ran).** I tested this on a scratch clone of the repo:\n   - The new tests pass as written.\n   - Taking `status`, `retrospective_ref` or `review` out of the code's list of protected fields made `test_close_work` fail each time.\n   - Removing the field check from both drivers made 3 supervised-driver tests and 1 unattended-driver test fail.\n   - I changed the supervised-driver test to set `status: completed` instead of adding `verification: passed`. The driver still rejected the attempt and restored the card.\n   - The acceptance suites `test_close_work`, `test_drive` and `test_template_v4` all pass.\n2. **The contract docs and executor commands say the same thing (pass, read).** Both executor commands in `.stage/settings.json`, the settings template, `stage-drive/SKILL.md` and `SCHEMA_V4.md` all list the same five fields. Each says the executor must not edit them and that the driver rejects the attempt and restores them.\n3. **The report follows the reporting contract (pass, read).**\n   - \"Decisions made:\" restates every decision still in effect from all three attempt commits (`ccbd6903`, `99555d02`, `5d1c05a1`).\n   - It reports the one change outside the card's scope, `stage/scripts/tests/test_drive_unattended.py`.\n   - \"Work not done: None\" is accurate.\n   - The listed changed paths match the three commits' diffs and `changed-paths.json` exactly.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2; cat repo/.stage/work/current/W-00000300/_story.md; echo ====; cat review-input/changed-paths.json; echo ====; cat repo/.stage/.runtime/driver/logs/W-00000300.md; echo ===; ls repo/.stage/.runtime/driver/verdicts/ 2>&1; cd repo; git status --short; git log --oneline -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2/repo; git log --oneline -15 | cat; for c in ccbd6903 99555d02 5d1c05a1; do git show --stat $c | cat; done",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2/repo; git show ccbd6903 99555d02 5d1c05a1 -- stage/skills stage/scripts stage/docs stage/templates .stage/settings.json | cat",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2/repo; git show --stat 03e74e1c | cat; git diff --name-only ccbd6903^ 5d1c05a1 -- . ':!.stage/work' | sort; echo; git log --format='%h %s' ccbd6903^..HEAD | cat; git show ccbd6903 -- .stage/state stage/CHANGELOG.md | cat",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W300-final-run2-repo/29afddd4-cf60-407f-ac69-947648ae0be8/scratchpad\nR=/tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2/repo\nrm -rf $S/m; git clone -q $R $S/m && cd $S/m\npython3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -k close_owned 2>&1 | tail -3\npython3 -m unittest discover -s stage/scripts/tests -p test_drive.py -k close_owned 2>&1 | tail -3\npython3 -m unittest discover -s stage/scripts/tests -p test_drive_unattended.py -k close_owned 2>&1 | tail -3\nfor f in status retrospective_ref review; do\n git checkout -q -- .\n sed -i \"s/^CLOSE_OWNED_FIELDS = (.*/CLOSE_OWNED_FIELDS = tuple(x for x in (\\\"status\\\", \\\"verification\\\", \\\"review\\\", \\\"retrospective\\\", \\\"retrospective_ref\\\") if x != \\\"$f\\\")/\" stage/skills/stage-retrospective/close_work.py\n echo \"drop $f:\"; python3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -k close_owned 2>&1 | tail -1\ndone\ngit checkout -q -- .\n# mutation: remove the driver check call in supervised driver\nsed -i 's/card_field_error = close_owned_fields_error(item.path, card_fields_before)/card_field_error = \"\"/' stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py\necho \"drivers no check:\"; python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -k close_owned 2>&1 | tail -1; python3 -m unittest discover -s stage/scripts/tests -p test_drive_unattended.py -k close_owned 2>&1 | tail -1\ngit checkout -q -- .",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W300-final-run2-repo/29afddd4-cf60-407f-ac69-947648ae0be8/scratchpad; cd $S/m\npython3 - <<'EOF'\nimport re\np='stage/scripts/tests/test_drive.py'\nt=open(p).read()\nt=t.replace(\"'status: active\\\\\\\\nverification: passed'\",\"'status: completed'\",1)\nt=t.replace('\"executor changed close-owned work card field(s) verification: `` -> `passed`\",\\n            result.stdout,\\n        )\\n        self.assertNotIn(\"Acceptance result:\"','\"executor changed close-owned work card field(s) status: `active` -> `completed`\",\\n            result.stdout,\\n        )\\n        self.assertNotIn(\"Acceptance result:\"',1)\nopen(p,'w').write(t)\nEOF\ngit diff --stat; python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -k test_executor_editing_close_owned_card_fields_fails_the_attempt 2>&1 | tail -15\ngit checkout -q -- .\npython3 -m unittest discover -s stage/scripts/tests -p test_close_work.py -q 2>&1 | tail -2; python3 -m unittest discover -s stage/scripts/tests -p test_drive.py -q 2>&1 | tail -2; python3 -m unittest discover -s stage/scripts/tests -p test_template_v4.py -q 2>&1 | tail -2\ngrep -n \"retrospective_ref\" .stage/settings.json stage/templates/v4/project-stage/settings.jsonc stage/skills/stage-drive/SKILL.md stage/docs/SCHEMA_V4.md | cut -c1-200",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300-final-run2/repo; cat > .stage/.runtime/driver/verdicts/W-00000300.json <<'EOF'\n{\"criteria\": [\n{\"criterion\": \"실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"In a scratch clone the close_owned tests pass; deleting status, retrospective_ref, or review from CLOSE_OWNED_FIELDS made test_close_work fail; blanking the close_owned_fields_error call in both drivers made the supervised (3) and unattended (1) driver tests fail; and my own change of the supervised driver test from adding verification to setting status: completed was also rejected with the card restored.\"},\n{\"criterion\": \"실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다\", \"verdict\": \"PASS\", \"method\": \"read\", \"reason\": \"At HEAD, both executor prompts in .stage/settings.json, the settings.jsonc template, stage-drive SKILL.md, and SCHEMA_V4.md name the same five fields and say executors do not edit them and the driver rejects and restores the attempt; test_template_v4 also passes.\"},\n{\"criterion\": \"Executor report follows the purpose and scope-boundary reporting contract\", \"verdict\": \"PASS\", \"method\": \"read\", \"reason\": \"Decisions made restates every decision still in effect from all three attempt commits (ccbd6903, 99555d02, 5d1c05a1) and reports the one out-of-scope path, test_drive_unattended.py; Work not done: None matches the work; and Changed paths equals the union of the attempt diffs and changed-paths.json.\"}\n], \"approved\": true}\nEOF\npython3 -c \"import json;d=json.load(open('.stage/.runtime/driver/verdicts/W-00000300.json'));print(len(d['criteria']),d['approved'])\"; git status --short"
+  ],
+  "tokens": {
+    "input": 18,
+    "cache_creation": 48928,
+    "cache_read": 493778,
+    "output": 5282
+  }
+}

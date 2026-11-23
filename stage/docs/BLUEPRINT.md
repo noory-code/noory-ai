@@ -28,10 +28,10 @@ Stage 의 코드는 일곱 레이어로 나뉜다. 각 레이어는 한 가지 �
 | 기록 | 무엇을 어디에 적는가 | `templates/`, 프로젝트의 `.stage/` | [SCHEMA_V5.md](SCHEMA_V5.md), [artifacts.md](../operations/artifacts.md) |
 | 경로와 규칙 | 기록이 어디에 있고 어떤 값이 허용되는가 | `hooks/stage_topology.py`, `hooks/stage_paths.py`, `hooks/stage_record_paths.py`, `hooks/stage_work.py`, `hooks/stage_roadmap.py`, `hooks/stage_roadmap_closure.py`, `hooks/stage_model_tiers.py`, `hooks/stage_process.py`, `scripts/lifecycle_paths.py`, `scripts/stage_record_ids.py`, `scripts/stage_id_blocks.py` | [SCHEMA_V5.md](SCHEMA_V5.md) |
 | 관문 | 지금 이 쓰기와 커밋을 허용하는가 | `hooks/hooks.json`, `hooks/stage_guard.py`, `hooks/stage_shell.py`, `hooks/stage_git.py`, `hooks/stage_runtime.py`, `hooks/stage_context.py`, `hooks/stage_memory_index.py`, `hooks/stage_roadmap_gate.py`, `hooks/stage_agent_tier.py` | [hooks/README.md](../hooks/README.md) |
-| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py`, `scripts/started_cards.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
-| 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py`, `scripts/work_load.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
+| 절차 | 기록을 한 상태에서 다음 상태로 어떻게 옮기는가 | `skills/`, `scripts/start_work.py`, `scripts/promote_intent.py`, `scripts/close_record.py`, `scripts/escalate_work.py`, `scripts/init_stage.py`, `scripts/migrate_stage.py`, `scripts/stage_schema_v*_migration.py`, `scripts/refresh_guidance.py`, `scripts/guidance_docs.py`, `scripts/refresh_decision_index.py`, `scripts/refresh_index_titles.py`, `scripts/handoff_*.py`, `scripts/subsession_brief.py`, `scripts/started_cards.py` | 각 스킬의 `SKILL.md`, [operations/](../operations/) |
+| 검증 | 일이 목적에 닿았는가 | `skills/stage-retrospective/close_work.py`, `skills/stage-retrospective/worktree_guard.py`, `skills/stage-retrospective/review_material.py`, `scripts/run_review.py`, `scripts/claude_review_companion.py`, `scripts/codex_companion.py`, `scripts/work_load.py` | [review.md](../operations/review.md), [verification.md](../operations/verification.md) |
 | 드라이버 | 등록된 일을 사람 대신 누가 실행하는가 | `scripts/drive.py`, `scripts/drive_parallel.py`, `scripts/driver_*.py`, `scripts/land_run.py`, `scripts/import_executor_report.py` | `skills/stage-drive/SKILL.md` |
-| 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
+| 점검 | 기록이 계약대로 적혀 있는가 | `scripts/audit_stage.py`, `scripts/audit_model_tier.py`, `scripts/audit_close_evidence.py`, `scripts/stage_records.py` | `skills/stage-audit/SKILL.md` |
 
 검증과 점검은 다른 레이어다. 검증은 카드 한 장의 결과를 보고 그 일이 목적에 닿았는지 판정한다. 점검은 기록
 전체를 읽고 형식과 연결이 계약대로인지 본다. 점검을 통과한 카드가 목적에 닿지 않았을 수 있고, 그 반대도 있다.
@@ -163,7 +163,12 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
 
 - 오케스트레이터는 `skills/stage-orchestrate/SKILL.md` 로 역할을 받는다. 진행 상태를 적는 파일은 없다. 진행 중인
   카드는 `.stage/work/current/` 가, 진행 중인 세션은 플랫폼의 세션 목록이 답한다.
-- 작업 세션과 검증 세션은 `scripts/subsession_brief.py` 가 카드에서 만든 첫 메시지로 역할을 받는다. `--role work`
+- 오케스트레이터가 아닌 세션은 모두 `scripts/subsession_brief.py` 가 기록에서 만든 브리핑으로 역할을 받는다.
+  역할 이름은 카드의 `## Sessions` 줄에 적는 이름과 같다(`work`, `verify`, `discussion`, `planning`,
+  `consolidation`). 브리핑은 두 길로 전해진다. `--first-message` 는 브리핑 대신 짧은 첫 메시지를 내고, 그 메시지는
+  같은 명령을 담아서 세션이 자기 체크아웃에서 브리핑을 스스로 내어 읽는다. 브리핑과 색인을 합치면 상한(10,000자)에
+  닿아 첫 메시지로 옮기기에 길기 때문이다. 세션의 호스트에 이 스크립트가 없을 때만 오케스트레이터가 출력을 그대로
+  붙여 보낸다. `--role work`
   는 카드가 에픽이면 그 아래 스토리를 세션 안의 서브에이전트에게 맡기고 스토리마다 커밋을 하나씩 남기게 한다.
   `--role verify` 는 `--criterion` 으로 넘긴 기준, 곧 온전한 세션이 해 봐야만 볼 수 있는 기준만 관찰해서
   보고하게 한다. 그 기준이 없으면 브리핑을 만들지 않는다. 검증 세션은 닫기의 관문이 아니다(DE-00000101):
@@ -175,9 +180,13 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
   판정 파일만 쓸 수 있다. 리뷰가 저장소 파일을 바꿨는지는 권한이 아니라 리뷰 앞뒤의 비교
   (`reject_review_writes`)가 잡는다. 저장소 밖의 변경은 잡지 못한다.
 - `subsession_brief.py` 는 카드를 읽기만 한다. 세션을 만들지 않고 카드나 런타임 상태를 고치지 않는다.
-- 규칙 후보를 모으는 정리 세션도 첫 메시지로 역할을 받는다. 오케스트레이터가 마일스톤을 닫기 전과 새 회고가
-  20건 쌓였을 때 띄우고, 그 세션은 `.stage/state/rule-candidates.md` 만 쓴다. 회고, 결정, 규칙 문서는 고치지
-  않고 규칙으로 올리자는 제안까지만 한다(DE-00000100).
+- 규칙 후보를 모으는 정리 세션은 `--role consolidation` 브리핑으로 역할을 받는다. 오케스트레이터가 마일스톤을
+  닫기 전과 새 회고가 20건 쌓였을 때 띄우고, 그 세션은 `.stage/state/rule-candidates.md` 만 쓴다. 회고, 결정,
+  규칙 문서는 고치지 않고 규칙으로 올리자는 제안까지만 한다(DE-00000100).
+- 토론 세션(`--role discussion`)과 계획 세션(`--role planning`)은 `--topic` 으로 주제를 받고, 카드 없이도 브리핑이
+  나온다. 두 세션은 기록을 쓰지 않는다. 사용자가 고른 것과 제안하는 카드를 보고하고, 결정 기록과 카드는
+  오케스트레이터가 그 보고에서 만든다. 클라우드 세션은 번호를 원격에 잡지 못하고(DE-00000094) 카드는 한 세션만
+  등록하기 때문이다.
 
 ### 세션이 처음 받는 글은 규칙 문장과 기록에서 만든 색인이다
 
@@ -198,15 +207,21 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
   색인을 받는 유일한 길이다.
 - 색인은 파일로 두지 않는다. 읽을 때마다 기록에서 만들어서 기록이 바뀌어도 낡은 복사본이 남지 않는다.
 - 전체 상한은 10,000자다(`SESSION_CONTEXT_CHAR_LIMIT`). 훅에서는 규칙 문장과 색인을 합친 길이이고, 브리핑에서는
-  브리핑과 색인을 합친 길이다. 넘으면 `fit_blocks()` 가 정해진 순서로 줄을 덜어낸다: 오래된 결정 제목, 규칙 후보,
-  지난 세션의 인계문, 프로젝트 지시 파일 목록, `.stage/operations/` 파일 목록. 지금 하는 일과 규칙 문장은 덜어내지
+  브리핑과 색인을 합친 길이다. 넘으면 `fit_blocks()` 가 정해진 순서로 줄을 덜어낸다: 규칙 후보, 오래된 결정 제목,
+  지난 세션의 인계문, 프로젝트 지시 파일 목록, `.stage/operations/` 파일 목록. 규칙 후보는 `proposed: promote` 인
+  것을 앞에, `proposed: hold` 인 것을 뒤에 싣고 뒤에서부터 덜어내므로 hold 후보가 먼저 빠진다. 후보를 결정보다 먼저
+  덜어내는 까닭은 결정은 일을 묶고 후보는 아직 규칙이 아니기 때문이다. 후보가 39건일 때 후보 36건이 실리고 결정
+  제목은 한 건도 실리지 않았다(W-00000413). 지금 하는 일과 규칙 문장은 덜어내지
   않는다. 덜어낸 조각은 몇 건을 덜어냈고 어디서 읽는지를 한 줄로 남긴다. 덜어낼 것이 없는데도 넘으면 끝을 자르고
   마지막 줄에 그렇다고 적는다.
 - 10,000자는 잰 값이 아니다. 정할 때의 크기(6,484자)에서 역산한 처음 값이다. 규칙 문장이 3,400자쯤을 쓰기
-  때문에 결정이 늘면 오래된 제목부터 빠진다. 규칙 문장을 줄일지는 이 장치가 정하지 않는다.
+  때문에 후보가 모두 빠진 뒤에도 결정이 늘면 오래된 제목부터 빠진다. 규칙 문장을 줄일지는 이 장치가 정하지 않는다.
 - 결정 색인 파일에도 제목 칸이 있다. `scripts/refresh_decision_index.py` 가 대기 중 결정 색인을 통째로 만들고,
   손으로 쓰는 공식 결정 색인에서는 제목 칸만 기록의 제목으로 채운다. 감사의 `DECISION005` 가 제목이 없거나 기록과
   다른 공식 색인을 잡는다. 작업 보관 색인의 줄은 `archive_work.py` 가 보관할 때 제목을 끝 칸에 적는다.
+- 앞선 판의 Stage 로 만든 프로젝트는 두 색인에 제목이 없다. `scripts/refresh_index_titles.py` 한 번이 대기 중 결정
+  색인, 공식 결정 색인의 제목, 작업 보관 색인의 제목을 채운다. 작업 보관 색인에서는 제목이 없는 줄만 채우고 이미
+  적힌 제목은 바꾸지 않는다. 감사의 `DECISION005` 와 `ARCHIVE005` 가 이 명령을 알려 준다.
 - 세션이 실린 줄을 실제로 썼는지를 재는 장치는 없다. 작업 세션이 색인을 보고 연 기록의 번호를 보고에 적고,
   오케스트레이터가 그것을 카드의 `## Sessions` 에 세션 번호와 함께 옮겨 적는다. 세션이 스스로 말한 것이다.
 - 새 오케스트레이터는 `scripts/started_cards.py` 한 번으로 진행 중인 카드를 얻는다. 가져온 브랜치 가운데 기본

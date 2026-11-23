@@ -80,6 +80,36 @@ well as guidance and can destroy project data.
 - Archived work item location violations.
 - Schema-v4 roadmap references, theme/milestone index parity, status ownership, and decision
   chains.
+- Evidence a close leaves, and index titles: see "After a Stage plugin update" below.
+
+## After a Stage plugin update
+
+A project made by an earlier Stage keeps records and settings in that version's shape. These
+findings name each place; none of them is fixed by editing a record by hand.
+
+| Code | Level | Meaning | What to do |
+|---|---|---|---|
+| `DECISION005` | error | The official decision index has no title column, or a title differs from its record's heading. | Run `python3 stage/scripts/refresh_index_titles.py --project-root .` |
+| `ARCHIVE005` | warning | The work archive index has rows without a title that their archived card can fill. One finding names the index and the row count. | The same command. It never replaces a title a row already has. |
+| `REVIEW003` | warning | A command under `review.reviewers` or `review.strengths` in `settings.json` does not contain the words `method`, `ran`, `read`, and `unable`, so it does not tell the reviewer to name how it judged each criterion. `close_work.py` rejects a verdict without `method`, so a close review through that command fails. | Add the `method` sentences from the `review` comment of `templates/v4/project-stage/settings.jsonc` to the command (`operations/review.md`, "How the reviewer judges"). |
+| `WORK030` | warning | A card has a `- Checks at close` line and no `- Load at close` line, and it closed on a later day than the project's first card that carries a load line. | Do not write the line by hand. Confirm which Stage version the closing session ran; a stale plugin cache is the usual cause. |
+
+```yaml
+work030_cut_off:
+  judged: cards whose last `- Checks at close` day is later than the earliest `- Load at close`
+    day among the project's own cards
+  not_judged:
+    - cards closed on or before that day, because the project's Stage did not write the line yet
+      or the day alone cannot say which close came first
+    - cards with no `- Checks at close` line, because nothing dates their close
+    - every card of a project that has no `- Load at close` line at all
+  why_not_a_fixed_date_or_card_id: another project updates its plugin on another day and numbers
+    its cards by itself
+```
+
+`refresh_index_titles.py` is the one command to run after an update. It renders the
+pending-decision index, fills the official decision index's titles, and fills the work archive
+index's titles; a second run changes nothing.
 
 ## Roadmap and chain finding codes
 
