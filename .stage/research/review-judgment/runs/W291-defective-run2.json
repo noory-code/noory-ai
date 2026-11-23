@@ -1,0 +1,54 @@
+{
+  "case": "W291-defective",
+  "card": "W-00000291",
+  "version": "defective",
+  "commit": "87726a00",
+  "report_commit": "87726a00",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 6,
+  "seconds": 64,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "다른 로컬 또는 원격 브랜치에 이미 있는 W 번호를 등록 도구가 고르지 않고, 그 번호를 직접 주면 거절한다는 것을 테스트가 확인한다",
+        "verdict": "FAIL",
+        "method": "ran",
+        "reason": "Automatic allocation skips branch numbers and both paths refuse a branch-only --id, but my probe (register_work.py --id W-00000005 with the card only on branch feature-x) printed 'refusing — id already used on branch feature-x' on the current path and only 'refusing — id is already used' with --backlog; for explicit ids on the planned (--backlog) path the card's Actions require the branch name, the new test skips that check with 'if not planned', and the executor report gives Work not done: None, so the narrowed scope is hidden, not reported"
+      },
+      {
+        "criterion": "결정과 관측 같은 다른 기록의 다음 번호를 브랜치를 넘어 알려 주는 도구가 있고, 결정 절차가 그 도구로 번호를 고르라고 적는다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "In a scratch git repo with DE-00000003 on main and DE-00000040 plus O-00000009 only on remote-tracking ref up/x, stage_record_ids.py printed DE-00000041 and O-00000010; stage-decision/SKILL.md line 157 tells authors to take DE numbers from this command"
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "W-00000291 is not approved: one success criterion fails and one passes. I wrote the verdict file at `.stage/.runtime/driver/verdicts/W-00000291.json`. It is the only file I wrote in the repository, and the working tree is otherwise clean.\n\n**The reporting contract was not followed.** The card's Actions say that an explicit `--id` used only on another branch must be refused with that branch's name. The latest executor report says `Work not done: None`, and its `Decisions made` list doesn't mention any narrowing. But its own `What changed` line says the branch is named only \"on the current-card path.\"\n\n- **Criterion 1 (W numbers on other branches are skipped and an explicit one is refused): FAIL, checked by running it.** The two card checks pass (4 and 47 tests). Automatic numbering does skip numbers used on another branch, and an explicit `--id` from another branch is refused on both paths. My own test put card `W-00000005` only on branch `feature-x`:\n  - Registering it as a current card gave `refusing — id already used on branch feature-x`.\n  - Registering it with `--backlog` (the planned-card path) gave only `refusing — id is already used`, with no branch name.\n\n  The new test skips the branch-name check on that path (`if not planned`), and the report doesn't disclose the gap.\n- **Criterion 2 (a cross-branch numbering tool for decisions and observations, and the decision skill points to it): PASS, checked by running it.** I made a scratch git repo with `DE-00000003` on `main`, and `DE-00000040` and `O-00000009` only on a remote-tracking branch. `stage_record_ids.py` returned `DE-00000041` and `O-00000010`. `stage/skills/stage-decision/SKILL.md:157` tells authors to take decision numbers from this tool.\n\nTo pass criterion 1, the executor should either name the branch on the `--backlog` path and test it, or report the gap under `Work not done`.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2; cat repo/.stage/work/current/W-00000291/_story.md; echo ====; cat review-input/changed-paths.json; echo ====; cat repo/.stage/.runtime/driver/logs/W-00000291.md; ls review-input; ls repo/.stage/.runtime/driver/verdicts/ 2>&1",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; git status --short; git log --oneline -3; cat stage/scripts/stage_record_ids.py; git diff HEAD -- stage/skills/stage-work/register_work.py stage/skills/stage-decision/SKILL.md stage/CHANGELOG.md | head -300",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; git diff HEAD --stat; git diff HEAD -- stage/scripts/tests/test_register_work.py; cat stage/scripts/tests/test_stage_record_ids.py | head -150",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; git show --stat HEAD | tail -10; git diff HEAD~1 HEAD -- stage/skills/stage-work/register_work.py stage/skills/stage-decision/SKILL.md stage/CHANGELOG.md stage/scripts/tests/test_register_work.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; sed -n 700,830p stage/skills/stage-work/register_work.py; grep -n \"def allocate\\|existing_numbers\\|O_EXCL\\|refusing\" stage/skills/stage-work/register_work.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; sed -n 395,440p stage/skills/stage-work/register_work.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; python3 -m unittest discover -s stage/scripts/tests -p test_stage_record_ids.py -q 2>&1|tail -3; python3 -m unittest discover -s stage/scripts/tests -p test_register_work.py -q 2>&1 | tail -3; sed -n 1,80p stage/scripts/tests/test_register_work.py | grep -n \"def make\\|def run\\|REGISTER\\|SCRIPT\" ; python3 stage/scripts/stage_record_ids.py --project-root . DE; python3 stage/scripts/stage_record_ids.py --project-root . W; python3 stage/scripts/stage_record_ids.py --project-root . O; git branch -a | head",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W291-defective-run2-repo/f97d709b-7039-4370-a7f5-cbcdaff7195a/scratchpad; mkdir -p $S; cat > $S/probe.py <<'EOF'\nimport sys, unittest\nsys.path.insert(0, sys.argv[1])\nimport test_register_work as t\ntc = t.RegisterWorkTest()\nfor planned in (False, True):\n    tmp, root = tc.make()\n    with tmp:\n        tc.commit_card_on_other_branch(root, \"W-00000005\", \"refs/heads/feature-x\")\n        extra = (\"--backlog\",) if planned else ()\n        p = t.run(root, \"--id\", \"W-00000005\", \"--title\", \"T\", \"--kind\", \"design\", \"--scope\", \"src\", *extra)\n        print(\"planned\" if planned else \"current\", p.returncode, repr(p.stderr.strip()))\n        if planned:\n            p = t.run(root, \"--title\", \"T\", \"--kind\", \"design\", \"--scope\", \"src\", \"--backlog\")\n            print(\"auto backlog\", p.returncode, p.stdout.strip()[:200])\nEOF\npython3 -I $S/probe.py stage/scripts/tests",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W291-defective-run2-repo/f97d709b-7039-4370-a7f5-cbcdaff7195a/scratchpad; R=/tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; d=$(mktemp -d -p $S); cd $d; git init -q -b main; mkdir -p .stage/decisions/pending .stage/state/observations; printf -- '---\\nid: DE-00000003\\n---\\n' > .stage/decisions/pending/DE-00000003.md; git add -A; git -c user.name=a -c user.email=a@x.invalid commit -qm a; git checkout -qb tmp; printf -- '---\\nid: DE-00000040\\n---\\n' > .stage/decisions/pending/DE-00000040.md; printf -- '---\\nid: O-00000009\\n---\\n' > .stage/state/observations/O-00000009.md; git add -A; git -c user.name=a -c user.email=a@x.invalid commit -qm b; git update-ref refs/remotes/up/x HEAD; git checkout -q main; git branch -qD tmp; python3 $R/stage/scripts/stage_record_ids.py --project-root . DE; python3 $R/stage/scripts/stage_record_ids.py --project-root . O; grep -n \"stage_record_ids\" $R/stage/skills/stage-decision/SKILL.md",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run2/repo; cat > .stage/.runtime/driver/verdicts/W-00000291.json <<'EOF'\n{\"criteria\": [{\"criterion\": \"다른 로컬 또는 원격 브랜치에 이미 있는 W 번호를 등록 도구가 고르지 않고, 그 번호를 직접 주면 거절한다는 것을 테스트가 확인한다\", \"verdict\": \"FAIL\", \"method\": \"ran\", \"reason\": \"Automatic allocation skips branch numbers and both paths refuse a branch-only --id, but my probe (register_work.py --id W-00000005 with the card only on branch feature-x) printed 'refusing — id already used on branch feature-x' on the current path and only 'refusing — id is already used' with --backlog; for explicit ids on the planned (--backlog) path the card's Actions require the branch name, the new test skips that check with 'if not planned', and the executor report gives Work not done: None, so the narrowed scope is hidden, not reported\"}, {\"criterion\": \"결정과 관측 같은 다른 기록의 다음 번호를 브랜치를 넘어 알려 주는 도구가 있고, 결정 절차가 그 도구로 번호를 고르라고 적는다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"In a scratch git repo with DE-00000003 on main and DE-00000040 plus O-00000009 only on remote-tracking ref up/x, stage_record_ids.py printed DE-00000041 and O-00000010; stage-decision/SKILL.md line 157 tells authors to take DE numbers from this command\"}], \"approved\": false}\nEOF\npython3 -c \"import json;d=json.load(open('.stage/.runtime/driver/verdicts/W-00000291.json'));print(d['approved'],[c['verdict'] for c in d['criteria']])\"; git status --short"
+  ],
+  "tokens": {
+    "input": 20,
+    "cache_creation": 28104,
+    "cache_read": 467377,
+    "output": 5662
+  }
+}

@@ -1,7 +1,8 @@
-"""The briefs a main session sends work and verification sessions (DE-00000094, DE-00000099)."""
+"""The briefs that give each session of a main session its role (DE-00000094, DE-00000099)."""
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -282,6 +283,177 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn("older decisions not shown — read", proc.stdout)
         # The brief's own rules are never what gets shortened.
         self.assertIn("Then wait, and push no commit until the main session answers", proc.stdout)
+
+    def test_a_discussion_brief_needs_no_card_and_writes_no_record(self) -> None:
+        proc = brief(self.root, "--role", "discussion", "--topic", "Whether  to split\nthe driver")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        out = proc.stdout
+        self.assertIn("You are a discussion session of the main session `session_main`.", out)
+        self.assertIn("## Topic\n\nWhether to split the driver\n", out)
+        self.assertIn("You build nothing", out)
+        self.assertIn("keep the user's words", out)
+        self.assertIn("do not create a card, a decision record, or\n  any record that needs a new id", out)
+        self.assertIn("Do not invent a purpose or a success criterion", out)
+        self.assertIn("Do not run `start_work.py`, `register_work.py`, `close_work.py`", out)
+        self.assertIn("When the user says the talk is finished, send the main session", out)
+        self.assertIn("- each decision the talk reached", out)
+        self.assertIn("- each card the talk proposes", out)
+        self.assertIn("- the ids of the records you opened because the session index below", out)
+        self.assertNotIn("## Card:", out)
+        self.assertNotIn("Executor report", out)
+
+    def test_a_planning_brief_designs_what_to_achieve_and_never_how(self) -> None:
+        proc = brief(self.root, "--role", "planning", "--topic", "Cut the migration into cards")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        out = proc.stdout
+        self.assertIn("You are a planning session of the main session `session_main`.", out)
+        self.assertIn("You never design how a card is executed", out)
+        self.assertIn("It carries no steps,\n  no file-level design, and no method.", out)
+        self.assertIn("docs/PHILOSOPHY.md`", out)
+        self.assertIn("- each card you propose, in the order to run them and why that order", out)
+        self.assertIn("only the user's machine or a whole session can observe", out)
+        self.assertIn("Do not edit, commit, or push anything", out)
+
+    def test_a_talk_brief_lists_a_started_card_to_read_when_one_is_named(self) -> None:
+        self.card()
+
+        for role in ("discussion", "planning"):
+            with self.subTest(role=role):
+                out = brief(self.root, "W-00000002", "--role", role, "--topic", "Change course").stdout
+
+                self.assertIn("- `.stage/work/current/W-00000002/_story.md`", out)
+                self.assertIn("- `.stage/decisions/pending/DE-00000007.md`", out)
+                self.assertNotIn("## Record ids", out)
+
+    def test_a_talk_brief_is_refused_without_a_topic_or_for_an_unstarted_card(self) -> None:
+        for role in ("discussion", "planning"):
+            with self.subTest(role=role):
+                no_topic = brief(self.root, "--role", role, "--topic", " ")
+                no_card = brief(self.root, "W-00000099", "--role", role, "--topic", "Change course")
+
+                self.assertEqual((1, ""), (no_topic.returncode, no_topic.stdout))
+                self.assertIn(f"--role {role} needs --topic", no_topic.stderr)
+                self.assertEqual((1, ""), (no_card.returncode, no_card.stdout))
+                self.assertIn("start it first", no_card.stderr)
+
+    def test_a_consolidation_brief_writes_only_the_candidate_list(self) -> None:
+        proc = brief(self.root, "--role", "consolidation", "--branch", "claude/candidates")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        out = proc.stdout
+        self.assertIn("You are a consolidation session of the main session `session_main`.", out)
+        self.assertIn("skills/stage-retrospective/rule-promotion.md`", out)
+        self.assertIn("every retrospective newer than that list's `through:` id", out)
+        self.assertIn("Write only `.stage/state/rule-candidates.md`.", out)
+        self.assertIn("branch `claude/candidates`", out)
+        self.assertIn("Do not edit a retrospective, a decision record, a rule file, a skill, or a card", out)
+        self.assertIn("mark a candidate `proposed: promote` and stop there", out)
+        self.assertIn("- each `proposed: promote` line with the retrospectives it cites", out)
+
+    def test_a_consolidation_brief_takes_no_card_and_a_card_role_needs_one(self) -> None:
+        self.card()
+
+        with_card = brief(self.root, "W-00000002", "--role", "consolidation")
+        self.assertEqual((1, ""), (with_card.returncode, with_card.stdout))
+        self.assertIn("pass no W-id", with_card.stderr)
+        for role in ("work", "verify"):
+            with self.subTest(role=role):
+                proc = brief(self.root, "--role", role)
+
+                self.assertEqual((1, ""), (proc.returncode, proc.stdout))
+                self.assertIn(f"--role {role} needs the started card's W-id", proc.stderr)
+
+    ROLE_ARGUMENTS = {
+        "work": ["W-00000002", "--branch", "claude/w2"],
+        "verify": [
+            "W-00000002", "--role", "verify", "--branch", "claude/w2", "--commit", "abc1234",
+            "--criterion", "A new cloud session takes the role and reports back",
+        ],
+        "discussion": ["--role", "discussion", "--topic", "Whether it's time to split `drive.py`"],
+        "planning": ["W-00000002", "--role", "planning", "--topic", "Cut the migration"],
+        "consolidation": ["--role", "consolidation", "--branch", "claude/candidates"],
+    }
+
+    def test_the_first_message_has_the_session_print_the_same_brief_itself(self) -> None:
+        self.card()
+        names = {"verify": "verification"}
+
+        for role, arguments in self.ROLE_ARGUMENTS.items():
+            with self.subTest(role=role):
+                pasted = brief(self.root, *arguments)
+                proc = brief(self.root, *arguments, "--first-message")
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                message = proc.stdout
+                self.assertIn(
+                    f"You are a {names.get(role, role)} session of the main session `session_main`.",
+                    message,
+                )
+                self.assertIn("brief is what this command prints", message)
+                self.assertIn("do not start without the brief", message)
+                self.assertNotIn("## Session index", message)
+                self.assertLess(len(message), 1_500)
+                [command] = [line.strip() for line in message.splitlines() if line.startswith("    ")]
+                self.assertNotIn("--first-message", command)
+                # The plugin is outside this project, so the message names where to find it.
+                prefix = "python3 <installed Stage plugin>/scripts/subsession_brief.py --project-root . "
+                self.assertTrue(command.startswith(prefix), command)
+                self.assertIn("Replace `<installed Stage plugin>`", message)
+                # What the session gets by running the command is what the main session would paste.
+                rerun = subprocess.run(
+                    [sys.executable, str(BRIEF), "--project-root", str(self.root)]
+                    + shlex.split(command[len(prefix):]),
+                    capture_output=True, text=True, encoding="utf-8", errors="replace",
+                )
+                self.assertEqual(0, rerun.returncode, rerun.stderr)
+                self.assertEqual(pasted.stdout, rerun.stdout)
+
+    def test_the_first_message_names_the_script_inside_the_project_by_its_path(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import subsession_brief
+
+        message = subsession_brief.first_message(
+            SCRIPTS.parent.parent, "work", "session_main", ["W-00000002", "--role", "work"]
+        )
+
+        self.assertIn(
+            f"    python3 {SCRIPTS.parent.name}/scripts/subsession_brief.py --project-root . "
+            "W-00000002 --role work\n",
+            message,
+        )
+        self.assertNotIn("<installed Stage plugin>", message)
+
+    def test_the_first_message_is_refused_when_the_brief_would_be(self) -> None:
+        self.card()
+
+        for arguments in (["W-00000099"], ["W-00000002", "--role", "verify"], ["--role", "planning"]):
+            with self.subTest(arguments=arguments):
+                proc = brief(self.root, *arguments, "--first-message")
+
+                self.assertEqual((1, ""), (proc.returncode, proc.stdout))
+
+    def test_the_new_roles_end_with_the_index_and_stay_within_the_hook_limit(self) -> None:
+        self.card()
+        for number in range(100, 500):
+            write(
+                self.root / f".stage/official/decisions/records/DE-{number:08d}.md",
+                f"---\nid: DE-{number:08d}\nstatus: promoted\n---\n\n"
+                f"# DE-{number:08d} A decision with a reasonably long title, number {number}\n",
+            )
+
+        for role in ("discussion", "planning", "consolidation"):
+            with self.subTest(role=role):
+                proc = brief(self.root, *self.ROLE_ARGUMENTS[role])
+
+                self.assertEqual(0, proc.returncode, proc.stderr)
+                self.assertLessEqual(len(proc.stdout), 10_000)
+                head, index = proc.stdout.split("\n## Session index\n", 1)
+                self.assertIn("- DE-00000499 ", index)
+                self.assertIn("older decisions not shown — read", index)
+                # The brief's own rules are never what gets shortened.
+                self.assertIn("Then wait. The main session", head)
 
     def test_an_unknown_role_is_refused(self) -> None:
         self.card()

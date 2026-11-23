@@ -17,7 +17,7 @@ class OrchestrateSkillTest(unittest.TestCase):
         text = read("stage-orchestrate")
 
         self.assertTrue(text.startswith("---\nname: stage-orchestrate\ndescription: "))
-        self.assertIn("subsession_brief.py --project-root . <W-id>", text)
+        self.assertIn("subsession_brief.py --project-root . [<W-id>]", text)
         self.assertIn("--role verify", text)
         self.assertIn("## Take over from the records", text)
         self.assertIn("`list_sessions`", text)
@@ -57,11 +57,43 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("A verification session is not the gate on closing a card (DE-00000101).", text)
         self.assertIn("can be observed only by\n      a whole session doing the thing", text)
         self.assertIn("then: start none; close the card, for an epic too", text)
-        self.assertIn('--criterion "<success criterion copied from the card>"', text)
+        self.assertIn("Copy each `--criterion` from\nthe card", text)
         self.assertIn("add to the card's `## Verification`, on your branch", text)
         self.assertNotIn("The verification session's verdict decides whether you close", text)
         self.assertIn("The close review\n   is the only gate", cloud)
         self.assertIn("The verification session does\nnot decide the close.", review)
+
+    def test_the_skill_has_a_session_print_its_own_brief_for_every_role(self) -> None:
+        text = read("stage-orchestrate")
+
+        self.assertIn("## Give a session its brief", text)
+        self.assertIn("--first-message", text)
+        self.assertIn("the session runs it in its own checkout and reads its brief", text)
+        self.assertNotIn("send it as the session's first message, unedited", text)
+        self.assertNotIn("a first message you write", text)
+        for role in ("work", "verify", "discussion", "planning", "consolidation"):
+            self.assertIn(f"| `{role}` |", text)
+        # The consolidation session's rules live in its brief, not in the skill.
+        self.assertNotIn("first_message_must_say", text)
+
+    def test_the_close_procedure_covers_the_paths_made_up_by_hand(self) -> None:
+        text = read("stage-orchestrate")
+        cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
+
+        for section in (
+            "Import again after a rejected close review",
+            "Merge a card that waits for the user's machine",
+        ):
+            self.assertIn(f"### {section}\n", cloud)
+            self.assertIn(f'("{section}")', text)
+        self.assertIn("do not reset, revert, amend, or rebase it", cloud)
+        self.assertIn("`git checkout FETCH_HEAD -- <path>`", cloud)
+        self.assertIn("`git diff FETCH_HEAD -- <the card's scope paths", cloud)
+        self.assertIn("--commit <first-squash> --commit HEAD", cloud)
+        self.assertIn("no close review runs", cloud)
+        self.assertIn("`This change was merged without a close review.`", cloud)
+        self.assertIn("that close review is the card's\n    first", cloud)
+        self.assertIn("- if: the card's `## Sessions` has a `verify` line", cloud)
 
     def test_the_procedures_state_the_judgment_contract_and_the_stand_in_permission(self) -> None:
         cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")

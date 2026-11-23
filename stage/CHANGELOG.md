@@ -2,6 +2,68 @@
 
 ## Unreleased
 
+- Write down the paths an orchestrator made up by hand while conducting eight cards and a
+  release (W-00000412, O-00000061).
+  - **A session prints its own brief.** `subsession_brief.py --first-message` prints a short
+    first message that names the role and the same command without that flag; the session runs
+    it in its own checkout and reads its brief. A brief with its session index runs up to 10000
+    characters, more than a first message carries well. `stage-orchestrate` no longer says to
+    paste the brief; pasting stays as the path for a host that cannot run the script.
+  - **Briefs for three more roles.** `--role discussion` and `--role planning` take `--topic`
+    and an optional started card; `--role consolidation` takes no card. The names are the ones
+    a card's `## Sessions` line uses. The three sessions write no card and no decision record:
+    they report, and the orchestrator registers. `stage-orchestrate` no longer carries the
+    consolidation session's rules; the brief does.
+  - **Second import after a rejected close review.** `operations/cloud-execution.md` says the
+    first squash commit stays, how to resolve the second squash's conflicts with the
+    sub-session's files, how to confirm the code equals the sub-session's branch, and that the
+    report is imported with one `--commit` per squash commit.
+  - **Merging a card that waits for the user's machine.** The same document says when code may
+    merge while its card stays open, that no close review runs before that merge, what is
+    written on the card and in the observation that collects deferred checks, and how the
+    card closes when the user's check arrives.
+  - **Observation on the card before the close.** Before closing a card that had a verification
+    session, the main session confirms the `- Observed` line is on the card.
+  - The repository's release procedure (root `CLAUDE.md`, "Plugin Changes") says to merge the
+    default branch immediately before creating the release commit, and not after it.
+  - `stage-orchestrate` is 320 lines, down from 322.
+- Leave the evidence of a review and a close on the records, and tell a project that updates
+  Stage where it is behind (W-00000413).
+  - **Attempts survive a squash.** `import_executor_report.py` ends the imported report with
+    `Attempt commits: <n> (<sha>, ...)`, the distinct commits passed with `--commit`.
+    `work_load.py` counts `attempts` as the largest of the reports in the work log, the review
+    FAIL rounds plus one, and that number, so the card's `- Load at close` line keeps the count
+    of a squashed cloud card.
+  - **How the reviewer judged, per closed card.** The `work_load.py` table gains `Ran`, `Read`,
+    and `Unable`: the criteria of the card's last `- Review at close` line by `method`.
+    `no review` marks a card closed without a review, `not recorded` a line from before
+    verdicts named a method.
+  - **The reviewer reads what the checks printed.** Before the review command starts,
+    `close_work.py` appends a `### Checks at close` section to the work log: each passed
+    check's command and the end of its output, at most 60 lines and 6000 bytes per check and
+    30000 bytes per close, indented so output is never read as a log heading. The card still
+    keeps the commands only.
+  - **Choose the commits the review reads.** `close_work.py --review-commit <rev>` (repeatable)
+    hands the reviewer the paths of the named commits instead of HEAD's, and the close warns
+    when the default list holds only `.stage/` paths (O-00000058). An unknown revision stops
+    the close before any check runs.
+  - **New audit codes.** `WORK030` (warning): a card closed with no `- Load at close` line on a
+    later day than the project's first card that carries one. `REVIEW003` (warning): a command
+    under `review.reviewers` or `review.strengths` does not name `method`, `ran`, `read`, and
+    `unable`. `ARCHIVE005` (warning): the work archive index has rows without a title that
+    their card can fill.
+  - **One command after an update.** `python3 stage/scripts/refresh_index_titles.py
+    --project-root .` renders the pending-decision index, fills the official decision index's
+    titles, and fills the work archive index's missing titles. `DECISION005` now names this
+    command. `stage-audit` lists the findings an updated project sees and what to do for each.
+  - **Decision titles stay in the session index.** Over the limit, rule candidates are left out
+    before decision titles, and the index shows `proposed: promote` candidates ahead of
+    `proposed: hold` ones, so the hold ones go first. With 39 candidates the index had shown 36
+    of them and no decision title.
+  - `LiveReviewerWriteProbeTest` no longer copies `run_review.py` alone into its throwaway
+    repository, where it failed at import before any reviewer ran; the project reviewer
+    command now runs this plugin's scripts.
+
 ## 0.69.0 — 2026-11-23
 
 - Put four small fixes left in earlier cards' reports into the code and CI (W-00000410).

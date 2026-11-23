@@ -38,6 +38,8 @@ DECISION_SETTLED_STATUSES = frozenset({"decided", "promoted", "approved"})
 RULE_CANDIDATE_LIST = "state/rule-candidates.md"
 # New retrospectives since the list's `through:` id that make a consolidation session due.
 CONSOLIDATION_DUE_AFTER = 20
+# What a bullet of that list says when the consolidation session proposes promoting it.
+PROMOTE_PROPOSAL = "proposed: promote"
 
 RULE_CANDIDATE_SECTION = re.compile(
     r"^## Rule candidate[ \t]*\r?\n(?P<body>.*?)(?=^## |\Z)", re.MULTILINE | re.DOTALL
@@ -171,11 +173,49 @@ def _has_rule_candidate(path: Path) -> bool:
     return not said.startswith(NO_CANDIDATE_PREFIX)
 
 
+def candidate_bullets(list_text: str) -> list[tuple[str, bool]]:
+    """Each top-level bullet of the list as (its bounded first line, whether it proposes promotion).
+
+    A wrapped bullet states `proposed: promote` on an indented line, so the proposal is read
+    from the whole bullet while only its first line is shown.
+    """
+    bullets: list[list[str]] = []
+    open_bullet = False
+    for line in list_text.splitlines():
+        if line.startswith("- "):
+            bullets.append([line[2:]])
+            open_bullet = True
+        elif open_bullet and line[:1] in (" ", "\t") and line.strip():
+            bullets[-1].append(line)
+        elif line.strip():
+            open_bullet = False
+    found = []
+    for parts in bullets:
+        body = " ".join(parts[0].split())
+        if len(body) > SESSION_CONTEXT_LINE_LIMIT - 2:
+            body = body[: SESSION_CONTEXT_LINE_LIMIT - 3] + "…"
+        whole = " ".join(" ".join(parts).split()).lower()
+        found.append((f"- {body}", PROMOTE_PROPOSAL in whole))
+    return found
+
+
+def promote_first(bullets: list[tuple[str, bool]]) -> list[str]:
+    """Candidate lines with the `proposed: promote` ones first, each group in the list's order.
+
+    The index gives up candidates from the end (`fit_blocks`), so the ones a person is asked
+    to decide on are the last to go.
+    """
+    return [line for line, promote in bullets if promote] + [
+        line for line, promote in bullets if not promote
+    ]
+
+
 def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
     """The open rule candidates, and the fixed lines that say how current they are.
 
     Returns `(candidates, status)`. `candidates` are the top-level bullets of the
-    consolidated list, one bounded line each, in the list's order. `status` says how many
+    consolidated list, one bounded line each: the `proposed: promote` ones first, then the
+    rest, each group in the list's order. `status` says how many
     retrospectives are newer than the list and whether a consolidation session is due; with
     no list it says how many retrospectives carry a candidate and where they are.
     """
@@ -199,13 +239,7 @@ def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
         text = list_path.read_text(encoding="utf-8")
     except OSError:
         text = ""
-    candidates = []
-    for line in text.splitlines():
-        if line.startswith("- "):
-            body = " ".join(line[2:].split())
-            if len(body) > SESSION_CONTEXT_LINE_LIMIT - 2:
-                body = body[: SESSION_CONTEXT_LINE_LIMIT - 3] + "…"
-            candidates.append(f"- {body}")
+    candidates = promote_first(candidate_bullets(text))
     if re.fullmatch(r"R-\d{3,}", through):
         covered = id_sort_key(through)
         newer = sum(1 for record_id, _path in retrospectives if id_sort_key(record_id) > covered)

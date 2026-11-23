@@ -138,6 +138,26 @@ same command archives the hierarchy and its retrospectives, so the close and the
 one commit beside the work. Commit the source changes before running it: the review judges the
 commit at `HEAD`, and the archiver refuses while a path inside the item's scope is uncommitted.
 
+```yaml
+what_the_review_at_close_is_handed:
+  changed_paths:
+    - default: the paths the `HEAD` commit changed
+    - if: the card's code is not in `HEAD` (a records-only commit sits on top, or the card took
+        several commits)
+      then: pass `--review-commit <rev>` once per commit; the reviewer gets every path those
+        commits changed, each once
+    - if: the default list holds only `.stage/` paths
+      then: close_work.py prints a WARNING that names `--review-commit`; the review still runs
+    - if: a `--review-commit` revision does not resolve, or the card runs no review
+      then: the close is refused before any check runs
+  check_output:
+    - the output of every check that passed, as a `### Checks at close` section appended to the
+      work log (`$STAGE_WORK_LOG_PATH`) before the review command starts
+    - bound: the last 60 lines and 6000 bytes of each check; with more than five checks, an
+      equal share of 30000 bytes each. A cut output says how many earlier lines were left out.
+    - the card still receives the commands only, never their output
+```
+
 | Case | What happens |
 |---|---|
 | A check or the review fails | Nothing is closed and nothing is archived. |
@@ -163,6 +183,9 @@ python3 stage/scripts/import_executor_report.py --project-root <project-root> W-
 
 It joins fields that the commit body wrapped across lines, validates the report against the executor
 contract and the paths that commit changed, and leaves the work log unchanged when validation fails.
+Pass `--commit` once per attempt commit. The importer ends the imported report with
+`Attempt commits: <n> (<sha>, ...)`, and the close counts `attempts` in the card's
+`- Load at close` line from it, so a squashed card keeps its attempt count without the work log.
 
 ## Completion rule
 

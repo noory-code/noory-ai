@@ -53,6 +53,7 @@
 | 가정 레코드 | `state/assumptions/` |
 | 리스크 | `state/risks.md` |
 | 리스크 레코드 | `state/risks/` |
+| 회고의 규칙 후보를 묶은 목록 | `state/rule-candidates.md` |
 | 제안 인덱스 | `proposals/index.md` |
 | 제안 본문 | `proposals/` |
 | 로드맵 인덱스 | `roadmap/index.md` |

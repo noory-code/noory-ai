@@ -83,7 +83,18 @@ All commands run from inside the package directory (`cd evonest` here, or
      `CHANGELOG.md`. When the plugin first adopts this workflow, create that section directly after
      the first H1 heading line, or at the start of the file when it has no H1 heading.
   2. Do not change either plugin manifest version during card work.
-  3. At release time, choose the plugin's declared version path:
+  3. At release time, run `git fetch origin` and merge the default branch into the release branch
+     (`git merge origin/main`) immediately before creating the release commit. The release commit
+     titles everything under `## Unreleased`, so a card merged into the default branch after the
+     last fetch is missing from it.
+     - Do not merge the default branch into the release branch after the release commit: the merge
+       puts the entries of cards merged in between inside the section that was already released.
+       `python3 stage/scripts/release_plugin.py <plugin-directory> --check-released` fails on that,
+       and CI runs it for `stage/`.
+     - If the default branch gained a card after the release commit and the release branch must
+       take it: after that merge, move the card's entry from the released section to
+       `## Unreleased`, and run the `--check-released` command before pushing.
+  4. Choose the plugin's declared version path:
      - `evonest/`: do not use the generic release command. Follow `evonest/CLAUDE.md` Version
        Management so `pyproject.toml` remains the version SSOT and both manifests plus `uv.lock`
        move with it; title the queued changelog section with that version.
@@ -95,11 +106,11 @@ All commands run from inside the package directory (`cd evonest` here, or
      - `pencil_m3_flutter/`: use the same command for a host-plugin release. Its root and example
        `pubspec.yaml` versions belong to separate Dart package and example release streams; this
        command does not change them.
-  4. The generic release command requires a non-empty `## Unreleased` section, verifies that the
+  5. The generic release command requires a non-empty `## Unreleased` section, verifies that the
      latest changelog release matches every manifest the plugin ships, titles the queued section,
      updates those manifest versions without reformatting them, and opens a new empty `## Unreleased`
      section for the next card.
-  5. Commit + push the release in one step.
+  6. Commit + push the release in one step.
 
 ### Diagrams
 

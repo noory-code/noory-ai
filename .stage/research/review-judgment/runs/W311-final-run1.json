@@ -1,0 +1,51 @@
+{
+  "case": "W311-final",
+  "card": "W-00000311",
+  "version": "final",
+  "commit": "b05185fe",
+  "report_commit": "b05185fe",
+  "run": 1,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 6,
+  "seconds": 44,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "Edit·Write 호출의 세션 transcript 경로, 출력을 버리는 /dev/null, OS 임시 폴더 안 경로, 환경에서 펼칠 수 있는 셸 변수로 시작하는 임시 경로가 범위 넘음으로 알려지지 않는다는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "test_scope_report_leaves_out_paths_the_call_does_not_change covers Edit and Write transcript_path, > /dev/null, a cp into the temp folder and a $VAR temp target, and the suite passes (262 OK). I also ran my own handle_event probe with workspaces both inside /tmp and under $HOME, using cp \"$TMPDIR/x\", ${TMPDIR}/x, >> /dev/null, > /tmp/foo.txt and an Edit with transcript_path: none of them produced a scope-crossing message."
+      },
+      {
+        "criterion": "범위 밖 프로젝트 파일과 작업 폴더 밖의 다른 경로는 여전히 범위 넘음으로 알려지고, .stage 쓰기를 막는 게이트는 그대로라는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "test_scope_report_still_names_real_crossings, the cwd-independence test and the gate test beside a transcript_path all pass. My own probe in both a /tmp workspace and a $HOME workspace reported docs/readme.md (Edit), docs/r.md (Bash), /etc/probe.conf, ~/other/f.txt and \"$HOME/other/f.txt\" as crossings, and denied a Write to .stage/past/canon/p.md. The diff leaves the gate code untouched."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "W-00000311 is approved: both success criteria pass. I wrote the verdict to `.stage/.runtime/driver/verdicts/W-00000311.json`. `git status` shows nothing changed in the repository.\n\n- **Paths that should not be reported (PASS, ran):**\n  - **Stored test:** The new test covers an Edit or Write transcript path, output sent to `/dev/null`, a file in the OS temporary folder, and a temporary path that starts with a shell variable. The full suite passes: 262 tests, 1 skipped.\n  - **My own check:** I ran the hook directly in two test workspaces, one under `/tmp` and one under `$HOME`. The commands were `cp \"$TMPDIR/x\"`, `${TMPDIR}/x`, `>> /dev/null` and `> /tmp/foo.txt`, plus an Edit carrying a transcript path. None of them produced a scope-crossing line.\n- **Real crossings and the `.stage` gate (PASS, ran):**\n  - **Still reported:** My check flagged out-of-scope project files changed through both Edit and Bash. It also flagged paths outside the workspace that are neither devices nor temporary files: `/etc/probe.conf`, `~/other/f.txt` and `\"$HOME/other/f.txt\"`.\n  - **Gate unchanged:** A Write to `.stage/past/canon/` was still denied, and the diff doesn't touch the gate code.\n\n**Executor report:** The report follows the reporting contract.\n- \"Decisions made\" says the exclusions apply only to the report, that targets come only from the tool input, and that relative paths resolve against the workspace rather than the current directory. It ends with \"out-of-scope paths changed: none\", which is accurate: all six changed paths are within the card's scope.\n- \"Work not done: None\" matches what I saw: the fix, tests, `hooks.md`, the CHANGELOG line and the O-00000050 closure are all present.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1; cat repo/.stage/work/current/W-00000311/_story.md; echo ----; cat review-input/changed-paths.json; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000311.md; ls review-input",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; git status --short; git log --oneline -3; git diff HEAD --stat; git diff HEAD -- stage/hooks/stage_guard.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; git diff 8d727759 HEAD --stat; git diff 8d727759 HEAD -- stage/hooks/stage_guard.py stage/hooks/tests/test_stage_guard.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; python3 -m unittest discover -s stage/hooks/tests -p test_stage_guard.py -q 2>&1 | tail -3; grep -n \"def write_purpose_reminder_fixture\" -A30 stage/hooks/tests/test_stage_guard.py | head -40",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; cat > /tmp/probe311.py <<'EOF'\nimport sys, os, tempfile, shutil, unittest\nfrom pathlib import Path\nsys.path.insert(0, \"stage/hooks\"); sys.path.insert(0, \"stage/hooks/tests\")\nimport stage_guard, test_stage_guard as T\nt = T.StageGuardTest(\"test_scope_report_still_names_real_crossings\")\ndef msg(r): return T.message(r)\nfor base in [tempfile.mkdtemp(), os.path.expanduser(\"~/probe311ws\")]:\n    root = Path(base); root.mkdir(exist_ok=True)\n    t.write_purpose_reminder_fixture(root)\n    os.environ[\"TMPDIR\"] = tempfile.gettempdir()\n    def run(p):\n        r = stage_guard.handle_event(\"pre-tool-use\", {\"cwd\": str(root), \"session_id\":\"s\", **p})\n        return T.decision(r), msg(r)\n    cases = {\n      \"tmpdir cp\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'cp pkg/a.py \"$TMPDIR/x\"'}},\n      \"tmpdir braced\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'cp pkg/a.py ${TMPDIR}/x'}},\n      \"devnull append\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'ls >> /dev/null'}},\n      \"tmp foo\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'echo hi > /tmp/foo.txt'}},\n      \"edit transcript\": {\"transcript_path\":\"/root/.claude/x.jsonl\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"pkg/a.py\",\"old_string\":\"a\",\"new_string\":\"b\"}},\n      \"OOS project\": {\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"docs/readme.md\",\"old_string\":\"a\",\"new_string\":\"b\"}},\n      \"OOS bash\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'echo x > docs/r.md'}},\n      \"outside etc\": {\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/etc/probe.conf\",\"content\":\"x\"}},\n      \"outside home\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'echo x > ~/other/f.txt'}},\n      \"HOME var\": {\"tool_name\":\"Bash\",\"tool_input\":{\"command\":'echo x > \"$HOME/other/f.txt\"'}},\n      \"stage canon write\": {\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\".stage/past/canon/p.md\",\"content\":\"x\"}},\n    }\n    print(\"== root\", root)\n    for k,p in cases.items(): print(k, run(p))\n    shutil.rmtree(root)\nEOF\npython3 /tmp/probe311.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; sed -n 168,200p stage/hooks/tests/test_stage_guard.py | grep -n scope; sed -i 's#pkg/a.py#stage/hooks/a.py#g' /tmp/probe311.py; python3 /tmp/probe311.py | grep -E \"edit transcript|tmpdir\"; git stash list | head -1; git diff 8d727759 HEAD -- stage/operations/hooks.md .stage/state/observations/O-00000050.md | head -60; git status --short; rm /tmp/probe311.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W311-final-run1/repo; cat > .stage/.runtime/driver/verdicts/W-00000311.json <<'EOF'\n{\"criteria\": [\n{\"criterion\": \"Edit·Write 호출의 세션 transcript 경로, 출력을 버리는 /dev/null, OS 임시 폴더 안 경로, 환경에서 펼칠 수 있는 셸 변수로 시작하는 임시 경로가 범위 넘음으로 알려지지 않는다는 것을 테스트가 확인한다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"test_scope_report_leaves_out_paths_the_call_does_not_change covers Edit and Write transcript_path, > /dev/null, a cp into the temp folder and a $VAR temp target, and the suite passes (262 OK). I also ran my own handle_event probe with workspaces both inside /tmp and under $HOME, using cp \\\"$TMPDIR/x\\\", ${TMPDIR}/x, >> /dev/null, > /tmp/foo.txt and an Edit with transcript_path: none of them produced a scope-crossing message.\"},\n{\"criterion\": \"범위 밖 프로젝트 파일과 작업 폴더 밖의 다른 경로는 여전히 범위 넘음으로 알려지고, .stage 쓰기를 막는 게이트는 그대로라는 것을 테스트가 확인한다\", \"verdict\": \"PASS\", \"method\": \"ran\", \"reason\": \"test_scope_report_still_names_real_crossings, the cwd-independence test and the gate test beside a transcript_path all pass. My own probe in both a /tmp workspace and a $HOME workspace reported docs/readme.md (Edit), docs/r.md (Bash), /etc/probe.conf, ~/other/f.txt and \\\"$HOME/other/f.txt\\\" as crossings, and denied a Write to .stage/past/canon/p.md. The diff leaves the gate code untouched.\"}\n], \"approved\": true}\nEOF\npython3 -m json.tool .stage/.runtime/driver/verdicts/W-00000311.json >/dev/null && echo ok; git status --short"
+  ],
+  "tokens": {
+    "input": 16,
+    "cache_creation": 22987,
+    "cache_read": 338150,
+    "output": 4425
+  }
+}

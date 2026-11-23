@@ -318,8 +318,11 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
 
     What the session is doing now is never shortened. Over the limit, lines go in this
     order, each block leaving one line that counts what it left out and names where to read
-    it: decision titles from the oldest, then rule candidates, then the previous session's
-    handoff, then the two lists of rule files.
+    it: rule candidates from the end of their list (`proposed: hold` before
+    `proposed: promote`), then decision titles from the oldest, then the previous session's
+    handoff, then the two lists of rule files. Candidates go first because a decision binds
+    work and a candidate is not yet a rule (W-00000413: 39 candidates had pushed every
+    decision title out).
     """
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
@@ -380,7 +383,7 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
         Block(
             "### Decisions (titles only, newest first)",
             decisions,
-            shed=1,
+            shed=2,
             noun="older decisions",
             read_at=" and ".join(f"`.stage/{root}/`" for root in decision_roots(stage_root)),
         )
@@ -415,7 +418,7 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
             "### Rule candidates (not yet rules)",
             candidates,
             tail=candidate_status,
-            shed=2,
+            shed=1,
             noun="candidates",
             read_at=f"`.stage/{RULE_CANDIDATE_LIST}`",
         )

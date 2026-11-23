@@ -121,6 +121,8 @@
   // work log, and comments in the code are claims, not evidence.
   // A criterion that asks for a command result or observed behavior needs method ran, and a
   // criterion with method unable is always FAIL.
+  // close_work.py appends what the card's checks printed to $STAGE_WORK_LOG_PATH as a
+  // "### Checks at close" section before the review starts; read it there.
   // close_work.py runs the stored acceptance checks of the card itself, so repeating one is
   // not your evidence: for each criterion that needs method ran, run at least one command you
   // chose yourself that could show the criterion false, and say in its reason which command

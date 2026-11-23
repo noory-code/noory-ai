@@ -221,6 +221,91 @@ class RuleCandidateIndexTest(SessionIndexFixture):
         self.assertNotIn("due", status[0])
 
 
+def candidate_list(count: int, promote_every: int = 0) -> str:
+    """A consolidated list of `count` wrapped bullets in the documented format.
+
+    Every `promote_every`-th bullet proposes promotion on its wrapped line; the rest hold.
+    """
+    bullets = []
+    for number in range(1, count + 1):
+        proposal = "promote" if promote_every and number % promote_every == 0 else "hold"
+        bullets.append(
+            f"- **Candidate behavior number {number} written as one imperative sentence.** "
+            f"(seen 2: R-{number:08d},\n  R-{number + 100:08d}) — proposed: {proposal}\n"
+        )
+    return "---\nthrough: R-00000399\n---\n# Rule candidates\n\n" + "".join(bullets)
+
+
+class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
+    """W-00000413: 39 candidates had left the index with no decision title at all."""
+
+    def write_candidates(self, count: int, promote_every: int = 0) -> None:
+        (self.stage_root / "state" / "rule-candidates.md").write_text(
+            candidate_list(count, promote_every), encoding="utf-8"
+        )
+
+    def test_promote_proposals_come_before_hold_ones_in_the_lists_order(self):
+        self.write_candidates(6, promote_every=3)
+
+        candidates, _status = stage_memory_index.rule_candidate_lines(self.stage_root)
+
+        self.assertEqual(
+            [3, 6, 1, 2, 4, 5],
+            [int(line.split("number ")[1].split()[0]) for line in candidates],
+        )
+
+    def test_a_bullet_without_a_proposal_counts_as_hold(self):
+        (self.stage_root / "state" / "rule-candidates.md").write_text(
+            "---\nthrough: R-00000001\n---\n- **First.** (seen 1: R-00000001)\n"
+            "- **Second.** (seen 2: R-00000001,\n  R-00000002) — proposed: promote\n",
+            encoding="utf-8",
+        )
+
+        candidates, _status = stage_memory_index.rule_candidate_lines(self.stage_root)
+
+        self.assertEqual(
+            ["- **Second.** (seen 2: R-00000001,", "- **First.** (seen 1: R-00000001)"],
+            candidates,
+        )
+
+    def test_thirty_nine_candidates_leave_the_decision_titles_in_the_index(self):
+        self.write_decisions(82)
+        self.write_active_card()
+        self.write_candidates(39, promote_every=5)
+
+        context = stage_context.session_context(self.root)
+
+        self.assertLessEqual(len(context), LIMIT)
+        listed = [line.split()[1] for line in context.splitlines() if line.startswith("- DE-")]
+        self.assertTrue(listed, "no decision title is shown")
+        self.assertEqual("DE-00000082", listed[0])
+        shown = [line for line in context.splitlines() if line.startswith("- **Candidate")]
+        # Decisions lose a title only after every candidate line is gone.
+        if "older decisions not shown" in context:
+            self.assertEqual([], shown)
+            self.assertIn("- …39 candidates not shown — read `.stage/state/rule-candidates.md`", context)
+        else:
+            self.assertEqual(82, len(listed))
+
+    def test_the_candidates_left_out_first_are_the_hold_ones(self):
+        self.write_decisions(3)
+        self.write_candidates(39, promote_every=5)
+        full = stage_context.session_index(self.root)
+        self.assertNotIn("not shown", full)
+
+        index = stage_context.session_index(self.root, len(full) - 2_500)
+
+        shown = [line for line in index.splitlines() if line.startswith("- **Candidate")]
+        numbers = [int(line.split("number ")[1].split()[0]) for line in shown]
+        self.assertEqual([5, 10, 15, 20, 25, 30, 35], numbers[:7])
+        self.assertLess(len(shown), 39)
+        self.assertIn("candidates not shown — read `.stage/state/rule-candidates.md`", index)
+        self.assertEqual(
+            3, sum(1 for line in index.splitlines() if line.startswith("- DE-"))
+        )
+        self.assertNotIn("older decisions not shown", index)
+
+
 class FitBlocksTest(unittest.TestCase):
     def blocks(self) -> list[Block]:
         return [
@@ -228,7 +313,7 @@ class FitBlocksTest(unittest.TestCase):
             Block(
                 "### Decisions",
                 [f"- D{n} " + "d" * 40 for n in range(9, 0, -1)],
-                shed=1,
+                shed=2,
                 noun="older decisions",
                 read_at="`decisions/`",
             ),
@@ -236,7 +321,7 @@ class FitBlocksTest(unittest.TestCase):
                 "### Candidates",
                 [f"- C{n} " + "c" * 40 for n in range(1, 4)],
                 tail=["- status"],
-                shed=2,
+                shed=1,
                 noun="candidates",
                 read_at="`list`",
             ),
@@ -248,23 +333,27 @@ class FitBlocksTest(unittest.TestCase):
         self.assertNotIn("not shown", text)
         self.assertIn("- D1 ", text)
 
-    def test_decisions_are_dropped_before_candidates_and_oldest_first(self):
+    def test_candidates_are_dropped_before_decisions_and_from_the_end(self):
         full = len(fit_blocks(self.blocks(), 10_000))
 
-        text = fit_blocks(self.blocks(), full - 60)
+        text = fit_blocks(self.blocks(), full - 5)
 
-        self.assertLessEqual(len(text), full - 60)
+        self.assertLessEqual(len(text), full - 5)
+        self.assertIn("- C1 ", text)
+        self.assertNotIn("- C3 ", text)
+        self.assertIn("candidates not shown — read `list`", text)
+        self.assertIn("- D9 ", text)
+        self.assertIn("- D1 ", text)
+        self.assertNotIn("older decisions not shown", text)
+
+    def test_decisions_go_only_after_every_candidate_oldest_first_and_fixed_lines_stay(self):
+        text = fit_blocks(self.blocks(), 420)
+
+        self.assertLessEqual(len(text), 420)
+        self.assertIn("- …3 candidates not shown — read `list`", text)
+        self.assertIn("older decisions not shown — read `decisions/`", text)
         self.assertIn("- D9 ", text)
         self.assertNotIn("- D1 ", text)
-        self.assertIn("older decisions not shown — read `decisions/`", text)
-        self.assertIn("- C3 ", text)
-
-    def test_candidates_go_only_after_every_decision_and_fixed_lines_stay(self):
-        text = fit_blocks(self.blocks(), 230)
-
-        self.assertLessEqual(len(text), 230)
-        self.assertIn("- …9 older decisions not shown — read `decisions/`", text)
-        self.assertIn("candidates not shown — read `list`", text)
         self.assertIn("- now ", text)
         self.assertIn("- status", text)
 

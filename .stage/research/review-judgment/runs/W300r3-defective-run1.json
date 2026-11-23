@@ -1,0 +1,58 @@
+{
+  "case": "W300r3-defective",
+  "card": "W-00000300",
+  "version": "defective",
+  "commit": "03e74e1c",
+  "report_commit": "03e74e1c",
+  "run": 1,
+  "reviewer_checkout": "36f63ef3b7049bd94cb211c3c5669c44ad8807ef",
+  "executor_report_in_log": true,
+  "changed_paths": 14,
+  "seconds": 161,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다",
+        "verdict": "FAIL",
+        "method": "ran",
+        "reason": "The suites pass and my own probe script showed close_owned_fields_error does catch and restore status, review and retrospective_ref edits, but grep over stage/scripts/tests shows every driver-level test (test_drive.py x2, test_drive_unattended.py x1) changes only verification, and the close_work unit tests cover only verification/review/retrospective; no test changes status or retrospective_ref, so the kind of input left untested is edits to each close-owned field other than verification, at driver level for all four and anywhere for status and retrospective_ref."
+      },
+      {
+        "criterion": "실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "stage-drive SKILL.md, SCHEMA_V4.md, the template settings.jsonc, and both executor prompts in .stage/settings.json each name status, verification, review, retrospective, retrospective_ref as fields executors do not edit, and say the driver rejects and restores an attempt that changes them; test_template_v4.py asserts the template wording."
+      },
+      {
+        "criterion": "Executor report follows the purpose and scope-boundary reporting contract",
+        "verdict": "PASS",
+        "method": "read",
+        "reason": "Decisions made restates the decisions still in effect across both attempts, including the known --resume limitation and the out-of-scope test_drive_unattended.py crossing (the only changed path outside the declared scope); Work not done is None; the 14 claimed paths equal the union of attempt commits ccbd6903 and 99555d02."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I didn't approve W-00000300. The verdict file is written with `approved: false`: one criterion fails, two pass. I changed no other file.\n\n- **FAIL: tests prove the driver rejects edits to all five fields.** The code itself works. I wrote my own probe script, and it showed the check catches and restores edits to `status`, `review` and `retrospective_ref`. The `test_close_work`, `test_drive`, `test_drive_unattended` and `test_template_v4` suites all pass. But no test covers most of the fields the criterion names:\n  - Every driver-level test (two supervised, one unattended) changes only `verification`.\n  - The `close_work.py` unit tests cover only `verification`, `review` and `retrospective`.\n  - No test anywhere changes `status` or `retrospective_ref`.\n\n  What's missing is a driver-level test for each close-owned field other than `verification`.\n- **PASS: the contract docs and executor prompts say the same thing.** `SKILL.md`, `SCHEMA_V4.md`, the template `settings.jsonc` and both executor prompts in `.stage/settings.json` name all five fields. Each says executors must not edit them and that the driver rejects and restores an attempt that does.\n- **PASS: the executor report follows the reporting contract.**\n  - `Decisions made:` restates the decisions from both attempts, including the `--resume` limitation.\n  - It reports `test_drive_unattended.py`, the one changed path outside the card's scope.\n  - `Work not done:` is None.\n  - The 14 claimed paths match the files changed in the two attempt commits, `ccbd6903` and `99555d02`.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1; cat repo/.stage/work/current/W-00000300/_story.md; echo ======; cat repo/.stage/.runtime/driver/logs/W-00000300.md; echo =====; cat review-input/changed-paths.json; ls review-input; cd repo; git status --short; git log --oneline|head -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; ls .stage/.runtime/driver/ .stage/.runtime/driver/verdicts 2>&1; git log --oneline -25 --stat | head -120",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; grep -rn -i \"Work not done\\|Decisions made\\|purpose\\|scope\" stage/skills/stage-drive/SKILL.md | head -40; git diff 2ab27846 03e74e1c -- stage/skills/stage-retrospective/close_work.py stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py stage/skills/stage-drive/SKILL.md stage/docs/SCHEMA_V4.md stage/templates/v4/project-stage/settings.jsonc .stage/settings.json stage/scripts/tests/test_template_v4.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; sed -n 150,240p stage/scripts/driver_supervised.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; git diff ccbd6903~1 99555d02 -- stage/scripts/tests/test_drive.py stage/scripts/tests/test_drive_unattended.py stage/scripts/tests/test_close_work.py | grep -v \"^ \" | head -250",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; grep -n \"close.owned\\|close_owned\" stage/scripts/tests/*.py; grep -n \"retrospective_ref\" stage/scripts/tests/test_close_work.py stage/scripts/tests/test_drive*.py | head",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W300r3-defective-run1-repo/faa807cc-00e1-4d17-a2b5-ff750fffd301/scratchpad; mkdir -p $S; for t in test_close_work.py test_drive.py test_drive_unattended.py test_template_v4.py; do python3 -m unittest discover -s stage/scripts/tests -p $t -q 2>&1 | tail -2; done\ncat > $S/probe.py <<'EOF'\nimport sys; sys.path.insert(0,'stage/skills/stage-retrospective')\nfrom pathlib import Path; import close_work as c, tempfile\norig=\"---\\nid: W-1\\nstatus: active\\nverification: pending\\nreview: pending\\nretrospective: pending\\nretrospective_ref:\\npromotion: pending\\n---\\nbody\\n\"\nfor f,new in [(\"status\",\"completed\"),(\"retrospective_ref\",\"R-1\"),(\"review\",\"passed\")]:\n    d=tempfile.mkdtemp(); p=Path(d)/\"c.md\"; p.write_text(orig)\n    b=c.close_owned_fields(p)\n    import re; p.write_text(re.sub(rf\"(?m)^{f}:.*$\",f\"{f}: {new}\",orig))\n    print(f, repr(c.close_owned_fields_error(p,b)), p.read_text()==orig)\nEOF\npython3 $S/probe.py; git status --short",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W300r3-defective-run1/repo; diff <(git diff --name-only ccbd6903~1 ccbd6903; git diff --name-only 99555d02~1 99555d02 | sort -u) <(python3 -c \"import json;print('\\n'.join(json.load(open('../review-input/changed-paths.json'))))\") && echo same; grep -rn \"close-owned\\|retrospective_ref\" stage/skills/stage-drive/SKILL.md | head -3\ncat > .stage/.runtime/driver/verdicts/W-00000300.json <<'EOF'\n{\"criteria\": [\n{\"criterion\": \"실행자가 판 안에서 status, verification, review, retrospective, retrospective_ref 를 바꾸면 드라이버가 그 판을 거절한다는 것을 테스트가 확인한다\", \"verdict\": \"FAIL\", \"method\": \"ran\", \"reason\": \"The suites pass and my own probe script showed close_owned_fields_error does catch and restore status, review and retrospective_ref edits, but grep over stage/scripts/tests shows every driver-level test (test_drive.py x2, test_drive_unattended.py x1) changes only verification, and the close_work unit tests cover only verification/review/retrospective; no test changes status or retrospective_ref, so the kind of input left untested is edits to each close-owned field other than verification, at driver level for all four and anywhere for status and retrospective_ref.\"},\n{\"criterion\": \"실행자 계약 문서와 실행 명령이 그 칸들을 실행자가 고치지 않는다고 같은 뜻으로 적는다\", \"verdict\": \"PASS\", \"method\": \"read\", \"reason\": \"stage-drive SKILL.md, SCHEMA_V4.md, the template settings.jsonc, and both executor prompts in .stage/settings.json each name status, verification, review, retrospective, retrospective_ref as fields executors do not edit, and say the driver rejects and restores an attempt that changes them; test_template_v4.py asserts the template wording.\"},\n{\"criterion\": \"Executor report follows the purpose and scope-boundary reporting contract\", \"verdict\": \"PASS\", \"method\": \"read\", \"reason\": \"Decisions made restates the decisions still in effect across both attempts, including the known --resume limitation and the out-of-scope test_drive_unattended.py crossing (the only changed path outside the declared scope); Work not done is None; the 14 claimed paths equal the union of attempt commits ccbd6903 and 99555d02.\"}\n], \"approved\": false}\nEOF\npython3 -m json.tool .stage/.runtime/driver/verdicts/W-00000300.json >/dev/null && echo valid; git status --short"
+  ],
+  "tokens": {
+    "input": 20,
+    "cache_creation": 42371,
+    "cache_read": 523906,
+    "output": 5371
+  }
+}
