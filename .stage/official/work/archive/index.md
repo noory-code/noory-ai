@@ -341,3 +341,4 @@
 | W-00000415 | completed | [items/W-00000415/_story.md](items/W-00000415/_story.md) | 쌓인 규칙 후보를 처음으로 한 목록에 묶는다 |
 | W-00000411 | completed | [items/W-00000411/_epic.md](items/W-00000411/_epic.md) | 지휘와 닫기 절차, 리뷰 증거에 남은 빈 곳을 메운다 |
 | W-00000414 | completed | [items/W-00000414/_story.md](items/W-00000414/_story.md) | 지금의 닫기 리뷰어를 결함이 기록된 과거 변경으로 잰다 |
+| W-00000417 | completed | [items/W-00000417/_story.md](items/W-00000417/_story.md) | 세션 시작의 고정 규칙 문장을 줄여 색인의 자리를 만든다 |
