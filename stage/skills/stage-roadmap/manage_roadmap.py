@@ -24,7 +24,6 @@ import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402
 import stage_topology  # noqa: E402
 import refresh_decision_index  # noqa: E402
-from stage_record_paths import record_paths  # noqa: E402
 from stage_record_ids import (  # noqa: E402
     IdReserver,
     used_numbers,
@@ -157,61 +156,27 @@ def _add_chain_decision_row(
     )
 
 
-def _roadmap_existing_ids(stage_root: Path) -> list[str]:
-    return [
-        record.record_id
-        for zone_name in ("themes", "milestones")
-        for record in stage_roadmap.roadmap_records(stage_root, zone_name)
-    ]
-
-
-def _decision_existing_ids(stage_root: Path) -> list[str]:
-    roots = {
-        Path(path).parent
-        for path in stage_topology.resolve_artifact_reference(
-            "DE-00000000"
-        ).candidate_paths
-    }
-    ids: list[str] = []
-    for root in sorted(roots):
-        for path in record_paths(stage_root / root):
-            if path.name in {"README.md", "_template.md"}:
-                continue
-            fields = parse_frontmatter(path)
-            ids.append((fields.get("id") or path.stem).strip())
-    return ids
-
-
 def _create_atomic(
     directory: Path,
     prefix: str,
-    existing_ids: list[str],
     content_for: Callable[[str], str],
     project_root: Path,
 ) -> str:
-    # Numbers a started card holds back in `reserved_ids:` (DE-00000094), records on
-    # other local or remote-tracking branches, and ids reserved on the remote by
-    # sessions this checkout has not fetched (DE-00000092) all count as used, as
-    # stage_record_ids.py counts them; next_artifact_id keeps only the prefix's
-    # counter family.
+    # `used_numbers` owns what counts as used: this checkout's records, numbers a started
+    # card holds back in `reserved_ids:` (DE-00000094), records on other local or
+    # remote-tracking branches, and ids reserved on the remote (DE-00000092).
     reserver = IdReserver(project_root)
-    existing_ids = existing_ids + [
-        f"{prefix}-{number:08d}"
-        for number in sorted(used_numbers(project_root, prefix, reserver))
-    ]
-    candidate = stage_topology.next_artifact_id(prefix, existing_ids)
+    number = max(used_numbers(project_root, prefix, reserver), default=0) + 1
     for _ in range(1000):
+        candidate = f"{prefix}-{number:08d}"
+        number += 1
         path = directory / f"{candidate}.md"
         if path.exists() or not reserver.claim(candidate):
-            existing_ids.append(candidate)
-            candidate = stage_topology.next_artifact_id(prefix, existing_ids)
             continue
         try:
             with path.open("x", encoding="utf-8") as handle:
                 handle.write(content_for(candidate))
         except FileExistsError:
-            existing_ids.append(candidate)
-            candidate = stage_topology.next_artifact_id(prefix, existing_ids)
             continue
         note = reserver.unreserved_note(candidate)
         if note:
@@ -241,7 +206,7 @@ def create_theme(stage_root: Path, args: argparse.Namespace) -> int:
         return text
 
     record_id = _create_atomic(
-        directory, "TH", _roadmap_existing_ids(stage_root), content_for, stage_root.parent
+        directory, "TH", content_for, stage_root.parent
     )
     row = f"| {record_id} | {_clean_cell(args.title)} | [{record_id}.md]({record_id}.md) |"
     _ensure_index_row(index_path, record_id, row)
@@ -283,7 +248,7 @@ def create_milestone(stage_root: Path, args: argparse.Namespace) -> int:
         return text
 
     record_id = _create_atomic(
-        directory, "M", _roadmap_existing_ids(stage_root), content_for, stage_root.parent
+        directory, "M", content_for, stage_root.parent
     )
     row = (
         f"| {record_id} | {args.theme} | {_clean_cell(args.title)} | "
@@ -439,7 +404,6 @@ def open_pursuit(stage_root: Path, args: argparse.Namespace) -> int:
     decision_id = _create_atomic(
         records_dir,
         "DE",
-        _decision_existing_ids(stage_root),
         lambda item_id: _decision_content(template, item_id, milestone),
         stage_root.parent,
     )
@@ -492,7 +456,6 @@ def close_milestone(stage_root: Path, args: argparse.Namespace) -> int:
     decision_id = _create_atomic(
         records_dir,
         "DE",
-        _decision_existing_ids(stage_root),
         lambda item_id: _closure_decision_content(
             template,
             item_id,

@@ -11,8 +11,12 @@
   - **One count of used record numbers.** `stage_record_ids.used_numbers()` is the one function
     that says which numbers are taken (this checkout, `reserved_ids:` blocks, fetched branches,
     remote reservations). `stage_record_ids.py`, `stage_id_blocks.py`, `register_work.py`,
-    `manage_roadmap.py`, and `escalate_work.py` pick from it. An escalation decision therefore
-    no longer takes a number a fetched branch already uses.
+    `manage_roadmap.py`, `escalate_work.py`, and `migrate_stage.py` pick from it and read no
+    record folder of their own. It also counts a record named only by its file, at any id width
+    (`W-012.md`), and counts prefixes that share a counter together (`DE` with the legacy `D`),
+    so `stage_record_ids.py DE` no longer offers a number a legacy `D-` record holds. An
+    escalation decision and a converted v3 backlog item no longer take a number a fetched
+    branch already uses.
   - **`TIER007`.** The audit warns when `model_fallbacks` names a venue whose
     `executors.<venue>` or `review.reviewers.<venue>` command does not contain `STAGE_MODEL`:
     that command cannot switch model, so its first usage limit ends the turn.

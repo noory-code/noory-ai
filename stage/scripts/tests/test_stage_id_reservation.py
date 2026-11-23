@@ -244,8 +244,8 @@ class RoadmapReservationTest(ReservationFixture):
         themes_a.mkdir()
         themes_b.mkdir()
 
-        first = roadmap._create_atomic(themes_a, "TH", [], lambda record_id: record_id, self.a)
-        second = roadmap._create_atomic(themes_b, "TH", [], lambda record_id: record_id, self.b)
+        first = roadmap._create_atomic(themes_a, "TH", lambda record_id: record_id, self.a)
+        second = roadmap._create_atomic(themes_b, "TH", lambda record_id: record_id, self.b)
 
         self.assertEqual("TH-00000001", first)
         self.assertEqual("TH-00000002", second)

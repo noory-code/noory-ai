@@ -96,9 +96,11 @@ flowchart TD
 번호를 고르고, 잡지 못했다고 한 줄 출력한다. 관문(훅)은 이 모듈을 쓰지 않는다.
 
 이미 쓰인 번호를 세는 함수는 `stage_record_ids.used_numbers()` 하나다. 이 체크아웃의 기록, 카드가
-`reserved_ids:` 로 잡아 둔 번호, 받아 온 브랜치의 기록, 원격에 잡힌 번호를 합친다. 새 번호를 고르는 곳
-(`stage_record_ids.py`, `stage_id_blocks.py`, `register_work.py`, `manage_roadmap.py`, `escalate_work.py`)은 모두
-이 집합에서 시작한다. `migrate_stage.py` 는 옛 구조(v3)의 카드를 옮기면서 번호를 따로 센다.
+`reserved_ids:` 로 잡아 둔 번호, 받아 온 브랜치의 기록, 원격에 잡힌 번호를 합친다. 이 체크아웃의 기록은
+`id:` 줄, 제목 줄, 파일 이름 어디에 번호가 있어도 세고, 파일 이름은 옛 구조의 짧은 번호(`W-012.md`)도 센다.
+카운터를 같이 쓰는 접두어(`DE` 와 옛 `D`)는 함께 센다. 새 번호를 고르는 곳(`stage_record_ids.py`,
+`stage_id_blocks.py`, `register_work.py`, `manage_roadmap.py`, `escalate_work.py`, `migrate_stage.py`)은 모두 이
+집합에서 시작하고, 기록 폴더를 따로 읽지 않는다.
 
 ### `close_work.py` 와 드라이버는 서로를 가져다 쓴다
 

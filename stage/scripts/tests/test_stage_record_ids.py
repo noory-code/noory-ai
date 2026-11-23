@@ -100,6 +100,31 @@ class StageRecordIdsTest(unittest.TestCase):
         )
         self.assertEqual({1}, stage_record_ids.used_numbers(self.root, "W"))
 
+    def test_used_numbers_counts_a_record_named_only_by_its_file_at_any_id_width(self):
+        for relative in (
+            "present/work/items/W-014.md",
+            "past/work/archive/items/W-00000020.md",
+            "decisions/pending/DE-031-topic.md",
+            ".runtime/driver/logs/W-00000099.md",
+            "work/current/W-00000050/notes-W-077.md",
+        ):
+            path = self.stage / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("no id line here\n", encoding="utf-8")
+
+        self.assertEqual({14, 20}, stage_record_ids.used_numbers(self.root, "W"))
+        self.assertEqual({31}, stage_record_ids.used_numbers(self.root, "DE"))
+
+    def test_used_numbers_counts_prefixes_that_share_one_counter_together(self):
+        self.write("official/decisions/records/D-00000040.md", "D-00000040")
+        self.write("decisions/pending/DE-00000007.md", "DE-00000007")
+        self.write("roadmap/milestones/M-00000009.md", "M-00000009")
+
+        self.assertEqual({7, 40}, stage_record_ids.used_numbers(self.root, "DE"))
+        self.assertEqual("DE-00000041", stage_record_ids.next_record_id(self.root, "DE"))
+        self.assertEqual({9}, stage_record_ids.used_numbers(self.root, "M"))
+        self.assertEqual(set(), stage_record_ids.used_numbers(self.root, "TH"))
+
     def write_heading_only(self, relative: str, record_id: str) -> None:
         path = self.stage / relative
         path.parent.mkdir(parents=True, exist_ok=True)

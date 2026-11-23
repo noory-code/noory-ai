@@ -27,7 +27,6 @@ from lifecycle_paths import (  # noqa: E402
     v4_lifecycle_paths,
 )
 from stage_record_paths import (  # noqa: E402
-    FRONTMATTER_ID_RE,
     EPIC_RECORD_NAME,
     STORY_RECORD_NAME,
     record_path,
@@ -137,29 +136,6 @@ def fill_list_section(text: str, heading: str, values: list[str]) -> str:
 
     rendered = "".join(f"- {value}\n" for value in values)
     return text.replace(f"## {heading}\n\n", f"## {heading}\n\n{rendered}", 1)
-
-
-def existing_numbers(stage_root: Path, reserver: IdReserver | None = None) -> set[int]:
-    # `used_numbers` owns what counts as used (this checkout, other branches, numbers a
-    # card holds back, and with a reserver the remote's reservations). The card folders
-    # are read here as well so a card outside the current topology's `.stage` scan counts.
-    numbers = used_numbers(stage_root.parent, "W", reserver)
-    if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
-        paths = v4_lifecycle_paths()
-        bases = (paths.planned_cards, paths.current_cards, paths.archive_cards)
-    else:
-        bases = (
-            Path("present", "work", "items").as_posix(),
-            Path("past", "work", "archive", "items").as_posix(),
-            Path("future", "backlog", "items").as_posix(),
-        )
-    for base in bases:
-        for path in record_paths(stage_root / base, pattern="W-*.md"):
-            identity = FRONTMATTER_ID_RE.search(path.read_text(encoding="utf-8"))
-            match = ID_RE.match(identity.group("record_id")) if identity else None
-            if match:
-                numbers.add(int(match.group(1)))
-    return numbers
 
 
 def hierarchy_template(paths, lifecycle: str, scale: str) -> Path:
@@ -370,7 +346,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
         if match is None:
             print(f"--id must look like W-00000001, got {args.id}", file=sys.stderr)
             return 2
-        if int(match.group(1)) in existing_numbers(stage_root):
+        if int(match.group(1)) in used_numbers(stage_root.parent, "W"):
             other_branches = branch_record_numbers(stage_root.parent, "W").get(
                 int(match.group(1)), set()
             )
@@ -396,7 +372,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
         reserver = IdReserver(stage_root.parent)
         item_id, item_path = create_hierarchy_item_atomic(
             backlog_dir,
-            existing_numbers(stage_root, reserver),
+            used_numbers(stage_root.parent, "W", reserver),
             args.scale,
             parent_path,
             content_for,
@@ -406,7 +382,7 @@ def register_backlog_card(stage_root: Path, args) -> int:
     else:
         reserver = IdReserver(stage_root.parent)
         item_id = create_item_atomic(
-            backlog_dir, existing_numbers(stage_root, reserver), content_for, reserver
+            backlog_dir, used_numbers(stage_root.parent, "W", reserver), content_for, reserver
         )
         report_unreserved(reserver, item_id)
         item_path = record_path(backlog_dir, item_id)
@@ -847,7 +823,7 @@ def main() -> int:
         item_id = args.id
     else:
         reserver = IdReserver(stage_root.parent)
-        numbers = existing_numbers(stage_root, reserver)
+        numbers = used_numbers(stage_root.parent, "W", reserver)
         if hierarchy_paths is None:
             item_id = create_item_atomic(items_dir, numbers, content_for, reserver)
         else:

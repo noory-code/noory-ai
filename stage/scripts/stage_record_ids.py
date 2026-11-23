@@ -40,6 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "hooks"))
 from stage_record_paths import record_paths  # noqa: E402
+from stage_topology import ARTIFACT_PREFIXES  # noqa: E402
 
 PREFIX_RE = re.compile(r"^[A-Z]{1,3}$")
 RUNTIME_PART = ".runtime"
@@ -61,16 +62,33 @@ def id_line_re(prefix: str) -> re.Pattern[str]:
     )
 
 
+def file_name_re(prefix: str) -> re.Pattern[str]:
+    """Match a record file named after its id, at any width a Stage layout has used.
+
+    Layouts before the eight-digit ids named records `W-001.md` or `DE-012-topic.md`, and
+    such a file may carry no `id:` line at all.
+    """
+
+    return re.compile(rf"^{re.escape(prefix)}-(\d{{3,}})(?:-.*)?$")
+
+
 def local_record_numbers(stage_root: Path, prefix: str) -> set[int]:
-    """Numbers named by ids in the working tree's `.stage/` records."""
+    """Numbers named by ids in the working tree's `.stage/` records.
+
+    A record names its id in an `id:` line, in its title heading, or in its file name.
+    """
 
     pattern = id_line_re(prefix)
+    name_pattern = file_name_re(prefix)
     numbers: set[int] = set()
     if not stage_root.is_dir():
         return numbers
     for path in record_paths(stage_root):
         if RUNTIME_PART in path.relative_to(stage_root).parts:
             continue
+        named = name_pattern.match(path.stem)
+        if named:
+            numbers.add(int(named.group(1)))
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
@@ -330,23 +348,39 @@ class IdReserver:
         )
 
 
+def counter_family_prefixes(prefix: str) -> tuple[str, ...]:
+    """`prefix` and every prefix that shares its counter (`DE` and the legacy `D`)."""
+
+    policy = ARTIFACT_PREFIXES.get(prefix)
+    if policy is None:
+        return (prefix,)
+    return tuple(
+        name
+        for name, other in ARTIFACT_PREFIXES.items()
+        if other.counter_family == policy.counter_family
+    )
+
+
 def used_numbers(
     project_root: Path, prefix: str, reserver: IdReserver | None = None
 ) -> set[int]:
     """Every number of `prefix` a new record must not take.
 
-    The one place that says what counts as used: an id in the working tree's `.stage/`,
-    a number a card holds back in `reserved_ids:`, either of those on a local or
-    remote-tracking branch, and, with a `reserver`, an id reserved on the remote. Every
-    command that picks a new id starts from this set, so a source added here is counted
+    The one place that says what counts as used: an id in the working tree's `.stage/`
+    (in an `id:` line, a title heading, or a file name of any id width), a number a card
+    holds back in `reserved_ids:`, an eight-digit id or a held-back number on a local or
+    remote-tracking branch, and, with a `reserver`, an id reserved on the remote. Prefixes
+    that share one counter are counted together. Every command that picks a new id starts
+    from this set and reads no record folder of its own, so a source added here is counted
     by all of them.
     """
 
-    used = local_record_numbers(project_root / ".stage", prefix) | set(
-        branch_record_numbers(project_root, prefix)
-    )
-    if reserver is not None:
-        used |= reserver.remote_numbers(prefix)
+    used: set[int] = set()
+    for family_prefix in counter_family_prefixes(prefix):
+        used |= local_record_numbers(project_root / ".stage", family_prefix)
+        used |= set(branch_record_numbers(project_root, family_prefix))
+        if reserver is not None:
+            used |= reserver.remote_numbers(family_prefix)
     return used
 
 
