@@ -24,6 +24,7 @@
     current card, so `### Current work hierarchy` no longer repeats a card with no parent and no
     child, and names a card inside a tree by id and status only. With one flat card the section
     is gone.
+## 0.68.0 — 2026-11-23
 
 - Make the text a session starts with an index derived from the records, and bound it
   (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
