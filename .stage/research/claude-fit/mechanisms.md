@@ -78,7 +78,7 @@ cloud" .stage/official/work .stage/work`, 진행 중 카드 포함). 훅 쪽 장
 | B8 | 인라인 인터프리터 거부(`python -c`, heredoc 이 `.stage` 를 건드림) | 훅 PreToolUse | 게이트가 쓰기를 볼 수 있어야 한다 | `platform` (훅의 시야) | — | 다른 게이트를 위한 장치다. 다른 게이트를 빼면 함께 빠진다 |
 | B9 | `.stage` 삭제, 옛 경로, OS 전용 스크립트, 열거값, 설정 손상, 스키마 버전, 이주 표식 게이트 | 훅 PreToolUse | 정직한 실수가 기록을 되돌릴 수 없게 망친다 / 호스트가 어긋난다 | `accident`, `platform` | 훅 README | 빼 볼 대상 아님. 발동 비용이 거의 없다 |
 | B10 | 모델 등급 게이트: 서브에이전트 모델을 카드 등급 이하로, 넘으면 이유 요구 | 훅 PreToolUse, `stage_agent_tier.py` | 모델은 비용을 고려하지 않고 비싼 모델을 부른다 | `capability` (비용 판단) | SCHEMA_V5 "Model and effort tiers" | `over_tier_allowed` 기록 수와 그 이유의 질. 마일스톤 (라)의 맥락 비용 기준과 겹친다 |
-| B11 | 실행 방식 지시: 드라이버 시간 제한을 세어서 정하는 표, 실행자 프롬프트의 절차 문장 | `stage-drive` SKILL, `settings.json` `executors` | 모델은 자기 일의 크기를 판단하지 못한다 | `capability` | `### Driver failure` 기록 | 마일스톤 Scope 가 "어떻게 할지는 실행하는 쪽이 정한다"고 했으므로 이미 방향과 어긋난다. 제한 시간 자체(`accident`: 멈춘 프로세스)는 남는다 |
+| B11 | 실행 방식 지시: 드라이버 시간 제한을 세어서 정하는 표, 실행자 프롬프트의 절차 문장 | `stage-drive` SKILL, `settings.json` `executors` | 모델은 자기 일의 크기를 판단하지 못한다 | `capability` | 시간 제한 표: `### Driver failure` 기록. 실행자 프롬프트의 절차 문장("인용된 예만 고치지 말고 그 종류 전부를 고친다"): Dasina R-00000028, R-00000031 | 마일스톤 Scope 가 "어떻게 할지는 실행하는 쪽이 정한다"고 했으므로 이미 방향과 어긋난다. 제한 시간 자체(`accident`: 멈춘 프로세스)는 남는다 |
 
 ### 다. 끝낼 때
 

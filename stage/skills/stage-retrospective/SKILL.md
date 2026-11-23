@@ -141,6 +141,11 @@ commit at `HEAD`, and the archiver refuses while a path inside the item's scope 
 | The close succeeds and archiving fails | The command exits non-zero, names the cause, and leaves the item completed in `work/current/`. Fix the cause, then run `archive_work.py` or rerun the same command. |
 | The item is already completed | Rerunning with `--archive` refreshes the decision index and archives it. |
 
+Every close also writes a `- Load at close` line into `## Verification`: attempts, review FAIL
+rounds, repeated findings, driver rounds, and driver failures, counted from the work log and the
+card. `operations/review.md` owns the line's format and `stage/scripts/work_load.py` prints the
+counts of closed cards as a table.
+
 The drivers close without `--archive`: their landing step commits the closed card from
 `work/current/`, so a driver-run item still waits there, completed, until it is archived.
 
