@@ -8,8 +8,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000372
 promotion: pending
 review: not_required
 scope: stage/CHANGELOG.md,stage/.claude-plugin,stage/.codex-plugin
