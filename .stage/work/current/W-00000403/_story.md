@@ -8,12 +8,12 @@ milestone: M-00000006
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
-review: pending
+status: completed
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000403
+promotion: not_applicable
+review: passed
 scope: stage/skills/stage-drive,stage/templates,.stage/settings.json,stage/CHANGELOG.md,.stage/research/claude-fit
 promotes:
 decision_refs:
@@ -65,10 +65,26 @@ faf5ea1 을 가져와 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
 - 2026-11-23 사용자가 뺀 실행자 문장("실패한 기준이 예시 입력을 인용하면 그 종류의 입력을 모두 고친다")을 되돌리기로 했다("네 추천대로 되돌리죠"). 사고 출처(Dasina R-00000028, R-00000031)가 있고 뺀 뒤 재발을 잴 길이 없기 때문이다. 작업 세션에 전했다.
 - 2026-11-23 사용자가 드라이버 코드의 기본 시간 제한 계산(선언한 크기 x 900초)은 B11 에 넣지 않고 남기기로 했다("네 추천대로 남기죠"). 지시가 아니라 기본값이고 `stage/scripts` 는 이 카드의 범위 밖이다.
 - 2026-11-23 작업 세션이 faf5ea1 을 보고했다. 실행자 문장을 되돌렸고 성공 기준 1, 2 를 주장했다(scripts 908, hooks 467 통과, audit 오류 0). 지휘 세션이 첫째 성공 기준의 문장을 사용자의 되돌리기 결정에 맞춰 고쳤다.
+- 2026-11-23 작업 세션이 786e643 을 보고했다. 연구 노트에 남긴 기본 시간 제한과 그 까닭만 더했다. 지휘 세션이 이 커밋까지 squash 로 가져왔다.
 - Follow-up candidate: 드라이버 기록이 있는 로컬 기계에서 `b11-load.md` 의 표로 빼기 전 기준선을 세고, 뺀 뒤 드라이버 카드가 돌면 결과 표를 채운다.
 - Follow-up candidate: 요즘 흐름(클라우드 작업 세션, 드라이버 없음)에서 B11 의 하중을 잴 수 있는지, 작업 세션 브리핑의 지시가 지금의 B11 인지 정한다.
 - Follow-up candidate: 닫을 때 사라지는 회차별 증거(시도 수, FAIL 회차, Driver failure)를 커밋되는 카드에 작게 남긴다.
 - Follow-up candidate: `mechanisms.md` 의 B11 행에 Dasina 사고 출처를 적는다.
 - Follow-up candidate: 뺀 문장을 자기 설정에 복사해 둔 다른 프로젝트(Dasina)의 실행자 설정을 고친다.
 
+### Executor report at close — 2026-11-23
+
+```
+What changed: Removed the timeout-override counting table and the "overshoot deliberately" paragraph from the stage-drive skill and replaced them with three facts and no computation rule; added a changelog entry; added .stage/research/claude-fit/b11-load.md with what was removed, what was kept and why, what the repository can and cannot count, the counting method, and an empty baseline table, and linked it from the folder README. The executor sentence about fixing the whole kind of input was removed in 8c3dda6 and restored in faf5ea1.
+Why: DE-00000098 removes execution-method instructions first so their load can be read from records; the user decided on 2026-11-23 (relayed by the main session) to keep the one executor sentence because it has incident sources and its recurrence cannot be measured after removal, and to keep the driver's derived default timeout because it is a default, not an instruction.
+Decisions made: Restored the executor sentence byte-for-byte in .stage/settings.json (both executors), stage/templates/v4/project-stage/settings.jsonc, and the skill's round-trip paragraph, so those two settings files equal the start commit 99f8273 and are left out of Changed paths, which lists the four paths that differ from 99f8273 (the close validator compares the claim with the squash commit's paths for equality); kept every other executor-prompt sentence as reading duty, authority boundary, autonomy range, or report contract; left the driver code's derived default timeout (declared size times 900 seconds) untouched by the user's decision and named it in the research note; kept the reviewer's duty to name the kind of input; recorded no before/after comparison because Driver failure entries, FAIL rounds and retries live only in the gitignored .stage/.runtime/driver/logs/ and no card has run through the driver since the removal; changed no path outside the card's scope.
+Work not done: The first success criterion is met only for the skill's timeout table; the executor prompt still carries its one procedure sentence by the user's decision. The before/after comparison is not done and moves to a later card. Windows checks were not run. The driver itself was not run. The test suites were not rerun for this last commit, which changes only the research note; they passed on faf5ea1.
+```
+
 ## Verification
+
+- 닫기 리뷰는 codex 가 없는 클라우드 환경에서 Claude 대역으로 돌린 같은 모델 리뷰이며, 다른 venue 의 리뷰가 아니다.
+- 지휘 세션이 squash 커밋에서 scripts 908, hooks 467 통과와 audit 오류 0 을 다시 확인했다.
+
+- Checks at close 2026-11-23: 2 passed — `python3 -m unittest discover -s stage/scripts/tests -q`; `python3 -m unittest discover -s stage/scripts/tests -q`
+- Review at close 2026-11-23 by claude_review_companion: approved (1 PASS, 2 PASS)
