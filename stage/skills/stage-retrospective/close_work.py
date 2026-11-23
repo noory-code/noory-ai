@@ -1067,7 +1067,9 @@ def main() -> int:
             )
             return 1
 
-    checks = [*work_item.acceptance, *args.check]
+    # A `--check` that repeats one of the card's stored checks runs and is recorded once
+    # (W-00000406); `dict.fromkeys` keeps the first occurrence and the order.
+    checks = list(dict.fromkeys([*work_item.acceptance, *args.check]))
     if not checks:
         print(
             f"{args.item}: no --check or acceptance given; closing must run the "

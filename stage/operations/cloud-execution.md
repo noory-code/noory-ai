@@ -71,7 +71,9 @@ of a range so another card's commits in between are left out.
    (`git worktree add --detach <path> <code-commit>`), because the review receives
    the paths of the HEAD commit.
 2. Import the report there, reserve the retrospective
-   (`close_work.py --allocate-retrospective`), and write it.
+   (`close_work.py --allocate-retrospective` prints its id), and write it. Then link it on the
+   card: set `retrospective: completed` and `retrospective_ref: <R-id>` in the card's frontmatter.
+   `close_work.py` stops before the checks and the review while either field is unset.
 3. When the routed reviewer venue is unavailable too, keep `settings.json`
    unchanged and run the project's configured review through the Claude stand-in:
 
@@ -80,6 +82,9 @@ of a range so another card's commits in between are left out.
      python3 stage/skills/stage-retrospective/close_work.py --project-root . W-00000001 \
      --check "<suite>" --promotion <final-choice>
    ```
+
+   `close_work.py` runs the card's stored `acceptance` checks by itself. Pass `--check` only for
+   a command the card does not store; one that repeats a stored check runs and is recorded once.
 
    The stand-in lets the reviewer write only its verdict file, read the
    changed-path folder, and run `python3 -m unittest`; it may not edit project
@@ -101,15 +106,23 @@ A card handed to a cloud sub-session (`stage-orchestrate`, "Start a work session
 by the main session, never by the sub-session (DE-00000094). The sub-session's branch starts at the
 main session's start commit, so its diff is exactly the card's change.
 
-1. `git fetch origin <sub-session-branch>`.
+1. Send the sub-session one message before anything else: the review of commit `<reported-sha>`
+   starts, and it pushes no commit until the main session answers. Then
+   `git fetch origin <sub-session-branch>` and compare `git rev-parse FETCH_HEAD` with the
+   reported commit. When they differ, the sub-session pushed after its report: ask it which
+   commit to review, and restart this step with its answer.
 2. Squash it onto the main session's branch as one commit that carries the sub-session's executor
-   report: `git merge --squash FETCH_HEAD`, then `git commit -C FETCH_HEAD`. The review receives
-   the paths of HEAD (O-00000058), so one squash commit hands the reviewer every path; no local-only
-   commit is needed.
+   report: `git merge --squash FETCH_HEAD`, then commit with a message of your own. Its subject
+   is `<type>(<scope>): <the card's whole change> (<W-id>)`; the last commit of the sub-session's
+   branch names only its last step. Its body is that commit's body, unchanged:
+   `git log -1 --format=%b FETCH_HEAD` prints it. Write both to a file outside the repository and
+   run `git commit -F <file>`. The review receives the paths of HEAD (O-00000058), so one squash
+   commit hands the reviewer every path; no local-only commit is needed.
 3. Re-run the card's checks yourself; do not trust the sub-session's transcript.
 4. Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
-   retrospective, and close with the review as in "Close" above. When the review fails, send its
-   failed criteria to the sub-session and repeat from step 1 after it pushes.
+   retrospective, link it on the card, and close with the review as in "Close" above. When the
+   review fails, send its failed criteria to the sub-session and repeat from step 1 after it
+   pushes.
 5. Archive the card, push, and open the pull request from the main session's branch. The
    sub-session's branch is not merged on its own.
 

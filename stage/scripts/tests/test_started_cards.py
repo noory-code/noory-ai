@@ -169,6 +169,47 @@ class StartedCardsTest(unittest.TestCase):
         self.assertIn("- question Q-00000001 Which host: .stage/state/questions/Q-00000001.md", out)
         self.assertIn("## Waiting in the records: 3", out)
 
+    def test_open_observations_are_listed_apart_from_what_waits(self) -> None:
+        folder = self.root / ".stage/state/observations"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "O-00000001.md").write_text(
+            "---\nid: O-00000001\ntitle: 후속 후보가 남아 있다\n---\n", encoding="utf-8"
+        )
+        self.commit("observe")
+
+        out = self.run_script().stdout
+
+        self.assertIn("## Open observations: 1", out)
+        self.assertIn(
+            "- O-00000001 후속 후보가 남아 있다: .stage/state/observations/O-00000001.md", out
+        )
+        self.assertIn("## Waiting in the records: 0", out)
+
+    def test_sessions_that_committed_card_records_are_listed_newest_first(self) -> None:
+        self.card("W-00000001", status="ready", root=".stage/work/planned")
+        self.commit("register W-00000001\n\nClaude-Session: https://claude.ai/code/session_0000000000earlier")
+        self.branch("conduct")
+        self.card("W-00000002")
+        self.commit("start W-00000002\n\nClaude-Session: https://claude.ai/code/session_00000000000later")
+        (self.root / "code.txt").write_text("code\n", encoding="utf-8")
+        self.commit("code only\n\nClaude-Session: https://claude.ai/code/session_000000000000work")
+        git(self.root, "checkout", "-q", "--detach", "main")
+
+        out = self.run_script().stdout
+
+        self.assertIn("## Sessions that committed card records: 2", out)
+        later = out.index("- session_00000000000later: ")
+        earlier = out.index("- session_0000000000earlier: ")
+        self.assertLess(later, earlier)
+        self.assertIn("start W-00000002", out[later:earlier])
+        self.assertNotIn("session_000000000000work", out)
+
+    def test_no_session_is_listed_when_no_commit_names_one(self) -> None:
+        self.card("W-00000001")
+        self.commit("start")
+
+        self.assertIn("## Sessions that committed card records: 0", self.run_script().stdout)
+
     def test_a_planned_card_is_not_in_progress(self) -> None:
         self.card("W-00000001", status="ready", root=".stage/work/planned")
         self.commit("plan")
