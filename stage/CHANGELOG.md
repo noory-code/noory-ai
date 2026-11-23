@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.69.0 — 2026-11-23
+
 - Put four small fixes left in earlier cards' reports into the code and CI (W-00000410).
   - **Released changelog check in CI.** The `stage` workflow has a `changelog` job that runs
     `release_plugin.py stage --check-released --since 0.67.0` on the whole history
