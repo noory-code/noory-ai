@@ -35,8 +35,13 @@ decision_refs:
 
 ### Included
 
+- DE-00000101 의 "Where this applies" 표에서 코드, 설정, 절차 줄.
+
 
 ### Excluded
+
+- 결함이 기록된 과거 변경으로 리뷰어를 재는 일(3-가). 다음 카드가 한다.
+- 사용자가 카드 다섯 장을 직접 판정하는 일(3-나). O-00000062 에 있다.
 
 
 ## Risks
@@ -53,6 +58,11 @@ decision_refs:
 
 
 ## Related truth
+
+- DE-00000101, `.stage/research/review-judgment/`, W-00000401, W-00000405(`- Load at close` 줄과 `work_load.py`)
+- 리뷰어의 권한을 넓히면 저장소 밖 변경과 푸시는 닫기의 앞뒤 비교가 보지 못한다(DE-00000101 이 알고 고른 약점). 넓힌 범위와 남는 위험을 보고에 적는다.
+- 목적과 성공 기준은 지휘 세션이 사용자의 위임(2026-11-23)으로 DE-00000101 에서 옮겨 적었다.
+- 시작 커밋 ac85e8f0 의 제목은 W-00000407 이라고 적었지만 이 카드의 번호는 W-00000408 이다. W-00000407 은 다른 세션이 `claude/register-rag-python-314-card` 에서 먼저 썼다.
 
 
 ## Progress
