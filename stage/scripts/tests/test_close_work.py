@@ -872,6 +872,28 @@ class CloseWorkTest(unittest.TestCase):
         self.assertIn("print(123)", item)
         self.assertIn("print(456)", item)
 
+    def test_a_check_argument_repeating_a_stored_check_runs_and_is_recorded_once(self):
+        tmp, root = self.make(acceptance='\n  - "python3 -c \\"print(123)\\""')
+        with tmp:
+            proc = run(
+                root,
+                "W-00000001",
+                "--check",
+                'python3 -c "print(123)"',
+                "--check",
+                'python3 -c "print(456)"',
+            )
+            item = (root / ".stage/work/current/W-00000001/_story.md").read_text(
+                encoding="utf-8"
+            )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn("verification passed on 2 check(s)", proc.stdout)
+        record = next(line for line in item.splitlines() if line.startswith("- Checks at close"))
+        self.assertIn("2 passed", record)
+        self.assertEqual(1, record.count("print(123)"))
+        self.assertEqual(1, record.count("print(456)"))
+
     def test_failing_item_acceptance_changes_nothing(self):
         tmp, root = self.make(
             acceptance='\n  - "python3 -c \\"import sys; sys.exit(1)\\""'

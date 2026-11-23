@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Close the gaps the first full conducting run filled by hand (W-00000406, O-00000061).
+  `started_cards.py` now lists every open observation and, newest first, the sessions whose
+  commits changed a card record, so a new orchestrator finds follow-up candidates and the earlier
+  orchestrator when no work session is open; the session list is empty on a host that writes no
+  session id into commit messages. The `stage-orchestrate` skill refuses the role to a session
+  that has a parent session, asks the user in its own conversation to confirm a transfer that
+  arrived only in another session's message, records an order the user sets among planned cards
+  on those cards, and says what to do when a cloud session cannot reserve a card id on the
+  remote. `operations/cloud-execution.md` tells the main session to stop the sub-session's
+  commits before the review and to compare the fetched head with the reported commit, to link
+  the retrospective on the card after writing it, and to write the squash commit's subject
+  itself instead of reusing the sub-session's last one. The work brief tells the session to push
+  nothing after its report until the main session answers. `close_work.py` runs and records a
+  `--check` that repeats one of the card's stored checks once instead of twice.
 - Stop telling the run's operator how to compute a timeout override (W-00000403, DE-00000098).
   The `stage-drive` skill no longer carries the table that computed `--timeout` from a file count
   and a prior timeout, nor the advice to overshoot deliberately; it states the facts that bear on

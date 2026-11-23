@@ -110,7 +110,9 @@ python3 stage/skills/stage-retrospective/close_work.py --project-root <project-r
   --check "<test command>" [--check "..."] [--promotion <final-choice>] [--archive]
 ```
 
-It runs each `--check`, records the output as evidence, and completes the item only when they pass —
+It runs the card's stored `acceptance` checks and each `--check` (a `--check` that repeats a stored
+check runs and is recorded once), records the output as evidence, and completes the item only when
+they pass —
 and also requires a completed retrospective and a FINAL promotion decision. When `decision_refs`
 names any decision that does not declare `authorizes: venue_exception`, `not_applicable` is not a
 promotion decision: choose another final value with `--promotion`. An item with no linked decision,
