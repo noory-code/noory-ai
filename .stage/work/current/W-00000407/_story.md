@@ -71,12 +71,16 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 ## Next action
 
+작업 세션 session_018VXR6NvDBdQga8T4NuJ3u9 의 보고를 받아 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+
 Windows 기기가 없어도 고칠 수 있다. 맥북이나 클라우드 세션이 카드를 시작해 고치고, 첫째 성공 기준은 Windows
 세션이 확인한다(`.stage/operations/verification.md` 의 "Windows 동작 확인").
 
 ## Related truth
 
 ## Sessions
+
+- session_018VXR6NvDBdQga8T4NuJ3u9 — work — 2026-11-23 — opened from the index: not reported yet
 
 ## Progress
 
