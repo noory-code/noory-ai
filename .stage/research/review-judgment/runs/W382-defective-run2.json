@@ -1,0 +1,65 @@
+{
+  "case": "W382-defective",
+  "card": "W-00000382",
+  "version": "defective",
+  "commit": "af0af805",
+  "report_commit": "af0af805",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 8,
+  "seconds": 1183,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "scripts 시험 전체에서 띄우는 git 프로세스 수가 바꾸기 전보다 줄었고 그 수가 카드에 적혀 있다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Ran `strace -f -e trace=execve python3 -m unittest discover -s stage/scripts/tests` on fresh git exports of HEAD~1 and HEAD: successful git execs fell from 6,962 to 5,401 (rev-parse --git-path index 1,042->144, ls-files --others 908->251, ls-files --cached --stage 422->0 merged into ls-files -t 432), and the card's Progress records the before/after counts (6,879->5,330; the small gap is environment variance, same trend)."
+      },
+      {
+        "criterion": "드라이버의 동작 시험이 바꾸기 전과 같은 수로 모두 통과한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Ran the scripts suite with -v on both exports: before 846 tests OK (skipped=2), after 857 tests OK (skipped=2), and a comm of passing test names shows 0 before-tests missing from after; a hand-built repo with unmerged, skip-worktree, tab-named, ignored, removed-from-index and .stage/.runtime paths gave identical index/untracked results from the old two listings and the new combined listing, and repository_observation equaled the separate fingerprint+snapshot reads."
+      },
+      {
+        "criterion": "Executor report follows the purpose and scope-boundary reporting contract in Decisions made and Work not done",
+        "verdict": "FAIL",
+        "method": "read",
+        "reason": "git show HEAD and changed-paths.json show edits to stage/scripts/driver_supervised.py and stage/scripts/driver_unattended.py, which are outside the card's scope list, yet Decisions made never reports or justifies crossing that boundary (it covers only driver_git.py, driver_runstate.py and land_run.py), so a reader cannot tell the scope was widened; Work not done is reported properly."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I've set up a monitor and am waiting for the before/after strace runs to finish.\n\nNot approved. Both success criteria pass when I run them myself, but the executor report breaks the scope-boundary reporting rule. The verdict is in `.stage/.runtime/driver/verdicts/W-00000382.json`.\n\n**Fewer git processes, with the count on the card: PASS.** I ran the scripts suite under strace on fresh copies of the code before (HEAD~1) and after (HEAD) the change:\n\n| | Before | After |\n|---|---|---|\n| git processes started | 6,962 | 5,401 |\n| `rev-parse --git-path index` | 1,042 | 144 |\n| `ls-files --others` | 908 | 251 |\n| `ls-files --cached --stage` | 422 | 0 (merged into the 432 `ls-files -t` calls) |\n\nThe card's Progress section records 6,879 → 5,330. My totals are a little higher, which is likely just a different machine; the drop is the same.\n\n**Driver tests pass in the same number: PASS.**\n- Before: 846 tests, all OK. After: 857 tests, all OK. No test that passed before is missing afterwards.\n- I also built a small test repository with merge-conflict files, skip-worktree files, a tab in a file name, ignored files, a file removed from the index and `.stage/.runtime` files. The new combined listing gave exactly the same index entries and untracked files as the two old listings. The new combined observation also matched the two separate reads.\n\n**Reporting contract: FAIL.** The commit edits `driver_supervised.py` and `driver_unattended.py`, which are not in the card's scope list. \"Decisions made\" never says the scope was widened or why. It only explains decisions about `driver_git.py`, `driver_runstate.py` and `land_run.py`. \"Work not done\" is filled in properly.\n\nI didn't change anything in the repository except the verdict file. My temporary copies and strace logs are in the session scratchpad.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2; cat repo/.stage/work/current/W-00000382/_story.md; echo ----; cat review-input/changed-paths.json; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000382.md; ls repo/.stage/.runtime/driver/verdicts/ 2>&1; ls review-input",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; git status --short; git log --oneline -3; git diff --stat HEAD; git diff HEAD -- stage/scripts/driver_git.py stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py stage/CHANGELOG.md",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; git show --stat HEAD; git show HEAD -- stage/scripts/driver_git.py stage/scripts/driver_supervised.py stage/scripts/driver_unattended.py stage/CHANGELOG.md",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; which strace; S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; mkdir -p $S; rm -rf $S/before $S/after; git archive HEAD~1 stage | (mkdir $S/before && tar -x -C $S/before); git archive HEAD stage | (mkdir $S/after && tar -x -C $S/after); ls $S/before",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; for v in before after; do (cd $S/$v && strace -f -qq -e trace=execve -o $S/$v.trace python3 -m unittest discover -s stage/scripts/tests -q > $S/$v.out 2>&1; echo \"$v exit $?\"; tail -4 $S/$v.out) & done; wait; for v in before after; do echo $v $(grep -c 'execve(\"[^\"]*/git\"' $S/$v.trace); done",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; grep -E '^(ERROR|FAIL):' $S/after.out | head -30; grep -E 'Error|error:' $S/after.out | sort | uniq -c | sort -rn | head -10",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; for v in fb:HEAD~1 fa:HEAD; do d=${v%%:*}; r=${v#*:}; rm -rf $S/$d; mkdir $S/$d; git archive $r | tar -x -C $S/$d; done; cd $S/fb && git init -q && git add -A && git -c user.email=x@x -c user.name=x commit -qm b; cd $S/fa && git init -q && git add -A && git -c user.email=x@x -c user.name=x commit -qm a; ls -a $S/fa | head",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; for v in fb:HEAD~1 fa:HEAD; do d=${v%%:*}; r=${v#*:}; mkdir \"${S:?}/${d:?}\"; git archive $r | tar -x -C $S/$d; done; cd $S/fb && git init -q && git add -A && git -c user.email=x@x -c user.name=x commit -qm b; cd $S/fa && git init -q && git add -A && git -c user.email=x@x -c user.name=x commit -qm a; ls -a $S/fa | head",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; for v in fb fa; do (cd $S/$v && strace -f -qq -e trace=execve -o $S/$v.trace python3 -m unittest discover -s stage/scripts/tests -v > $S/$v.out 2>&1; echo \"$v exit $?\") & done; wait; for v in fb fa; do echo $v git=$(grep -c 'execve(\"[^\"]*/git\"' $S/$v.trace); tail -3 $S/$v.out; done",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; git show HEAD -- stage/scripts/driver_repository.py | head -300",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W382-defective-run2/repo; sed -n 30,105p stage/scripts/driver_repository.py",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; T=$S/eq; mkdir -p $T/r && cd $T/r && git init -q -b main && git config user.email x@x && git config user.name x && echo a>a && echo s>sk && printf 'base\\n'>c && git add -A && git commit -qm 1 && git checkout -qb o && printf 'ours\\n'>c && git commit -qam o && git checkout -q main && printf 'theirs\\n'>c && git commit -qam t && (git merge o -q >/dev/null 2>&1; true) && git update-index --skip-worktree sk && echo u> 'un\ttab' && echo u2>u2 && mkdir -p .stage/.runtime && echo r>.stage/.runtime/x && echo new>staged && git add staged && echo 'ig'>.gitignore && echo i>ig && git rm -q --cached a; ls; cat > $T/cmp.py <<'EOF'\nimport sys\nfrom pathlib import Path\nsys.path.insert(0, sys.argv[1]+\"/stage/scripts\")\nimport driver_repository as d\nr=Path(sys.argv[2])\nnew=d.git_index_and_untracked(r)\nold=(d.git_index_entries(r)[0], d.git_untracked_paths(r)[0])\nprint(\"index equal\", new[0]==old[0], \"untracked equal\", new[1]==old[1], new[2]); print(new[0]); print(new[1])\nprint(\"obs equal\", d.repository_observation(r)==(d.repository_fingerprint(r), d.repository_path_snapshot(r)))\nEOF\npython3 -I $T/cmp.py $S/fa $T/r",
+    "python3 -I /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad/eqtool/cmp.py /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad/fa /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad/eqrepo",
+    "cat /tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/tasks/b9kg369pd.output",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W382-defective-run2-repo/6408d4e0-773e-4e00-a171-425e4dc14633/scratchpad; for v in fb fa; do echo $v ok_git=$(grep 'execve(\"[^\"]*/git\"' $S/$v.trace | grep -c '= 0$'); grep -E ' \\.\\.\\. (ok|skipped.*)$' $S/$v.out | sed 's/ \\.\\.\\. .*//' | sort > $S/$v.names; grep -cE ' \\.\\.\\. ' $S/$v.out; done; echo missing_in_after: $(comm -23 $S/fb.names $S/fa.names | wc -l); comm -23 $S/fb.names $S/fa.names | head; for v in fb fa; do echo $v; grep 'execve(\"[^\"]*/git\"' $S/$v.trace | grep '= 0$' | grep -oE '\"(rev-parse|ls-files|diff)\", \"[^\"]*\"(, \"[^\"]*\")?' | sort | uniq -c | sort -rn | head -6; done"
+  ],
+  "tokens": {
+    "input": 42,
+    "cache_creation": 42617,
+    "cache_read": 1084571,
+    "output": 9933
+  }
+}
