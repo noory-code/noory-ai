@@ -79,8 +79,10 @@ limit:
 over_the_limit:
   never_shortened: what is being done now, and the rules or the brief itself
   shortened_in_this_order:
+    - rule candidates, from the end of the shown list. The index shows `proposed: promote`
+      candidates first and `proposed: hold` ones after them, each group in the list's order,
+      so the hold ones are left out first.
     - decision titles, from the oldest
-    - rule candidates, from the end of the list
     - the previous session's handoff
     - the list of project instruction files
     - the list of `.stage/operations/` files
@@ -90,7 +92,9 @@ over_the_limit:
 
 The limit is a first value taken from the size the text had when it was chosen, not from a
 measurement. When decision titles start to be left out, that is the reason to look at the number
-and the order again (DE-00000100, "Follow-up").
+and the order again (DE-00000100, "Follow-up"). The order was looked at once (W-00000413): with
+39 rule candidates the index showed 36 of them and no decision title, so candidates now give way
+first. A decision binds work; a candidate is not yet a rule.
 
 ## Sessions on the card
 
@@ -136,11 +140,19 @@ report is read from the last one, and its `Changed paths (JSON)` must list every
 path those commits changed, as the contract requires. List the commits instead
 of a range so another card's commits in between are left out.
 
+The importer ends the imported report with `Attempt commits: <n> (<sha>, ...)`, the distinct
+commits it was given. The close counts the card's `attempts` from that line
+(`operations/review.md`), so a squashed card keeps its attempt count although the work log is
+not committed.
+
 ## Close
 
 1. Close from a worktree checked out at the card's code commit
    (`git worktree add --detach <path> <code-commit>`), because the review receives
-   the paths of the HEAD commit.
+   the paths of the HEAD commit. When the code is in other commits than HEAD, pass
+   `--review-commit <rev>` to `close_work.py` once per commit instead: the review then receives
+   every path those commits changed (O-00000058). `close_work.py` prints a WARNING when the
+   paths it is about to hand over are all under `.stage/`.
 2. Import the report there, reserve the retrospective
    (`close_work.py --allocate-retrospective` prints its id), and write it. Then link it on the
    card: set `retrospective: completed` and `retrospective_ref: <R-id>` in the card's frontmatter.
@@ -156,6 +168,8 @@ of a range so another card's commits in between are left out.
 
    `close_work.py` runs the card's stored `acceptance` checks by itself. Pass `--check` only for
    a command the card does not store; one that repeats a stored check runs and is recorded once.
+   It appends what those checks printed to the work log as `### Checks at close` before the
+   review command starts, so the reviewer reads their output there (`operations/review.md`).
 
    The reviewer judges by running (DE-00000101; `operations/review.md`, "How the reviewer
    judges"), so the stand-in lets it run any shell command: the card's checks (for example
@@ -255,7 +269,8 @@ then:
   - import with one `--commit` per squash commit, oldest first ("Import the report"):
     `import_executor_report.py <W-id> --commit <first-squash> --commit HEAD`
   - the review receives the paths of HEAD, which are the paths the second attempt changed; the
-    first attempt's paths are in the imported report
+    first attempt's paths are in the imported report. To hand the reviewer both attempts' paths,
+    close with `--review-commit <first-squash> --review-commit HEAD`.
   - the retrospective keeps its id: commit it together with the `rejected` line, and rewrite it
     to cover both attempts before the second close
 ```

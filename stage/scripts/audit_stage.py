@@ -25,10 +25,12 @@ if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
 import stage_guard  # noqa: E402
+import audit_close_evidence  # noqa: E402
 import audit_model_tier  # noqa: E402
 import close_record  # noqa: E402
 import guidance_docs  # noqa: E402
 import refresh_decision_index  # noqa: E402
+import refresh_index_titles  # noqa: E402
 import stage_roadmap  # noqa: E402
 import stage_roadmap_closure  # noqa: E402
 import stage_records  # noqa: E402
@@ -273,6 +275,7 @@ class Audit:
         self.audit_orphan_records(graph)
         self.audit_pending_decision_index()
         self.audit_official_decision_titles()
+        self.audit_work_archive_titles()
         self.audit_state_links(graph)
         self.audit_archive_records(graph)
         self.audit_record_archive_indexes(graph)
@@ -288,6 +291,9 @@ class Audit:
         self.audit_operations_ownership()
         self.audit_venue_routing(items)
         self.audit_model_tiers(items)
+        audit_close_evidence.audit_load_lines(
+            (audited.item.path for audited in items), self.warning
+        )
         self.audit_canon()
         self.audit_governance()
         return self.findings
@@ -912,8 +918,25 @@ class Audit:
                 "DECISION005",
                 "Official decision index lacks a title, or carries one that differs from its "
                 "record's heading; run "
-                "`python3 stage/scripts/refresh_decision_index.py --project-root .`.",
+                "`python3 stage/scripts/refresh_index_titles.py --project-root .` "
+                "(it fills the work archive titles too).",
                 index_path,
+            )
+
+    def audit_work_archive_titles(self) -> None:
+        """Work archive rows name their card by title, so a card is found by topic."""
+
+        result = refresh_index_titles.work_archive_titles(self.stage_root)
+        if result is None:
+            return
+        _existing, _rendered, fillable, _untitled = result
+        if fillable:
+            self.warning(
+                "ARCHIVE005",
+                f"Work archive index has {fillable} row(s) without a title that their card "
+                "can fill (rows written by an earlier Stage); run "
+                "`python3 stage/scripts/refresh_index_titles.py --project-root .`.",
+                self.stage_root / refresh_index_titles.work_archive_index_relative(),
             )
 
     def audit_state_links(self, graph: RecordGraph) -> None:
@@ -1943,6 +1966,7 @@ class Audit:
                             f"review.stages has an unknown stage `{name}` (known: {list(stage_guard.REVIEW_STAGES)})",
                             settings_path,
                         )
+            audit_close_evidence.audit_review_methods(review, settings_path, self.warning)
 
     def known_kinds(self) -> set[str]:
         if not hasattr(self, "_known_kinds"):

@@ -325,12 +325,6 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
             probe_module(*WRITE_AT["test body"]),
             card_criterion="`python3 -m unittest discover -s tests -q` passes when you run it",
         )
-        (root / "stage/scripts").mkdir(parents=True)
-        # The project command runs the companion through run_review.py.
-        for script in (COMPANION, COMPANION.with_name("run_review.py")):
-            shutil.copy(script, root / "stage/scripts" / script.name)
-        git(root, "add", "-A")
-        git(root, "commit", "-q", "-m", "add the companion")
         log = root / ".stage/.runtime/driver/logs" / f"{ITEM_ID}.md"
         log.parent.mkdir(parents=True)
         log.write_text(
@@ -339,10 +333,17 @@ class LiveReviewerWriteProbeTest(unittest.TestCase):
             encoding="utf-8",
         )
         settings = json.loads((REPO_ROOT / ".stage/settings.json").read_text(encoding="utf-8"))
+        # The project command names its scripts relative to the project root. The throwaway
+        # repository has no plugin, and a copy of run_review.py alone cannot start there: it
+        # imports close_work.py and the hook modules (W-00000413 found the probe ending at
+        # that import, before any reviewer ran). Point the command at this plugin instead.
+        command = settings["review"]["reviewers"]["claude"]
+        for script in (COMPANION.with_name("run_review.py"), COMPANION):
+            relative = f"stage/scripts/{script.name}"
+            self.assertIn(relative, command)
+            command = command.replace(relative, shlex.quote(script.as_posix()))
 
-        self.probe(
-            "project reviewers.claude", settings["review"]["reviewers"]["claude"], root, card
-        )
+        self.probe("project reviewers.claude", command, root, card)
 
 
 if __name__ == "__main__":
