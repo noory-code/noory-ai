@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.68.0 — 2026-11-23
+
 - Make the text a session starts with an index derived from the records, and bound it
   (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
   rules every time; it named no decision, and a cloud session received none of it.

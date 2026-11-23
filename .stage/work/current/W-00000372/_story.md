@@ -2,14 +2,19 @@
 id: W-00000372
 title: Stage 를 릴리스한다
 kind: release
-venue:
+venue: claude
 milestone:
-status: captured
-priority: 8
 autonomous: false
 acceptance: []
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
 review: not_required
 scope: stage/CHANGELOG.md,stage/.claude-plugin,stage/.codex-plugin
+promotes:
+decision_refs:
 ---
 
 # W-00000372 Stage 를 릴리스한다
@@ -53,3 +58,9 @@ scope: stage/CHANGELOG.md,stage/.claude-plugin,stage/.codex-plugin
 - Windows 세션이 새 버전에서 훅이 실행되는 것을 확인했다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
