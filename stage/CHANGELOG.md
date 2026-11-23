@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Stop telling the run's operator how to compute a timeout override (W-00000403, DE-00000098).
+  The `stage-drive` skill no longer carries the table that computed `--timeout` from a file count
+  and a prior timeout, nor the advice to overshoot deliberately; it states the facts that bear on
+  the choice and leaves the number to whoever starts the run. The timeout itself and the derived
+  default are unchanged. The executor instruction to fix the whole kind of input behind a failed
+  criterion stays: it came from incidents (Dasina R-00000028, R-00000031), and their recurrence
+  could not be measured after removing it.
 - Add the `stage-orchestrate` skill and role briefs (W-00000404, DE-00000099). The skill gives one
   session the orchestrator role: take over from the records and the platform's session list, take
   the user's confirmations, organize work, start work and verification sessions, close and merge.
