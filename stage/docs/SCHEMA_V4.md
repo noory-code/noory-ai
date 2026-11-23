@@ -174,8 +174,10 @@ W frontmatter includes these execution fields:
   runs.
   A review has two separately routed parts:
   - **Criteria verdict** — read the card at `STAGE_WORK_ITEM_PATH`, judge every item under its
-    `## Success criteria`, and write one JSON entry per criterion with its `PASS`/`FAIL` and a
-    one-line reason. Only a failed success criterion may block the close.
+    `## Success criteria`, and write one JSON entry per criterion with its `PASS`/`FAIL`, its
+    `method` (`ran`, `read`, or `unable`: how the reviewer judged it), and a one-line reason. A
+    criterion judged `unable` is always `FAIL` (`operations/review.md`, "How the reviewer
+    judges"). Only a failed success criterion may block the close.
   - **Out-of-criteria observations** — every other finding belongs in prose, never in the verdict
     file. These observations are inputs to later disposition, never blockers for the current card.
 
@@ -407,8 +409,8 @@ prior verdict. The reviewer judges every previously failed criterion plus any pr
 criterion affected by that changed segment, and writes only the criteria judged in that round.
 The driver rejects a narrowed result that omits an earlier failure or introduces an unknown
 criterion, then merges it with the prior complete verdict. Every merged criterion has a positive
-`reviewed_in_round` value: carried criteria retain their earlier round, while reviewed criteria
-receive the next round. The merged `criteria` array therefore remains complete, and `approved` is
+`reviewed_in_round` value: carried criteria retain their earlier round and `method`, while
+reviewed criteria receive the next round and the `method` of that round. The merged `criteria` array therefore remains complete, and `approved` is
 true exactly when every merged criterion passes. A missing or malformed prior verdict fails safe
 to a complete review rather than selecting a round by attempt count.
 

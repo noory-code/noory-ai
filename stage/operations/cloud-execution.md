@@ -86,15 +86,17 @@ of a range so another card's commits in between are left out.
    `close_work.py` runs the card's stored `acceptance` checks by itself. Pass `--check` only for
    a command the card does not store; one that repeats a stored check runs and is recorded once.
 
-   The stand-in lets the reviewer write only its verdict file, read the
-   changed-path folder, and run `python3 -m unittest`; it may not edit project
-   files. Those rules cover only the reviewer's own tool calls, and code the
-   tests run can still write, so `close_work.py` compares the repository before
-   and after every review command: when any file other than the verdict changed,
-   it removes the verdict, names the paths, and fails the close review. Inspect
-   and discard those changes before closing again. The project's own Claude
-   reviewer command runs through the same stand-in. Never write a verdict file by
-   hand.
+   The reviewer judges by running (DE-00000101; `operations/review.md`, "How the reviewer
+   judges"), so the stand-in lets it run any shell command: the card's checks (for example
+   `audit_stage.py`) and commands it chooses itself. Its file-edit tools may write only the
+   verdict file, and it may read the changed-path folder. The project's own Claude reviewer
+   command runs through the same stand-in. Never write a verdict file by hand.
+
+   | What could go wrong | What holds it |
+   |---|---|
+   | a shell command, or code the tests run, writes a project file | `close_work.py` compares the repository before and after every review command: when any file other than the verdict changed, it removes the verdict, names the paths, and fails the close review. Inspect and discard those changes before closing again. |
+   | the reviewer commits or pushes | the stand-in denies `git push` and `git commit`, alone or inside a compound command line. A command hidden inside another program (`sh -c`, a script) is not seen. |
+   | the reviewer changes something outside the repository (another checkout, the home folder, a remote service) | nothing. DE-00000101 accepted this weakness; when you see one case, record an observation, because it is that decision's stated reason to be revisited. |
 4. State on the card's `## Verification` that the close review was a same-model
    review, not a cross-venue one.
 
@@ -124,7 +126,11 @@ main session's start commit, so its diff is exactly the card's change.
    run `git commit -F <file>`. The review receives the paths of HEAD (O-00000058), so one squash
    commit hands the reviewer every path; no local-only commit is needed.
 3. Re-run the card's checks yourself; do not trust the sub-session's transcript.
-4. Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
+4. When a verification session observed a criterion that only a session can observe
+   (`stage-orchestrate`, "Start a verification session"), its observation is on the card's
+   `## Verification` before this step, committed on the main session's branch. The close review
+   is the only gate; no verification session has to pass first.
+   Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
    retrospective, link it on the card, and close with the review as in "Close" above. When the
    review fails, commit the card with its new `rejected` review line on the main session's
    branch, keep `.stage/.runtime/driver/logs/<W-id>.md` in place, send the failed criteria to the

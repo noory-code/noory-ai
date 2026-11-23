@@ -14,7 +14,7 @@ this skill. Every other session receives its role in its first message.
 | Discussion | a long talk with the user about new work or a change of direction; ends in decision records and cards | a first message you write |
 | Planning | designs what to achieve, never how | a first message you write |
 | Work | builds one top-level card; an epic's stories run in sub-agents inside it | `subsession_brief.py --role work` |
-| Verification | judges success criteria and changes nothing | `subsession_brief.py --role verify` |
+| Verification | observes the success criteria only a whole session can observe, and changes nothing; it is not the gate on closing | `subsession_brief.py --role verify` |
 
 ```yaml
 orchestrator_does:
@@ -172,7 +172,7 @@ Every new session pays to read the same documents from the start.
 start_a_session_when:
   - the unit is a top-level card to build (an epic, or a story that has no epic)
   - the user will talk at length (discussion, planning)
-  - a judgment needs a context that did not see the building (verification)
+  - a success criterion can be observed only by a whole session doing the thing (verification)
 use_a_sub_agent_when:
   - the task returns a summary to this session (searching, comparing)
   - reading more than ten record files, or more than three session transcripts
@@ -212,29 +212,49 @@ its own branch, so you hold the ids its card may need (DE-00000094).
 
 ## Start a verification session
 
-Start one when a work session has reported. Create it from the work session's branch, title it
-`<W-id> verify`, and give it the same two tags as a work session.
+A verification session is not the gate on closing a card (DE-00000101). The close review is: its
+reviewer runs commands itself and judges every success criterion (`operations/review.md`, "How
+the reviewer judges"). A verification session exists for what that reviewer cannot do from one
+command line.
+
+```yaml
+start_a_verification_session:
+  - if: a success criterion of the card, or of one of an epic's stories, can be observed only by
+      a whole session doing the thing (for example "a new cloud session takes the role and ...")
+    then: start one after the work session has reported, and name each such criterion
+  - if: every success criterion can be judged by running commands or reading files and records
+    then: start none; close the card, for an epic too
+```
+
+Create it from the work session's branch, title it `<W-id> verify`, and give it the same two tags
+as a work session. Pass each criterion with `--criterion`, copied from the card; the script
+refuses a verify brief without one, and one whose text the card and its stories do not state.
 
 ```bash
 python3 <stage-plugin-root>/scripts/subsession_brief.py --project-root . <W-id> \
-  --main-session <this-session-id> --role verify --branch <work-session-branch> --commit <sha>
+  --main-session <this-session-id> --role verify --branch <work-session-branch> --commit <sha> \
+  --criterion "<success criterion copied from the card>"
 ```
 
-For an epic, omit `--commit`: the brief lists the stories and the session judges each one on the
-commit that names its id. The session answers with `PASS` or `FAIL` per success criterion.
+For an epic, omit `--commit`: the brief lists the stories, and the session finds each card's
+change by the commit that names its id. The session answers, per named criterion, what it did,
+what it observed, and one of `held`, `did not hold`, or `could not observe`.
 
 ```yaml
-on_verdict:
-  - if: every criterion passes
-    then: close the card
-  - if: a criterion fails
-    then: send the failed criteria and their reasons to the work session, and ask the verification session again after the new commit
-  - if: the verdict names something only the user can decide
+on_observation:
+  - always: add to the card's `## Verification`, on your branch, one line per criterion —
+      `- Observed <date> by verification session <session-id> at <commit>: <criterion> — <held|did not hold|could not observe>; <what the session did and saw>`
+      — then commit and push. The close reviewer reads this line; an observation left only in
+      the session's message does not reach it.
+  - if: a criterion did not hold
+    then: send it and what was observed to the work session, and ask the verification session again after the new commit
+  - if: a criterion could not be observed
+    then: ask the user how to judge it; the close reviewer fails a criterion it has no evidence for
+  - if: the observation names something only the user can decide
     then: ask the user, and relay the answer to the session that needs it
+  - if: every named criterion held
+    then: close the card; the close review still judges every criterion
 ```
-
-The verification session's verdict decides whether you close. `close_work.py` still runs the
-project's configured close review as its own command; this skill does not replace that step.
 
 ## Close and merge
 

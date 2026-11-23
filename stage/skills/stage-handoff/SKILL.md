@@ -82,8 +82,8 @@ behaves the same way. This is the bridge runtime's behavior, not something Stage
 
 ### Cloud sessions
 
-Handing a started card to a cloud work session, and having a verification session judge it, is the
-orchestrator's procedure: see `stage-orchestrate`.
+Handing a started card to a cloud work session, and having a verification session observe what
+only a session can observe, is the orchestrator's procedure: see `stage-orchestrate`.
 
 ## Before handing off, make each open item self-carrying
 

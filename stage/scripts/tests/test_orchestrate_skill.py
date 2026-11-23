@@ -49,6 +49,33 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertNotIn("git commit -C FETCH_HEAD", cloud)
         self.assertIn("runs and is recorded once", cloud)
 
+    def test_a_verification_session_is_not_the_gate_on_closing(self) -> None:
+        text = read("stage-orchestrate")
+        cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
+        review = (SKILLS.parent / "operations" / "review.md").read_text(encoding="utf-8")
+
+        self.assertIn("A verification session is not the gate on closing a card (DE-00000101).", text)
+        self.assertIn("can be observed only by\n      a whole session doing the thing", text)
+        self.assertIn("then: start none; close the card, for an epic too", text)
+        self.assertIn('--criterion "<success criterion copied from the card>"', text)
+        self.assertIn("add to the card's `## Verification`, on your branch", text)
+        self.assertNotIn("The verification session's verdict decides whether you close", text)
+        self.assertIn("The close review\n   is the only gate", cloud)
+        self.assertIn("The verification session does\nnot decide the close.", review)
+
+    def test_the_procedures_state_the_judgment_contract_and_the_stand_in_permission(self) -> None:
+        cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
+        review = (SKILLS.parent / "operations" / "review.md").read_text(encoding="utf-8")
+
+        self.assertIn("## How the reviewer judges", review)
+        for method in ("| `ran` |", "| `read` |", "| `unable` |"):
+            self.assertIn(method, review)
+        self.assertIn("(1 PASS ran, 2 FAIL read, ...)", review)
+        self.assertIn("lets it run any shell command", cloud)
+        self.assertIn("the stand-in denies `git push` and `git commit`", cloud)
+        self.assertIn("the reviewer changes something outside the repository", cloud)
+        self.assertNotIn("and run `python3 -m unittest`; it may not edit project", cloud)
+
     def test_handoff_keeps_no_copy_of_the_sub_session_procedure(self) -> None:
         text = read("stage-handoff")
 

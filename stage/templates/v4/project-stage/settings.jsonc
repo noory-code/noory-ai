@@ -102,20 +102,38 @@
   // Without those prior-review inputs, review every success criterion.
   // A non-interactive claude -p reviewer needs explicit permissions: put --add-dir with the folder of
   // $STAGE_CHANGED_PATHS_FILE and --allowedTools with an Edit rule for the absolute path
-  // /$STAGE_REVIEW_VERDICT_FILE (Edit rules govern every file write) plus
-  // Bash(python3 -m unittest:*), then -- before the prompt.
+  // /$STAGE_REVIEW_VERDICT_FILE (Edit rules govern every file write) plus Bash, so the
+  // reviewer can run the card's checks and commands it chooses itself; add
+  // --disallowedTools with Bash(git push), Bash(git push:*), Bash(git commit), and
+  // Bash(git commit:*); then -- before the prompt. stage/scripts/claude_review_companion.py
+  // builds exactly this command.
   // Do not grant edits to project files. Those rules cover only the reviewer's own tool
   // calls, not code its tests run, so close_work.py and the driver compare the repository
   // around every review command and fail a review that changed any file but its verdict.
+  // That comparison does not see a change outside the repository.
   // Read the non-empty Decisions made: and Work not done: fields in the latest executor report and judge whether the purpose and scope-boundary reporting contract was followed.
   // When a criterion fails on example inputs, name in its reason the kind of input those
   // examples belong to, so the next executor round can fix the whole kind.
-  // For a criterion that asks for a command to be run or behavior to be observed, say in its
-  // reason which command you ran and what it showed, or that you did not run it.
+  // method says how you judged that criterion: ran when you ran a command or observed the
+  // behavior yourself, read when you read files or records, unable when you could not gather
+  // the evidence the criterion needs.
+  // A criterion whose evidence you did not see yourself is FAIL: the executor report, the
+  // work log, and comments in the code are claims, not evidence.
+  // A criterion that asks for a command result or observed behavior needs method ran, and a
+  // criterion with method unable is always FAIL.
+  // close_work.py runs the stored acceptance checks of the card itself, so repeating one is
+  // not your evidence: for each criterion that needs method ran, run at least one command you
+  // chose yourself that could show the criterion false, and say in its reason which command
+  // you ran and what it showed.
+  // Change no file other than $STAGE_REVIEW_VERDICT_FILE, keep scratch files in the system
+  // temp folder, and never commit or push: a review that changes the repository fails.
   // Each command must write
-  // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL","reason":"..."}],
+  // exactly {"criteria":[{"criterion":"...","verdict":"PASS|FAIL",
+  // "method":"ran|read|unable","reason":"..."}],
   // "approved":true|false}, with no other keys at either level. criteria must be
-  // non-empty with unique, non-empty one-line criterion and reason values. approved
+  // non-empty with unique, non-empty one-line criterion and reason values. A verdict that
+  // marks a criterion PASS with method unable is invalid, and the method of every criterion
+  // is written on the card beside its verdict. approved
   // is true exactly when every criterion passes. Review prose may still go to
   // $STAGE_WORK_LOG_PATH, but prose never decides the result. To record that prose on
   // every platform, start the command with: python3 stage/scripts/run_review.py --label <name>

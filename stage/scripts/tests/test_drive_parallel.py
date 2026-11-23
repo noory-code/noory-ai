@@ -423,6 +423,7 @@ class DriveParallelTest(unittest.TestCase):
                                 {
                                     "criterion": "isolated worktree root",
                                     "verdict": "PASS",
+                                    "method": "ran",
                                     "reason": (
                                         f"reviewer opened {changed[0]} in {root}"
                                     ),
