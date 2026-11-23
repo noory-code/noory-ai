@@ -2,14 +2,21 @@
 id: W-00000403
 title: 실행 방식 지시(B11)를 빼 보고 하중을 본다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000006
-status: captured
-priority: 3
 autonomous: false
-acceptance: []
-review: not_required
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/skills/stage-drive,stage/templates,.stage/settings.json,stage/CHANGELOG.md,.stage/research/claude-fit
+promotes:
+decision_refs:
 ---
 
 # W-00000403 실행 방식 지시(B11)를 빼 보고 하중을 본다
@@ -41,3 +48,9 @@ scope: stage/skills/stage-drive,stage/templates,.stage/settings.json,stage/CHANG
 - 뺀 뒤 돈 카드들의 Driver failure, 리뷰 FAIL, 재시도를 빼기 전과 비교한 결과가 연구 자료에 있다
 
 ## Next action
+
+## Related truth
+
+## Progress
+
+## Verification
