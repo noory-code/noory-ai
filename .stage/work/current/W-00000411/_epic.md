@@ -49,6 +49,8 @@ decision_refs:
 
 ## Next action
 
+작업 세션 session_018VXR6PwLBPzLD6Y92UC31m 의 보고를 받아 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+
 
 ## Related truth
 
@@ -58,8 +60,12 @@ decision_refs:
 
 ## Sessions
 
+- session_018VXR6PwLBPzLD6Y92UC31m — work — 2026-11-23 — opened from the index: not reported yet
+
 
 ## Progress
+
+- 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 d192365b 에서 카드를 등록해 시작하고 작업 세션 session_018VXR6PwLBPzLD6Y92UC31m (`claude/w411-procedure-and-evidence`)를 띄웠다. 번호 묶음은 잡지 않았다.
 
 
 ## Verification
