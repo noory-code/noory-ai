@@ -83,7 +83,15 @@ Stage 컨텍스트를 넣는지, PreToolUse 훅이 `.stage` 를 언급하는 `py
 - 성공 기준 1: 2026-11-23 Mac 에서 main(`7e2b6712`)을 받은 뒤 `claude plugin list` 가 `stage@noory-ai` 에
   `Version: 0.68.0`, `Read from: /Users/woogis/Workspace/repo/noory-ai/stage`, `Status: ✔ enabled` 를 보여 줬다.
   새 세션에서 0.68.0 의 훅이 실행되는지는 이 세션에서 보지 않았다.
-- 성공 기준 2: 아직 확인하지 않았다.
+- 성공 기준 2: 2026-11-23 한국어 Windows 11(cp949, Python 3.14.10) 세션이 확인했다. `claude plugin marketplace
+  update noory-ai` 와 `claude plugin update stage@noory-ai` 로 0.67.0 에서 0.69.0 으로 올렸고, `claude plugin list` 가
+  `stage@noory-ai` 에 `Version: 0.69.0` 을 보여 줬다. 저장소(`66b53229`)에서 `claude -p` 로 새 세션을 열어 실행 기록을
+  봤다. 그 세션은 Stage 를 `plugins\cache\noory-ai\stage\0.69.0` 에서 불러왔다. `SessionStart:startup` 훅이 실행돼
+  `## Stage context` 를 넣었고, PreToolUse 훅이 `python -c "print('.stage probe')"` 를 "Stage guard cannot verify what
+  opaque inline interpreter code writes" 로 거부했다. Stop 훅은 따로 보지 않았다.
+- 같은 날 같은 기기에서 `05ff6f8d`(0.69.0 릴리스 전)의 `python -m unittest discover -s stage/hooks/tests -q` 는
+  480개가 통과했고(44개 건너뜀), `python -m unittest discover -s stage/scripts/tests -q` 는 945개가 통과했다(6개
+  건너뜀). `66b53229` 에서는 다시 실행하지 않았다.
 - 릴리스 전 Mac 에서 `python3 -m unittest discover -s stage/hooks/tests -q` 는 480개가 통과했고(1개 건너뜀),
   `python3 -m unittest discover -s stage/scripts/tests -q` 는 945개가 통과했다(2개 건너뜀).
   `python3 stage/scripts/audit_stage.py` 는 errors=0 이었다.
