@@ -154,7 +154,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
 
         self.assertIn("`past` is official, `present` is in progress, `future` is planned", context)
         self.assertIn("`.stage/present/work/items/`", context)
-        self.assertIn("`future/backlog/items`", context)
+        self.assertIn("`.stage/past/`", context)
         self.assertNotIn("`.stage/work/current/`", context)
 
     def test_v4_fixture_routes_every_rewired_consumer_through_registry_paths(self):
@@ -238,10 +238,9 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
 
         self.assertIn("`.stage/work/current/`", context)
         self.assertIn("`official/canon/principles.md`", context)
-        self.assertIn("`decisions/pending`", context)
-        self.assertIn("`state/questions`", context)
-        self.assertIn("`work/planned`", context)
-        self.assertIn("`roadmap/", context)
+        self.assertIn("`.stage/official/`", context)
+        # Where each record kind lives is named, not listed (W-00000417).
+        self.assertIn("`.stage/index.md`", context)
         self.assertNotIn("`.stage/present/work/items/`", context)
 
     def test_v4_guard_authorizes_official_write_with_matching_intent(self):

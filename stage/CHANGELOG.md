@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Shorten the standing rules a session starts with so the index keeps its decision titles
+  (W-00000417, DE-00000100). The rules and the index share one 10,000-character limit, and the
+  rules are never shortened, so each of their sentences displaced a decision title.
+  - The `## Stage context` block is six lines instead of fifteen: in this repository 1,384
+    characters, down from 3,373. With five cards in progress and 39 rule candidates, all 82
+    decision titles are listed; before, six to nineteen of them were left out.
+  - Removed, because another place already says it: the space-axis sentence and the artifact
+    map (`.stage/index.md`, `operations/artifacts.md`), the six principle summaries (the
+    project's principle catalog), and the venue exception and `split` rules (the `stage-work`
+    and `stage-handoff` skills, and `register_work.py`'s refusal). The two write-gate sentences
+    are one line that leaves the command to the hook's refusal.
+  - Removed, because it was wrong: "cite the governing principles in every … retrospective".
+    A retrospective has had no such section since DE-00000093.
+  - Kept, shorter: the inline-interpreter refusal, the routing table with how each venue
+    runs, and the document language.
+  - What the hooks refuse, and the text of each refusal, is unchanged. The limit is unchanged.
+
 - Write down the paths an orchestrator made up by hand while conducting eight cards and a
   release (W-00000412, O-00000061).
   - **A session prints its own brief.** `subsession_brief.py --first-message` prints a short

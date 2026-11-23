@@ -83,7 +83,9 @@ class ContextRoutingTest(unittest.TestCase):
         self.assertIn("design -> claude", context)
         self.assertIn("development -> codex", context)
         self.assertIn("do not ask the human during normal routing", context)
-        self.assertIn("Split mixed design+implementation work", context)
+        # The exception and split rules are named, not repeated (W-00000417).
+        self.assertIn("Exceptions and `split` kinds: the `stage-work` skill", context)
+        self.assertNotIn("authorizes: venue_exception", context)
 
     def test_no_routing_injects_nothing(self):
         context = stage_context.session_context(self.make_workspace(None))

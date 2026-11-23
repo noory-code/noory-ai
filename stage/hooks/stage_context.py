@@ -73,10 +73,30 @@ def read_if_exists(path: Path, limit: int = 1400) -> str:
 # find out.
 INLINE_INTERPRETER_RULE_LINE = (
     "- A shell command that runs inline interpreter code (`python -c`, `node -e`, `bash -c`, "
-    "or an interpreter heredoc) and mentions `.stage` is refused, read-only code included: "
-    "the hook cannot see what such code writes. Use Write/Edit, or put the code in a script "
-    "file and run it by name."
+    "an interpreter heredoc) and mentions `.stage` is refused, read-only code included. "
+    "Use Write/Edit or a script file."
 )
+
+
+def standing_rule_lines(
+    lifecycle: str, principles_path: str, current_work: str, official_root: str
+) -> list[str]:
+    """The rules every session starts with, one line each.
+
+    A line stays here only when a session needs it before its first tool call. What a
+    refusal, a skill, or an operations document already says is named, not repeated
+    (W-00000417): these lines share the limit with the index, so every sentence here is
+    a decision title the index cannot carry.
+    """
+    return [
+        "## Stage context",
+        f"- Lifecycle: {lifecycle}. Where each record kind lives: `.stage/index.md`; "
+        f"principles: `{principles_path}`.",
+        f"- Modifying governed files (nearly all files; see `.stage/settings.json`) needs an "
+        f"active work item in `.stage/{current_work}/`; modifying `.stage/{official_root}/` "
+        "needs a promotion intent, not a new work item. The hook's refusal names the command.",
+        INLINE_INTERPRETER_RULE_LINE,
+    ]
 
 
 def active_milestone_table(stage_root: Path) -> str:
@@ -200,102 +220,42 @@ def session_context(workspace_root: Path) -> str:
 
     if active_topology(stage_root) == ACTIVE_TOPOLOGY_V4:
         current_work = stage_topology.card_location_for_status("active")
-        planned_work = stage_topology.card_location_for_status("selected")
-        current_retro, _ = stage_topology.retrospective_locations()
-        decision_paths = stage_topology.resolve_artifact_reference(
-            "DE-00000000"
-        ).candidate_paths
-        state_roots = {
-            prefix: stage_topology.resolve_artifact_reference(
-                f"{prefix}-00000000"
-            ).candidate_paths[0].rsplit("/", 1)[0]
-            for prefix in ("O", "Q", "A", "K")
-        }
-        proposal_root = stage_topology.get_zone("proposals", "planned").canonical_path
-        milestone_root = stage_topology.get_zone("roadmap", "milestones").canonical_path
         principles_path = next(
             path
             for path in stage_topology.get_zone("canon", "official").index_surfaces
             if path.endswith("principles.md")
         )
-        parts = [
-            "## Stage context",
-            "- Global lifecycle axis: `planned` is intended, `current` is in progress, "
-            "`official` is settled truth.",
-            "- Space axis: `canon`, `model`, `decisions`, `work`, `state`, `proposals`, "
-            "`roadmap`, `operations` divide responsibility.",
-            f"- Core principles (full catalog: `{principles_path}`):",
-            "  SSOT — one owning location per durable fact. MECE — no overlap, no known gaps.",
-            "  Fail Fast — surface wrong premises early. AHA — no abstraction before repetition.",
-            "  Completion — external view + internal view + retrospective, all three.",
-            "  Honesty — never assert unverified facts; no partial completion, no silent substitution.",
-            "- Cite the governing principles in every decision record and retrospective.",
-            f"- Register an active work item in `.stage/{current_work}/` before modifying governed files "
-            "(nearly all files are governed by default; see `.stage/settings.json`).",
-            f"- Modifying `.stage/{stage_topology.OFFICIAL_ROOT}/` is gated ONLY by a pending intent "
-            "(`scripts/promote_intent.py`) that names the completed work item being promoted or "
-            "archived — no NEW work item is needed, and `.stage/` is not governed source so the "
-            "registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
-            f"- Artifact map — W current work `{current_work}` · R retro `{current_retro}` · "
-            f"DE pending decision `{decision_paths[0].rsplit('/', 1)[0]}` · official decisions "
-            f"`{decision_paths[1].rsplit('/', 1)[0]}` · O state `{state_roots['O']}` · "
-            f"Q state `{state_roots['Q']}` · A state `{state_roots['A']}` · "
-            f"K state `{state_roots['K']}` · planned "
-            f"W cards `{planned_work}` · P proposal `{proposal_root}` · M milestone "
-            f"`{milestone_root}`. A work card is ONE artifact moving planned -> current -> official; "
-            "start a planned card with `scripts/start_work.py` (never hand-move it). Full catalog: "
-            "`operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
-        ]
+        parts = standing_rule_lines(
+            "`planned` is intended, `current` is in progress, `official` is settled truth",
+            principles_path,
+            current_work,
+            stage_topology.OFFICIAL_ROOT,
+        )
     else:
-        parts = [
-            "## Stage context",
-            "- Global time axis: `past` is official, `present` is in progress, `future` is planned.",
-            "- Space axis: `canon`, `model`, `decisions`, `work`, `state`, `operations` divide responsibility.",
-            "- Core principles (full catalog: `past/canon/principles.md`):",
-            "  SSOT — one owning location per durable fact. MECE — no overlap, no known gaps.",
-            "  Fail Fast — surface wrong premises early. AHA — no abstraction before repetition.",
-            "  Completion — external view + internal view + retrospective, all three.",
-            "  Honesty — never assert unverified facts; no partial completion, no silent substitution.",
-            "- Cite the governing principles in every decision record and retrospective.",
-            "- Register an active work item in `.stage/present/work/items/` before modifying governed files "
-            "(nearly all files are governed by default; see `.stage/settings.json`).",
-            "- Modifying `.stage/past/` is gated ONLY by a pending intent (`scripts/promote_intent.py`) that names "
-            "the completed work item being promoted or archived — no NEW work item is needed, and `.stage/` is not "
-            "governed source so the registration/commit gates never fire on it. To archive, use the `stage-archive` skill.",
-            "- Artifact map — W work `present/work/items` · R retro `present/work/retrospectives` · "
-            "DE decision `present/work/decisions` · D approved `past/decisions/records` · "
-            "O/Q/A/K state `present/state/*` · planned W cards `future/backlog/items` · P proposal · M milestone. "
-            "A work card is ONE artifact moving future -> present -> past; start a planned card with "
-            "`scripts/start_work.py` (never hand-move it). "
-            "Full catalog: `operations/artifacts.md` in the installed Stage plugin; routing: `index.md`.",
-        ]
-
-    parts.append(INLINE_INTERPRETER_RULE_LINE)
+        parts = standing_rule_lines(
+            "`past` is official, `present` is in progress, `future` is planned",
+            "past/canon/principles.md",
+            "present/work/items",
+            "past",
+        )
 
     routing = load_venue_routing(stage_root)
     if routing:
         routing_text = ", ".join(f"{kind} -> {venue}" for kind, venue in sorted(routing.items()))
         parts.append(
-            f"- Venue routing (declared role policy): {routing_text}. Derive `venue` from this "
-            "policy when registering work — do not ask the human during normal routing; a "
-            "contradicting venue registers only with a decided decision record declaring "
-            "`authorizes: venue_exception` (register_work --decision). A kind routed to `split` "
-            "is mixed by definition: Split mixed design+implementation work into separate items "
-            "with `parent` lineage instead of assigning one ambiguous item. An implementation "
-            "venue that hits an unresolved product/design decision registers a planning-venue "
-            "item carrying the evidence and the exact decision needed. For execution, spawn a "
-            "teammate agent for `claude`-venue work and hand `codex`-venue work to the driver; "
-            "read `.stage/operations/claude-venue.md` for the procedure."
+            f"- Venue routing (declared role policy): {routing_text}. `register_work.py` "
+            "derives `venue` from it; do not ask the human during normal routing. Exceptions "
+            "and `split` kinds: the `stage-work` skill. For execution, spawn a teammate agent "
+            "for `claude`-venue work and hand `codex`-venue work to the driver; read "
+            "`.stage/operations/claude-venue.md` for the procedure."
         )
 
     language = load_language(stage_root)
     if language != DEFAULT_LANGUAGE:
         parts.append(
-            f"- Stage document language: `{language}`. Write human-readable Stage content "
-            "(titles after the ID, prose bodies, index labels) in that language. Keep machine "
-            "tokens exactly as templates declare: IDs, paths, frontmatter keys and enum values, "
-            "work kinds, venue and principle names, and record section headings "
-            "(`## Purpose`, `## Verification`, ...)."
+            f"- Stage document language: `{language}` for human-readable content. Machine "
+            "tokens stay as templates declare: IDs, paths, frontmatter keys and enum values, "
+            "work kinds, venue and principle names, record section headings."
         )
 
     # The rules above are the same every session; the index below is derived from the
