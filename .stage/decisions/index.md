@@ -20,3 +20,5 @@
 | DE-00000094 | decided | [W-00000385](../official/work/archive/items/W-00000385/_story.md) | archived | [pending/DE-00000094.md](pending/DE-00000094.md) |
 | DE-00000098 | decided | [W-00000399](../official/work/archive/items/W-00000399/_story.md) | archived | [pending/DE-00000098.md](pending/DE-00000098.md) |
 | DE-00000099 | decided | [W-00000402](../official/work/archive/items/W-00000402/_story.md) | archived | [pending/DE-00000099.md](pending/DE-00000099.md) |
+| DE-00000100 | decided | [W-00000400](../official/work/archive/items/W-00000400/_story.md) | archived | [pending/DE-00000100.md](pending/DE-00000100.md) |
+| DE-00000101 | decided | [W-00000401](../official/work/archive/items/W-00000401/_story.md) | archived | [pending/DE-00000101.md](pending/DE-00000101.md) |
