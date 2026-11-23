@@ -2,14 +2,21 @@
 id: W-00000405
 title: 뺀 장치의 하중을 커밋된 기록으로 잴 수 있게 한다
 kind: development
-venue:
+venue: claude
+environment: cloud
 milestone: M-00000006
-status: captured
-priority:
 autonomous: false
-acceptance: []
-review: not_required
+acceptance:
+  - "python3 -m unittest discover -s stage/scripts/tests -q"
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: stage/scripts,stage/skills,stage/operations,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md,.stage/research/claude-fit
+promotes:
+decision_refs:
 ---
 
 # W-00000405 뺀 장치의 하중을 커밋된 기록으로 잴 수 있게 한다
@@ -27,6 +34,9 @@ scope: stage/scripts,stage/skills,stage/operations,stage/docs/BLUEPRINT.md,stage
 ## Scope
 
 ### Included
+
+- `.stage/research/claude-fit/mechanisms.md` 의 B11 행에 Dasina 사고 출처(R-00000028, R-00000031)를 적는다(W-00000403 의 후속 후보).
+- DE-00000101 이 정한 판정 방법 칸과 리뷰어 권한은 다음 카드가 만든다. 이 카드는 지금의 판정 기록에서 남길 수 있는 것을 남긴다.
 
 
 ### Excluded
@@ -49,3 +59,7 @@ scope: stage/scripts,stage/skills,stage/operations,stage/docs/BLUEPRINT.md,stage
 - W-00000403 과 R-00000403: 빼기 전후 비교를 이 카드로 옮겼다.
 - DE-00000098, `.stage/research/claude-fit/b11-load.md`
 - 사용자가 2026-11-23 에 목적("잴 수 있는지부터 정하기")과 성공 기준 두 개를 정했다("네 추천대로 1, 2만 등록하죠").
+
+## Progress
+
+## Verification
