@@ -194,6 +194,48 @@ class CloseRecordTest(unittest.TestCase):
         self.assertEqual(2, card.count(": rejected (1 FAIL)"))
         self.assertEqual(1, card.count(": approved (1 PASS)"))
 
+    def test_close_records_the_load_of_a_card_with_no_work_log(self):
+        tmp, root = self.make()
+        with tmp:
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            f"- Load at close {TODAY}: attempts 1, review FAIL rounds 0, repeated findings 0, "
+            "driver rounds 0, driver failures 0 (timed out 0)\n",
+            card,
+        )
+        self.assertLess(card.index("- Checks at close"), card.index("- Load at close"))
+
+    def test_load_counts_earlier_rejections_and_the_uncommitted_work_log(self):
+        tmp, root = self.make(review="pending", review_command=reviewer_command(["FAIL"]))
+        with tmp:
+            run(root, "W-00000001", "--check", python_command("print('ok')"))
+            log = root / ".stage/.runtime/driver/logs/W-00000001.md"
+            with log.open("a", encoding="utf-8") as handle:
+                handle.write(
+                    "\n### Driver commands\nExecutor command: \"x\"\n"
+                    "\n### Driver failure\nRole: executor\n"
+                    "Reason: executor timed out after 900s\nOutput:\n\n```text\nSECRET OUTPUT\n```\n"
+                )
+            settings = root / ".stage/settings.json"
+            config = json.loads(settings.read_text(encoding="utf-8"))
+            config["review"]["strengths"]["standard"] = reviewer_command(["PASS"])
+            settings.write_text(json.dumps(config), encoding="utf-8")
+
+            proc = run(root, "W-00000001", "--check", python_command("print('ok')"))
+            card = self.card(root)
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertIn(
+            f"- Load at close {TODAY}: attempts 2, review FAIL rounds 1, "
+            "repeated findings unknown, driver rounds 1, driver failures 1 (timed out 1)\n"
+            "  - Driver failure: executor — executor timed out after 900s\n",
+            card,
+        )
+        self.assertNotIn("SECRET OUTPUT", card)
+
     def test_review_line_names_the_label_of_the_review_command(self):
         command = reviewer_command(["PASS"])
         labelled = command + " --label claude"

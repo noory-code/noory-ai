@@ -76,6 +76,7 @@ from driver_environment import (  # noqa: E402
 )
 from driver_model_fallback import run_with_model_fallbacks  # noqa: E402
 import audit_stage  # noqa: E402
+import work_load  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
 OPEN_TO_CLOSE = {"active", "review"}
@@ -1206,14 +1207,15 @@ def main() -> int:
         evidence += f"\n{review_line}"
     log_path = work_log_path(stage_root, work_item.item_id)
     try:
-        report_lines = (
-            latest_executor_report_lines(read_work_log(log_path))
-            if log_path.is_file()
-            else []
-        )
+        log_text = read_work_log(log_path) if log_path.is_file() else ""
     except RuntimeError as exc:
         print(f"{args.item}: {exc}; work item unchanged", file=sys.stderr)
         return 1
+    report_lines = latest_executor_report_lines(log_text)
+    # The work log is not committed; its counts reach the committed card here (W-00000405).
+    evidence += "\n" + work_load.load_record_lines(
+        work_load.count_load(log_text, text), close_date
+    )
     if report_lines and "## Progress\n" not in text:
         print(
             f"{args.item}: no '## Progress' section to record the executor report into; "

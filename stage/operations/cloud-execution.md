@@ -97,6 +97,11 @@ of a range so another card's commits in between are left out.
    hand.
 4. State on the card's `## Verification` that the close review was a same-model
    review, not a cross-venue one.
+
+   When the review fails, `close_work.py` leaves a `- Review at close ... rejected` line on the
+   worktree's card. Copy that line onto the branch's card and commit it before the next attempt:
+   the next close counts those lines into the card's `- Load at close` line
+   (`operations/review.md`), and a line left in a removed worktree is lost.
 5. Copy the closed card and retrospective back to the branch and run
    `close_work.py <id>` there once more; its reconcile path refreshes the decision index.
 
@@ -121,8 +126,10 @@ main session's start commit, so its diff is exactly the card's change.
 3. Re-run the card's checks yourself; do not trust the sub-session's transcript.
 4. Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
    retrospective, link it on the card, and close with the review as in "Close" above. When the
-   review fails, send its failed criteria to the sub-session and repeat from step 1 after it
-   pushes.
+   review fails, commit the card with its new `rejected` review line on the main session's
+   branch, keep `.stage/.runtime/driver/logs/<W-id>.md` in place, send the failed criteria to the
+   sub-session, and repeat from step 1 after it pushes. The close that passes counts the rejected
+   lines and the reports in that log into the card's `- Load at close` line.
 5. Archive the card, push, and open the pull request from the main session's branch. The
    sub-session's branch is not merged on its own.
 

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Keep what a card took to land on the card itself (W-00000405). Attempts, failed review rounds,
+  and driver failures were visible only in the shared work log, which is not committed, so a
+  session without that log could not tell whether a removed control had been carrying load.
+  `close_work.py` now writes a `- Load at close` line into `## Verification`: attempts, review
+  FAIL rounds, repeated findings, driver rounds, and driver failures with the timed-out count,
+  plus one line per driver failure reason. The new `scripts/work_load.py` owns the counting and
+  prints the counts of closed cards as a Markdown table (`--closed-since <date>` or card ids);
+  a card closed before the line existed shows its rejected reviews and `not recorded` elsewhere.
+  `operations/review.md` defines each count, and `operations/cloud-execution.md` tells the main
+  session to commit a rejected review line and keep the work log between attempts so the counts
+  survive a cloud close.
 - Close the gaps the first full conducting run filled by hand (W-00000406, O-00000061).
   `started_cards.py` now lists every open observation and, newest first, the sessions whose
   commits changed a card record, so a new orchestrator finds follow-up candidates and the earlier

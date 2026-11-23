@@ -14,7 +14,13 @@
   "결과" 표의 빼기 전 줄은 그 로그가 있는 Mac 에서 2026-11-23 에 "세는 방법"대로 센 값입니다.
 - **빼기 전에 시간 초과는 101장 가운데 3장에서 한 번씩 있었습니다.**
 
-그래서 이 문서는 세는 방법과 빼기 전 기준선까지 담습니다. 뺀 뒤 줄은 뒤 카드가 채웁니다.
+- **W-00000405 부터는 닫을 때의 수치가 카드에 남습니다.** `close_work.py` 가 카드의 `## Verification` 에
+  `- Load at close` 줄을 적고, `stage/scripts/work_load.py` 가 닫힌 카드들의 그 줄을 표로 냅니다.
+  아래 "커밋된 기록으로 세는 방법"과 "결과"가 그것으로 채운 자리입니다.
+- **그래도 뺀 표(시간 제한)의 하중은 아직 말할 수 없습니다.** W-00000403 뒤에 닫힌 카드는 모두 클라우드
+  세션에서 돌았고 드라이버로 돈 카드가 없습니다.
+
+빼기 전 기준선은 로그가 있는 Mac 에서 센 값으로 채웠습니다. 뺀 뒤 줄은 드라이버로 카드가 돌아야 채워집니다.
 
 ## 뺀 것과 남긴 것
 
@@ -76,7 +82,33 @@ fix every input of that kind, and test each variant; do not fix only the quoted 
 
 회고에는 "2바퀴", "3회차" 같은 말이 있지만 산문이라서 장치의 하중을 재는 숫자로 쓰지 않았습니다.
 
-## 세는 방법
+## 커밋된 기록으로 세는 방법
+
+W-00000405 가 만들었습니다. 카드가 닫힐 때 `close_work.py` 가 그 자리의 작업 로그와 카드를 세어 카드에 한 줄을 남깁니다.
+줄의 모양과 칸마다 무엇을 세는지는 `stage/operations/review.md` 가 원본입니다.
+
+```
+- Load at close <날짜>: attempts <n>, review FAIL rounds <n>, repeated findings <n|unknown>, driver rounds <n>, driver failures <n> (timed out <n>)
+```
+
+표는 이 명령으로 냅니다. 로그가 없는 클라우드 세션에서도 같은 값이 나옵니다.
+
+```bash
+python3 stage/scripts/work_load.py --project-root . W-00000406 W-00000401 W-00000400
+python3 stage/scripts/work_load.py --project-root . --closed-since 2026-11-23
+```
+
+| 칸 | 한계 |
+|---|---|
+| `attempts` | 작업 로그의 실행자 보고 수와 "리뷰 FAIL 바퀴 + 1" 가운데 큰 값입니다. 클라우드에서 닫는 자리의 로그에 보고가 하나뿐이면 리뷰 없이 다시 한 시도는 세지 못합니다 |
+| `review FAIL rounds` | 카드에 남은 `rejected` 줄과 로그의 처리 목록 가운데 큰 값입니다. 클라우드에서는 거절 줄을 브랜치에 커밋해 두어야 남습니다(`cloud-execution.md` 에 그 단계를 넣었습니다) |
+| `repeated findings` | 로그에 바퀴마다의 처리 목록이 다 있어야 셉니다. 없으면 `unknown` 입니다. 클라우드 흐름에서는 거의 `unknown` 이 됩니다 |
+| `driver rounds` | 0 이면 드라이버로 돌지 않은 카드입니다. 시간 제한 표의 표본은 이 값이 1 이상인 카드뿐입니다 |
+| `driver failures`, `timed out` | 닫는 기기의 로그에 있는 것만 셉니다. 실패 사유는 줄 아래에 한 줄씩 남습니다 |
+
+이 줄이 생기기 전에 닫힌 카드는 `rejected` 줄 수만 나오고 나머지 칸은 `not recorded` 입니다.
+
+## 로그로 세는 방법
 
 공유 작업 로그가 있는 기기에서 카드마다 다음을 셉니다. 로그 파일은 `.stage/.runtime/driver/logs/<W-id>.md` 입니다.
 
@@ -100,7 +132,7 @@ fix every input of that kind, and test each variant; do not fix only the quoted 
 | | 카드 수 | 시간 초과 | 그 밖의 드라이버 실패 | 재시도 | 리뷰 FAIL 바퀴 | 같은 지적이 다시 나온 바퀴 |
 |---|---|---|---|---|---|---|
 | 빼기 전 | 101 | 3번 (장당 0.03, 3장 3%) | 53번 (장당 0.52, 30장 30%) | 64번 (장당 0.63, 37장 37%) | 29번 (장당 0.29, 19장 19%) | 5번 (장당 0.05, 5장 5%) |
-| 뺀 뒤 | 0 | — | — | — | — | — |
+| 뺀 뒤, 드라이버로 돈 카드 | 0 | — | — | — | — | — |
 
 빼기 전 줄은 Mac 의 `.stage/.runtime/driver/logs/` 에 있는 로그 101개(W-00000096 ~ W-00000373)를 센 값입니다.
 칸마다 합계, 카드 한 장당 평균, 한 번이라도 있었던 카드의 수와 비율을 적었습니다.
@@ -109,6 +141,24 @@ fix every input of that kind, and test each variant; do not fix only the quoted 
 - 같은 지적이 다시 나온 카드는 W-00000107, W-00000166, W-00000193, W-00000209, W-00000226 입니다.
 - 101장 가운데 20장은 로그에 `### Executor report` 가 없습니다. 이 카드들의 재시도는 0으로 세었습니다.
 - 로그 수(101)는 보관된 카드가 로그 경로를 적은 수(89)보다 많습니다. 차이 12장이 어떤 카드인지는 확인하지 않았습니다.
+
+### W-00000403 뒤에 닫힌 카드
+
+2026-11-23, `python3 stage/scripts/work_load.py --project-root . W-00000406 W-00000401 W-00000400` 의 출력입니다.
+닫힌 순서는 W-00000406, W-00000401, W-00000400 이고 셋 다 `environment: cloud` 입니다.
+
+| Card | Closed | Attempts | Review FAIL rounds | Repeated findings | Driver rounds | Driver failures | Timed out |
+|---|---|---|---|---|---|---|---|
+| W-00000400 | 2026-11-23 | not recorded | 0 | not recorded | not recorded | not recorded | not recorded |
+| W-00000401 | 2026-11-23 | not recorded | 0 | not recorded | not recorded | not recorded | not recorded |
+| W-00000406 | 2026-11-23 | not recorded | 0 | not recorded | not recorded | not recorded | not recorded |
+| Total (3 cards) |  | not recorded | 0 (3) | not recorded | not recorded | not recorded | not recorded |
+
+- 세 장은 `- Load at close` 줄이 생기기 전에 닫혔습니다. 커밋된 기록에서 나오는 값은 닫기 리뷰가 되돌려 보낸 횟수(0)뿐입니다.
+  시도 수와 드라이버 칸은 기록이 없어서 비어 있고, 0 이라는 뜻이 아닙니다.
+- 이 값은 닫는 자리에서 거절 줄이 카드에 남았을 때만 맞습니다. 작업 세션에 리뷰 결과를 돌려보내고 워크트리를 버린 경우는
+  이 표에 나오지 않습니다.
+- W-00000405 와 그 뒤에 닫히는 카드부터 모든 칸이 채워집니다. 같은 명령을 다시 실행해 이 표를 갈아 끼웁니다.
 
 ## 이 비교로 말할 수 없는 것
 

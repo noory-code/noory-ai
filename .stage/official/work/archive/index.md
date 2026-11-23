@@ -334,3 +334,4 @@
 | W-00000401 | completed | [items/W-00000401/_story.md](items/W-00000401/_story.md) |
 | W-00000400 | completed | [items/W-00000400/_story.md](items/W-00000400/_story.md) |
 | W-00000406 | completed | [items/W-00000406/_story.md](items/W-00000406/_story.md) |
+| W-00000405 | completed | [items/W-00000405/_story.md](items/W-00000405/_story.md) |

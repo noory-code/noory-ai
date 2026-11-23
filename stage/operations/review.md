@@ -101,14 +101,30 @@ fails, and a missing or malformed verdict leave the card unchanged.
   file name of the `STAGE_CODEX_COMPANION` override when that replaced a `codex`
   label, or `reviewer` when the command names none. Counting the `rejected` lines of
   archived cards gives the number of reviews at close that sent work back.
+- `## Verification` gains the card's load, counted by `scripts/work_load.py` from the work log
+  and the card as they stand at close:
+  `- Load at close <date>: attempts <n>, review FAIL rounds <n>, repeated findings <n|unknown>, driver rounds <n>, driver failures <n> (timed out <n>)`,
+  followed by one `  - Driver failure: <role> — <reason>` line per driver failure.
+
+  | Count | Counted from |
+  |---|---|
+  | `review FAIL rounds` | the larger of: executor reports in the work log with a non-empty `Review dispositions (JSON):`; `rejected` review lines already on the card |
+  | `attempts` | the larger of: `### Executor report` sections in the work log; `review FAIL rounds` + 1 |
+  | `repeated findings` | adjacent answered rounds in the work log that share a `finding`; `unknown` when the work log holds fewer answered rounds than `review FAIL rounds` |
+  | `driver rounds` | `### Driver commands` sections in the work log; `0` means no driver ran the card from this checkout |
+  | `driver failures` | `### Driver failure` sections in the work log; `timed out` counts those whose `Reason:` contains `timed out` |
+
+  `python3 stage/scripts/work_load.py --project-root . --closed-since <YYYY-MM-DD>` prints these
+  counts for closed cards as a Markdown table with a totals row. A card closed before this line
+  existed shows its `rejected` review lines and `not recorded` in the other columns.
 - The reviewer's reasons and report are not copied onto the card. They stay in the
   work log (`.stage/.runtime/driver/logs/<work-id>.md`), which is not committed.
 - Reviews that the drivers run between rounds are recorded in the work log only.
 
-The executor report lines and the criteria live on the card because the work
-log and the verdict file sit under `.stage/.runtime/`, which is not committed.
-The card is the only durable record of what the executor decided and what the
-passing review checked.
+The executor report lines, the criteria, and the load counts live on the card because
+the work log and the verdict file sit under `.stage/.runtime/`, which is not committed.
+The card is the only durable record of what the executor decided, what the
+passing review checked, and what the card took to land.
 
 ## Cross-venue review
 
