@@ -338,3 +338,4 @@
 | W-00000408 | completed | [items/W-00000408/_story.md](items/W-00000408/_story.md) | 닫기 리뷰어가 실행해서 판정하고 판정 방법이 카드에 남는다 |
 | W-00000409 | completed | [items/W-00000409/_story.md](items/W-00000409/_story.md) | 세션의 맨 위 층이 기록에서 만든 색인을 싣는다 |
 | W-00000410 | completed | [items/W-00000410/_story.md](items/W-00000410/_story.md) | 지난 카드들의 보고에 남은 작은 고침 넷을 넣는다 |
+| W-00000415 | completed | [items/W-00000415/_story.md](items/W-00000415/_story.md) | 쌓인 규칙 후보를 처음으로 한 목록에 묶는다 |
