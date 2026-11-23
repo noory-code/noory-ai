@@ -91,3 +91,20 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 - 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 카드를 시작했다. 성공 기준은 Python 3.14 만 있는 한국어 Windows 에서만 볼 수 있다. 사용자가 기계 확인을 기다리지 말고 진행하라고 했으므로("맥 윈도우즈 상관하지 말고 하세요") 고침을 만들어 병합하고, 그 확인은 O-00000062 에 올린다. 클라우드에서 볼 수 있는 것(잠금 파일에 3.14 용 wheel 이 있는지, Linux 에서 시험이 도는지)까지 본다.
 
 ## Verification
+
+2026-11-23 한국어 Windows 11(cp949) 세션이 `66b53229` 에서 확인했다. 이 기기는 ARM64 이고, 깔린 Python 은
+x86_64 3.14.10 하나이며, uv 는 0.13.9 의 `aarch64-pc-windows-msvc` 빌드다.
+
+- 성공 기준 1 은 이 기기에서 명령을 그대로 실행하면 통과하지 않는다. 원인은 kuzu 가 아니다.
+  - 명령을 그대로 실행하면 uv 가 `Missing expected target directory for Python minor version link` 로 멈춘다. 이
+    기기에서 uv 가 관리하는 Python 의 링크가 깨져 있기 때문이고, 카드가 범위 밖으로 둔 문제다.
+  - `UV_PYTHON_INSTALL_DIR` 을 빈 폴더로 지정해 uv 가 Python 을 새로 받게 했다. uv 는 3.14 를 고르지 않고
+    `cpython-3.13.18-windows-aarch64-none` 을 내려받았다. kuzu 를 소스에서 빌드하려 하지 않았다. 그 뒤
+    `sqlite-vec==0.1.9` 에 `win_arm64` wheel 이 없어서 설치가 멈췄다. Windows wheel 은 `win_amd64` 뿐이다.
+  - 같은 조건에서 `uv run --python cpython-3.13-windows-x86_64-none --extra dev pytest -q -m "not slow"` 로 x86_64
+    Python 을 지정하면 uv 가 그 Python 을 내려받고 kuzu wheel 을 설치한다. 121개가 통과했다(13개는 `slow` 라서
+    고르지 않았다).
+- x86_64 Windows 에서 명령을 그대로 실행하면 통과하는지는 확인하지 않았다. 이 세션에는 x86_64 Windows 기기가 없다.
+- 성공 기준 2(맥북)는 이 세션이 볼 수 없다.
+- Follow-up candidate: ARM64 Windows 에서는 uv 가 ARM64 Python 을 골라 `sqlite-vec` 와 kuzu 의 wheel 을 찾지 못한다.
+  ARM64 Windows 를 지원할지, 지원하지 않는다면 x86_64 Python 을 쓰라고 안내할지 정해야 한다.
