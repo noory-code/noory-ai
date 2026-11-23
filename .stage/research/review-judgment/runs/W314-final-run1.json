@@ -1,0 +1,50 @@
+{
+  "case": "W314-final",
+  "card": "W-00000314",
+  "version": "final",
+  "commit": "46092f48",
+  "report_commit": "46092f48",
+  "run": 1,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 5,
+  "seconds": 46,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "제목 줄에만 번호가 있는 기록(작업 트리와 다른 브랜치 모두)의 번호를 도구가 세어, 그보다 큰 번호를 다음 번호로 알린다는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "Ran the new tests against the pre-change stage_record_ids.py (HEAD~1) copied to temp: the heading-only tests fail; reverting only the branch git-grep pattern makes test_counts_records_that_name_their_id_only_in_the_heading fail with KeyError 6, so both checkout and other-branch heading-only proposals are tested (next P-00000007); on the real repo P went from P-00000002 to P-00000006."
+      },
+      {
+        "criterion": "frontmatter id 로 세던 기존 접두사의 결과는 그대로라는 것을 테스트가 확인한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "The commit only adds tests, so the existing frontmatter tests for W, DE and O (checkout, local and remote branches, templates, runtime skip, CLI) are unchanged and all 6 tests pass; running old vs new tool on this repo for DE, M, O, Q, R, TH and W gave identical next ids, and only P changed."
+      }
+    ],
+    "approved": true
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I approved W-00000314: both success criteria pass. This was a full review, because no earlier failed verdict was set, so I judged every criterion.\n\n**Criterion 1: records with the id only in the title heading are counted, in the checkout and on other branches — PASS (ran).**\n- All 6 tests pass.\n- I ran the new tests against the code from before the fix. The two new tests failed.\n- I then undid only the branch-side search pattern. The heading-only test failed because the side branch's P-00000006 was no longer found. So the checkout case and the other-branch case are each tested.\n- On this repo, the tool's next P id went from P-00000002 to P-00000006, which is past the archived proposals P-00000001 to P-00000004.\n\n**Criterion 2: results for prefixes counted from the frontmatter `id:` line are unchanged — PASS (ran).**\n- The commit only adds tests, so the existing W, DE and O tests are unchanged, and they still pass.\n- I ran the old and new tool on this repo for DE, M, O, Q, R, TH and W, and each gave the same next id. Only P changed.\n\n**Reporting contract: followed.**\n- \"Decisions made\" gives each choice with a reason, and states \"out-of-scope paths changed: none\".\n- The 5 changed paths are exactly the card's scope list.\n- \"Work not done: None\" is consistent with what I found.\n\nOne small thing that doesn't affect the verdict: the new CHANGELOG line has no blank line before the `## 0.64.0` heading.\n\nI changed no other file in the repository. My scratch copies are in the session scratchpad.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1; cat repo/.stage/work/current/W-00000314/_story.md; echo ----; cat review-input/changed-paths.json; echo ----; ls review-input; ls repo/.stage/work/current/W-00000314/",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1/repo; cat .stage/.runtime/driver/logs/W-00000314.md; echo ----; git status --short; git log --oneline -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1/repo; git show --stat HEAD; git show HEAD -- stage/scripts/stage_record_ids.py stage/CHANGELOG.md .stage/state; cat stage/scripts/stage_record_ids.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1/repo; git show HEAD -- stage/scripts/tests/test_stage_record_ids.py; cat stage/scripts/tests/test_stage_record_ids.py | head -120",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1/repo; python3 -m unittest discover -s stage/scripts/tests -p test_stage_record_ids.py -v 2>&1 | tail -12\nS=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W314-final-run1-repo/2f2553fd-e77c-4b7f-9579-9bfdaeae31ec/scratchpad\nrm -rf $S/old && mkdir -p $S/old/stage/scripts/tests $S/old/stage/hooks\ngit show HEAD~1:stage/scripts/stage_record_ids.py > $S/old/stage/scripts/stage_record_ids.py\ncp stage/hooks/stage_record_paths.py $S/old/stage/hooks/\ncp stage/scripts/tests/test_stage_record_ids.py $S/old/stage/scripts/tests/\necho \"== new tests vs OLD code ==\"; python3 -m unittest discover -s $S/old/stage/scripts/tests -p test_stage_record_ids.py 2>&1 | grep -E \"^(FAIL|ERROR|OK|FAILED|Ran)\"\necho \"== real repo old vs new ==\"; for p in DE M O P Q R TH W; do echo \"$p old=$(python3 $S/old/stage/scripts/stage_record_ids.py --project-root . $p) new=$(python3 stage/scripts/stage_record_ids.py --project-root . $p)\"; done\ngit status --short",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W314-final-run1/repo\nS=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W314-final-run1-repo/2f2553fd-e77c-4b7f-9579-9bfdaeae31ec/scratchpad\nrm -rf $S/mut && mkdir -p $S/mut/stage/scripts/tests $S/mut/stage/hooks\nsed 's/rf\"^(id:\\[\\[:space:\\]\\]\\*|#\\[\\[:space:\\]\\]+){prefix}/rf\"^id:[[:space:]]*{prefix}/' stage/scripts/stage_record_ids.py > $S/mut/stage/scripts/stage_record_ids.py\ngrep -n 'space' $S/mut/stage/scripts/stage_record_ids.py\ncp stage/hooks/stage_record_paths.py $S/mut/stage/hooks/; cp stage/scripts/tests/test_stage_record_ids.py $S/mut/stage/scripts/tests/\npython3 -m unittest discover -s $S/mut/stage/scripts/tests -p test_stage_record_ids.py 2>&1 | grep -E \"^(FAIL|ERROR|OK|FAILED|KeyError)\"; git status --short"
+  ],
+  "tokens": {
+    "input": 16,
+    "cache_creation": 26115,
+    "cache_read": 348225,
+    "output": 4197
+  }
+}

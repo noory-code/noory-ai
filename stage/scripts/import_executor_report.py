@@ -15,6 +15,11 @@ Usage:
 Pass --commit once per attempt when a card took several: the report is read from the
 last commit and checked against every path those commits changed, because the
 contract's Changed paths (JSON) covers all attempts.
+
+The imported report ends with one line the importer adds, `Attempt commits: <n> (<sha>, ...)`:
+how many distinct commits were passed and which. A squashed card keeps one report however
+many attempts it took, and the work log is not committed, so `work_load.py` counts the card's
+attempts from this line and `close_work.py` writes the count onto the card.
 """
 
 from __future__ import annotations
@@ -60,6 +65,9 @@ LABEL_RE = re.compile(
     r"^(" + "|".join(re.escape(label) for label in REPORT_LABELS) + r"):[ \t]*(.*?)[ \t]*$"
 )
 TRAILER_RE = re.compile(r"^[A-Za-z][A-Za-z0-9-]*:[ \t]")
+# The importer's own line under a report; `work_load.ATTEMPT_COMMITS_RE` reads it back.
+ATTEMPT_COMMITS_LABEL = "Attempt commits"
+SHORT_SHA_CHARS = 12
 
 
 def git(project_root: Path, *args: str) -> bytes:
@@ -108,10 +116,24 @@ def render_report(fields: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def attempt_commits_line(project_root: Path, revisions: list[str]) -> str:
+    """`Attempt commits: <n> (<sha>, ...)` for the distinct commits `revisions` name, in order."""
+
+    commits = []
+    for revision in revisions:
+        resolved = os.fsdecode(
+            git(project_root, "rev-parse", "--verify", f"{revision}^{{commit}}")
+        ).strip()
+        if resolved not in commits:
+            commits.append(resolved)
+    listed = ", ".join(commit[:SHORT_SHA_CHARS] for commit in commits)
+    return f"{ATTEMPT_COMMITS_LABEL}: {len(commits)} ({listed})\n"
+
+
 def import_report(project_root: Path, item_id: str, revisions: list[str]) -> Path:
     stage_root = project_root / ".stage"
     message = os.fsdecode(git(project_root, "log", "-1", "--format=%B", revisions[-1]))
-    report = render_report(parse_report(message))
+    report = render_report(parse_report(message)) + attempt_commits_line(project_root, revisions)
     observed = sorted(
         {
             os.fsdecode(path)

@@ -1,0 +1,203 @@
+{
+ "cases": [
+  {
+   "id": "W382-defective",
+   "card": "W-00000382",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "af0af805",
+   "card_path": ".stage/work/current/W-00000382/_story.md",
+   "defect": "report",
+   "source": "W-00000382 ## Verification: Review at close rejected (3 FAIL)"
+  },
+  {
+   "id": "W382-final",
+   "card": "W-00000382",
+   "version": "final",
+   "expected": "approved",
+   "commit": "743096fb",
+   "card_path": ".stage/work/current/W-00000382/_story.md",
+   "report_commit": "dc2abaf1",
+   "path_commits": [
+    "af0af805"
+   ]
+  },
+  {
+   "id": "W410-defective",
+   "card": "W-00000410",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "2d0f56fe",
+   "card_path": ".stage/work/current/W-00000410/_story.md",
+   "defect": "criterion 2",
+   "source": "W-00000410 ## Verification: Review at close rejected (2 FAIL read)"
+  },
+  {
+   "id": "W410-final",
+   "card": "W-00000410",
+   "version": "final",
+   "expected": "approved",
+   "commit": "21c24923",
+   "card_path": ".stage/work/current/W-00000410/_story.md"
+  },
+  {
+   "id": "W300r1-defective",
+   "card": "W-00000300",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "ccbd6903",
+   "card_path": ".stage/work/current/W-00000300/_story.md",
+   "defect": "criterion 1",
+   "source": "W-00000300 ## Verification; R-00000300"
+  },
+  {
+   "id": "W300r2-defective",
+   "card": "W-00000300",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "99555d02",
+   "card_path": ".stage/work/current/W-00000300/_story.md",
+   "path_commits": [
+    "ccbd6903",
+    "99555d02"
+   ],
+   "defect": "report",
+   "source": "W-00000300 ## Verification; R-00000300"
+  },
+  {
+   "id": "W300r3-defective",
+   "card": "W-00000300",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "03e74e1c",
+   "card_path": ".stage/work/current/W-00000300/_story.md",
+   "path_commits": [
+    "ccbd6903",
+    "99555d02"
+   ],
+   "defect": "criterion 1",
+   "source": "W-00000300 ## Verification; R-00000300"
+  },
+  {
+   "id": "W300-final",
+   "card": "W-00000300",
+   "version": "final",
+   "expected": "approved",
+   "commit": "5d1c05a1",
+   "card_path": ".stage/work/current/W-00000300/_story.md",
+   "path_commits": [
+    "ccbd6903",
+    "99555d02",
+    "5d1c05a1"
+   ]
+  },
+  {
+   "id": "W311-defective",
+   "card": "W-00000311",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "84894387",
+   "card_path": ".stage/work/current/W-00000311/_story.md",
+   "defect": "criterion 2",
+   "source": "R-00000311"
+  },
+  {
+   "id": "W311-final",
+   "card": "W-00000311",
+   "version": "final",
+   "expected": "approved",
+   "commit": "b05185fe",
+   "card_path": ".stage/work/current/W-00000311/_story.md",
+   "path_commits": [
+    "84894387",
+    "b05185fe"
+   ]
+  },
+  {
+   "id": "W324-defective",
+   "card": "W-00000324",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "cdd7d0c3",
+   "card_path": ".stage/work/current/W-00000324/_story.md",
+   "defect": "criterion 3",
+   "source": "W-00000324 ## Verification"
+  },
+  {
+   "id": "W295-defective",
+   "card": "W-00000295",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "639f2b6b",
+   "card_path": ".stage/work/current/W-00000295/_story.md",
+   "defect": "criterion 1",
+   "source": "W-00000299 table row for W-00000295; W-00000309"
+  },
+  {
+   "id": "W309-final",
+   "card": "W-00000309",
+   "version": "final",
+   "expected": "approved",
+   "commit": "6a5b050d",
+   "card_path": ".stage/work/current/W-00000309/_story.md",
+   "fixes": "W295-defective"
+  },
+  {
+   "id": "W332-defective",
+   "card": "W-00000332",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "c442f444",
+   "card_path": ".stage/work/current/W-00000332/_story.md",
+   "defect": "criterion 1",
+   "source": "O-00000057; W-00000335"
+  },
+  {
+   "id": "W335-final",
+   "card": "W-00000335",
+   "version": "final",
+   "expected": "approved",
+   "commit": "ce81f2b5",
+   "card_path": ".stage/work/current/W-00000335/_story.md",
+   "fixes": "W332-defective"
+  },
+  {
+   "id": "W291-defective",
+   "card": "W-00000291",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "87726a00",
+   "card_path": ".stage/work/current/W-00000291/_story.md",
+   "defect": "criterion 2",
+   "source": "O-00000056; R-00000314"
+  },
+  {
+   "id": "W314-final",
+   "card": "W-00000314",
+   "version": "final",
+   "expected": "approved",
+   "commit": "46092f48",
+   "card_path": ".stage/work/current/W-00000314/_story.md",
+   "fixes": "W291-defective"
+  },
+  {
+   "id": "W392-defective",
+   "card": "W-00000392",
+   "version": "defective",
+   "expected": "rejected",
+   "commit": "17063278",
+   "card_path": ".stage/work/current/W-00000392/_story.md",
+   "defect": "criterion 1",
+   "source": "R-00000393; W-00000393"
+  },
+  {
+   "id": "W393-final",
+   "card": "W-00000393",
+   "version": "final",
+   "expected": "approved",
+   "commit": "e463dc97",
+   "card_path": ".stage/work/current/W-00000393/_story.md",
+   "fixes": "W392-defective"
+  }
+ ]
+}

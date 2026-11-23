@@ -1,0 +1,52 @@
+{
+  "case": "W392-defective",
+  "card": "W-00000392",
+  "version": "defective",
+  "commit": "17063278",
+  "report_commit": "17063278",
+  "run": 2,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 4,
+  "seconds": 67,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "release_plugin.py 의 점검이 각 릴리스 절을 그 릴리스 커밋이 쓴 내용과 비교해 더해진 줄을 출력하고 실패로 끝나는 시험이 있고 통과한다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "test_release_plugin.py (11 tests) and test_changelog_union.py (5 tests) pass, including tests asserting exit 1 and the listed line; independently ran `release_plugin.py stage --check-released` on the repo, which printed each gained line as '+ ...' under its heading with the release commit and exited 1."
+      },
+      {
+        "criterion": "끼어든 줄이 없으면 점검이 통과한다",
+        "verdict": "FAIL",
+        "method": "ran",
+        "reason": "Ran `release_plugin.py stage --check-released` on this repository: it exits 1 for 0.51.0, 0.49.0, 0.43.5 and 0.14.0, but those lines were added deliberately by ordinary non-merge commits (e.g. 97563cc4 'record the working-directory fix in the 0.51.0 entry', whose only parent is the release commit 6c1ed40c), not slipped in by a merge; for intentional post-release amendments to a released section the check fails with no slipped-in line, and the executor's Decisions made/Work not done (None) do not disclose that the shipped repository fails its own check."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I did not approve W-00000392: the first criterion passes and the second fails. The verdict is at `.stage/.runtime/driver/verdicts/W-00000392.json`. The task text had blanks where a previous round's failed criteria would be named, and I found no earlier verdict, so I judged every success criterion.\n\n**Criterion 1 (a test where the check lists the added lines and fails) — PASS (ran).** Both test files pass: 11 tests in `test_release_plugin.py` and 5 in `test_changelog_union.py`. I also ran `release_plugin.py stage --check-released` on the repository myself. It printed each added line under its release heading, named the release commit, and exited with 1.\n\n**Criterion 2 (the check passes when no line slipped in) — FAIL (ran).** On this repository the check exits with 1 and flags the 0.51.0, 0.49.0, 0.43.5 and 0.14.0 sections. Those lines did not slip in through a merge: ordinary commits added them deliberately after release. For example, commit `97563cc4`, \"record the working-directory fix in the 0.51.0 entry\", has the 0.51.0 release commit as its only parent. The check can't tell these intentional amendments from lines a merge slipped in, so the repository fails it even though nothing slipped in.\n\n**Reporting contract — not followed.** `Decisions made:` mentions only that edits to existing lines count as added lines. `Work not done:` says \"None\". Neither field says that the repository fails its own new check, or that deliberate amendments are reported as slipped-in lines. That gap goes beyond the card's purpose.\n\nI also tried to rebuild a small merge-then-amend scenario in a temp directory, but the permission prompt denied it twice. The verdict therefore rests on the run against the real repository and on its git history. No repository file other than the verdict was changed, and nothing was committed.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2; cat repo/.stage/work/current/W-00000392/_story.md; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000392.md; echo ----; cat review-input/changed-paths.json; ls review-input; ls repo/.stage/.runtime/driver/verdicts/ 2>&1",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo; git status --short; git log --oneline -5; git diff HEAD --stat; wc -l stage/scripts/release_plugin.py; grep -n \"check.released\\|check_released\\|def \" stage/scripts/release_plugin.py | head -60",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo; git show --stat HEAD; sed -n 1,62p stage/scripts/release_plugin.py; sed -n 320,515p stage/scripts/release_plugin.py",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo; python3 -m unittest discover -s stage/scripts/tests -p test_release_plugin.py 2>&1 | tail -3; python3 -m unittest discover -s stage/scripts/tests -p test_changelog_union.py 2>&1 | tail -3; python3 stage/scripts/release_plugin.py stage --check-released; echo rc=$?; git diff HEAD~1 -- stage/scripts/tests/ | head -250",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo; for c in fb80887997df c1093a428d0f ed02556bc71e 6c1ed40cb9a2; do echo \"=== $c\"; git log -1 --format='%h %p %s' $c; git show $c --stat --format= -- stage/CHANGELOG.md; git show $c --format= -U1 -- stage/CHANGELOG.md | head -30; done",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo; for s in \"New \\`stage-work\\` skill\" \"Join the audit command the way\" \"Recognize executor and reviewer report markers\" \"Keep record path resolution independent\"; do echo \"=== $s\"; git log --format='%h %p | %s' -S\"$s\" -- stage/CHANGELOG.md | cat; done; git show HEAD -- stage/CHANGELOG.md",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W392-defective-run2-repo/5c2bd5bd-852c-40c9-934e-b4dd534a60fc/scratchpad; R=$S/r1; rm -rf $R; mkdir -p $R/stage; cd $R; export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t\nP=/tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo/stage/scripts/release_plugin.py\ngit init -q -b main; printf '# C\\n\\n## Unreleased\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git add -A; git commit -qm base\ngit checkout -qb card; printf '# C\\n\\n## Unreleased\\n\\n- a\\n- card\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam card\ngit checkout -q main; printf '# C\\n\\n## Unreleased\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam release\ngit merge -q --no-edit card; cat stage/CHANGELOG.md; python3 $P stage --check-released --repository-root $R; echo rc=$?\n# repair & then deliberate amendment by direct commit\nprintf '# C\\n\\n## Unreleased\\n\\n- card\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam repair; python3 $P stage --check-released --repository-root $R; echo rc=$?\nprintf '# C\\n\\n## Unreleased\\n\\n- card\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n- (note: a also fixed b)\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam \"docs: amend 0.2.0 notes\"; python3 $P stage --check-released --repository-root $R; echo rc=$?",
+    "R=$(mktemp -d); mkdir -p $R/stage; cd $R; export GIT_CONFIG_GLOBAL=/dev/null GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@t\nP=/tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W392-defective-run2/repo/stage/scripts/release_plugin.py\ngit init -q -b main; printf '# C\\n\\n## Unreleased\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git add -A; git commit -qm base\ngit checkout -qb card; printf '# C\\n\\n## Unreleased\\n\\n- a\\n- card\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam card\ngit checkout -q main; printf '# C\\n\\n## Unreleased\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam release\ngit merge -q --no-edit card; cat stage/CHANGELOG.md; python3 $P stage --check-released --repository-root $R; echo rc=$?\nprintf '# C\\n\\n## Unreleased\\n\\n- card\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam repair; python3 $P stage --check-released --repository-root $R; echo rc=$?\nprintf '# C\\n\\n## Unreleased\\n\\n- card\\n\\n## 0.2.0 — 2026-02-01\\n\\n- a\\n- (note: a also fixed b)\\n\\n## 0.1.0 — 2026-01-01\\n\\n- old\\n' > stage/CHANGELOG.md; git commit -qam \"docs: amend 0.2.0 notes\"; python3 $P stage --check-released --repository-root $R; echo rc=$?; echo $R"
+  ],
+  "tokens": {
+    "input": 20,
+    "cache_creation": 32910,
+    "cache_read": 469949,
+    "output": 6672
+  }
+}

@@ -21,6 +21,12 @@ Usage:
         --check "python3 -m unittest discover -s stage/hooks/tests -q" \
         --check "python3 stage/scripts/audit_stage.py" \
         [--promotion <final-choice>] [--timeout 900] [--review-timeout 3600] [--archive]
+        [--review-commit <rev>]...
+
+A review at close reads the paths of the HEAD commit. `--review-commit` (repeatable) names
+the commits whose paths it reads instead, for a card whose code is not in HEAD (O-00000058).
+The output of the checks reaches the reviewer as a `### Checks at close` section of the work
+log (`review_material.py`).
 
 `--archive` archives the closed top-level item in the same command. Without it the
 completed card waits in `work/current/`, which the drivers rely on: their landing
@@ -76,6 +82,7 @@ from driver_environment import (  # noqa: E402
 )
 from driver_model_fallback import run_with_model_fallbacks  # noqa: E402
 import audit_stage  # noqa: E402
+import review_material  # noqa: E402
 import work_load  # noqa: E402
 import refresh_decision_index  # noqa: E402
 
@@ -782,28 +789,7 @@ def run_check(
 
 
 def committed_paths_in_head(project_root: Path, timeout: int) -> list[str]:
-    command = [
-        "git",
-        "show",
-        "--format=",
-        "--name-only",
-        "--no-renames",
-        "-z",
-        "HEAD",
-    ]
-    try:
-        proc = subprocess.run(
-            command,
-            capture_output=True,
-            timeout=timeout,
-            cwd=str(project_root),
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RuntimeError(f"cannot list paths in HEAD commit: {exc}") from exc
-    if proc.returncode != 0:
-        detail = os.fsdecode(proc.stderr).strip() or f"git exited {proc.returncode}"
-        raise RuntimeError(f"cannot list paths in HEAD commit: {detail}")
-    return sorted({os.fsdecode(raw_path) for raw_path in proc.stdout.split(b"\0") if raw_path})
+    return review_material.committed_paths(project_root, ["HEAD"], timeout)
 
 
 def close_review_environment(
@@ -812,8 +798,20 @@ def close_review_environment(
     item_id: str,
     changed_paths_file: Path,
     timeout: int,
+    review_commits: list[str] | None = None,
 ) -> dict[str, str]:
-    paths = committed_paths_in_head(project_root, timeout)
+    """The environment of one review at close; writes the path list the reviewer reads.
+
+    The list holds the paths of the HEAD commit, or of `review_commits` when given.
+    """
+
+    if review_commits:
+        paths = review_material.committed_paths(project_root, review_commits, timeout)
+    else:
+        paths = committed_paths_in_head(project_root, timeout)
+        warning = review_material.records_only_warning(paths)
+        if warning:
+            print(f"{item_id}: {warning}", file=sys.stderr)
     work_log = ensure_work_log(project_root / ".stage", item_id)
     verdict_file = review_verdict_path(project_root / ".stage", item_id)
     clear_review_verdict(verdict_file)
@@ -847,8 +845,15 @@ def run_close_review(
     command: str,
     timeout: int,
     review_timeout: int,
+    *,
+    review_commits: list[str] | None = None,
+    check_output: str = "",
 ) -> tuple[bool, str]:
     """Run one review at close and return whether it passed and, if not, why.
+
+    `review_commits` names the commits whose paths the reviewer reads (default: HEAD).
+    `check_output` is the `### Checks at close` section appended to the work log before
+    the review, so the reviewer sees what the checks printed.
 
     Raises RuntimeError when the review material or the repository snapshots
     cannot be prepared; a failed snapshot after the review removes the verdict.
@@ -861,6 +866,10 @@ def run_close_review(
             item_id,
             Path(review_tmp) / "changed-paths.json",
             timeout,
+            review_commits,
+        )
+        review_material.append_check_output(
+            Path(environment["STAGE_WORK_LOG_PATH"]), check_output
         )
         verdict_file = Path(environment["STAGE_REVIEW_VERDICT_FILE"])
         before = repository_path_snapshot(project_root)
@@ -922,6 +931,16 @@ def main() -> int:
         "--archive",
         action="store_true",
         help="After a successful close, archive this top-level item in the same command.",
+    )
+    parser.add_argument(
+        "--review-commit",
+        action="append",
+        default=[],
+        metavar="REV",
+        help=(
+            "A commit whose changed paths the review at close reads (repeatable). "
+            "Default: the HEAD commit."
+        ),
     )
     args = parser.parse_args()
 
@@ -1137,13 +1156,31 @@ def main() -> int:
         return 1
 
     project_root = stage_root.parent
+    review_expected = work_item.autonomous or (field(text, "review") or "not_required") == "pending"
+    if args.review_commit:
+        if not review_expected:
+            print(
+                f"{args.item}: --review-commit names what a review reads, and this card runs no "
+                "review at close (it is not autonomous and its `review` is not `pending`); "
+                "work item unchanged",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            # Fail before the checks run, not after them, when a revision does not resolve.
+            review_material.committed_paths(project_root, args.review_commit, args.timeout)
+        except RuntimeError as exc:
+            print(f"{args.item}: {exc}; work item unchanged", file=sys.stderr)
+            return 1
+    check_results: list[tuple[str, str]] = []
     for command in checks:
-        ok, block, _raw = run_check(
+        ok, block, raw = run_check(
             command, args.timeout, project_root, timeout_source="--timeout"
         )
         if not ok:
             print(f"{args.item}: check failed, nothing changed:\n{block}", file=sys.stderr)
             return 1
+        check_results.append((command, raw))
         if re.search(r"Ran 0 tests", block):
             print(f"{args.item}: WARNING a check reported 'Ran 0 tests' — it may verify nothing", file=sys.stderr)
 
@@ -1153,6 +1190,9 @@ def main() -> int:
     # and an approving reviewer-owned JSON verdict.
     review_passed = False
     reviewer = ""
+    check_output = review_material.check_output_section(
+        check_results, date.today().isoformat()
+    )
     if work_item.autonomous:
         review_command, review_error = resolve_independent_review_command(
             load_review_config(stage_root), work_item.venue
@@ -1179,6 +1219,8 @@ def main() -> int:
                 review_command,
                 args.timeout,
                 args.review_timeout,
+                review_commits=args.review_commit,
+                check_output=check_output,
             )
         except RuntimeError as exc:
             print(
@@ -1217,6 +1259,8 @@ def main() -> int:
                 review_command,
                 args.timeout,
                 args.review_timeout,
+                review_commits=args.review_commit,
+                check_output=check_output,
             )
         except RuntimeError as exc:
             print(

@@ -10,6 +10,7 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 CLI = SCRIPTS / "import_executor_report.py"
 sys.path.insert(0, str(SCRIPTS.parent / "skills" / "stage-retrospective"))
 import close_work  # noqa: E402
+import work_load  # noqa: E402
 
 LOG = Path(".stage/.runtime/driver/logs/W-00000001.md")
 
@@ -163,6 +164,35 @@ class ImportExecutorReportTest(unittest.TestCase):
         self.assertIn(f"from {first}, {second}", both.stdout)
         self.assertIn('Changed paths (JSON):\n["src/a.py", "src/b.py"]\n', log)
         self.assertEqual(1, log.count("### Executor report"))
+        # The squash keeps one report; the attempt count survives as the importer's line.
+        self.assertTrue(
+            log.endswith(
+                "Review request: judge both attempts\n"
+                f"Attempt commits: 2 ({first[:12]}, {second[:12]})\n"
+            ),
+            log[-200:],
+        )
+        self.assertEqual(2, work_load.count_load(log, "").attempts)
+
+    def test_one_commit_named_twice_is_one_attempt(self):
+        self.commit(WRAPPED_MESSAGE, "src/app.py", "src/settings.py")
+        head = self.head()
+
+        proc = self.run_cli("--commit", "HEAD", "--commit", head)
+        log = (self.root / LOG).read_text(encoding="utf-8")
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        self.assertTrue(log.endswith(f"Attempt commits: 1 ({head[:12]})\n"), log[-200:])
+        self.assertEqual(1, work_load.count_load(log, "").attempts)
+
+    def test_an_unknown_commit_is_refused_and_the_log_is_not_created(self):
+        self.commit(WRAPPED_MESSAGE, "src/app.py", "src/settings.py")
+
+        proc = self.run_cli("--commit", "no-such-revision", "--commit", "HEAD")
+
+        self.assertEqual(1, proc.returncode)
+        self.assertIn("work log unchanged", proc.stderr)
+        self.assertFalse((self.root / LOG).exists())
 
     def test_refuses_reports_that_fail_the_contract_and_leaves_the_log_alone(self):
         cases = {

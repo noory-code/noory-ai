@@ -290,9 +290,9 @@ def refresh_index(project_root: Path) -> bool:
     return True
 
 
-def main() -> int:
-    args = parse_args()
-    project_root = Path(args.project_root).expanduser().resolve()
+def main_for(project_root: Path) -> int:
+    """Refresh both decision indexes of one project, print a line for each; 0 when done."""
+
     try:
         changed = refresh_index(project_root)
     except (OSError, IndexFormatError) as exc:
@@ -308,6 +308,11 @@ def main() -> int:
     outcome = "refreshed" if changed else "already current"
     print(f"Official decision titles {outcome}: .stage/{OFFICIAL_INDEX_RELATIVE.as_posix()}")
     return 0
+
+
+def main() -> int:
+    args = parse_args()
+    return main_for(Path(args.project_root).expanduser().resolve())
 
 
 if __name__ == "__main__":

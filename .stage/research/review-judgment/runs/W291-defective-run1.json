@@ -1,0 +1,51 @@
+{
+  "case": "W291-defective",
+  "card": "W-00000291",
+  "version": "defective",
+  "commit": "87726a00",
+  "report_commit": "87726a00",
+  "run": 1,
+  "reviewer_checkout": "a79aef6435d90936947cc3bf80e3cb5d87866a2c",
+  "executor_report_in_log": true,
+  "changed_paths": 6,
+  "seconds": 54,
+  "exit_code": 0,
+  "timed_out": false,
+  "verdict_error": "",
+  "verdict": {
+    "criteria": [
+      {
+        "criterion": "다른 로컬 또는 원격 브랜치에 이미 있는 W 번호를 등록 도구가 고르지 않고, 그 번호를 직접 주면 거절한다는 것을 테스트가 확인한다",
+        "verdict": "FAIL",
+        "method": "ran",
+        "reason": "A probe script I wrote (reusing the test fixture with W-00000005 committed on origin/parallel) showed the current-card path refuses with 'id already used on branch origin/parallel', but for explicit --id with --backlog (planned-card inputs) it refuses with only 'id is already used' and no branch name, which the card's Actions require; test_explicit_id_used_on_another_branch_is_refused deliberately skips the branch assertion for planned, and the report's Work not done: None and Decisions made never disclose this narrowed scope (it says only 'naming the branch on the current-card path'), so the reporting contract was not followed."
+      },
+      {
+        "criterion": "결정과 관측 같은 다른 기록의 다음 번호를 브랜치를 넘어 알려 주는 도구가 있고, 결정 절차가 그 도구로 번호를 고르라고 적는다",
+        "verdict": "PASS",
+        "method": "ran",
+        "reason": "I committed DE-00000009 only on a separate branch x, returned to main, and ran stage/scripts/stage_record_ids.py --project-root <tmp> DE, which printed DE-00000010; read stage/skills/stage-decision/SKILL.md, which now tells authors to take the DE number from that helper; the helper is prefix-generic so it serves O as well."
+      }
+    ],
+    "approved": false
+  },
+  "tree_changed_by_review": false,
+  "tree_state_after": "",
+  "reviewer_output": "I did not approve W-00000291: one success criterion failed and one passed.\n\n**Criterion 1 (W numbers already on other branches): FAIL.** The tool does skip such numbers when picking one itself, and it refuses one given with `--id`. But the card also says the refusal must name the branch that holds the number, and only part of the code does that. I ran a probe with W-00000005 committed only on `origin/parallel`:\n- **Registering an active card:** refused with \"id already used on branch origin/parallel\", which meets the card.\n- **Registering a planned card (`--backlog`):** refused with only \"id is already used\", with no branch name.\n\nThe new test checks for the branch name only on the active-card path and skips it for planned cards.\n\n**Reporting contract: not followed.** The executor report says \"Work not done: None\". Its \"Decisions made\" never says that branch names were left out of the planned-card refusal. The only hint is the phrase \"naming the branch on the current-card path\" in \"What changed\". The executor narrowed the scope without saying so.\n\n**Criterion 2 (next-number helper and decision procedure): PASS.** I committed DE-00000009 only on a separate branch and went back to `main`. `stage_record_ids.py DE` returned DE-00000010. The helper works for any prefix, so it covers O numbers too. `stage-decision/SKILL.md` now tells authors to take DE numbers from it. The fetch-first advice in the skill doesn't conflict with the card's exclusions, because those only stop the tool itself from fetching.\n\nBoth of the card's own acceptance commands pass (4 and 47 tests). The verdict file is `.stage/.runtime/driver/verdicts/W-00000291.json`, with `approved: false`. No other repository file changed, and the probe script is in the scratchpad.\nPlugin \"plugin-dev\" is enabled in project settings but isn't installed — run `claude plugin install plugin-dev@claude-plugins-official --scope project`\n",
+  "transcript_found": true,
+  "shell_commands": [
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1; cat repo/.stage/work/current/W-00000291/_story.md; echo ----; cat repo/.stage/.runtime/driver/logs/W-00000291.md; echo ----; cat review-input/changed-paths.json; ls review-input; cd repo; git status --short; git log --oneline | head -5",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; git show --stat HEAD | cat; cat stage/scripts/stage_record_ids.py; git show HEAD -- stage/skills/stage-work/register_work.py stage/skills/stage-decision/SKILL.md stage/CHANGELOG.md | cat",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; sed -n 740,830p stage/skills/stage-work/register_work.py; git show HEAD -- stage/scripts/tests/test_register_work.py | cat",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; for p in test_stage_record_ids.py test_register_work.py; do python3 -m unittest discover -s stage/scripts/tests -p $p -q 2>&1 | tail -3; done; grep -n \"backlog\" stage/skills/stage-work/register_work.py | head -30; sed -n 1,80p stage/scripts/tests/test_register_work.py | grep -n \"def run\\|def make\\|def story_path\" ",
+    "cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; sed -n 352,445p stage/skills/stage-work/register_work.py",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W291-defective-run1-repo/0ef2a7ac-dfaf-4775-9766-dbdeebcfd861/scratchpad; mkdir -p $S; cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; cat > $S/probe.py <<'EOF'\nimport sys, subprocess, unittest\nsys.path.insert(0, \"stage/scripts/tests\")\nimport test_register_work as t\nclass P(t.RegisterWorkTest):\n    def test_probe(self):\n        for planned in (False, True):\n            tmp, root = self.make()\n            with tmp:\n                self.commit_card_on_other_branch(root, \"W-00000005\", \"refs/remotes/origin/parallel\")\n                # also a DE on another branch\n                extra = (\"--backlog\",) if planned else ()\n                p = t.run(root, \"--id\", \"W-00000005\", \"--title\", \"T\", \"--kind\", \"design\", \"--scope\", \"src\", *extra)\n                print(\"planned\" if planned else \"current\", p.returncode, repr(p.stderr.strip()))\n                d = root/\".stage/decisions/pending/DE-00000009.md\"; \n                subprocess.run([\"git\",\"checkout\",\"-q\",\"-b\",\"x\"],cwd=root,check=True)\n                d.parent.mkdir(parents=True,exist_ok=True); d.write_text(\"---\\nid: DE-00000009\\n---\\n\")\n                subprocess.run([\"git\",\"add\",\"-A\"],cwd=root,check=True)\n                subprocess.run([\"git\",\"-c\",\"user.name=a\",\"-c\",\"user.email=a@b.c\",\"commit\",\"-qm\",\"d\"],cwd=root,check=True)\n                subprocess.run([\"git\",\"checkout\",\"-q\",\"main\"],cwd=root,check=True)\n                o = subprocess.run([sys.executable, \"stage/scripts/stage_record_ids.py\",\"--project-root\",str(root),\"DE\"],capture_output=True,text=True)\n                print(\"DE next:\", o.stdout.strip(), o.stderr.strip())\nunittest.main(argv=[\"x\",\"P.test_probe\"])\nEOF\npython3 $S/probe.py 2>&1 | tail -8; git status --short",
+    "S=/tmp/claude-0/-tmp-claude-0--home-user-noory-ai-bed2d232-d55e-5f6f-824c-ac002e43cc50-scratchpad-w414-W291-defective-run1-repo/0ef2a7ac-dfaf-4775-9766-dbdeebcfd861/scratchpad; cd /tmp/claude-0/-home-user-noory-ai/bed2d232-d55e-5f6f-824c-ac002e43cc50/scratchpad/w414/W291-defective-run1/repo; python3 $S/probe.py 2>&1 | head -4"
+  ],
+  "tokens": {
+    "input": 18,
+    "cache_creation": 28512,
+    "cache_read": 421835,
+    "output": 4498
+  }
+}

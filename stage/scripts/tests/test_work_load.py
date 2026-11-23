@@ -152,6 +152,53 @@ class RecordLineTest(unittest.TestCase):
         self.assertIsNone(work_load.parse_load_record("- Checks at close 2026-11-23: 1 passed"))
 
 
+class ReviewMethodsTest(unittest.TestCase):
+    def test_the_last_review_line_gives_the_count_per_method(self):
+        card = (
+            "- Review at close 2026-11-23 by codex: rejected (1 PASS ran, 2 FAIL unable)\n"
+            "- Review at close 2026-11-24 by claude_review_companion: approved "
+            "(1 PASS ran, 2 PASS ran, 3 PASS read)\n"
+        )
+
+        self.assertEqual({"ran": 2, "read": 1, "unable": 0}, work_load.review_methods(card))
+
+    def test_a_rejecting_last_line_counts_unable(self):
+        card = "- Review at close 2026-11-23 by codex: rejected (1 FAIL unable, 2 FAIL read)\r\n"
+
+        self.assertEqual({"ran": 0, "read": 1, "unable": 1}, work_load.review_methods(card))
+
+    def test_a_line_from_before_methods_is_an_empty_count_and_no_line_is_none(self):
+        old = "- Review at close 2026-11-22 by codex: approved (1 PASS, 2 PASS)\n"
+
+        self.assertEqual({}, work_load.review_methods(old))
+        self.assertIsNone(work_load.review_methods("## Verification\n\nprose about a Review\n"))
+
+
+class ImportedAttemptsTest(unittest.TestCase):
+    def test_one_imported_report_that_names_three_commits_is_three_attempts(self):
+        log = report() + "Attempt commits: 3 (aaaaaaaaaaaa, bbbbbbbbbbbb, cccccccccccc)\n"
+
+        load = work_load.count_load(log, "## Verification\n")
+
+        self.assertEqual(3, load.attempts)
+        self.assertEqual(0, load.review_fail_rounds)
+        self.assertIn("attempts 3,", work_load.load_record_lines(load, "2026-11-24"))
+
+    def test_the_largest_of_reports_rejections_and_named_commits_is_taken(self):
+        two_reports = report() + "Attempt commits: 1 (aaaaaaaaaaaa)\n" + report()
+        rejected = "- Review at close 2026-11-23 by codex: rejected (1 FAIL read)\n" * 3
+
+        self.assertEqual(2, work_load.count_load(two_reports, "").attempts)
+        self.assertEqual(
+            4, work_load.count_load(report() + "Attempt commits: 2 (a, b)\n", rejected).attempts
+        )
+
+    def test_the_words_inside_a_report_field_are_not_the_importers_line(self):
+        log = report() + "Why: see Attempt commits: 9 in the other log\n"
+
+        self.assertEqual(1, work_load.count_load(log, "").attempts)
+
+
 class TableTest(unittest.TestCase):
     def make(self, cards: dict[str, str]) -> tuple[tempfile.TemporaryDirectory, Path]:
         tmp = tempfile.TemporaryDirectory()
@@ -193,8 +240,12 @@ class TableTest(unittest.TestCase):
                     "- Review at close 2026-11-23 by codex: approved (1 PASS)\n"
                 ),
                 "work/current/W-00000003": (
-                    f"- Checks at close 2026-11-24: 1 passed — `x`\n{recorded}\n"
+                    "- Review at close 2026-11-24 by codex: rejected (1 FAIL unable, 2 PASS read)\n"
+                    "- Checks at close 2026-11-24: 1 passed — `x`\n"
+                    "- Review at close 2026-11-24 by codex: approved "
+                    f"(1 PASS ran, 2 PASS read, 3 PASS ran)\n{recorded}\n"
                 ),
+                "work/current/W-00000005": "- Checks at close 2026-11-25: 1 passed — `x`\n",
                 "work/current/W-00000004": "Not closed yet.\n",
             }
         )
@@ -206,12 +257,16 @@ class TableTest(unittest.TestCase):
         self.assertEqual(
             [
                 "| W-00000002 | 2026-11-23 | not recorded | 1 | not recorded | not recorded "
-                "| not recorded | not recorded |",
-                "| W-00000003 | 2026-11-24 | 2 | 1 | 0 | 0 | 1 | 1 |",
-                "| Total (2 cards) |  | 2 (1) | 2 (2) | 0 (1) | 0 (1) | 1 (1) | 1 (1) |",
+                "| not recorded | not recorded | not recorded | not recorded | not recorded |",
+                "| W-00000003 | 2026-11-24 | 2 | 1 | 0 | 0 | 1 | 1 | 2 | 1 | 0 |",
+                "| W-00000005 | 2026-11-25 | not recorded | 0 | not recorded | not recorded "
+                "| not recorded | not recorded | no review | no review | no review |",
+                "| Total (3 cards) |  | 2 (1) | 2 (3) | 0 (1) | 0 (1) | 1 (1) | 1 (1) "
+                "| 2 (1) | 1 (1) | 0 (1) |",
             ],
             rows[2:],
         )
+        self.assertTrue(rows[0].endswith("| Timed out | Ran | Read | Unable |"))
 
     def test_named_cards_limit_the_table(self):
         tmp, root = self.make(
