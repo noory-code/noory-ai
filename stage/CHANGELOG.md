@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.68.0 — 2026-11-23
+
 - Close the gaps the first full conducting run filled by hand (W-00000406, O-00000061).
   `started_cards.py` now lists every open observation and, newest first, the sessions whose
   commits changed a card record, so a new orchestrator finds follow-up candidates and the earlier
