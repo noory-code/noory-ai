@@ -57,7 +57,7 @@ decision_refs:
 
 ## Next action
 
-Waiting on user: Windows 세션에서 저장소를 받아 Stage 0.68.0 으로 올린 뒤 훅이 실행되는지 확인한다. SessionStart 훅이
+Waiting on user: Windows 세션에서 저장소를 받아 Stage 0.69.0 으로 올린 뒤(0.68.0 다음에 0.69.0 이 릴리스됐다. Progress 를 본다) 훅이 실행되는지 확인한다. SessionStart 훅이
 Stage 컨텍스트를 넣는지, PreToolUse 훅이 `.stage` 를 언급하는 `python -c` 명령을 거부하는지 본다. 확인되면
 이 카드를 닫는다.
 

@@ -2,14 +2,20 @@
 id: W-00000407
 title: Python 3.14 만 있는 기기에서 rag 서버가 설치되게 한다
 kind: fix
-venue:
+venue: claude
+environment: cloud
 milestone:
-status: captured
-priority:
 autonomous: false
 acceptance: []
-review: not_required
+status: active
+verification: pending
+retrospective: pending
+retrospective_ref:
+promotion: pending
+review: pending
 scope: rag/server/pyproject.toml,rag/server/uv.lock,rag/CHANGELOG.md
+promotes:
+decision_refs:
 ---
 
 # W-00000407 Python 3.14 만 있는 기기에서 rag 서버가 설치되게 한다
@@ -67,3 +73,13 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 Windows 기기가 없어도 고칠 수 있다. 맥북이나 클라우드 세션이 카드를 시작해 고치고, 첫째 성공 기준은 Windows
 세션이 확인한다(`.stage/operations/verification.md` 의 "Windows 동작 확인").
+
+## Related truth
+
+## Sessions
+
+## Progress
+
+- 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 카드를 시작했다. 성공 기준은 Python 3.14 만 있는 한국어 Windows 에서만 볼 수 있다. 사용자가 기계 확인을 기다리지 말고 진행하라고 했으므로("맥 윈도우즈 상관하지 말고 하세요") 고침을 만들어 병합하고, 그 확인은 O-00000062 에 올린다. 클라우드에서 볼 수 있는 것(잠금 파일에 3.14 용 wheel 이 있는지, Linux 에서 시험이 도는지)까지 본다.
+
+## Verification
