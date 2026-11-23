@@ -11,8 +11,8 @@ acceptance:
   - "python3 -m unittest discover -s stage/hooks/tests -q"
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000410
 promotion: pending
 review: pending
 scope: stage/scripts,stage/hooks,stage/skills,.github/workflows/stage.yml,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md
@@ -55,7 +55,7 @@ decision_refs:
 
 ## Next action
 
-작업 세션 session_018VXR6QTeKjAAj8MoTZaY5B 의 보고를 받아 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+작업 세션이 둘째 기준의 고침을 보고하면 가져와 닫기 리뷰를 다시 돌린다.
 
 
 ## Related truth
@@ -66,7 +66,7 @@ decision_refs:
 
 ## Sessions
 
-- session_018VXR6QTeKjAAj8MoTZaY5B — work — 2026-11-23 — opened from the index: not reported yet
+- session_018VXR6QTeKjAAj8MoTZaY5B — work — 2026-11-23 — opened from the index: O-00000061
 
 
 ## Progress
@@ -74,4 +74,15 @@ decision_refs:
 - 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 340510d1 에서 카드를 등록해 시작하고 작업 세션 session_018VXR6QTeKjAAj8MoTZaY5B (`claude/w410-small-fixes`)를 띄웠다. 브리핑이 색인을 달고 12,613바이트가 되어, 첫 메시지에 본문을 옮기지 않고 세션이 같은 명령으로 브리핑을 스스로 내어 읽게 했다.
 
 
+- 2026-11-23 작업 세션 session_018VXR6QTeKjAAj8MoTZaY5B 가 5150d29b 를 보고했다. 성공 기준 1-4 를 주장했다(넷째는 여유 40자). 지휘 세션이 squash 커밋에서 scripts 950, hooks 483 통과와 audit 오류 0 을 다시 확인했다. 범위 밖 변경은 `stage/docs/SCHEMA_V5.md` 한 곳이다.
+- 2026-11-23 지휘 세션이 사용자의 위임으로 받은 것: 얕은 체크아웃에서 `--check-released` 를 거부하는 것, 트리에 번호와 상태가 남는 것.
+- 2026-11-23 닫기 리뷰가 둘째 기준을 반려했다: `register_work.existing_numbers` 와 `migrate_stage.next_work_number` 가 아직 따로 센다. 작업 세션에 돌려보냈다.
+- Follow-up candidate: 색인의 여유가 40자다. 규칙 문장을 줄이거나 상한을 다시 정한다(M-00000006 의 (가)).
+- Follow-up candidate: `register_work` 의 옛 구조 폴더 훑기와 `migrate_stage.next_work_number` 를 `used_numbers` 아래로 모으거나, 옛 구조는 범위 밖이라고 적는다.
+- Follow-up candidate: `review.strengths` 명령의 TIER007 은 설정이 그 강도가 어느 venue 로 도는지 말해야 가능하다.
+
 ## Verification
+
+- 닫기 리뷰는 Claude 대역으로 돌린 같은 모델 리뷰다.
+
+- Review at close 2026-11-23 by claude_review_companion: rejected (1 PASS ran, 2 FAIL read, 3 PASS ran, 4 PASS ran)
