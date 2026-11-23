@@ -51,8 +51,12 @@ Stage 의 장기 기억과 결정 기록을 줄이지 않고, 세션이 필요�
 
 ## Next action
 
+작업 세션 session_018VXR6Qgu3ifaQ7oHco8PPm 의 설계안 보고를 받아 사용자에게 선택지를 보이고, 고른 답을 결정 기록에 적은 뒤 닫는다.
+
 ## Related truth
 
 ## Progress
+
+- 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 aa4cfbac 에서 카드를 시작하고 작업 세션 session_018VXR6Qgu3ifaQ7oHco8PPm (`claude/w400-memory-layers`)를 띄웠다. 결정 번호 하나를 잡았다.
 
 ## Verification
