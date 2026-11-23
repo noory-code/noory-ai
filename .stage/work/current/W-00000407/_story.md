@@ -71,18 +71,22 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 ## Next action
 
-작업 세션 session_018VXR6NvDBdQga8T4NuJ3u9 의 보고를 받아 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+사용자의 기계에서 두 확인이 오면 닫는다. 코드는 병합됐다.
 
-Windows 기기가 없어도 고칠 수 있다. 맥북이나 클라우드 세션이 카드를 시작해 고치고, 첫째 성공 기준은 Windows
-세션이 확인한다(`.stage/operations/verification.md` 의 "Windows 동작 확인").
+- Waiting on user: Python 3.14 만 있는 한국어 Windows 에서 `rag/server` 의 `uv run --extra dev pytest -m "not slow"` 가 kuzu 를 소스에서 빌드하지 않고 통과하는지 확인한다(첫째 성공 기준).
+- Waiting on user: 맥북에서 같은 명령이 전과 같이 통과하는지 확인한다(둘째 성공 기준).
 
 ## Related truth
 
 ## Sessions
 
-- session_018VXR6NvDBdQga8T4NuJ3u9 — work — 2026-11-23 — opened from the index: not reported yet
+- session_018VXR6NvDBdQga8T4NuJ3u9 — work — 2026-11-23 — opened from the index: none
 
 ## Progress
+
+- 2026-11-23 작업 세션 session_018VXR6NvDBdQga8T4NuJ3u9 가 0de973cd 를 보고했다. `requires-python` 을 `>=3.11,<3.14` 로 좁히고 잠금 파일을 다시 만들었다. kuzu 0.11.3 이 PyPI 의 마지막 판이고 3.14 wheel 은 Linux 용뿐이라 kuzu 를 올리는 길은 없었다. 범위 밖으로 `rag/README.md` 와 `rag/skills/rag-help/SKILL.md` 의 "Python 3.11+" 를 "3.11-3.13" 으로 고쳤다.
+- 2026-11-23 지휘 세션이 squash 커밋에서 `uv lock --check` 와 `uv run --extra dev pytest -q -m "not slow"`(Linux, 121 통과)를 다시 돌렸다. 두 성공 기준은 사용자의 기계에서만 볼 수 있어 닫기 리뷰를 돌리지 않았고 카드를 열어 둔 채 병합한다. 이 변경은 닫기 리뷰를 받지 않았다.
+- Follow-up candidate: kuzu(또는 대신할 그래프 저장소)가 Windows 와 macOS 의 3.14 wheel 을 내면 `<3.14` 상한을 푼다. kuzu 는 더 릴리스가 없어 보인다.
 
 - 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 카드를 시작했다. 성공 기준은 Python 3.14 만 있는 한국어 Windows 에서만 볼 수 있다. 사용자가 기계 확인을 기다리지 말고 진행하라고 했으므로("맥 윈도우즈 상관하지 말고 하세요") 고침을 만들어 병합하고, 그 확인은 O-00000062 에 올린다. 클라우드에서 볼 수 있는 것(잠금 파일에 3.14 용 wheel 이 있는지, Linux 에서 시험이 도는지)까지 본다.
 
