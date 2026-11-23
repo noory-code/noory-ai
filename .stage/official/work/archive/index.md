@@ -330,3 +330,4 @@
 | W-00000399 | completed | [items/W-00000399/_story.md](items/W-00000399/_story.md) |
 | W-00000402 | completed | [items/W-00000402/_story.md](items/W-00000402/_story.md) |
 | W-00000404 | completed | [items/W-00000404/_story.md](items/W-00000404/_story.md) |
+| W-00000403 | completed | [items/W-00000403/_story.md](items/W-00000403/_story.md) |

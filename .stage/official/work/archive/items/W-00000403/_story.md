@@ -8,7 +8,8 @@ milestone: M-00000006
 autonomous: false
 acceptance:
   - "python3 -m unittest discover -s stage/scripts/tests -q"
-status: completed
+status: archived
+terminal_disposition: accepted
 verification: passed
 retrospective: completed
 retrospective_ref: R-00000403
@@ -49,7 +50,7 @@ decision_refs:
 
 ## Next action
 
-faf5ea1 을 가져와 검사를 다시 돌리고 닫기 리뷰로 넘긴다.
+없음. 닫고 보관했다. 빼기 전후 비교와 나머지 Follow-up candidate 는 지휘 세션이 뒤 카드로 등록한다.
 
 
 ## Related truth
