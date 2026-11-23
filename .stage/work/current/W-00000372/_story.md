@@ -57,9 +57,7 @@ decision_refs:
 
 ## Next action
 
-Waiting on user: Windows 세션에서 저장소를 받아 Stage 0.69.0 으로 올린 뒤(0.68.0 다음에 0.69.0 이 릴리스됐다. Progress 를 본다) 훅이 실행되는지 확인한다. SessionStart 훅이
-Stage 컨텍스트를 넣는지, PreToolUse 훅이 `.stage` 를 언급하는 `python -c` 명령을 거부하는지 본다. 확인되면
-이 카드를 닫는다.
+두 성공 기준이 0.69.0 으로 확인됐다(Verification). 회고를 쓰고 카드를 닫는다.
 
 ## Related truth
 
@@ -83,6 +81,8 @@ Stage 컨텍스트를 넣는지, PreToolUse 훅이 `.stage` 를 언급하는 `py
 - 성공 기준 1: 2026-11-23 Mac 에서 main(`7e2b6712`)을 받은 뒤 `claude plugin list` 가 `stage@noory-ai` 에
   `Version: 0.68.0`, `Read from: /Users/woogis/Workspace/repo/noory-ai/stage`, `Status: ✔ enabled` 를 보여 줬다.
   새 세션에서 0.68.0 의 훅이 실행되는지는 이 세션에서 보지 않았다.
+  같은 날 main(`66b53229`)을 받은 뒤에는 같은 명령이 `Version: 0.69.0` 과 같은 `Read from` 줄, `Status: ✔ enabled` 를
+  보여 줬다.
 - 성공 기준 2: 2026-11-23 한국어 Windows 11(cp949, Python 3.14.10) 세션이 확인했다. `claude plugin marketplace
   update noory-ai` 와 `claude plugin update stage@noory-ai` 로 0.67.0 에서 0.69.0 으로 올렸고, `claude plugin list` 가
   `stage@noory-ai` 에 `Version: 0.69.0` 을 보여 줬다. 저장소(`66b53229`)에서 `claude -p` 로 새 세션을 열어 실행 기록을

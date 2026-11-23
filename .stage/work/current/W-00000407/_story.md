@@ -71,10 +71,11 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 ## Next action
 
-사용자의 기계에서 두 확인이 오면 닫는다. 코드는 병합됐다.
+코드는 병합됐다. 둘째 성공 기준은 Mac 에서 확인됐다(Verification).
 
-- Waiting on user: Python 3.14 만 있는 한국어 Windows 에서 `rag/server` 의 `uv run --extra dev pytest -m "not slow"` 가 kuzu 를 소스에서 빌드하지 않고 통과하는지 확인한다(첫째 성공 기준).
-- Waiting on user: 맥북에서 같은 명령이 전과 같이 통과하는지 확인한다(둘째 성공 기준).
+- Waiting on user: 첫째 성공 기준을 어떻게 판정할지 정한다. ARM64 Windows 기기에서는 명령을 그대로 실행하면 kuzu 가 아닌
+  다른 까닭(uv 의 Python 링크, `sqlite-vec` 의 `win_arm64` wheel 없음)으로 멈추고, x86_64 Python 을 지정하면 121개가
+  통과한다. x86_64 Windows 에서 명령을 그대로 실행해 본 기록은 없다.
 
 ## Related truth
 
@@ -106,5 +107,15 @@ x86_64 3.14.10 하나이며, uv 는 0.13.9 의 `aarch64-pc-windows-msvc` 빌드�
     고르지 않았다).
 - x86_64 Windows 에서 명령을 그대로 실행하면 통과하는지는 확인하지 않았다. 이 세션에는 x86_64 Windows 기기가 없다.
 - 성공 기준 2(맥북)는 이 세션이 볼 수 없다.
+
+2026-11-23 Mac 세션(macOS, Apple Silicon, uv 0.10.3, 시스템 Python 3.15.2)이 `66b53229` 에서 확인했다.
+
+- 성공 기준 2: 새 가상 환경에서 `uv run --extra dev pytest -q -m "not slow"` 를 그대로 실행하니 121개가 통과했다(13개는
+  `slow` 라서 고르지 않았다). uv 는 Python 3.11.14 를 골랐다. 새 환경은 `UV_PROJECT_ENVIRONMENT` 로 저장소 밖 폴더를
+  지정해 만들었다. `uv lock --check` 도 통과했다.
+- 이 Mac 의 기존 `rag/server/.venv` 에서는 같은 명령이 `Failed to spawn: pytest` 로 멈춘다. `.venv/bin/pytest` 의 첫 줄이
+  저장소를 옮기기 전의 경로(`/Users/woogis/Workspace/noory-workspace/noory-ai/...`)를 가리키기 때문이고, 이 카드의
+  변경과는 관계가 없다. 그 환경에서 `uv run --extra dev python -m pytest -q -m "not slow"` 는 121개가 통과했다.
+  기존 `.venv` 는 고치지 않았다.
 - Follow-up candidate: ARM64 Windows 에서는 uv 가 ARM64 Python 을 골라 `sqlite-vec` 와 kuzu 의 wheel 을 찾지 못한다.
   ARM64 Windows 를 지원할지, 지원하지 않는다면 x86_64 Python 을 쓰라고 안내할지 정해야 한다.
