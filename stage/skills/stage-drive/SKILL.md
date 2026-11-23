@@ -158,29 +158,12 @@ python3 "<driver>" --project-root <project-root> --timeout 5400 --execute <TARGE
 
 The override replaces the derived value outright and applies to every command in the run.
 
-Decide it with a count, not a judgment. Take the declared size from the three rows above, then count
-the files the card will change — read its Actions and Next action, and expand any `scope` entry
-naming a directory into the files under it the card will touch:
-
-| Checkable before the run | Seconds it asks for |
-|---|---|
-| That file count exceeds the declared size | `file count * 900` |
-| A prior round on this card timed out | Twice the seconds that round had; its `### Driver failure` entry in the shared work log names them |
-| Neither | None — the derived value already covers the work |
-
-Both rows can hold at once. When they do, pass the larger of the two numbers, so exactly one value
-always falls out of the table.
-
-A `scope` entry naming a directory counts 1 however many files it holds, which is the most frequent
-reason the file count exceeds the declared size. The dry run does not print the derived timeout —
-its `Execution time` line reports command time already used against the run's global limit, not the
-per-command limit — so take the declared size from the card.
-
-Two cases offer no count beforehand: a card whose paths are unknown until it starts, and a card
-whose one file needs many edit-and-test rounds rather than a single pass. No threshold covers those
-honestly, so overshoot deliberately instead. The two errors do not cost the same — too large costs
-only the delay before a hung command gives up, too small costs the whole round and the work inside
-it.
+The timeout exists to end a hung command, not to size the work. Whoever starts the run chooses the
+override; Stage prescribes no way to compute it (DE-00000098). Three facts bear on the choice: a
+`scope` entry naming a directory counts 1 however many files it holds; the dry run does not print
+the derived timeout — its `Execution time` line reports command time already used against the run's
+global limit; and a prior round's timeout is named in its `### Driver failure` entry in the shared
+work log.
 
 A truncated command costs the round, not an attempt: the driver reads a timeout as venue
 infrastructure failure and says so rather than counting a failed card attempt. Raising the number
