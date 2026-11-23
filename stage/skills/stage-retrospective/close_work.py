@@ -89,6 +89,11 @@ MAX_BYTES = 4000
 DEFAULT_REVIEW_TIMEOUT = 3600
 WORK_LOG_RELATIVE_DIR = Path(".stage/.runtime/driver/logs")
 REVIEW_VERDICT_RELATIVE_DIR = Path(".stage/.runtime/driver/verdicts")
+# How a reviewer reached one criterion's verdict (DE-00000101). `ran`: it ran a command
+# or observed the behavior itself. `read`: it read files or records. `unable`: it could
+# not gather the evidence the criterion needs, which is never a pass.
+REVIEW_METHODS = ("ran", "read", "unable")
+REVIEW_METHOD_UNABLE = "unable"
 WORK_LOG_PREAMBLE = """\
 # Stage 작업 로그 — {item_id}
 
@@ -297,6 +302,10 @@ def normalize_review_verdict(
 ) -> tuple[dict[str, object] | None, str]:
     """Validate a reviewer verdict object and return its normalized form.
 
+    Every criterion names its `method` (`REVIEW_METHODS`). A criterion the reviewer
+    was `unable` to gather evidence for must be `FAIL`, so a review that needed to
+    run something and could not never approves the work.
+
     A driver-merged re-review verdict (`merged`) also carries a positive
     `reviewed_in_round` on every criterion. close_work.py and the driver share
     this one rule set so they never accept the same verdict differently.
@@ -312,7 +321,7 @@ def normalize_review_verdict(
     if type(approved) is not bool:
         return None, "review verdict approved must be a boolean"
 
-    keys = {"criterion", "verdict", "reason"}
+    keys = {"criterion", "verdict", "method", "reason"}
     if merged:
         keys.add("reviewed_in_round")
     normalized: list[dict[str, object]] = []
@@ -321,17 +330,18 @@ def normalize_review_verdict(
         if not isinstance(entry, dict) or set(entry) != keys:
             return None, (
                 "each merged review criterion must contain exactly `criterion`, "
-                "`verdict`, `reason`, and `reviewed_in_round`"
+                "`verdict`, `method`, `reason`, and `reviewed_in_round`"
                 if merged
                 else "each review criterion must contain exactly `criterion`, "
-                "`verdict`, and `reason`"
+                "`verdict`, `method`, and `reason`"
             )
         criterion = entry["criterion"]
         verdict = entry["verdict"]
+        method = entry["method"]
         reason = entry["reason"]
         if not all(
             isinstance(value, str)
-            for value in (criterion, verdict, reason)
+            for value in (criterion, verdict, method, reason)
         ):
             return None, "review criterion values must be strings"
         if (
@@ -349,9 +359,19 @@ def normalize_review_verdict(
             return None, "review verdict criteria must be unique"
         if verdict not in {"PASS", "FAIL"}:
             return None, "review criterion verdict must be `PASS` or `FAIL`"
+        if method not in REVIEW_METHODS:
+            return None, (
+                "review criterion method must be `ran`, `read`, or `unable`"
+            )
+        if method == REVIEW_METHOD_UNABLE and verdict != "FAIL":
+            return None, (
+                "a review criterion whose method is `unable` must be `FAIL`: "
+                "evidence the reviewer did not gather is not a pass"
+            )
         normalized_entry: dict[str, object] = {
             "criterion": criterion,
             "verdict": verdict,
+            "method": method,
             "reason": reason,
         }
         if merged:
@@ -370,13 +390,36 @@ def normalize_review_verdict(
     return {"criteria": normalized, "approved": approved}, ""
 
 
+def rejection_error(verdict: dict[str, object] | None) -> str:
+    """Why a valid verdict does not approve the work, or "" when it approves.
+
+    Names the criteria the reviewer was `unable` to judge, so a review that could
+    not run what it needed reads differently from one that found a defect.
+    """
+
+    if verdict is not None and verdict["approved"] is True:
+        return ""
+    message = "review verdict did not approve the work item"
+    criteria = verdict["criteria"] if verdict is not None else []
+    assert isinstance(criteria, list)
+    unable = [
+        str(number)
+        for number, entry in enumerate(criteria, 1)
+        if entry["method"] == REVIEW_METHOD_UNABLE
+    ]
+    if unable:
+        message += (
+            f": the reviewer could not gather evidence for criterion {', '.join(unable)}"
+            " (method `unable`)"
+        )
+    return message
+
+
 def review_verdict_error(path: Path) -> str:
     verdict, error = load_review_verdict(path)
     if error:
         return error
-    if verdict is None or verdict["approved"] is not True:
-        return "review verdict did not approve the work item"
-    return ""
+    return rejection_error(verdict)
 
 
 def one_line(text: str) -> str:
@@ -403,7 +446,8 @@ def reviewer_label(command: str, fallback: str = "reviewer") -> str:
 
 
 def review_record_line(path: Path, reviewer: str, day: str) -> str:
-    """One committed line per review: who judged, the outcome, each criterion's verdict.
+    """One committed line per review: who judged, the outcome, and each criterion's
+    verdict and method.
 
     Reasons stay in the uncommitted work log. Raises RuntimeError when the verdict
     file holds no valid verdict, because then there is no judgement to record.
@@ -415,7 +459,8 @@ def review_record_line(path: Path, reviewer: str, day: str) -> str:
     criteria = verdict["criteria"]
     assert isinstance(criteria, list)
     marks = ", ".join(
-        f"{number} {entry['verdict']}" for number, entry in enumerate(criteria, 1)
+        f"{number} {entry['verdict']} {entry['method']}"
+        for number, entry in enumerate(criteria, 1)
     )
     outcome = "approved" if verdict["approved"] is True else "rejected"
     return f"- Review at close {day} by {one_line(reviewer)}: {outcome} ({marks})"

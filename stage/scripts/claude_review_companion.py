@@ -4,18 +4,28 @@
 A session without Codex (a cloud session) can still run the project's configured
 Codex review commands unchanged: point `STAGE_CODEX_COMPANION` at this script and
 `codex_companion.py` hands it the companion's arguments. The prompt is the last
-argument; the Codex-only flags before it are ignored. The reviewer may write only
-`$STAGE_REVIEW_VERDICT_FILE` and run `python3 -m unittest` (on Windows through the
-PowerShell tool as well as Bash), and gets `--add-dir` for
-the folder of `$STAGE_CHANGED_PATHS_FILE`, which lives outside the project; it may
-not edit project files. The result is a same-model review, never a cross-venue one;
-the cloud-execution procedure requires the card to say so.
+argument; the Codex-only flags before it are ignored. The result is a same-model
+review, never a cross-venue one; the cloud-execution procedure requires the card to
+say so.
 
-Permission rules govern only the reviewer's own tool calls: code that `python3 -m
-unittest` imports and runs can still write anywhere. `close_work.py` and the
-supervised driver therefore compare the repository around every review command,
-this one included, and fail a review that changed anything but its verdict
-(`close_work.reject_review_writes`).
+The reviewer judges by running (DE-00000101), so it may run any shell command: the
+card's stored checks (for example `audit_stage.py`) and probes it chooses itself, on
+Windows through the PowerShell tool as well as Bash. Its file-edit tools may write
+only `$STAGE_REVIEW_VERDICT_FILE`, and it gets `--add-dir` for the folder of
+`$STAGE_CHANGED_PATHS_FILE`, which lives outside the project.
+
+What still holds the reviewer back, and what does not:
+
+- A shell command can write project files. `close_work.py` and the supervised driver
+  compare the repository around every review command, this one included, and fail a
+  review that changed anything but its verdict (`close_work.reject_review_writes`).
+- `DENIED_COMMANDS` refuses the commands that publish or record a change (`git push`,
+  `git commit`). Claude Code matches these rules against each command of a compound
+  line, but a command hidden inside another program (`sh -c`, a script) is not seen:
+  the rules stop a mistake, not a determined reviewer.
+- Nothing here sees a change outside the repository (another checkout, the home
+  folder, a remote service). DE-00000101 chose this weakness knowingly; one observed
+  case is its stated reason to revisit the choice.
 
 The project's own Claude reviewer command runs through this script as well, so both
 review paths share these permissions.
@@ -51,16 +61,30 @@ def absolute_rule_path(path: PurePath) -> str:
     return "/" + posix
 
 
-def unittest_rules(platform: str) -> list[str]:
-    """Name every shell tool the reviewer may run `python3 -m unittest` through.
+# Commands the reviewer never needs: they publish or record a change.
+DENIED_COMMANDS = ("git push", "git commit")
 
-    On Windows Claude Code offers a PowerShell tool beside Bash, and a `Bash(...)`
-    rule does not cover it: a reviewer that picks PowerShell is denied and judges
-    from records instead of a run.
+
+def shell_tools(platform: str) -> list[str]:
+    """Name every shell tool the reviewer runs commands through.
+
+    On Windows Claude Code offers a PowerShell tool beside Bash, and a `Bash` rule
+    does not cover it: a reviewer that picks PowerShell is denied and judges from
+    records instead of a run.
     """
-    rules = ["Bash(python3 -m unittest:*)"]
+    tools = ["Bash"]
     if platform == "win32":
-        rules.append("PowerShell(python3 -m unittest:*)")
+        tools.append("PowerShell")
+    return tools
+
+
+def denied_rules(platform: str) -> list[str]:
+    """One deny rule per shell tool and denied command, with and without arguments."""
+
+    rules = []
+    for tool in shell_tools(platform):
+        for command in DENIED_COMMANDS:
+            rules += [f"{tool}({command})", f"{tool}({command}:*)"]
     return rules
 
 
@@ -84,8 +108,11 @@ def claude_command(
         environ.get(MODEL_ENV) or DEFAULT_MODEL,
         "--allowedTools",
         f"Edit({verdict_rule})",
-        *unittest_rules(platform),
-        # --add-dir and --allowedTools take several values; `--` ends them before the prompt.
+        *shell_tools(platform),
+        # A deny rule wins over an allow rule.
+        "--disallowedTools",
+        *denied_rules(platform),
+        # These options take several values; `--` ends them before the prompt.
         "--",
         argv[-1],
     ]

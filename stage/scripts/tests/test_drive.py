@@ -103,7 +103,7 @@ def retry_reviewer_command(marker: Path) -> str:
         "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
         "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
         "    json.dumps({'criteria': [{'criterion': 'cumulative paths', "
-        "'verdict': 'PASS', 'reason': 'both rounds were reviewed'}], "
+        "'verdict': 'PASS', 'method': 'ran', 'reason': 'both rounds were reviewed'}], "
         "'approved': True}), encoding='utf-8')\n"
         "print('APPROVED')\n"
     )
@@ -151,9 +151,9 @@ def narrowing_reviewer_command(marker: Path, capture: Path) -> str:
         "    assert 'STAGE_REVIEW_FAILED_CRITERIA_FILE' not in os.environ\n"
         "    verdict = {\n"
         "        'criteria': [\n"
-        "            {'criterion': 'passing criterion', 'verdict': 'PASS', "
+        "            {'criterion': 'passing criterion', 'verdict': 'PASS', 'method': 'ran', "
         "'reason': 'the first review passed it'},\n"
-        "            {'criterion': 'failing criterion', 'verdict': 'FAIL', "
+        "            {'criterion': 'failing criterion', 'verdict': 'FAIL', 'method': 'ran', "
         "'reason': 'the first review found a defect'},\n"
         "        ],\n"
         "        'approved': False,\n"
@@ -180,6 +180,7 @@ def narrowing_reviewer_command(marker: Path, capture: Path) -> str:
         "        'criteria': [{\n"
         "            'criterion': 'failing criterion',\n"
         "            'verdict': 'PASS',\n"
+        "            'method': 'ran',\n"
         "            'reason': 'the second review confirmed the fix',\n"
         "        }],\n"
         "        'approved': True,\n"
@@ -201,8 +202,8 @@ def criteria_change_reviewer_command(marker: Path, capture: Path) -> str:
         "round_number = int(marker.read_text(encoding='utf-8'))\n"
         "if round_number == 1:\n"
         "    verdict = {'criteria': [\n"
-        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'reason': 'ok'},\n"
-        "        {'criterion': 'failing criterion', 'verdict': 'FAIL', 'reason': 'defect'},\n"
+        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'method': 'ran', 'reason': 'ok'},\n"
+        "        {'criterion': 'failing criterion', 'verdict': 'FAIL', 'method': 'ran', 'reason': 'defect'},\n"
         "    ], 'approved': False}\n"
         "else:\n"
         "    capture.write_text(json.dumps({\n"
@@ -210,9 +211,9 @@ def criteria_change_reviewer_command(marker: Path, capture: Path) -> str:
         "        'has_previous': 'STAGE_PREVIOUS_REVIEW_VERDICT_FILE' in os.environ,\n"
         "    }), encoding='utf-8')\n"
         "    verdict = {'criteria': [\n"
-        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'reason': 'ok'},\n"
-        "        {'criterion': 'failing criterion', 'verdict': 'PASS', 'reason': 'fixed'},\n"
-        "        {'criterion': 'added criterion', 'verdict': 'PASS', 'reason': 'met'},\n"
+        "        {'criterion': 'passing criterion', 'verdict': 'PASS', 'method': 'ran', 'reason': 'ok'},\n"
+        "        {'criterion': 'failing criterion', 'verdict': 'PASS', 'method': 'ran', 'reason': 'fixed'},\n"
+        "        {'criterion': 'added criterion', 'verdict': 'PASS', 'method': 'ran', 'reason': 'met'},\n"
         "    ], 'approved': True}\n"
         "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(json.dumps(verdict), encoding='utf-8')\n"
     )
@@ -239,6 +240,7 @@ def missing_verdict_then_full_reviewer_command(marker: Path, capture: Path) -> s
         "    'criteria': [{\n"
         "        'criterion': 'full criterion',\n"
         "        'verdict': 'PASS',\n"
+        "        'method': 'ran',\n"
         "        'reason': 'the fallback reviewed the complete card',\n"
         "    }],\n"
         "    'approved': True,\n"
@@ -269,7 +271,7 @@ def approving_reviewer_command(code: str = "") -> str:
         "log.write_text(log.read_text(encoding='utf-8') + report, encoding='utf-8')\n"
         "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
         "    json.dumps({'criteria': [{'criterion': 'criterion', "
-        "'verdict': 'PASS', 'reason': 'test reviewer inspected the inputs'}], "
+        "'verdict': 'PASS', 'method': 'ran', 'reason': 'test reviewer inspected the inputs'}], "
         "'approved': True}), encoding='utf-8')\n"
         "print('APPROVED')"
     )
@@ -282,7 +284,7 @@ def rejecting_reviewer_command(code: str = "") -> str:
         + (f"exec({code!r})\n" if code else "")
         + "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
         "    json.dumps({'criteria': [{'criterion': 'criterion', "
-        "'verdict': 'FAIL', 'reason': 'reviewer found a blocker'}], "
+        "'verdict': 'FAIL', 'method': 'ran', 'reason': 'reviewer found a blocker'}], "
         "'approved': False}), encoding='utf-8')\n"
         "print('prose says APPROVED and CRITERIA VERDICT: PASS')"
     )
@@ -2136,7 +2138,7 @@ class DriveTest(unittest.TestCase):
             f"assert changed == [{completed_path!r}]\n"
             "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
             "    json.dumps({'criteria': [{'criterion': 'criterion', "
-            "'verdict': 'PASS', 'reason': 'the completed work passed review'}], "
+            "'verdict': 'PASS', 'method': 'ran', 'reason': 'the completed work passed review'}], "
             "'approved': True}), encoding='utf-8')\n"
         )
         tmp, root = self.make_project(
@@ -2631,12 +2633,14 @@ class DriveTest(unittest.TestCase):
                     {
                         "criterion": "passing criterion",
                         "verdict": "PASS",
+                        "method": "ran",
                         "reason": "the first review passed it",
                         "reviewed_in_round": 1,
                     },
                     {
                         "criterion": "failing criterion",
                         "verdict": "PASS",
+                        "method": "ran",
                         "reason": "the second review confirmed the fix",
                         "reviewed_in_round": 2,
                     },
@@ -3535,7 +3539,7 @@ class DriveTest(unittest.TestCase):
                 "Path(os.environ['STAGE_REVIEW_VERDICT_FILE']).write_text(\n"
                 "    json.dumps({'criteria': [{"
                 f"'criterion': {finding!r}, "
-                "'verdict': 'PASS', "
+                "'verdict': 'PASS', 'method': 'ran', "
                 "'reason': 'the disposition resolves this criterion'}], "
                 "'approved': True}), encoding='utf-8')\n"
             ),
@@ -3561,6 +3565,7 @@ class DriveTest(unittest.TestCase):
                             {
                                 "criterion": finding,
                                 "verdict": "FAIL",
+                                "method": "ran",
                                 "reason": "reviewer requested a fictional host",
                             }
                         ],
