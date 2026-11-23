@@ -131,6 +131,22 @@ class CiWorkflowsTest(unittest.TestCase):
                 name = "WINDOWS_SHARD_TOTAL" if os_name == "windows-latest" else "SHARD_TOTAL"
                 self.assertEqual(set(range(1, int(totals[name]) + 1)), shards)
 
+    def test_stage_checks_released_changelog_sections_on_the_whole_history(self):
+        # release_plugin.py refuses a shallow checkout, so the job that runs the check must
+        # fetch every commit.
+        text = (WORKFLOWS / "stage.yml").read_text(encoding="utf-8")
+        job = re.search(r"(?ms)^  changelog:\n(.*?)(?=^  \S|\Z)", text)
+        assert job, "stage.yml has no changelog job"
+
+        self.assertRegex(
+            job.group(1),
+            r"- uses: actions/checkout@v\d+\n        with:\n          fetch-depth: 0\n",
+        )
+        self.assertIn(
+            "run: python stage/scripts/release_plugin.py stage --check-released --since 0.67.0",
+            job.group(1),
+        )
+
     def test_shards_together_run_every_test_exactly_once(self):
         spec = importlib.util.spec_from_file_location("unittest_shard", SHARD_SCRIPT)
         assert spec and spec.loader

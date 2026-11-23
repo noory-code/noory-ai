@@ -476,6 +476,14 @@ def check_released_sections(
     except FileNotFoundError as exc:
         raise ReleaseError(f"changelog not found: {changelog_file}") from exc
 
+    # A shallow checkout's oldest commit seems to add every heading, so each section would
+    # be compared with itself and the check would pass whatever was merged (W-00000410).
+    if run_git(repository_root, "rev-parse", "--is-shallow-repository").strip() == b"true":
+        raise ReleaseError(
+            "the checkout is shallow, so release commits cannot be found; fetch the whole "
+            "history first (`git fetch --unshallow`, or `fetch-depth: 0` in actions/checkout)"
+        )
+
     changelog_path = f"{plugin}/CHANGELOG.md"
     sections = release_sections(changelog)
     if since is not None:

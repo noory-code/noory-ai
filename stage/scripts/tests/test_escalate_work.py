@@ -129,6 +129,33 @@ class EscalateWorkTest(unittest.TestCase):
             self.assertIn("DE-00000008", decision_index)
             self.assertIn("DE-00000008", result.stdout)
 
+    def test_the_decision_id_skips_a_number_another_branch_uses(self):
+        tmp, root = self.make_project()
+        with tmp:
+
+            def git(*args: str) -> None:
+                subprocess.run(
+                    ["git", "-c", "user.name=Stage Test", "-c", "user.email=stage@example.invalid", *args],
+                    cwd=root,
+                    check=True,
+                    capture_output=True,
+                )
+
+            git("init", "-q", "-b", "main")
+            git("add", "-A")
+            git("commit", "-q", "-m", "base")
+            git("checkout", "-q", "-b", "side")
+            other = root / ".stage/decisions/pending/DE-00000012.md"
+            other.write_text("---\nid: DE-00000012\nstatus: open\n---\n", encoding="utf-8")
+            git("add", "-A")
+            git("commit", "-q", "-m", "side decision")
+            git("checkout", "-q", "main")
+
+            result = self.run_cli(root, "Decide whether to revise the requirement.")
+
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertTrue((root / ".stage/decisions/pending/DE-00000013.md").is_file())
+
     def test_non_open_item_is_refused_without_changes(self):
         tmp, root = self.make_project(status="completed")
         with tmp:

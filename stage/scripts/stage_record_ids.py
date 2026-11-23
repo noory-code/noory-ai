@@ -330,14 +330,30 @@ class IdReserver:
         )
 
 
-def next_record_id(
+def used_numbers(
     project_root: Path, prefix: str, reserver: IdReserver | None = None
-) -> str:
+) -> set[int]:
+    """Every number of `prefix` a new record must not take.
+
+    The one place that says what counts as used: an id in the working tree's `.stage/`,
+    a number a card holds back in `reserved_ids:`, either of those on a local or
+    remote-tracking branch, and, with a `reserver`, an id reserved on the remote. Every
+    command that picks a new id starts from this set, so a source added here is counted
+    by all of them.
+    """
+
     used = local_record_numbers(project_root / ".stage", prefix) | set(
         branch_record_numbers(project_root, prefix)
     )
     if reserver is not None:
         used |= reserver.remote_numbers(prefix)
+    return used
+
+
+def next_record_id(
+    project_root: Path, prefix: str, reserver: IdReserver | None = None
+) -> str:
+    used = used_numbers(project_root, prefix, reserver)
     number = (max(used) + 1) if used else 1
     for _ in range(1000):
         candidate = f"{prefix}-{number:08d}"

@@ -147,8 +147,15 @@ def derived_work_view(stage_root: Path, statuses: tuple[str, ...], review: bool)
     return "\n".join(lines)
 
 
-def work_hierarchy_view(stage_root: Path) -> str:
-    """Render current work as a deterministic parent/child tree."""
+def work_hierarchy_view(stage_root: Path, listed_statuses: tuple[str, ...] = ()) -> str:
+    """Render current work as a deterministic parent/child tree.
+
+    `listed_statuses` names the statuses whose cards another view of the same text already
+    carries with their title (the session index's work tables). Such a card is not carried
+    a second time: a card with no parent and no child is left out, and a card inside a tree
+    is named by id and status only, because the tree is the one thing the tables do not
+    say. Returns "" when every current card is left out that way.
+    """
 
     items = load_work_items(stage_root)
     by_id = {item.item_id: item for item in items}
@@ -167,7 +174,7 @@ def work_hierarchy_view(stage_root: Path) -> str:
 
     def append_item(item, depth: int, seen: set[str]) -> None:
         indent = "  " * depth
-        title = " ".join(item.title.split())
+        title = "" if item.status in listed_statuses else " ".join(item.title.split())
         label = f"{item.item_id} {title}".rstrip()
         lines.append(f"{indent}- {label} [{item.status}]")
         if item.item_id in seen:
@@ -177,10 +184,12 @@ def work_hierarchy_view(stage_root: Path) -> str:
             append_item(child, depth + 1, next_seen)
 
     for root in roots:
+        if root.status in listed_statuses and not children.get(root.item_id):
+            continue
         append_item(root, 0, set())
     if not roots:
         lines.append("- None")
-    return "\n".join(lines)
+    return "\n".join(lines) if len(lines) > 1 else ""
 
 
 def session_context(workspace_root: Path) -> str:
@@ -320,7 +329,10 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
     blocks: list[Block] = []
     if v4:
         blocks.append(_fixed_block("", "\n" + active_milestone_table(stage_root)))
-        blocks.append(_fixed_block("", "\n" + work_hierarchy_view(stage_root)))
+        # The two tables below carry every current card once; the tree adds only parent
+        # and child relations, so it does not repeat a card they list (W-00000410).
+        hierarchy = work_hierarchy_view(stage_root, ACTIVE_VIEW_STATUSES + REVIEW_VIEW_STATUSES)
+        blocks.append(_fixed_block("", "\n" + hierarchy if hierarchy else ""))
         snippets: list[tuple[str, str]] = [
             ("Active work", derived_work_view(stage_root, ACTIVE_VIEW_STATUSES, review=False)),
             (

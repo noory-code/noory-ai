@@ -9,6 +9,8 @@ Codes:
   their tier gives; a stated over-tier reason is quoted.
 - TIER005 (warning): a model-usage record line could not be read.
 - TIER006 (error): `model_fallbacks` / `usage_limit_patterns` is invalid.
+- TIER007 (warning): `model_fallbacks` names a venue whose executor or reviewer command does
+  not read STAGE_MODEL, so that command cannot switch model.
 
 Only cards in the current work zone are compared: archived history is not re-judged. Without
 `model_tiers` no card may carry a tier, and nothing else is checked.
@@ -38,6 +40,9 @@ WORK_LOG_DIR = Path(".runtime") / "driver" / "logs"
 USAGE_DIR = Path(".runtime") / "model-usage"
 MODEL_TIER_LINE = re.compile(r"^Model tier \(JSON\): (.+)$", re.MULTILINE)
 AGENT_VENUE = "claude"
+# The driver switches model by exporting this variable (`scripts/driver_environment.py`), and
+# `scripts/driver_model_fallback.py` tests a command for the same name before it reruns.
+MODEL_ENV = "STAGE_MODEL"
 
 # Evaluated at import time, so no `X | Y` syntax: Stage runs on Python 3.9.
 Report = Callable[[str, str, Union[Path, str]], None]
@@ -176,6 +181,42 @@ def _audit_subagents(
             )
 
 
+def _role_commands(settings: Any, venue: str) -> list[tuple[str, str]]:
+    """The commands settings bind to `venue` by name, as `(setting path, command)`."""
+
+    if not isinstance(settings, dict):
+        return []
+    review = settings.get("review")
+    sources = (
+        ("executors", settings.get("executors")),
+        ("review.reviewers", review.get("reviewers") if isinstance(review, dict) else None),
+    )
+    found: list[tuple[str, str]] = []
+    for label, commands in sources:
+        if not isinstance(commands, dict):
+            continue
+        for name, command in commands.items():
+            if isinstance(name, str) and name.strip().lower() == venue:
+                if isinstance(command, str) and command.strip():
+                    found.append((f"{label}.{name}", command))
+    return found
+
+
+def _audit_fallback_commands(
+    settings: Any, venues: list[str], settings_path: Path | str, warn: Report
+) -> None:
+    for venue in venues:
+        for where, command in _role_commands(settings, venue):
+            if MODEL_ENV not in command:
+                warn(
+                    "TIER007",
+                    f"`model_fallbacks.{venue}` is declared, but `{where}` does not read "
+                    f"${MODEL_ENV}: the command cannot switch model, so its first usage limit "
+                    "ends the turn as exhausted.",
+                    settings_path,
+                )
+
+
 def audit_model_tiers(
     stage_root: Path,
     settings: Any,
@@ -186,8 +227,10 @@ def audit_model_tiers(
 ) -> None:
     """Run every tier check; `current_cards` holds (id, tier, path) for current-zone cards."""
 
-    for message in parse_fallback_config(settings).errors:
+    fallbacks = parse_fallback_config(settings)
+    for message in fallbacks.errors:
         error("TIER006", f"Model fallback settings are invalid: {message}.", settings_path)
+    _audit_fallback_commands(settings, sorted(fallbacks.groups), settings_path, warning)
     config = parse_tier_config(settings)
     for message in config.errors:
         error("TIER001", f"Model tier settings are invalid: {message}.", settings_path)

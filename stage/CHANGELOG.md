@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Put four small fixes left in earlier cards' reports into the code and CI (W-00000410).
+  - **Released changelog check in CI.** The `stage` workflow has a `changelog` job that runs
+    `release_plugin.py stage --check-released --since 0.67.0` on the whole history
+    (`fetch-depth: 0`) and fails when a released section gained a line after its release.
+    `--check-released` now exits 2 on a shallow checkout instead of passing: there the oldest
+    commit seems to add every heading, so nothing was compared.
+  - **One count of used record numbers.** `stage_record_ids.used_numbers()` is the one function
+    that says which numbers are taken (this checkout, `reserved_ids:` blocks, fetched branches,
+    remote reservations). `stage_record_ids.py`, `stage_id_blocks.py`, `register_work.py`,
+    `manage_roadmap.py`, and `escalate_work.py` pick from it. An escalation decision therefore
+    no longer takes a number a fetched branch already uses.
+  - **`TIER007`.** The audit warns when `model_fallbacks` names a venue whose
+    `executors.<venue>` or `review.reviewers.<venue>` command does not contain `STAGE_MODEL`:
+    that command cannot switch model, so its first usage limit ends the turn.
+  - **A card is in the session index once.** The index's work tables already carry every
+    current card, so `### Current work hierarchy` no longer repeats a card with no parent and no
+    child, and names a card inside a tree by id and status only. With one flat card the section
+    is gone.
+
 - Make the text a session starts with an index derived from the records, and bound it
   (W-00000409, DE-00000100). The SessionStart text was small but two thirds of it was the same
   rules every time; it named no decision, and a cloud session received none of it.

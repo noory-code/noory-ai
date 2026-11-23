@@ -356,6 +356,33 @@ class ReleasePluginCliTest(unittest.TestCase):
         self.assertIn("no released section gained lines after its release", result.stdout)
         self.assertNotIn("Not checked", result.stdout)
 
+    def test_check_released_refuses_a_shallow_checkout(self):
+        temporary_directory, repository_root = self.make_released_repository()
+        with temporary_directory:
+            self.commit_all_after_touching(repository_root)
+            with tempfile.TemporaryDirectory() as clone_parent:
+                shallow = Path(clone_parent) / "shallow"
+                subprocess.run(
+                    ["git", "clone", "-q", "--depth", "1", repository_root.as_uri(), str(shallow)],
+                    check=True,
+                    capture_output=True,
+                )
+
+                result = self.run_mode(shallow, "--check-released")
+
+        self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+        self.assertIn("the checkout is shallow", result.stderr)
+        self.assertNotIn("no released section gained lines", result.stdout)
+
+    def commit_all_after_touching(self, repository_root: Path) -> None:
+        changelog_path = repository_root / "stage" / "CHANGELOG.md"
+        changelog = changelog_path.read_text(encoding="utf-8")
+        changelog_path.write_text(
+            changelog.replace("## Unreleased\n\n", "## Unreleased\n\n- Queued.\n\n", 1),
+            encoding="utf-8",
+        )
+        self.commit_all(repository_root, "queue a line")
+
     def make_twice_released_repository_with_an_old_intrusion(
         self,
     ) -> tuple[tempfile.TemporaryDirectory[str], Path]:

@@ -381,7 +381,7 @@ class SchemaV4ConsumerDispatchTest(unittest.TestCase):
             context = stage_context.session_context(root)
 
         self.assertNotIn("Lifecycle view", context)
-        self.assertIn("- W-00000109 W-00000109 [active]", context)
+        self.assertIn("| W-00000109 | W-00000109 |", context)
         decisions = context.split("### Decisions (titles only, newest first)\n", 1)[1].split(
             "\n\n", 1
         )[0]

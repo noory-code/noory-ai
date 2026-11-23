@@ -29,6 +29,7 @@ from stage_paths import (  # noqa: E402
 )
 from stage_work import parse_frontmatter, split_scope  # noqa: E402
 import refresh_decision_index  # noqa: E402
+from stage_record_ids import used_numbers  # noqa: E402
 
 
 ESCALATABLE_STATUSES = {"active", "review"}
@@ -84,7 +85,13 @@ def set_or_insert_field(text: str, name: str, value: str, *, after: str) -> str:
 
 
 def next_decision_id(stage_root: Path) -> str:
-    highest = 0
+    """The next free decision id, counted as every other id picker counts (`used_numbers`).
+
+    Escalation runs inside a driver round, so it reserves nothing on the remote. A decision
+    file whose name carries a legacy-width id is counted from its name as well.
+    """
+
+    highest = max(used_numbers(stage_root.parent, "DE"), default=0)
     for relative in ("decisions/pending", "official/decisions/records"):
         root = stage_root / relative
         for path in record_paths(root, pattern="DE-*.md") if root.exists() else ():

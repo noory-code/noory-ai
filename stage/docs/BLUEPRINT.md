@@ -95,6 +95,11 @@ flowchart TD
 이 모듈로 번호를 잡는다. 원격이 없거나 닿지 못하거나 push 를 거절하면 이 체크아웃과 받아 온 브랜치만 세어
 번호를 고르고, 잡지 못했다고 한 줄 출력한다. 관문(훅)은 이 모듈을 쓰지 않는다.
 
+이미 쓰인 번호를 세는 함수는 `stage_record_ids.used_numbers()` 하나다. 이 체크아웃의 기록, 카드가
+`reserved_ids:` 로 잡아 둔 번호, 받아 온 브랜치의 기록, 원격에 잡힌 번호를 합친다. 새 번호를 고르는 곳
+(`stage_record_ids.py`, `stage_id_blocks.py`, `register_work.py`, `manage_roadmap.py`, `escalate_work.py`)은 모두
+이 집합에서 시작한다. `migrate_stage.py` 는 옛 구조(v3)의 카드를 옮기면서 번호를 따로 센다.
+
 ### `close_work.py` 와 드라이버는 서로를 가져다 쓴다
 
 카드를 닫는 일은 `close_work.py` 한 곳이 소유한다. 드라이버는 카드의 상태를 직접 고치지 않고 `close_work.py`
@@ -180,7 +185,7 @@ Stage 의 코드에는 "오케스트레이터", "작업 세션", "검증 세션"
 
 | 색인의 조각 | 한 줄 | 만드는 곳 |
 |---|---|---|
-| 지금 하는 일 | 진행 중 마일스톤, 진행 중 카드, 열린 관측, 답을 기다리는 질문, 고른 계획 카드 | `hooks/stage_context.py` |
+| 지금 하는 일 | 진행 중 마일스톤, 진행 중 카드, 열린 관측, 답을 기다리는 질문, 고른 계획 카드. 카드는 표(Active work, Review candidates)에 한 번 실린다. 부모와 자식이 있는 카드만 트리에 번호와 상태로 다시 나온다 | `hooks/stage_context.py` |
 | 결정 | 번호와 제목, 새 것부터. 대기 중 결정과 공식 결정이고 닫힌 결정 보관함은 뺀다 | `hooks/stage_memory_index.py` |
 | 규칙이 사는 자리 | 프로젝트 지시 파일과 `.stage/operations/` 파일의 경로 | `hooks/stage_context.py` |
 | 규칙 후보 | `.stage/state/rule-candidates.md` 의 후보 한 줄씩, 그리고 그 목록보다 새 회고가 몇 건인지 | `hooks/stage_memory_index.py` |

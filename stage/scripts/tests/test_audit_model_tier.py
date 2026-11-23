@@ -216,6 +216,35 @@ class AuditModelTierTest(unittest.TestCase):
         )
         self.assertNotIn("TIER006", self.codes())
 
+    def test_a_fallback_venue_whose_command_ignores_the_model_variable_warns(self):
+        fallbacks = {
+            "model_fallbacks": {"agy": [["gemini"], ["gpt-oss"]]},
+            "usage_limit_patterns": {"agy": ["RESOURCE_EXHAUSTED"]},
+        }
+        self.write_settings(
+            {
+                **SETTINGS,
+                **fallbacks,
+                "executors": {"AGY": "agy run --model fixed", "codex": "codex exec"},
+                "review": {"reviewers": {"agy": 'agy review --model "$STAGE_MODEL"'}},
+            }
+        )
+        findings = [f for f in self.findings() if f[1] == "TIER007"]
+        self.assertEqual(1, len(findings), findings)
+        self.assertEqual("WARNING", findings[0][0])
+        self.assertIn("`executors.AGY` does not read $STAGE_MODEL", findings[0][3])
+
+        self.write_settings(
+            {**SETTINGS, **fallbacks, "executors": {"agy": "agy run --model $STAGE_MODEL"}}
+        )
+        self.assertNotIn("TIER007", self.codes())
+
+        # A venue with no fallback groups, or with no command bound by name, is not judged.
+        self.write_settings({**SETTINGS, "executors": {"agy": "agy run --model fixed"}})
+        self.assertNotIn("TIER007", self.codes())
+        self.write_settings({**SETTINGS, **fallbacks})
+        self.assertNotIn("TIER007", self.codes())
+
     def test_a_card_tier_without_model_tiers_is_an_error(self):
         self.write_settings({k: v for k, v in SETTINGS.items() if k not in ("model_tiers", "tier_routing")})
 
