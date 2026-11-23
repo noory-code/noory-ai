@@ -31,6 +31,24 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("Follow-up candidate: <text>", text)
         self.assertIn("Waiting on user: <question>", text)
 
+    def test_the_skill_covers_what_the_first_conducting_run_filled_by_hand(self) -> None:
+        text = read("stage-orchestrate")
+        cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Open observations", text)
+        self.assertIn("## Sessions that committed card records", text)
+        self.assertIn("No work session has to be open for this rule.", text)
+        self.assertIn("`parent_session_id`", text)
+        self.assertIn("in this session's own conversation", text)
+        self.assertIn("`not reserved on the remote`", text)
+        self.assertIn("Order: <before or after which card>", text)
+        self.assertIn("pushes nothing more until you", text)
+        self.assertIn("it pushes no commit until the main session answers", cloud)
+        self.assertIn("`retrospective: completed` and `retrospective_ref: <R-id>`", cloud)
+        self.assertIn("`<type>(<scope>): <the card's whole change> (<W-id>)`", cloud)
+        self.assertNotIn("git commit -C FETCH_HEAD", cloud)
+        self.assertIn("runs and is recorded once", cloud)
+
     def test_handoff_keeps_no_copy_of_the_sub_session_procedure(self) -> None:
         text = read("stage-handoff")
 

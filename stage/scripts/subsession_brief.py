@@ -240,7 +240,8 @@ def work_brief(
     lines += [
         *[f"- {item}" for item in REPORT_ITEMS],
         "",
-        "Then wait. The main session answers with a review result or a user decision.",
+        "Then wait, and push no commit until the main session answers: it reviews the commit you",
+        "reported. The main session answers with a review result or a user decision.",
     ]
     return lines
 

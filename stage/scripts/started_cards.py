@@ -15,6 +15,14 @@ orchestrator edits its record. Planned cards are not in progress and are not
 listed. This reads fetched refs and the checkout's records; it never touches the
 network and changes nothing.
 
+Two more lists serve a take-over with no open work session (W-00000406). Open
+observations are listed because follow-up candidates live there. Sessions whose
+commits changed a card record are listed newest first: registering, starting,
+closing, and archiving a card are the orchestrator's commits, so the newest
+session there that is not the reader is the earlier orchestrator. A commit names its session only when the host writes
+the session id into the commit message (Claude Code cloud sessions add a
+`Claude-Session:` trailer); elsewhere the list is empty.
+
 Usage:
     python3 stage/scripts/started_cards.py --project-root . [--base origin/main]
 """
@@ -32,12 +40,16 @@ sys.path.insert(0, str(SCRIPTS.parent / "hooks"))
 sys.path.insert(0, str(SCRIPTS))
 from lifecycle_paths import v4_lifecycle_paths  # noqa: E402
 from stage_paths import ACTIVE_TOPOLOGY_V4, active_topology  # noqa: E402
+from stage_context import observation_root  # noqa: E402
 from stage_record_ids import default_remote  # noqa: E402
 from stage_record_paths import record_paths  # noqa: E402
 from stage_work import DECISION_FINAL_STATUSES, parse_frontmatter  # noqa: E402
 
 WORK_ID_RE = re.compile(r"W-\d{8}")
 WAITING_PREFIX = "Waiting on user:"
+SESSION_ID_RE = re.compile(r"\bsession_[0-9A-Za-z]{8,}\b")
+SESSION_COMMIT_LIMIT = 300
+SESSION_LIST_LIMIT = 5
 SHOWN_FIELDS = ("status", "verification", "review")
 
 
@@ -83,6 +95,33 @@ def ref_paths(project_root: Path, ref: str, roots: list[str]) -> list[str]:
     """Every file path a ref holds under the given project-relative roots."""
 
     return git_lines(project_root, "ls-tree", "-r", "-z", "--name-only", ref, "--", *roots) or []
+
+
+def record_sessions(project_root: Path, refs: list[str]) -> list[str]:
+    """Sessions named in commits that changed a planned, started, or archived card.
+
+    One line per session: its id, and the date and subject of its newest such
+    commit. Only the last `SESSION_COMMIT_LIMIT` commits are read, and at most
+    `SESSION_LIST_LIMIT` sessions are returned.
+    """
+
+    text = git_text(
+        project_root,
+        "log",
+        f"--max-count={SESSION_COMMIT_LIMIT}",
+        "--date-order",
+        "--format=%x1e%cs%x1f%s%x1f%B",
+        *refs,
+        "--",
+        *[(Path(".stage") / root).as_posix() for root in lifecycle_roots(project_root / ".stage")],
+    )
+    found: dict[str, str] = {}
+    for entry in (text or "").split("\x1e"):
+        day, _, rest = entry.partition("\x1f")
+        subject, _, body = rest.partition("\x1f")
+        for session_id in SESSION_ID_RE.findall(body):
+            found.setdefault(session_id, f"{session_id}: {day} {subject.strip()}")
+    return list(found.values())[:SESSION_LIST_LIMIT]
 
 
 def lifecycle_roots(stage_root: Path) -> tuple[str, str, str]:
@@ -160,6 +199,19 @@ def is_card_record(path: str, root: str) -> bool:
     )
 
 
+def read_refs(project_root: Path, base: str) -> list[str]:
+    """HEAD, the base, and each unmerged fetched branch, one ref per distinct commit."""
+
+    refs: list[str] = []
+    seen_commits: set[str] = set()
+    for ref in ["HEAD", base, *sorted(unmerged_refs(project_root, base))]:
+        commit = (git_text(project_root, "rev-parse", "-q", "--verify", f"{ref}^{{commit}}") or "").strip()
+        if commit and commit not in seen_commits:
+            seen_commits.add(commit)
+            refs.append(ref)
+    return refs
+
+
 def started_cards(project_root: Path, base: str) -> list[dict[str, object]]:
     """Cards in progress, each with the refs that hold it, the most recently edited first."""
 
@@ -171,13 +223,7 @@ def started_cards(project_root: Path, base: str) -> list[dict[str, object]]:
         for path in ref_paths(project_root, base, [archive_root])
         for match in WORK_ID_RE.findall(path)
     }
-    refs: list[str] = []
-    seen_commits: set[str] = set()
-    for ref in ["HEAD", base, *sorted(unmerged_refs(project_root, base))]:
-        commit = (git_text(project_root, "rev-parse", "-q", "--verify", f"{ref}^{{commit}}") or "").strip()
-        if commit and commit not in seen_commits:
-            seen_commits.add(commit)
-            refs.append(ref)
+    refs = read_refs(project_root, base)
 
     cards: dict[str, dict[str, object]] = {}
     for ref in refs:
@@ -230,6 +276,20 @@ def open_questions(stage_root: Path) -> list[str]:
     return found
 
 
+def open_observations(stage_root: Path) -> list[str]:
+    """Every observation in the live folder; a closed one leaves it for the archive."""
+
+    root = observation_root(stage_root)
+    found = []
+    for path in record_paths(root) if root.is_dir() else ():
+        fields = parse_frontmatter(path)
+        record_id = (fields.get("id") or "").strip()
+        if re.fullmatch(r"O-\d{8}", record_id) and path.stem == record_id:
+            title = (fields.get("title") or "").strip()
+            found.append(f"{record_id} {title}: {path.relative_to(stage_root.parent).as_posix()}")
+    return found
+
+
 def render(project_root: Path, base: str) -> str:
     cards = started_cards(project_root, base)
     lines = [
@@ -266,6 +326,15 @@ def render(project_root: Path, base: str) -> str:
     waiting += [f"decision {entry}" for entry in open_decisions(stage_root)]
     waiting += [f"question {entry}" for entry in open_questions(stage_root)]
     lines += ["", f"## Waiting in the records: {len(waiting)}", "", *[f"- {entry}" for entry in waiting]]
+    observations = open_observations(stage_root)
+    lines += ["", f"## Open observations: {len(observations)}", "", *[f"- {entry}" for entry in observations]]
+    sessions = record_sessions(project_root, read_refs(project_root, base))
+    lines += [
+        "",
+        f"## Sessions that committed card records: {len(sessions)}",
+        "",
+        *[f"- {entry}" for entry in sessions],
+    ]
     return "\n".join(lines).rstrip() + "\n"
 
 
