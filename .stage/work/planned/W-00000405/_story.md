@@ -31,6 +31,8 @@ scope: stage/scripts,stage/skills,stage/operations,stage/docs/BLUEPRINT.md,stage
 
 ### Excluded
 
+- 빼기 전 기준선을 Mac 의 `.stage/.runtime/driver/logs/` 에서 세는 일. 사용자의 기계가 필요하다.
+- 빼기 실험을 시작하기 전에 잴 수 있는지 확인하는 절차. R-00000403 의 규칙 후보로 남기고 한 번 더 관찰되면 올린다.
 
 ## Risks
 
@@ -41,3 +43,9 @@ scope: stage/scripts,stage/skills,stage/operations,stage/docs/BLUEPRINT.md,stage
 - 그 기록으로 W-00000403(B11) 이후에 닫힌 카드들의 수치를 표로 낼 수 있고, .stage/research/claude-fit/b11-load.md 의 결과 표가 그 수치로 채워진다
 
 ## Next action
+
+## Related truth
+
+- W-00000403 과 R-00000403: 빼기 전후 비교를 이 카드로 옮겼다.
+- DE-00000098, `.stage/research/claude-fit/b11-load.md`
+- 사용자가 2026-11-23 에 목적("잴 수 있는지부터 정하기")과 성공 기준 두 개를 정했다("네 추천대로 1, 2만 등록하죠").
