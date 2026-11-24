@@ -71,7 +71,7 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 ## Next action
 
-닫기 리뷰를 받고 카드를 닫는다.
+W-00000418 의 규칙으로 닫기 리뷰를 다시 받는다.
 
 ## Related truth
 
@@ -124,3 +124,10 @@ x86_64 3.14.10 하나이며, uv 는 0.13.9 의 `aarch64-pc-windows-msvc` 빌드�
 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 코드 커밋 `e99c177` 의 것이다.
 
 - Review at close 2026-11-24 by claude_review_companion: rejected (1 FAIL unable, 2 FAIL unable)
+
+2026-11-24 지휘 세션이 위의 문단에 적힌 확인을 `stage/operations/review.md`, "A check recorded on the card" 의 줄로 옮긴다
+(W-00000418). 새로 돌린 확인은 없다.
+
+- Checked 2026-11-23 on Korean Windows 11 (ARM64, cp949, only x86_64 Python 3.14.10 installed, uv 0.13.9 aarch64-pc-windows-msvc) at 66b53229: 1 — did not hold; `uv run --extra dev pytest -m "not slow"` in rag/server with `UV_PYTHON_INSTALL_DIR` set to an empty folder — uv chose cpython-3.13.18-windows-aarch64 instead of 3.14 and did not build kuzu from source, then stopped because sqlite-vec 0.1.9 has no win_arm64 wheel; with `uv run --python cpython-3.13-windows-x86_64-none --extra dev pytest -q -m "not slow"` kuzu installed from the wheel and 121 passed, 13 deselected
+- User verdict 2026-11-23: 1 — held; "채워진 것으로 보기", "x86 하고 여기하고 크게 다르지 않아요"; rests on the `- Checked` line of 2026-11-23 on Korean Windows 11 (ARM64), its x86_64 Python run with 121 passed
+- Checked 2026-11-23 on macOS (Apple Silicon, uv 0.10.3, system Python 3.15.2) at 66b53229: 2 — held; `uv run --extra dev pytest -q -m "not slow"` in rag/server in a new virtual environment (`UV_PROJECT_ENVIRONMENT` outside the repository) — uv chose Python 3.11.14 and 121 passed, 13 deselected
