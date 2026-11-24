@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Let the close review pass a criterion that only the user's machine or the user can show, from
+  a check recorded on the card (W-00000418). Before, the reviewer could judge such a criterion
+  only as `unable`, which always fails, so a card that carried one could not close even after
+  the check had run (W-00000407: two criteria rejected as `unable`).
+  - `operations/review.md` gains "A check recorded on the card": a `- Checked <date> on
+    <machine> at <commit>: ...` line or a `- User verdict <date>: ...` line on the card's
+    `## Verification` is judged with method `read`. A criterion with no such line is still
+    `unable` and `FAIL`; a line that lacks a part, names another tree, or says `did not hold`
+    is `FAIL`. The verification session's `- Observed` line is judged under the same rules.
+  - The session that built the card never writes these lines; its brief now says so.
+  - The reviewer reads the record and does not see the machine. The card's review line marks
+    the criterion `read`, like a fact of the records.
+  - Projects: add the new sentences from the `review` comment of
+    `templates/v4/project-stage/settings.jsonc` (from "The exception is a criterion ..." to
+    "... its method is unable.") to each review command in `.stage/settings.json`. A command
+    without them keeps the old behavior: the criterion fails as `unable`.
+  - `operations/cloud-execution.md`, "Merge a card that waits for the user's machine", writes
+    the arriving check in that form, and "Close a sub-session's card" checks for the line
+    before the close.
+
 - Shorten the standing rules a session starts with so the index keeps its decision titles
   (W-00000417, DE-00000100). The rules and the index share one 10,000-character limit, and the
   rules are never shortened, so each of their sentences displaced a decision title.

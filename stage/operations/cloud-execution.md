@@ -226,6 +226,11 @@ main session's start commit, so its diff is exactly the card's change.
          line for each criterion that session was given. When one is missing, write it from the
          session's observation and commit it first: the reviewer fails a criterion it has no
          evidence for, and an observation left in a session's message does not reach it.
+     - if: a criterion names something only the user's machine or the user can show
+       then: confirm `## Verification` has a `- Checked` or `- User verdict` line for it
+         (`operations/review.md`, "A check recorded on the card"). When the check ran and only
+         prose records it, write the line from that prose and commit it first. When no check ran,
+         take "Merge a card that waits for the user's machine" or ask the user.
    ```
 
    Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
@@ -279,18 +284,22 @@ then:
 ### Merge a card that waits for the user's machine
 
 A success criterion that only the user's machine can show (another OS, an installed plugin, a
-device) cannot be judged from a cloud session, and the close review fails a criterion it has no
-evidence for. Such a card's code may be merged while the card stays open (W-00000372,
-W-00000407).
+device) cannot be judged by a command in a cloud session. The close review judges it from a check
+recorded on the card (`operations/review.md`, "A check recorded on the card") and fails it while
+no check is recorded. Such a card's code may be merged while the card stays open and the check is
+outstanding (W-00000372, W-00000407).
 
 ```yaml
 take_this_path_when:
-  - every criterion still open after step 3 names something only the user's machine can show
+  - every criterion still open after step 3 names something only the user's machine can show,
+    and its check is not recorded on the card yet
   - and the user has said to merge without waiting for that check
 otherwise:
   - if: the user has not said so
     then: ask the user: wait for the check, or merge with the card open
   - if: an open criterion can be judged by a command the reviewer can run
+    then: this path does not apply; close as in step 4
+  - if: every such criterion already has its `- Checked` or `- User verdict` line on the card
     then: this path does not apply; close as in step 4
 before_the_merge:
   - steps 1 to 3 as written
@@ -307,11 +316,16 @@ written_outside_the_card:
     (this repository's is O-00000062)
 then: step 5 without archiving — push and open the pull request with the card still open
 when_the_users_check_arrives:
-  - write it on the card's `## Verification`: the date, the machine, the command or action, and
-    what it showed; remove the `Waiting on user:` line and check the observation's line
+  - write it on the card's `## Verification` as one `- Checked` line per criterion
+    (`operations/review.md`, "A check recorded on the card", owns the form: the date, the
+    machine, the commit, the command or action, and what it showed); remove the
+    `Waiting on user:` line and check the observation's line
+  - if: the check does not match the criterion's words and the user says how to judge it
+    then: add a `- User verdict` line with the user's words under the `- Checked` line
   - close from a worktree at the squash commit as in step 4; that close review is the card's
-    first, and it judges every criterion
-  - if: the check shows a criterion does not hold
+    first, and it judges every criterion: the ones a command can show by running, the ones
+    only the user's machine or the user can show with method `read` from those lines
+  - if: the check shows a criterion does not hold, and no user verdict says it holds
     then: the card goes back to a work session; its fix merges through a new pull request
 ```
 

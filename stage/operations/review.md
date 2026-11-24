@@ -92,6 +92,8 @@ reviewer_rules:
     then: the criterion is FAIL; the executor report, the work log, and code comments are claims
   - if: a criterion asks for a command result or observed behavior
     then: method is ran, from at least one command the reviewer chose itself; its reason names the command and what it showed
+  - if: a criterion asks for a result that only a whole session, the user's machine, or the user can show
+    then: method is read, from a line on the card's `## Verification` and under the rules of "A check recorded on the card"; without such a line method is unable
   - if: a criterion states a fact of the records (a decision exists, a document says something)
     then: method is read
   - if: the reviewer could not run what a criterion needs
@@ -198,11 +200,63 @@ sandbox that hides the home folder and the network, which is not available on ev
 supports, or a home folder of the reviewer's own, which takes its credentials away. DE-00000101
 widened the shell, so this document names the reads and does not stop them.
 
-A criterion that only a whole session can observe (a new cloud session takes a role and does
-something) is observed by a verification session before the close (`stage-orchestrate`, "Start a
-verification session"). The orchestrator writes that observation on the card's `## Verification`,
-and the reviewer judges the criterion from it with method `read`. The verification session does
-not decide the close.
+## A check recorded on the card
+
+Some criteria cannot be judged by any command in the reviewer's checkout. The reviewer judges
+each of them with method `read` from one line on the card's `## Verification`, and from nothing
+else. The line is written before the close and committed with the card.
+
+| What the criterion needs | Line on `## Verification` | Who writes it |
+|---|---|---|
+| a whole session doing the thing (a new cloud session takes a role and does something) | `- Observed <date> by verification session <session-id> ...`; `stage-orchestrate`, "Start a verification session", owns its form | the orchestrator, from the verification session's observation |
+| the user's machine: another OS, an installed plugin, a device | `- Checked <date> on <machine> at <commit>: <criterion> — <held\|did not hold>; <the command or action> — <what it showed>` | the session that ran the check on that machine, or the main session from what the user or that session reported |
+| the user's own judgment, or the user's reading of a check that does not match the criterion's words | `- User verdict <date>: <criterion> — <held\|did not hold>; "<the user's words>"; rests on <the `- Checked` line's date and machine, or what the user looked at>` | the main session, from the user's message |
+
+```yaml
+line_parts:
+  date: the day the check ran or the user answered, as YYYY-MM-DD
+  machine: the OS and what else decides the result there — architecture, locale, the installed
+    version of the thing checked
+  commit: the commit the checked tree was at
+  criterion: the card's criterion, copied, or its number in `## Success criteria`
+  command_or_action: what was run or done, exactly; for a command, the command line
+  what_it_showed: the result that decides the criterion (for example `121 passed`), not `passed` alone
+never_written_by: the work session that built the card
+not_a_record:
+  - a statement in the executor report, the work log, a commit message, or a session's message
+  - a paragraph under `## Verification` or `## Progress` that is not one of the three lines
+reviewer_rules:
+  - if: the card has no line for the criterion
+    then: method is unable and the verdict is FAIL, as before
+  - if: the line lacks a part named above
+    then: method is read and the verdict is FAIL; the reason names the missing part
+  - if: a `- Checked` or `- Observed` line names a commit that does not hold the card's change
+      (`git merge-base --is-ancestor <code-commit> <named-commit>` fails, and
+      `git diff <code-commit> <named-commit> -- <the changed paths>` prints a difference)
+    then: method is read and the verdict is FAIL; the check ran on another tree
+  - if: the newest line for the criterion says `did not hold` or `could not observe`
+    then: method is read and the verdict is FAIL
+  - if: the newest line for the criterion says `held` and has every part
+    then: method is read and the verdict is PASS
+  - if: a `- Checked` line says `did not hold` and a later `- User verdict` line says `held`
+    then: the user's verdict decides — method is read and the verdict is PASS; the reason names both lines
+  - always: the reason names the line's kind and date, for a `- Checked` line its machine too,
+      and says the reviewer did not run the check
+  - if: the reviewer's checkout can run what the criterion needs
+    then: none of this applies; method is ran
+```
+
+The verification session and the session on the user's machine do not decide the close: the
+reviewer still writes the verdict, and it fails a line that does not say what the criterion asks.
+A `- User verdict` line is the user's judgment of the criterion, which the user owns; the
+reviewer checks that the line has its parts and names the criterion, not whether the user judged
+well.
+
+What this does not give: the reviewer cannot tell a line that describes a check nobody ran. It
+reads the record; it does not see the machine. The card's `- Review at close` line marks such a
+criterion `read`, the same mark a fact of the records gets, so the count of `read` marks does not
+say how many criteria rest on a recorded check. The line itself stays on the card and says who
+checked, where, and when.
 
 ## What close writes on the card
 
