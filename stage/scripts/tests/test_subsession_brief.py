@@ -81,6 +81,17 @@ class SubsessionBriefTest(unittest.TestCase):
         out = brief(self.root, "W-00000002").stdout
 
         self.assertIn("Checks that must run on another OS (for example Windows) are not yours to run", out)
+
+    def test_the_brief_keeps_recorded_checks_out_of_the_builders_hands(self) -> None:
+        self.card()
+
+        out = brief(self.root, "W-00000002").stdout
+
+        self.assertIn(
+            "- Do not write a `- Checked` or `- User verdict` line on the card's `## Verification`",
+            out,
+        )
+        self.assertIn('operations/review.md`,\n  "A check recorded on the card").', out)
         self.assertIn("The main session opens the pull request and reads its CI jobs.", out)
 
     def test_a_card_without_reserved_ids_forbids_new_records(self) -> None:

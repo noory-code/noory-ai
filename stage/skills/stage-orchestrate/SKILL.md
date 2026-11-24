@@ -268,7 +268,9 @@ on_observation:
   - if: a criterion did not hold
     then: send it and what was observed to the work session, and ask the verification session again after the new commit
   - if: a criterion could not be observed
-    then: ask the user how to judge it; the close reviewer fails a criterion it has no evidence for
+    then: ask the user how to judge it, and write the answer on the card as a `- User verdict`
+      line (`operations/review.md`, "A check recorded on the card"); the close reviewer fails a
+      criterion it has no evidence for
   - if: the observation names something only the user can decide
     then: ask the user, and relay the answer to the session that needs it
 ```

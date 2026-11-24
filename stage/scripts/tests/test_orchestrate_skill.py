@@ -61,7 +61,10 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("add to the card's `## Verification`, on your branch", text)
         self.assertNotIn("The verification session's verdict decides whether you close", text)
         self.assertIn("The close review\n   is the only gate", cloud)
-        self.assertIn("The verification session does\nnot decide the close.", review)
+        self.assertIn(
+            "The verification session and the session on the user's machine do not decide the close",
+            review,
+        )
 
     def test_the_skill_has_a_session_print_its_own_brief_for_every_role(self) -> None:
         text = read("stage-orchestrate")
@@ -107,6 +110,38 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("the stand-in denies `git push` and `git commit`", cloud)
         self.assertIn("the reviewer changes something outside the repository", cloud)
         self.assertNotIn("and run `python3 -m unittest`; it may not edit project", cloud)
+
+    def test_a_check_recorded_on_the_card_closes_a_machine_only_criterion(self) -> None:
+        text = read("stage-orchestrate")
+        cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
+        review = (SKILLS.parent / "operations" / "review.md").read_text(encoding="utf-8")
+        section = review.split("## A check recorded on the card\n", 1)[1].split("\n## ", 1)[0]
+
+        # The two lines a machine-only criterion is judged from, with every part named.
+        self.assertIn(
+            "`- Checked <date> on <machine> at <commit>: <criterion> — <held\\|did not hold>; "
+            "<the command or action> — <what it showed>`",
+            section,
+        )
+        self.assertIn('`- User verdict <date>: <criterion> — <held\\|did not hold>; "<the user\'s words>"', section)
+        # Allowed with method read; without a record it stays a FAIL.
+        self.assertIn(
+            "  - if: the newest line for the criterion says `held` and has every part\n"
+            "    then: method is read and the verdict is PASS\n",
+            section,
+        )
+        self.assertIn(
+            "  - if: the card has no line for the criterion\n"
+            "    then: method is unable and the verdict is FAIL, as before\n",
+            section,
+        )
+        self.assertIn("never_written_by: the work session that built the card", section)
+        self.assertIn("a statement in the executor report, the work log", section)
+        # The procedures that write the lines point at the section that owns their form.
+        for document in (cloud, text):
+            self.assertIn('(`operations/review.md`, "A check recorded on the card"', document)
+        self.assertIn("as one `- Checked` line per criterion", cloud)
+        self.assertNotIn("first, and it judges every criterion\n", cloud)
 
     def test_handoff_keeps_no_copy_of_the_sub_session_procedure(self) -> None:
         text = read("stage-handoff")

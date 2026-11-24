@@ -267,6 +267,17 @@ class TemplateV4Test(unittest.TestCase):
             "the work log, and comments in the code are claims, not evidence.",
             "A criterion that asks for a command result or observed behavior needs method ran, "
             "and a criterion with method unable is always FAIL.",
+            # A check only the user's machine or the user can show is judged from its line on
+            # the card, and stays unable without one (W-00000418).
+            "The exception is a criterion that only a whole session, a machine of the user, or the "
+            "user can show: judge it with method read from a line under ## Verification of the "
+            "card that starts with - Observed, - Checked, or - User verdict and names that "
+            "criterion.",
+            "Pass it only when that line says held and gives its date, where it was checked, the "
+            "command or action, and what it showed; a - User verdict line gives its date, the "
+            "words of the user, and what the verdict rests on.",
+            "Say in its reason which line you read and that you did not run the check yourself.",
+            "When the card has no such line for the criterion, its method is unable.",
             # The reviewer's own probe instead of a repeat of close's checks (2-다).
             "close_work.py runs the stored acceptance checks of the card itself, so repeating one is "
             "not your evidence: for each criterion that needs method ran, run at least one "
