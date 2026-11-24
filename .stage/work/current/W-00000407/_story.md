@@ -9,8 +9,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000407
 promotion: pending
 review: pending
 scope: rag/server/pyproject.toml,rag/server/uv.lock,rag/CHANGELOG.md
@@ -71,8 +71,7 @@ rag 서버를 설치하는 사람이 Python 3.14 에서 kuzu 빌드 오류를 �
 
 ## Next action
 
-코드는 병합됐다. 둘째 성공 기준은 Mac 에서 확인됐다(Verification). 첫째 성공 기준은 사용자가 2026-11-23 에 채워진
-것으로 판정했다(Verification). 남은 것은 카드를 닫는 일이다. 이 변경은 아직 닫기 리뷰를 받지 않았다.
+닫기 리뷰를 받고 카드를 닫는다.
 
 ## Related truth
 
@@ -120,3 +119,6 @@ x86_64 3.14.10 하나이며, uv 는 0.13.9 의 `aarch64-pc-windows-msvc` 빌드�
   기존 `.venv` 는 고치지 않았다.
 - Follow-up candidate: ARM64 Windows 에서는 uv 가 ARM64 Python 을 골라 `sqlite-vec` 와 kuzu 의 wheel 을 찾지 못한다.
   ARM64 Windows 를 지원할지, 지원하지 않는다면 x86_64 Python 을 쓰라고 안내할지 정해야 한다.
+
+2026-11-24 지휘 세션 session_018VXR6NxmjDnZJNGb3TZWco 가 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고
+다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 코드 커밋 `e99c177` 의 것이다.
