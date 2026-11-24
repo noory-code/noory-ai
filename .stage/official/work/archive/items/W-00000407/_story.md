@@ -7,12 +7,13 @@ environment: cloud
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000407
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: rag/server/pyproject.toml,rag/server/uv.lock,rag/CHANGELOG.md
 promotes:
 decision_refs:
@@ -87,6 +88,15 @@ W-00000418 의 규칙으로 닫기 리뷰를 다시 받는다.
 
 - 2026-11-23 지휘 세션 session_018VXR6RJwybKUJRATYqvEuM 이 카드를 시작했다. 성공 기준은 Python 3.14 만 있는 한국어 Windows 에서만 볼 수 있다. 사용자가 기계 확인을 기다리지 말고 진행하라고 했으므로("맥 윈도우즈 상관하지 말고 하세요") 고침을 만들어 병합하고, 그 확인은 O-00000062 에 올린다. 클라우드에서 볼 수 있는 것(잠금 파일에 3.14 용 wheel 이 있는지, Linux 에서 시험이 도는지)까지 본다.
 
+### Executor report at close — 2026-11-24
+
+```
+What changed: rag/server/pyproject.toml requires-python changes from ">=3.11" to ">=3.11,<3.14"; rag/server/uv.lock is regenerated with uv lock (requires-python ">=3.11, <3.14", the 3.15 resolution-markers split removed, cp314/cp314t/cp315 wheel entries dropped; no package name or version changed); rag/CHANGELOG.md gains an Unreleased entry; rag/README.md and rag/skills/rag-help/SKILL.md say "Python 3.11–3.13" instead of "Python 3.11+".
+Why: The card's purpose: a machine with only Python 3.14 must not build kuzu from source. kuzu 0.11.3 is the latest kuzu version on PyPI (info.version), so no kuzu upgrade can supply a Windows or macOS 3.14 wheel; of the card's three candidates only narrowing requires-python or pinning a .python-version remains, and .python-version alone does not stop `uv run --python 3.14` or a pip install on 3.14 from selecting it.
+Decisions made: (1) Chose the upper bound <3.14 over rag/server/.python-version: requires-python is enforced by uv's interpreter discovery, by uv lock, and by pip, while .python-version is only a preference. (2) Kept the mypy and ruff targets at 3.11; the minimum did not change. (3) Changed outside the card's scope: rag/README.md and rag/skills/rag-help/SKILL.md, because both told users "Python 3.11+", which would be wrong after the cap. (4) Manifest versions are unchanged, per the repository's plugin release rule. (5) The cap must be lifted by hand when kuzu (or a replacement) publishes 3.14 wheels for Windows and macOS; nothing flags that automatically.
+Work not done: The first success criterion (Korean Windows with only Python 3.14) was not run; only a Windows session can observe it. The second (MacBook) was not run either; Linux stands in below. Simulated "only Python 3.14" on Linux: with UV_PYTHON_PREFERENCE=only-managed and a fresh UV_PYTHON_INSTALL_DIR holding only cpython 3.14.6, uv sync --extra dev downloaded cpython 3.13.14, used it, and installed kuzu==0.11.3 from the wheel. Checks run on Linux with Python 3.13.18: uv run --extra dev pytest -q -m "not slow" (121 passed, 13 deselected), ruff check . (passed), mypy src (no issues in 23 files), uv lock --check (up to date); uv run --python 3.14 is now refused with the requires-python error. Not run: the 13 slow tests. Risk carried from the card: a machine with uv Python downloads disabled and only 3.14 installed now gets a refusal instead of a source build. No record was created.
+```
+
 ## Verification
 
 2026-11-23 한국어 Windows 11(cp949) 세션이 `66b53229` 에서 확인했다. 이 기기는 ARM64 이고, 깔린 Python 은
@@ -131,3 +141,7 @@ x86_64 3.14.10 하나이며, uv 는 0.13.9 의 `aarch64-pc-windows-msvc` 빌드�
 - Checked 2026-11-23 on Korean Windows 11 (ARM64, cp949, only x86_64 Python 3.14.10 installed, uv 0.13.9 aarch64-pc-windows-msvc) at 66b53229: 1 — did not hold; `uv run --extra dev pytest -m "not slow"` in rag/server with `UV_PYTHON_INSTALL_DIR` set to an empty folder — uv chose cpython-3.13.18-windows-aarch64 instead of 3.14 and did not build kuzu from source, then stopped because sqlite-vec 0.1.9 has no win_arm64 wheel; with `uv run --python cpython-3.13-windows-x86_64-none --extra dev pytest -q -m "not slow"` kuzu installed from the wheel and 121 passed, 13 deselected
 - User verdict 2026-11-23: 1 — held; "채워진 것으로 보기", "x86 하고 여기하고 크게 다르지 않아요"; rests on the `- Checked` line of 2026-11-23 on Korean Windows 11 (ARM64), its x86_64 Python run with 121 passed
 - Checked 2026-11-23 on macOS (Apple Silicon, uv 0.10.3, system Python 3.15.2) at 66b53229: 2 — held; `uv run --extra dev pytest -q -m "not slow"` in rag/server in a new virtual environment (`UV_PROJECT_ENVIRONMENT` outside the repository) — uv chose Python 3.11.14 and 121 passed, 13 deselected
+
+- Checks at close 2026-11-24: 2 passed — `cd rag/server && uv lock --check`; `cd rag/server && uv run --extra dev pytest -q -m 'not slow'`
+- Review at close 2026-11-24 by claude_review_companion: approved (1 PASS read, 2 PASS read)
+- Load at close 2026-11-24: attempts 2, review FAIL rounds 1, repeated findings unknown, driver rounds 0, driver failures 0 (timed out 0)

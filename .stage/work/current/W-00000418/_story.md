@@ -70,5 +70,6 @@ W-00000407 의 재리뷰 결과를 본 뒤 사용자의 확인을 받고 닫는�
 - Follow-up candidate: 다른 프로젝트(Dasina 등)는 리뷰 명령에 새 문장 넷을 넣어야 한다. 빠져도 audit 가 알리지 않는다(REVIEW003 은 method 낱말만 본다).
 - Follow-up candidate: `claude_review_companion.py` 의 REVIEWER_RULES 가 기록된 확인의 예외를 말하게 한다.
 - Follow-up candidate: `.stage/operations/verification.md` 의 "Windows 동작 확인" 이 `- Checked` 형식을 가리키게 한다.
+- 2026-11-24 지휘 세션이 W-00000407 의 닫기 리뷰를 이 카드의 규칙으로 다시 돌렸다(셋째 기준). 첫 리뷰는 두 기준을 `unable` 로 반려했고, 확인을 `- Checked` 와 `- User verdict` 줄로 옮긴 뒤의 리뷰는 두 기준을 `read` 로 통과시켰다. 리뷰어는 판정 이유에 줄의 종류와 날짜를 적고 자기가 확인을 돌리지 않았다고 적었다. W-00000407 은 닫혀 보관됐다.
 
 ## Verification
