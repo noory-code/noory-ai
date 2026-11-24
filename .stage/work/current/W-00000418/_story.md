@@ -9,8 +9,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000418
 promotion: pending
 review: pending
 scope: stage/operations/review.md,stage/operations/cloud-execution.md,stage/templates/v4/project-stage/settings.jsonc,.stage/settings.json,stage/scripts/subsession_brief.py,stage/scripts/tests,stage/CHANGELOG.md
@@ -49,7 +49,7 @@ decision_refs:
 
 ## Next action
 
-W-00000407 의 재리뷰 결과를 본 뒤 사용자의 확인을 받고 닫는다(DE-00000087).
+닫기 리뷰를 받고 닫는다.
 
 ## Related truth
 
@@ -71,5 +71,8 @@ W-00000407 의 재리뷰 결과를 본 뒤 사용자의 확인을 받고 닫는�
 - Follow-up candidate: `claude_review_companion.py` 의 REVIEWER_RULES 가 기록된 확인의 예외를 말하게 한다.
 - Follow-up candidate: `.stage/operations/verification.md` 의 "Windows 동작 확인" 이 `- Checked` 형식을 가리키게 한다.
 - 2026-11-24 지휘 세션이 W-00000407 의 닫기 리뷰를 이 카드의 규칙으로 다시 돌렸다(셋째 기준). 첫 리뷰는 두 기준을 `unable` 로 반려했고, 확인을 `- Checked` 와 `- User verdict` 줄로 옮긴 뒤의 리뷰는 두 기준을 `read` 로 통과시켰다. 리뷰어는 판정 이유에 줄의 종류와 날짜를 적고 자기가 확인을 돌리지 않았다고 적었다. W-00000407 은 닫혀 보관됐다.
+- 2026-11-24 사용자가 이 카드를 닫으라고 했다("닫으세요", DE-00000087 의 확인). 지휘 세션은 그 전에 사용자의 판정이 실패한 확인을 덮는다는 것과, 리뷰어가 아무도 돌리지 않은 확인의 줄을 가려내지 못한다는 것을 알렸다.
 
 ## Verification
+
+2026-11-24 지휘 세션 session_018VXR6NxmjDnZJNGb3TZWco 가 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 squash 커밋 `0dab111` 의 것이다.
