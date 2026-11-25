@@ -11,6 +11,12 @@
     removed and refused. `--main-session` is renamed `--po-session`.
   - Every brief tells its session not to ask the user anything, to put each question in its
     report to the PO session, and to pass on the user's words when the user writes there anyway.
+  - Every brief also tells its session to make no decision: before it builds what depends on
+    one, it sends the PO session the options and its recommendation and waits. The brief lists
+    what counts (a choice between viable options, one that takes more than one file to reverse,
+    a value another card depends on, a file under `official/`, the card's scope or an unmet
+    criterion) and what stays with the session (a one-file how-detail). `stage-orchestrate`
+    gains "Decide here".
   - The PM brief: a card that splits into two or more pieces goes to specialist sub-agents and
     the PM session inspects each against its completion condition; a one-piece card it does
     itself. A specialist is named by one profession noun (`developer`, `designer`, `planner`,

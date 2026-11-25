@@ -336,6 +336,7 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn("that piece's completion condition", out)
         self.assertIn("Inspect each piece yourself against its completion condition", out)
         self.assertIn("A specialist's summary is a claim.", out)
+        self.assertIn("A specialist decides nothing either: it returns a decision to you", out)
 
     def test_a_plan_brief_drafts_cards_from_the_digest_and_registers_nothing(self) -> None:
         proc = brief(self.root, "--role", "plan", "--topic", "Cut  the migration\ninto cards")
@@ -399,6 +400,32 @@ class SubsessionBriefTest(unittest.TestCase):
                 )
                 self.assertIn("send the user's words, quoted, to the PO\n  session", head)
                 self.assertIn("- anything that needs the user's confirmation", head)
+                # DE-00000103, "의사결정은 PO 에서 한다": no session under the PO decides.
+                self.assertIn(
+                    "- Do not make a decision yourself: every decision is made at the PO session "
+                    "(DE-00000103).",
+                    head,
+                )
+                flat = " ".join(head.split())
+                for kind in (
+                    "selects between two or more viable options",
+                    "would need more than one file edited to reverse",
+                    "sets a value another card depends on (a name, a path, a schema, an interface)",
+                    "changes a file under `official/`",
+                    "changes a card's scope or leaves a success criterion unmet",
+                ):
+                    self.assertIn(kind, flat)
+                self.assertIn(
+                    "Before you build what depends on a decision, send the PO session the options "
+                    "and the one you recommend, and wait for its answer.",
+                    flat,
+                )
+                self.assertIn("Send the decisions you can see ahead in one message", flat)
+                self.assertIn(
+                    "A how-detail that touches one file and is undone by undoing that file is "
+                    "yours to settle.",
+                    flat,
+                )
                 for gone in ("ask the user in this session", "Talk with the user in this session"):
                     self.assertNotIn(gone, head)
 

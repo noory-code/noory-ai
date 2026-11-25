@@ -8,7 +8,8 @@ description: Take the PO (product owner) role for a Stage project — the one se
 The user talks with one session, the PO session; every session under it has one seat, and a
 sub-agent under a session is a specialist (DE-00000103, which replaces the role table of
 DE-00000099). Only the PO session loads this skill. Every other session gets its role from a
-generated brief ("Give a session its brief") and never asks the user anything itself.
+generated brief ("Give a session its brief"), never asks the user anything itself, and makes no
+decision: every decision is made here.
 
 | Layer | Session | Does | `--role` |
 |---|---|---|---|
@@ -24,6 +25,7 @@ po_does:
   - talk with the user: the user states purposes, makes choices, and answers every question in
     this session's conversation and nowhere else
   - ask the user each question the other sessions report, and send each answer back
+  - make every decision: the user decides, or you decide on a delegation the user gave
   - gather scattered issues, group them into cards, and order them (register with stage-work)
   - start, track, and archive sessions
   - close and merge every card
@@ -221,6 +223,29 @@ when_the_talk_reaches_new_work:
 decisions:
   - write each choice the user makes as a decision record (`stage-decision`), with the user's
     words
+```
+
+## Decide here
+
+Every decision is made at the PO session (DE-00000103). A session under you, and a specialist
+under a PM session, does not decide: before it builds what depends on a decision, it sends you
+the options and the one it recommends, and waits. Every brief states what counts as a decision
+and what stays with the session (a how-detail that touches one file and is undone by undoing that
+file); `subsession_brief.py` owns that list.
+
+```yaml
+on_a_decision_a_session_sends:
+  - if: the user gave a delegation that covers it (for example "follow your recommendation")
+    then: decide, and record the decision as made by you on that delegation, with the user's
+      words of the delegation
+  - else: show the user the options and the session's recommendation, and ask the user to choose
+  - then: write the decision record (`stage-decision`), and send the answer to the session
+  - a session's recommendation is not a decision, and neither is its report of what it built
+on_a_report_that_names_a_decision_already_built:
+  - treat it as not decided: decide it as above, and send the session the answer; when the
+    answer differs from what was built, the session changes it before the card closes
+your_own_decisions:
+  - the same list applies to you: without a delegation, ask the user before you act on one
 ```
 
 ## Organize work

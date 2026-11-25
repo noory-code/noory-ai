@@ -4,7 +4,8 @@
 DE-00000103 names the layers. The PO session is the one session the user talks with:
 it registers and starts cards, holds record ids for them, and later closes and merges
 them (DE-00000094). Every session under it gets its role through its first message
-instead of a skill, and never asks the user anything itself:
+instead of a skill. It never asks the user anything itself, and it makes no decision:
+it sends the options and its recommendation to the PO session before building:
 
 - `--role pm` (default): the session manages one card. A card that splits into two or
   more pieces goes to specialist sub-agents and the session inspects what they return;
@@ -105,6 +106,17 @@ USER_RULE = (
     "  session; it asks the user and sends you the answer.",
     "- When the user writes in this session anyway, send the user's words, quoted, to the PO",
     "  session in your next message.",
+)
+DECISION_RULE = (
+    "- Do not make a decision yourself: every decision is made at the PO session (DE-00000103).",
+    "  A decision is a choice that selects between two or more viable options, that would need",
+    "  more than one file edited to reverse, that sets a value another card depends on (a name,",
+    "  a path, a schema, an interface), that changes a file under `official/`, or that changes a",
+    "  card's scope or leaves a success criterion unmet.",
+    "- Before you build what depends on a decision, send the PO session the options and the one",
+    "  you recommend, and wait for its answer. Send the decisions you can see ahead in one",
+    "  message, and continue with the parts that do not depend on them.",
+    "- A how-detail that touches one file and is undone by undoing that file is yours to settle.",
 )
 RECORD_FIELDS = ("status", "verification", "review", "retrospective", "retrospective_ref", "promotion")
 REPORT_ITEMS = (
@@ -252,6 +264,8 @@ def specialist_lines(item_id: str, unit: str) -> list[str]:
         "  the command or the reading that shows it), the card, and the rules below.",
         f"- Inspect each {unit} yourself against its completion condition: run its checks and read",
         "  its diff. A specialist's summary is a claim.",
+        "- A specialist decides nothing either: it returns a decision to you, and you send it to",
+        "  the PO session as the rules below say.",
     ]
 
 
@@ -343,6 +357,7 @@ def pm_brief(
         "## Rules",
         "",
         *USER_RULE,
+        *DECISION_RULE,
         LIFECYCLE_RULE,
         f"- Do not edit {card_word} `{'`, `'.join(RECORD_FIELDS)}` fields.",
         f"- Do not edit {card_word} `## Progress` or `## Next action` section; the PO session writes",
@@ -452,6 +467,7 @@ def verify_brief(
         "## Rules",
         "",
         *USER_RULE,
+        *DECISION_RULE,
         "- Do not edit, commit, or push anything. When a command writes files, restore the working",
         "  tree (`git status --short` prints nothing) before you report.",
         "- Do not fix what you find. A criterion that did not hold goes into your observation.",
@@ -565,6 +581,7 @@ def topic_brief(
         "## Rules",
         "",
         *USER_RULE,
+        *DECISION_RULE,
         *parts["rules"],
         *NO_RECORD_RULES,
         "",
@@ -599,6 +616,7 @@ def rule_candidates_brief(project_root: Path, po_session: str, branch: str) -> l
         "## Rules",
         "",
         *USER_RULE,
+        *DECISION_RULE,
         f"- Write only `{RULE_CANDIDATES}`: a research session writes a file in this task only.",
         f"  Commit and push it only to your own branch{f' `{branch}`' if branch else ''}.",
         "- Do not edit a retrospective, a decision record, a rule file, a skill, or a card.",

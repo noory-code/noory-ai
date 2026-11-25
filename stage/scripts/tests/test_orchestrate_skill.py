@@ -136,6 +136,21 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("## Start a research session", text)
         self.assertIn("The user chooses; the research session does not.", flat)
 
+    def test_every_decision_is_made_at_the_po_session(self) -> None:
+        text = read("stage-orchestrate")
+        section = text.split("## Decide here\n", 1)[1].split("\n## ", 1)[0]
+        flat = " ".join(section.split())
+        brief = (SKILLS.parent / "scripts" / "subsession_brief.py").read_text(encoding="utf-8")
+
+        self.assertIn("Every decision is made at the PO session (DE-00000103).", section)
+        self.assertIn("it sends you the options and the one it recommends, and waits", flat)
+        self.assertIn("`subsession_brief.py` owns that list", flat)
+        self.assertIn("record the decision as made by you on that delegation", flat)
+        self.assertIn("ask the user to choose", flat)
+        self.assertIn("a session's recommendation is not a decision", flat)
+        self.assertIn("- make every decision: the user decides, or you decide on a delegation", text)
+        self.assertIn("DECISION_RULE = (", brief)
+
     def test_sessions_tags_and_sub_agents_follow_the_naming_rule(self) -> None:
         """DE-00000103, "네이밍 룰": titles, tags, and the specialists' names."""
         text = read("stage-orchestrate")
