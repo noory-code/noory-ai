@@ -53,9 +53,13 @@ decision_refs: DE-00000103
 
 ## Next action
 
+작업 세션 session_018VXR6Rki1nPLNsnanfTae9 의 둘째 보고를 받는다. 받으면 "Close a sub-session's card" 대로 가져와 검사하고 닫기 리뷰를 돌린다. 이 카드가 병합된 뒤에 띄우는 세션부터 새 브리핑(`--po-session`, `--role pm`)과 새 이름을 쓴다.
+
 ## Related truth
 
 ## Sessions
+
+- session_018VXR6Rki1nPLNsnanfTae9 — work — 2026-11-25 — opened from the index: DE-00000103
 
 ## Progress
 
@@ -64,5 +68,8 @@ decision_refs: DE-00000103
 - 이 카드의 작업 세션은 옛 브리핑(`--role work`)과 옛 제목으로 뜬다. 새 이름은 이 카드가 병합된 뒤의 세션부터 쓴다.
 - 새 기록 번호는 잡아 두지 않았다. 이 카드는 새 기록을 만들지 않는다.
 - 2026-11-25 사용자가 "모든 의사결정은 PO 에서 이뤄집니다."라고 했다. DE-00000103 에 "의사결정은 PO 에서 한다"를 더했고, 성공 기준 한 줄을 더했다. 작업 세션에 메시지로 알렸다.
+- 2026-11-25 작업 세션 session_018VXR6Rki1nPLNsnanfTae9 가 b5d4ee33 을 보고했다. 처음 여섯 성공 기준을 채웠다고 했다(스크립트 시험 1036, 훅 시험 489 통과, audit 오류 0). 역할은 `pm`, `verify`, `plan`, `research` 이고 옛 이름은 거부한다. `--main-session` 은 `--po-session` 이 됐다. 범위 밖으로 `stage/scripts/stage_id_blocks.py` 와 `stage_record_ids.py` 의 설명과 오류 문구를 고쳤다. 새 브리핑으로 실제 세션을 돌려 본 적은 없다고 했다. 닫기 리뷰는 시작하지 않았다.
+- 2026-11-25 지휘 세션이 작업 세션의 세 질문을 사용자의 위임으로 정했다: 사용자의 말에 목적과 성공 기준이 다 있으면 PO 가 바로 등록하고 아니면 계획 세션을 거친다. 비교할 선택지가 있는 조사는 리서치 세션, 답이 하나인 찾아보기는 서브에이전트. 옛 이름의 호환은 두지 않는다. 사용자가 보고 뒤집을 수 있다.
+- 2026-11-25 지휘 세션이 일곱째 성공 기준("의사결정은 PO 에서")이 b5d4ee33 에 없어서 작업 세션에 둘째 커밋을 요청했다. 사용자가 같은 날 오늘 작업을 여기서 마무리하자고 했다.
 
 ## Verification
