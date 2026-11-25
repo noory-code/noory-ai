@@ -52,8 +52,8 @@ Two tests promote a candidate into a rule file, and nothing else does: **it happ
 [rule-promotion.md](rule-promotion.md) before writing the section or lifting a candidate — it owns
 the tests, where the rule goes, and why amending an existing rule usually beats adding a new one.
 
-A closing session does not gather candidates across retrospectives. A separate consolidation
-session does, into `.stage/state/rule-candidates.md`, and it only proposes
+A closing session does not gather candidates across retrospectives. A research session given
+the rule-candidates task does, into `.stage/state/rule-candidates.md`, and it only proposes
 ([rule-promotion.md](rule-promotion.md), "Consolidating candidates").
 
 Mixing the queue and the rule under one heading is what buried the earlier pile: 217 retrospectives carried a lesson

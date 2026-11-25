@@ -33,12 +33,12 @@ SESSION_CONTEXT_LINE_LIMIT = 160
 # Decisions whose status is one of these are in force; any other status is shown on the line.
 DECISION_SETTLED_STATUSES = frozenset({"decided", "promoted", "approved"})
 
-# The consolidated rule-candidate list a consolidation session writes
+# The consolidated rule-candidate list a research session writes as its rule-candidates task
 # (`skills/stage-retrospective/rule-promotion.md`), relative to `.stage/`.
 RULE_CANDIDATE_LIST = "state/rule-candidates.md"
-# New retrospectives since the list's `through:` id that make a consolidation session due.
+# New retrospectives since the list's `through:` id that make the rule-candidates task due.
 CONSOLIDATION_DUE_AFTER = 20
-# What a bullet of that list says when the consolidation session proposes promoting it.
+# What a bullet of that list says when that session proposes promoting it.
 PROMOTE_PROPOSAL = "proposed: promote"
 
 RULE_CANDIDATE_SECTION = re.compile(
@@ -216,7 +216,7 @@ def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
     Returns `(candidates, status)`. `candidates` are the top-level bullets of the
     consolidated list, one bounded line each: the `proposed: promote` ones first, then the
     rest, each group in the list's order. `status` says how many
-    retrospectives are newer than the list and whether a consolidation session is due; with
+    retrospectives are newer than the list and whether the rule-candidates task is due; with
     no list it says how many retrospectives carry a candidate and where they are.
     """
     if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
@@ -249,7 +249,8 @@ def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
         )
         if newer >= CONSOLIDATION_DUE_AFTER:
             status += (
-                f" A consolidation session is due ({CONSOLIDATION_DUE_AFTER} or more): "
+                f" Rule candidates are due ({CONSOLIDATION_DUE_AFTER} or more): give a research "
+                "session the rule-candidates task; "
                 "`skills/stage-retrospective/rule-promotion.md` in the installed Stage plugin."
             )
     else:

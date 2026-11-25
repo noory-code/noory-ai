@@ -99,21 +99,23 @@ first. A decision binds work; a candidate is not yet a rule.
 ## Sessions on the card
 
 A card's `## Sessions` section names each session that worked on it, so a later reader can open
-that session's transcript. The main session writes the line when it records the session's report;
+that session's transcript. The PO session writes the line when it records the session's report;
 a session that works alone on the device writes its own.
 
 ```markdown
 ## Sessions
 
-- session_01AbC… — work — 2026-11-23 — opened from the index: DE-00000094, DE-00000100
+- session_01AbC… — pm — 2026-11-23 — opened from the index: DE-00000094, DE-00000100
 - session_01XyZ… — verify — 2026-11-24 — opened from the index: none
 ```
 
 ```yaml
 one_line_per_session:
   - the session id as the platform prints it; `unknown` when the host gives the session none
-  - its role: `work`, `verify`, `orchestrator`, `discussion`, `planning`, or `consolidation`
-    (`orchestrator` aside, the `--role` values of `subsession_brief.py`)
+  - its role: `po`, `plan`, `pm`, `verify`, or `research` (DE-00000103; `po` aside, the
+    `--role` values of `subsession_brief.py`). A line written before that decision keeps its
+    role: `work` is today's `pm`, `orchestrator` is `po`, `planning` is `plan`, and
+    `discussion` and `consolidation` are seats that no longer exist
   - the date it reported
   - "opened from the index: <ids>": the records the session says it opened because the session
     index listed them, copied from its report; `none` when it opened none; `not reported` when
@@ -193,37 +195,38 @@ not committed.
 5. Copy the closed card and retrospective back to the branch and run
    `close_work.py <id>` there once more; its reconcile path refreshes the decision index.
 
-## Close a sub-session's card
+## Close a PM session's card
 
-A card handed to a cloud sub-session (`stage-orchestrate`, "Start a work session") is closed
-by the main session, never by the sub-session (DE-00000094). The sub-session's branch starts at the
-main session's start commit, so its diff is exactly the card's change.
+A card handed to a cloud PM session (`stage-orchestrate`, "Start a PM session") is closed
+by the PO session, never by the PM session (DE-00000094, DE-00000103). The PM session's branch
+starts at the PO session's start commit, so its diff is exactly the card's change.
 
-1. Send the sub-session one message before anything else: the review of commit `<reported-sha>`
-   starts, and it pushes no commit until the main session answers. Then
-   `git fetch origin <sub-session-branch>` and compare `git rev-parse FETCH_HEAD` with the
-   reported commit. When they differ, the sub-session pushed after its report: ask it which
+1. Send the PM session one message before anything else: the review of commit `<reported-sha>`
+   starts, and it pushes no commit until the PO session answers. Then
+   `git fetch origin <pm-session-branch>` and compare `git rev-parse FETCH_HEAD` with the
+   reported commit. When they differ, the PM session pushed after its report: ask it which
    commit to review, and restart this step with its answer.
-   Add the sub-session's line to the card's `## Sessions` ("Sessions on the card") in the same
+   Add the PM session's line to the card's `## Sessions` ("Sessions on the card") in the same
    commit that records its report.
-2. Squash it onto the main session's branch as one commit that carries the sub-session's executor
+2. Squash it onto the PO session's branch as one commit that carries the PM session's executor
    report: `git merge --squash FETCH_HEAD`, then commit with a message of your own. Its subject
-   is `<type>(<scope>): <the card's whole change> (<W-id>)`; the last commit of the sub-session's
+   is `<type>(<scope>): <the card's whole change> (<W-id>)`; the last commit of the PM session's
    branch names only its last step. Its body is that commit's body, unchanged:
    `git log -1 --format=%b FETCH_HEAD` prints it. Write both to a file outside the repository and
    run `git commit -F <file>`. The review receives the paths of HEAD (O-00000058), so one squash
    commit hands the reviewer every path; no local-only commit is needed.
-3. Re-run the card's checks yourself; do not trust the sub-session's transcript.
-4. When a verification session observed a criterion that only a session can observe
-   (`stage-orchestrate`, "Start a verification session"), its observation is on the card's
-   `## Verification` before this step, committed on the main session's branch. The close review
-   is the only gate; no verification session has to pass first.
+3. Re-run the card's checks yourself; do not trust the PM session's transcript.
+4. When a verify session observed a criterion that only a session can observe
+   (`stage-orchestrate`, "Start a verify session"), its observation is on the card's
+   `## Verification` before this step, committed on the PO session's branch. The close review
+   is the only gate; no verify session has to pass first.
 
    ```yaml
    before_closing:
      - if: the card's `## Sessions` has a `verify` line
-       then: confirm `## Verification` has a `- Observed ... by verification session <that id>`
-         line for each criterion that session was given. When one is missing, write it from the
+       then: confirm `## Verification` has a `- Observed ... by verify session <that id>`
+         line for each criterion that session was given (a line written before DE-00000103 says
+         `verification session`). When one is missing, write it from the
          session's observation and commit it first: the reviewer fails a criterion it has no
          evidence for, and an observation left in a session's message does not reach it.
      - if: a criterion names something only the user's machine or the user can show
@@ -240,23 +243,23 @@ main session's start commit, so its diff is exactly the card's change.
 
    Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
    retrospective, link it on the card, and close with the review as in "Close" above. When the
-   review fails, commit the card with its new `rejected` review line on the main session's
+   review fails, commit the card with its new `rejected` review line on the PO session's
    branch, keep `.stage/.runtime/driver/logs/<W-id>.md` in place, send the failed criteria to the
-   sub-session, and repeat from step 1 after it pushes ("Import again after a rejected close
+   PM session, and repeat from step 1 after it pushes ("Import again after a rejected close
    review"). The close that passes counts the rejected lines and the reports in that log into the
    card's `- Load at close` line.
-5. Archive the card, push, and open the pull request from the main session's branch. The
-   sub-session's branch is not merged on its own.
+5. Archive the card, push, and open the pull request from the PO session's branch. The
+   PM session's branch is not merged on its own.
 
-A work session that built an epic leaves one commit per story, each with that story's executor
+A PM session that managed an epic leaves one commit per story, each with that story's executor
 report. Bring them over one by one instead of squashing (`git cherry-pick <story-commit>`, oldest
 first), and run steps 3 and 4 for each story at its commit. Close the stories without `--archive`,
 then close and archive the epic.
 
 ### Import again after a rejected close review
 
-The main session's branch already holds the first squash commit and, above it, the commit that
-records the `rejected` line. The sub-session's branch holds the first change and the fix as its
+The PO session's branch already holds the first squash commit and, above it, the commit that
+records the `rejected` line. The PM session's branch holds the first change and the fix as its
 own commits, so the second `git merge --squash FETCH_HEAD` conflicts in every file both attempts
 changed (W-00000410: six files).
 
@@ -266,11 +269,11 @@ first_squash_commit:
     the commit that records the `rejected` line stands on it.
 second_squash:
   - run `git merge --squash FETCH_HEAD` as in step 2
-  - if: a path conflicts and the sub-session's branch changed it
-    then: take the sub-session's file whole — `git checkout FETCH_HEAD -- <path>`
-  - if: a path conflicts and it is a `.stage/` record the main session wrote
-    then: keep the main session's file — `git checkout HEAD -- <path>`
-  - confirm the code equals the sub-session's branch before committing:
+  - if: a path conflicts and the PM session's branch changed it
+    then: take the PM session's file whole — `git checkout FETCH_HEAD -- <path>`
+  - if: a path conflicts and it is a `.stage/` record the PO session wrote
+    then: keep the PO session's file — `git checkout HEAD -- <path>`
+  - confirm the code equals the PM session's branch before committing:
     `git diff FETCH_HEAD -- <the card's scope paths and every path the report lists>`
     prints nothing. When it prints a difference, the squash is wrong: resolve again, do not commit.
   - commit as in step 2. The body is the newest report, whose `Changed paths (JSON)` lists every
@@ -311,7 +314,7 @@ before_the_merge:
   - no close review runs, and no report is imported, no retrospective is written, and the card
     is not closed or archived: it stays in `.stage/work/current/` with its status unchanged
 written_on_the_card:
-  - under `## Progress` — which checks the main session re-ran at the squash commit, and the
+  - under `## Progress` — which checks the PO session re-ran at the squash commit, and the
     sentence `This change was merged without a close review.`
   - under `## Next action` — one line per open criterion:
     `Waiting on user: <what to run or look at, and on which machine> (<which criterion>)`
@@ -331,7 +334,7 @@ when_the_users_check_arrives:
     first, and it judges every criterion: the ones a command can show by running, the ones
     only the user's machine or the user can show with method `read` from those lines
   - if: the check shows a criterion does not hold, and no user verdict says it holds
-    then: the card goes back to a work session; its fix merges through a new pull request
+    then: the card goes back to a PM session; its fix merges through a new pull request
 ```
 
 ## What this does not cover

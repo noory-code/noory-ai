@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """List the cards in progress across fetched branches, and the questions waiting in records.
 
-An orchestrator that takes over reads this instead of walking branches by hand
-(DE-00000099). A card is in progress when a record for it sits under the started
+A PO session that takes over reads this instead of walking branches by hand
+(DE-00000099, DE-00000103). A card is in progress when a record for it sits under the started
 cards of HEAD, of the default branch, or of a fetched branch the default branch
 has not merged, and the default branch has not archived it. A branch merged by
 squash still looks unmerged to git; its cards are archived on the default branch
 and drop out for that reason.
 
-A card can sit on several branches (a work session's branch and the
-orchestrator's copy). The branch whose last commit touched the card's record most
+A card can sit on several branches (a PM session's branch and the
+PO session's copy). The branch whose last commit touched the card's record most
 recently is listed first and is the one to read: after a card starts, only the
-orchestrator edits its record. Planned cards are not in progress and are not
+PO session edits its record. Planned cards are not in progress and are not
 listed. This reads fetched refs and the checkout's records; it never touches the
 network and changes nothing.
 
-Two more lists serve a take-over with no open work session (W-00000406). Open
+Two more lists serve a take-over with no open PM session (W-00000406). Open
 observations are listed because they wait for a card or a decision. Sessions whose
 commits changed a card record are listed newest first: registering, starting,
-closing, and archiving a card are the orchestrator's commits, so the newest
-session there that is not the reader is the earlier orchestrator. A commit names its session only when the host writes
+closing, and archiving a card are the PO session's commits, so the newest
+session there that is not the reader is the earlier PO session. A commit names its
+session only when the host writes
 the session id into the commit message (Claude Code cloud sessions add a
 `Claude-Session:` trailer); elsewhere the list is empty.
 
@@ -51,6 +52,16 @@ SESSION_ID_RE = re.compile(r"\bsession_[0-9A-Za-z]{8,}\b")
 SESSION_COMMIT_LIMIT = 300
 SESSION_LIST_LIMIT = 5
 SHOWN_FIELDS = ("status", "verification", "review")
+# Session tags (DE-00000103). The earlier pair marks sessions created before that decision;
+# a PO session that takes over still finds them in the session list.
+ROLE_TAGS_LINE = (
+    "Role tags: stage-role:po on the PO session; stage-role:<plan|pm|verify|research> and "
+    "stage-po:<PO session id> on each session it creates"
+)
+EARLIER_TAGS_LINE = (
+    "Earlier tags: stage-orchestrator (a PO session), stage-main-session:<id> (a session "
+    "under the PO session <id>)"
+)
 
 
 def git_text(project_root: Path, *args: str) -> str | None:
@@ -157,7 +168,7 @@ def default_base(project_root: Path) -> str | None:
 def project_tag(project_root: Path) -> str:
     """The session tag of this project: `stage-project:<owner>/<name>` from the remote's URL.
 
-    Without a remote the project folder's name stands in. An orchestrator copies
+    Without a remote the project folder's name stands in. A PO session copies
     this line instead of spelling the repository itself, because a session whose
     tag is spelled differently silently drops out of the take-over list.
     """
@@ -295,6 +306,8 @@ def render(project_root: Path, base: str) -> str:
     lines = [
         f"Base: {base}",
         f"Project tag: {project_tag(project_root)}",
+        ROLE_TAGS_LINE,
+        EARLIER_TAGS_LINE,
         "",
         f"## Cards in progress: {len(cards)}",
         "",

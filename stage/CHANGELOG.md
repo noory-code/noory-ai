@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+- The user talks with one session, the PO session; the sessions under it and their sub-agents
+  work under fixed names and seats (W-00000420, DE-00000103). Before, discussion and planning
+  sessions talked with the user themselves, so the user answered in several windows and the
+  conducting session learned those answers only from messages.
+  - `subsession_brief.py` takes `--role pm` (default), `verify`, `plan`, or `research`. `work`
+    is renamed `pm` and `planning` is renamed `plan`; `discussion` and `consolidation` are
+    removed and refused. `--main-session` is renamed `--po-session`.
+  - Every brief tells its session not to ask the user anything, to put each question in its
+    report to the PO session, and to pass on the user's words when the user writes there anyway.
+  - The PM brief: a card that splits into two or more pieces goes to specialist sub-agents and
+    the PM session inspects each against its completion condition; a one-piece card it does
+    itself. A specialist is named by one profession noun (`developer`, `designer`, `planner`,
+    `writer`, `tester`) and each run is described as `<profession> <card id> <piece>`.
+  - The plan brief: the session writes card drafts from the PO session's digest, which quotes
+    the user's words, and registers nothing. The research brief: options with evidence, no
+    choice, no file written.
+  - Gathering rule candidates is a research session's task
+    (`--role research --task rule-candidates`), the only one in which it writes a file. The
+    session index line reads `Rule candidates are due` instead of
+    `A consolidation session is due`.
+  - `stage-orchestrate` gives the PO role (the skill keeps its name): "Names" states session
+    titles (`PO <project>`, `Plan <topic>`, `PM <W-id> <short title>`,
+    `Verify <W-id> <short title>`, `Research <question>`) and tags (`stage-role:<role>`,
+    `stage-po:<PO session id>`); "Talk with the user", "Start a plan session", and "Start a
+    research session" are new; "One conductor at a time" is now "One PO session at a time".
+  - A PO session that takes over still finds sessions tagged `stage-orchestrator` or
+    `stage-main-session:<id>`; `started_cards.py` prints the new and the earlier tag names.
+  - `operations/cloud-execution.md`, `review.md`, and `retrospective.md` say PO session, PM
+    session, and verify session. "Close a sub-session's card" is now "Close a PM session's
+    card", a card's `## Sessions` line takes the roles `po`, `plan`, `pm`, `verify`, and
+    `research`, and the observation line reads `- Observed <date> by verify session <id>`.
+    Lines written earlier keep their words.
+
 - A follow-up candidate becomes a card only with evidence; the rest are discarded unrecorded
   (W-00000419, DE-00000102). Before, every candidate a session reported was written on the card
   and registered at close: eight cards closed on one day produced more than thirty.

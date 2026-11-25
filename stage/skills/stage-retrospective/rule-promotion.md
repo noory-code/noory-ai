@@ -50,9 +50,10 @@ occurrence promotes it.
 ## Consolidating candidates
 
 One retrospective sees one card. Whether a behavior happened twice is only visible across all of
-them, so a separate session reads them together and keeps one list (DE-00000100). The
-`stage-orchestrate` skill owns when that session is started ("Start a consolidation session"):
-before a milestone is closed, and when 20 or more retrospectives are newer than the list.
+them, so a separate session reads them together and keeps one list (DE-00000100). That session
+is a research session whose task is the list (DE-00000103). The `stage-orchestrate` skill owns
+when the task is given ("The rule-candidates task"): before a milestone is closed, and when 20 or
+more retrospectives are newer than the list.
 
 The list is `.stage/state/rule-candidates.md`. The session index shows its candidates to every
 session, one line each, and counts the retrospectives newer than its `through:` id.
@@ -84,14 +85,14 @@ grouping:
     then: keep two bullets; a wrong merge turns one occurrence into a promotion
 ```
 
-What the consolidation session does not do:
+What the research session with this task does not do:
 
 | It does not | Because |
 |---|---|
 | edit a retrospective or a decision record | they are the source; the list is derived from them and cites them |
 | edit a rule file, a skill, or `operations/` | promotion is a person's choice, carried out by a card |
 | drop a candidate because it looks unimportant | only the two tests promote, and only a stated rule removes a candidate from the list |
-| decide that a `proposed: promote` line is now a rule | it proposes; the orchestrator shows the proposal to the user |
+| decide that a `proposed: promote` line is now a rule | it proposes; the PO session shows the proposal to the user |
 
 The list replaces no retrospective. A bullet without its `R-` ids cannot be checked, and a reader
 who doubts a bullet opens the retrospectives it cites.
