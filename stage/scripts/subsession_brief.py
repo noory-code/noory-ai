@@ -80,6 +80,13 @@ RULE_CANDIDATES = ".stage/state/rule-candidates.md"
 INDEX_REPORT_ITEM = (
     "the ids of the records you opened because the session index below listed them, or `none`"
 )
+FOLLOW_UP_REPORT_ITEM = (
+    "follow-up work candidates (do not register them), each with its evidence: the command that "
+    "reproduces what is broken now and what it prints, or one line quoted from an open "
+    "milestone's `## Completion criteria` with that milestone's id. The main session registers "
+    "only a candidate that carries one of the two and discards the rest unrecorded "
+    "(DE-00000102); write `none` when there is no candidate"
+)
 LIFECYCLE_RULE = (
     "- Do not run `start_work.py`, `register_work.py`, `close_work.py`, or `archive_work.py`."
 )
@@ -92,7 +99,7 @@ REPORT_ITEMS = (
     "paths changed outside the card's scope, and why",
     INDEX_REPORT_ITEM,
     "anything that needs the user's confirmation",
-    "follow-up work candidates (do not register them)",
+    FOLLOW_UP_REPORT_ITEM,
 )
 OBSERVATION_ITEMS = (
     "each criterion above copied exactly, then every command or action you took for it and what "

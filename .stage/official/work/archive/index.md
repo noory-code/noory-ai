@@ -346,3 +346,4 @@
 | W-00000416 | completed | [items/W-00000416/_story.md](items/W-00000416/_story.md) | 닫기 리뷰어가 저장소 밖을 읽거나 고친 것을 되돌려 숨기지 못한다 |
 | W-00000407 | completed | [items/W-00000407/_story.md](items/W-00000407/_story.md) | Python 3.14 만 있는 기기에서 rag 서버가 설치되게 한다 |
 | W-00000418 | completed | [items/W-00000418/_story.md](items/W-00000418/_story.md) | 기계에서만 보이는 성공 기준을 카드에 기록된 확인으로 닫기 리뷰가 판정하게 한다 |
+| W-00000419 | completed | [items/W-00000419/_story.md](items/W-00000419/_story.md) | 후속 작업 후보는 지금 깨져 있거나 열린 마일스톤의 완료 기준 한 줄을 지목할 때만 카드가 된다 |

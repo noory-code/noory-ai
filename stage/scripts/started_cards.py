@@ -16,7 +16,7 @@ listed. This reads fetched refs and the checkout's records; it never touches the
 network and changes nothing.
 
 Two more lists serve a take-over with no open work session (W-00000406). Open
-observations are listed because follow-up candidates live there. Sessions whose
+observations are listed because they wait for a card or a decision. Sessions whose
 commits changed a card record are listed newest first: registering, starting,
 closing, and archiving a card are the orchestrator's commits, so the newest
 session there that is not the reader is the earlier orchestrator. A commit names its session only when the host writes

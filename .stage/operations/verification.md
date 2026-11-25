@@ -24,7 +24,8 @@
 ## Windows 동작 확인
 
 - Windows 동작을 고치는 카드는 영어가 아닌 로캘의 실제 Windows에서 테스트를 한 번 실행하고, 기기·로캘·명령·결과를
-  `## Verification`에 남긴다. CI의 Windows 러너는 영어 로캘(cp1252)이라 출력이 깨져도 오류 없이 통과한다.
+  `## Verification`에 `- Checked` 줄 하나로 남긴다. 줄의 형식은 Stage 플러그인의 `operations/review.md`,
+  "A check recorded on the card" 가 정한다. 문단으로 적은 확인은 닫기 리뷰가 기록으로 치지 않는다(W-00000407). CI의 Windows 러너는 영어 로캘(cp1252)이라 출력이 깨져도 오류 없이 통과한다.
   Windows 기기가 없는 세션은 이 실행을 Windows 세션에 맡긴다.
   (R-00000354: W-00000352와 W-00000354에서 같은 인코딩 실수가 두 번 나왔고, 두 번 다 CI가 아니라 한국어 Windows에서
   직접 실행한 사람이 잡았다)
