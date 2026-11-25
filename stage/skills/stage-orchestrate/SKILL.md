@@ -50,8 +50,7 @@ handed over in a message.
    the default branch has not merged, minus cards the default branch archived, and names the copy
    to read when a card sits on several branches. It also lists what waits in the records
    (`blocked` cards, `Waiting on user:` lines, undecided pending decisions, open questions),
-   `## Open observations` (follow-up candidates that are not cards yet live there), and
-   `## Sessions that committed card records`, newest first (empty on a host that writes no session
+   `## Open observations`, and `## Sessions that committed card records`, newest first (empty on a host that writes no session
    id into commit messages). Planned cards are not listed; read `.stage/work/planned/` when you
    organize work. Copy its `Project tag:` line wherever this skill writes `<project-tag>`.
 3. Sessions. Take your own id from `get_session`, then page the session list: `list_sessions` with
@@ -135,8 +134,15 @@ on_a_session_report:
   - add the session's line to the card's `## Sessions`, in the format
     `operations/cloud-execution.md`, "Sessions on the card", owns; add the section above
     `## Progress` when an older card has none
-  - add each follow-up candidate the report names as a `## Progress` line
-    `Follow-up candidate: <text>`; register them when the card closes
+  - for each follow-up candidate the report names, look for its evidence: the command that
+    reproduces what is broken now with what it prints, or one quoted line of an open
+    milestone's completion criteria (`operations/before.md`, "Follow-up candidates")
+  - if: the candidate carries one of them
+    then: add a `## Progress` line `Follow-up candidate: <text> — evidence: <the command or the
+      quoted line with its milestone id>`; register it when the card closes
+  - if: it carries neither
+    then: do not write the candidate anywhere and do not ask the session for evidence; add
+      only the count, as a `## Progress` line `Follow-up candidates discarded: <n>`
   - set the card's `## Next action` to the one next step
 on_a_question_for_the_user:
   - add a line `Waiting on user: <question>` under the `## Next action` of the card it belongs to
@@ -147,11 +153,13 @@ on_the_answer:
 
 ## Organize work
 
-Gather what is scattered (observations, questions, retrospective rule candidates, follow-up
-candidates in session reports), group it into cards, and order the cards. A sub-agent reads; you
-register with `stage-work`. Ask the user for a missing purpose or success criterion; do not invent
-one. When organizing takes a long talk with the user, start a discussion session for it ("Start a
-discussion or planning session").
+Gather what is scattered (observations, questions, retrospective rule candidates, and the
+`Follow-up candidate:` lines on cards, which all carry evidence), group it into cards, and order
+the cards. A sub-agent reads; you register with `stage-work`. Ask the user for a missing purpose
+or success criterion; do not invent one. A follow-up candidate is the exception: its evidence is
+its purpose and success criterion (`operations/before.md`, "Follow-up candidates"), so register
+it without asking. When organizing takes a long talk with the user, start a discussion session
+for it ("Start a discussion or planning session").
 
 ```yaml
 when_the_user_sets_an_order_among_planned_cards:
@@ -302,10 +310,25 @@ on_its_report:
 
 Close from this session: `operations/cloud-execution.md`, "Close a sub-session's card". Its first
 step tells the work session that the review starts and that it pushes nothing more until you
-answer. Register the follow-up candidates yourself; other sessions register nothing. Archive a
-session once its card is merged. The same document owns the second import after a rejected close
-review ("Import again after a rejected close review") and merging code while its card stays open
-for a check on the user's machine ("Merge a card that waits for the user's machine").
+answer. Archive a session once its card is merged. The same document owns the second import after
+a rejected close review ("Import again after a rejected close review") and merging code while
+its card stays open for a check on the user's machine
+("Merge a card that waits for the user's machine").
+
+Before `close_work.py` runs:
+
+```yaml
+follow_up_candidates_at_close:
+  - register each `Follow-up candidate:` line of the card yourself; other sessions register
+    nothing. Every such line carries evidence, so a candidate becomes a card only when it is
+    broken now with a reproducing command, or quotes one line of an open milestone's completion
+    criteria (`operations/before.md`, "Follow-up candidates").
+  - a candidate you or the close review name at close passes the same test; without evidence
+    it is discarded and written nowhere
+  - then add one `## Progress` line `Follow-up candidates: registered <n>, discarded <m>`,
+    where <m> sums the card's `Follow-up candidates discarded:` lines and what was discarded
+    at close. Write the line when both are 0 too.
+```
 
 ## When this session's context fills
 

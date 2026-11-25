@@ -94,6 +94,17 @@ class SubsessionBriefTest(unittest.TestCase):
         self.assertIn('operations/review.md`,\n  "A check recorded on the card").', out)
         self.assertIn("The main session opens the pull request and reads its CI jobs.", out)
 
+    def test_the_brief_asks_for_evidence_with_each_follow_up_candidate(self) -> None:
+        """DE-00000102: a candidate without evidence never becomes a card."""
+        self.card()
+
+        out = brief(self.root, "W-00000002").stdout
+
+        self.assertIn("- follow-up work candidates (do not register them), each with its evidence:", out)
+        self.assertIn("the command that reproduces what is broken now and what it prints", out)
+        self.assertIn("one line quoted from an open milestone's `## Completion criteria`", out)
+        self.assertIn("discards the rest unrecorded (DE-00000102)", out)
+
     def test_a_card_without_reserved_ids_forbids_new_records(self) -> None:
         self.card()
 

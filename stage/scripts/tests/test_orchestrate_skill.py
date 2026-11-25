@@ -28,7 +28,7 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertNotIn("<repository>", text)
         self.assertIn("SESSION_STATUS_ARCHIVED", text)
         self.assertIn("## One conductor at a time", text)
-        self.assertIn("Follow-up candidate: <text>", text)
+        self.assertIn("Follow-up candidate: <text> — evidence: ", text)
         self.assertIn("Waiting on user: <question>", text)
 
     def test_the_skill_covers_what_the_first_conducting_run_filled_by_hand(self) -> None:
@@ -48,6 +48,33 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("`<type>(<scope>): <the card's whole change> (<W-id>)`", cloud)
         self.assertNotIn("git commit -C FETCH_HEAD", cloud)
         self.assertIn("runs and is recorded once", cloud)
+
+    def test_a_follow_up_candidate_needs_evidence_to_become_a_card(self) -> None:
+        """DE-00000102: the brief, the skill, and both gates state the same two conditions."""
+        operations = SKILLS.parent / "operations"
+        before = (operations / "before.md").read_text(encoding="utf-8")
+        after = (operations / "after.md").read_text(encoding="utf-8")
+        cloud = (operations / "cloud-execution.md").read_text(encoding="utf-8")
+        skill = read("stage-orchestrate")
+        brief = (SKILLS.parent / "scripts" / "subsession_brief.py").read_text(encoding="utf-8")
+
+        for name, text in (("before", before), ("after", after), ("skill", skill), ("brief", brief)):
+            flat = " ".join(text.replace('"', " ").split())
+            with self.subTest(document=name):
+                self.assertIn("broken now", flat)
+                self.assertIn("reproduces", flat)
+                self.assertRegex(flat, r"open milestone's `?(## )?[Cc]ompletion criteria")
+        for name, text in (("after", after), ("skill", skill), ("cloud", cloud)):
+            with self.subTest(document=name):
+                self.assertIn('`operations/before.md`, "Follow-up candidates"', " ".join(text.split()))
+                self.assertIn("Follow-up candidates: registered <n>, discarded <m>", text)
+        self.assertIn("## Follow-up candidates", before)
+        self.assertIn("discard it and record it nowhere", before)
+        self.assertIn("Follow-up candidates: registered <n>, discarded <m>", before)
+        self.assertIn("do not write the candidate anywhere", skill)
+        self.assertIn("Follow-up candidates discarded: <n>", skill)
+        self.assertNotIn("follow-up candidates that are not cards yet live there", skill)
+        self.assertNotIn("Route follow-up plans", after)
 
     def test_a_verification_session_is_not_the_gate_on_closing(self) -> None:
         text = read("stage-orchestrate")
