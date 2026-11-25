@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- A follow-up candidate becomes a card only with evidence; the rest are discarded unrecorded
+  (W-00000419, DE-00000102). Before, every candidate a session reported was written on the card
+  and registered at close: eight cards closed on one day produced more than thirty.
+  - `operations/before.md` gains "Follow-up candidates" and owns the two conditions: the
+    candidate is broken now and carries the reproducing command with its output, or it quotes
+    one line of an open milestone's `## Completion criteria`. Whoever names the candidate
+    attaches the evidence; the registering session only checks that it is there and does not
+    ask the user for a purpose.
+  - `operations/after.md` step 6 no longer routes follow-up plans to `proposals/` or
+    `work/planned/` without a condition; it states the same two.
+  - `stage-orchestrate`: a session report's candidate goes on the card as
+    `Follow-up candidate: <text> — evidence: <...>` only when it carries evidence; the others
+    leave a count (`Follow-up candidates discarded: <n>`) and no text. Before the close, the
+    card's `## Progress` gets `Follow-up candidates: registered <n>, discarded <m>`, and
+    `operations/cloud-execution.md`, "Close a sub-session's card", checks for that line.
+  - The work brief of `subsession_brief.py` asks for the evidence with each candidate.
+  - Open observations are no longer described as the place where candidates wait
+    (`stage-orchestrate`, `started_cards.py`).
+  - Discarded candidates are counted and not listed, so a wrongly discarded one cannot be
+    found later; DE-00000102 accepted this.
+
 - Let the close review pass a criterion that only the user's machine or the user can show, from
   a check recorded on the card (W-00000418). Before, the reviewer could judge such a criterion
   only as `unable`, which always fails, so a card that carried one could not close even after

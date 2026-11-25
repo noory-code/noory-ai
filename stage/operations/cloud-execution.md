@@ -231,6 +231,11 @@ main session's start commit, so its diff is exactly the card's change.
          (`operations/review.md`, "A check recorded on the card"). When the check ran and only
          prose records it, write the line from that prose and commit it first. When no check ran,
          take "Merge a card that waits for the user's machine" or ask the user.
+     - always: confirm the card's `## Progress` has the line
+         `Follow-up candidates: registered <n>, discarded <m>` (`stage-orchestrate`, "Close and
+         merge"). A candidate is registered only with evidence that it is broken now or with one
+         quoted line of an open milestone's completion criteria; `operations/before.md`,
+         "Follow-up candidates", owns the conditions.
    ```
 
    Import the report (`import_executor_report.py <W-id> --commit HEAD`), reserve and write the
