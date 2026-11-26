@@ -350,3 +350,4 @@
 | W-00000420 | completed | [items/W-00000420/_story.md](items/W-00000420/_story.md) | 사용자는 PO 세션하고만 이야기하고 그 아래 세션과 서브에이전트는 정한 이름과 자리로 일한다 |
 | W-00000421 | completed | [items/W-00000421/_story.md](items/W-00000421/_story.md) | 규칙 후보는 두 번 보면 묻지 않고 규칙이 되고, 한 번 본 것은 사람이 잡은 것만 사용자가 판정한다 |
 | W-00000423 | completed | [items/W-00000423/_story.md](items/W-00000423/_story.md) | 규칙 후보 목록을 R-00000421 까지 따라잡고 DE-00000104 의 문턱으로 다시 매긴다 |
+| W-00000422 | rejected | [items/W-00000422/_story.md](items/W-00000422/_story.md) | 이 저장소의 클라우드 브리핑에 proposed: promote 규칙 후보가 한 줄도 실리지 않는다 |
