@@ -7,12 +7,13 @@ environment: cloud
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
 retrospective: completed
 retrospective_ref: R-00000432
-promotion: pending
-review: pending
+promotion: not_applicable
+review: passed
 scope: stage/scripts/start_work.py,stage/skills/stage-work/register_work.py,stage/scripts/tests,stage/operations/cloud-execution.md,stage/skills/stage-orchestrate/SKILL.md,stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -80,6 +81,19 @@ decision_refs:
 - 2026-11-26 PO 세션이 squash 커밋 1629091f 에서 훅 시험, 스크립트 시험, `audit_stage.py`(오류 0)를 다시 돌렸다.
 - Follow-up candidates: registered 0, discarded 0
 
+### Executor report at close — 2026-11-26
+
+```
+What changed: start_work.py gives each non-rejected story of an epic whose review is pending after the start `review: pending` (only from `not_required`), the epic's `environment`, and that environment's venue, and refuses the start before moving anything when a story names another venue or environment; register_work.py --parent <epic> does the same for a story registered under a started epic whose review is pending and refuses a differing --venue or --environment; test_epic_story_review.py covers both scripts and one real close of an inherited story with --review-commit; cloud-execution.md, the stage-orchestrate skill, and the changelog state the rule.
+Why: the five stories of W-00000424 were closed without a review because start_work.py set `review: pending` on the epic only and close_work.py refuses --review-commit on a card that runs no review.
+Decisions made: decided by the PO session (decision 1 by the user, "권장으로 진행", 2026-11-26): fix the tool, not the document; a story inherits review, environment, and the environment's venue, and a differing stated venue refuses the start instead of being overwritten; stories only, actions untouched; register_work.py --parent inherits too. Decided by the PM session, one file each: inheritance follows the epic's final `review` value rather than the --review flag, so a planned epic already marked pending counts; a story naming another environment than the epic's is refused the same way as a differing venue; a rejected story is skipped; register_work.py inherits only from an epic in work/current, because a planned story is given the fields when its epic starts. No path outside the card's scope was changed.
+Work not done: none. The checks ran on Linux only; the Windows run of the two suites is the pull request's CI job.
+```
+
 ## Verification
 
 2026-11-26 PO 세션이 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 squash 커밋 `1629091f` 의 것이다.
+
+- Checks at close 2026-11-26: 3 passed — `python3 -m unittest discover -s stage/hooks/tests -q`; `python3 -m unittest discover -s stage/scripts/tests -q`; `python3 stage/scripts/audit_stage.py --project-root .`
+- Review at close 2026-11-26 by claude_review_companion: approved (1 PASS ran)
+- Load at close 2026-11-26: attempts 1, review FAIL rounds 0, repeated findings 0, driver rounds 0, driver failures 0 (timed out 0)
