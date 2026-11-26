@@ -9,8 +9,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000421
 promotion: pending
 review: pending
 scope: stage/skills/stage-retrospective/rule-promotion.md,stage/skills/stage-retrospective/SKILL.md,stage/skills/stage-orchestrate/SKILL.md,stage/hooks/stage_memory_index.py,stage/hooks/stage_context.py,stage/hooks/README.md,stage/hooks/tests,stage/scripts/subsession_brief.py,stage/scripts/tests,stage/operations/cloud-execution.md,stage/docs/BLUEPRINT.md,stage/CHANGELOG.md
@@ -51,6 +51,8 @@ decision_refs: DE-00000104
 
 ## Next action
 
+닫기 리뷰를 받고 닫는다.
+
 ## Related truth
 
 ## Sessions
@@ -65,5 +67,11 @@ decision_refs: DE-00000104
 - 새 기록 번호는 잡아 두지 않았다. 이 카드는 새 기록을 만들지 않는다.
 - 2026-11-26 PM 세션 session_018VXR6NLyvitbSjC79DvT8T 가 만들기 전에 결정 하나를 올렸다: 사용자가 올리지 않는다고 판정한 한 번짜리 줄은 목록에서 어떻게 되는가. 선택지는 A `proposed: hold` 로 내리고 `user declined <날짜>` 를 적는다(PM 의 추천), B 목록에서 뺀다, C 이 카드에서는 정하지 않는다. PO 세션이 사용자의 위임("왠만하면 니 추천을 따를 테니까 쭉쭉 진행해라")으로 A 를 골랐다. DE-00000104 가 문턱 아래의 후보를 목록에 두기로 한 것과 같은 방향이다. 사용자가 보고 뒤집을 수 있다.
 - 2026-11-26 PM 세션이 카드를 두 조각(색인 코드, 규칙 문서와 브리핑)으로 나눠 전문가 서브에이전트 둘에게 맡긴다고 알렸다. 범위 밖으로 `stage/operations/retrospective.md` 34행을 고친다고 했다.
+- 2026-11-26 PM 세션 session_018VXR6NLyvitbSjC79DvT8T 가 e756d4ca 를 보고했다. 성공 기준 다섯을 모두 채웠다고 했다. 카드를 두 조각으로 나눠 `developer`(색인)와 `writer`(문턱 문서와 브리핑)에게 맡기고 검수했다고 했다. 범위 밖으로 `stage/operations/retrospective.md` 의 `promotion:` 한 줄을 고쳤다.
+- 2026-11-26 PO 세션이 squash 커밋 8f51c35 에서 훅 시험(491 통과), 스크립트 시험(1039 통과), `audit_stage.py`(오류 0)를 다시 돌렸다.
+- Follow-up candidate: 이 저장소의 클라우드 브리핑에 `proposed: promote` 줄이 한 줄도 실리지 않고 수만 보인다 — evidence: `python3 stage/scripts/subsession_brief.py --project-root . W-00000421 --po-session session_x --role pm --branch b | tail -4` 가 `- …14 candidates not shown — read .stage/state/rule-candidates.md` 를 낸다
+- Follow-up candidates: registered 1, discarded 0. PM 세션이 든 둘째 후보(`.stage/state/rule-candidates.md` 의 머리말)는 이미 정해진 다음 카드(지금 목록에 적용)의 일이라 후보로 세지 않았다.
 
 ## Verification
+
+2026-11-26 PO 세션 session_018VXR6NxmjDnZJNGb3TZWco 가 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 squash 커밋 `8f51c35` 의 것이다.
