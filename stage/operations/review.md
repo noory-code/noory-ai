@@ -208,9 +208,9 @@ else. The line is written before the close and committed with the card.
 
 | What the criterion needs | Line on `## Verification` | Who writes it |
 |---|---|---|
-| a whole session doing the thing (a new cloud session takes a role and does something) | `- Observed <date> by verification session <session-id> ...`; `stage-orchestrate`, "Start a verification session", owns its form | the orchestrator, from the verification session's observation |
-| the user's machine: another OS, an installed plugin, a device | `- Checked <date> on <machine> at <commit>: <criterion> — <held\|did not hold>; <the command or action> — <what it showed>` | the session that ran the check on that machine, or the main session from what the user or that session reported |
-| the user's own judgment, or the user's reading of a check that does not match the criterion's words | `- User verdict <date>: <criterion> — <held\|did not hold>; "<the user's words>"; rests on <the `- Checked` line's date and machine, or what the user looked at>` | the main session, from the user's message |
+| a whole session doing the thing (a new cloud session takes a role and does something) | `- Observed <date> by verify session <session-id> ...`; `stage-orchestrate`, "Start a verify session", owns its form | the PO session, from the verify session's observation |
+| the user's machine: another OS, an installed plugin, a device | `- Checked <date> on <machine> at <commit>: <criterion> — <held\|did not hold>; <the command or action> — <what it showed>` | the session that ran the check on that machine, or the PO session from what the user or that session reported |
+| the user's own judgment, or the user's reading of a check that does not match the criterion's words | `- User verdict <date>: <criterion> — <held\|did not hold>; "<the user's words>"; rests on <the `- Checked` line's date and machine, or what the user looked at>` | the PO session, from the user's message |
 
 ```yaml
 line_parts:
@@ -221,7 +221,7 @@ line_parts:
   criterion: the card's criterion, copied, or its number in `## Success criteria`
   command_or_action: what was run or done, exactly; for a command, the command line
   what_it_showed: the result that decides the criterion (for example `121 passed`), not `passed` alone
-never_written_by: the work session that built the card
+never_written_by: the PM session that built the card
 not_a_record:
   - a statement in the executor report, the work log, a commit message, or a session's message
   - a paragraph under `## Verification` or `## Progress` that is not one of the three lines
@@ -246,7 +246,7 @@ reviewer_rules:
     then: none of this applies; method is ran
 ```
 
-The verification session and the session on the user's machine do not decide the close: the
+The verify session and the session on the user's machine do not decide the close: the
 reviewer still writes the verdict, and it fails a line that does not say what the criterion asks.
 A `- User verdict` line is the user's judgment of the criterion, which the user owns; the
 reviewer checks that the line has its parts and names the criterion, not whether the user judged

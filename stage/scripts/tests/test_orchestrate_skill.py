@@ -1,4 +1,8 @@
-"""The stage-orchestrate skill owns the cloud session procedure; stage-handoff points to it."""
+"""The stage-orchestrate skill gives the PO role and owns the cloud session procedure.
+
+DE-00000103 names the layers: the PO session, the plan, PM, verify, and research sessions under
+it, and the specialist sub-agents under a PM session. stage-handoff points to this skill.
+"""
 
 from __future__ import annotations
 
@@ -27,7 +31,7 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("`<project-tag>`", text)
         self.assertNotIn("<repository>", text)
         self.assertIn("SESSION_STATUS_ARCHIVED", text)
-        self.assertIn("## One conductor at a time", text)
+        self.assertIn("## One PO session at a time", text)
         self.assertIn("Follow-up candidate: <text> — evidence: ", text)
         self.assertIn("Waiting on user: <question>", text)
 
@@ -37,13 +41,13 @@ class OrchestrateSkillTest(unittest.TestCase):
 
         self.assertIn("## Open observations", text)
         self.assertIn("## Sessions that committed card records", text)
-        self.assertIn("No work session has to be open for this rule.", text)
+        self.assertIn("No PM session has to be open for this rule.", text)
         self.assertIn("`parent_session_id`", text)
         self.assertIn("in this session's own conversation", text)
         self.assertIn("`not reserved on the remote`", text)
         self.assertIn("Order: <before or after which card>", text)
         self.assertIn("pushes nothing more until you", text)
-        self.assertIn("it pushes no commit until the main session answers", cloud)
+        self.assertIn("it pushes no commit until the PO session answers", cloud)
         self.assertIn("`retrospective: completed` and `retrospective_ref: <R-id>`", cloud)
         self.assertIn("`<type>(<scope>): <the card's whole change> (<W-id>)`", cloud)
         self.assertNotIn("git commit -C FETCH_HEAD", cloud)
@@ -76,20 +80,20 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertNotIn("follow-up candidates that are not cards yet live there", skill)
         self.assertNotIn("Route follow-up plans", after)
 
-    def test_a_verification_session_is_not_the_gate_on_closing(self) -> None:
+    def test_a_verify_session_is_not_the_gate_on_closing(self) -> None:
         text = read("stage-orchestrate")
         cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")
         review = (SKILLS.parent / "operations" / "review.md").read_text(encoding="utf-8")
 
-        self.assertIn("A verification session is not the gate on closing a card (DE-00000101).", text)
+        self.assertIn("A verify session is not the gate on closing a card (DE-00000101).", text)
         self.assertIn("can be observed only by\n      a whole session doing the thing", text)
         self.assertIn("then: start none; close the card, for an epic too", text)
         self.assertIn("Copy each `--criterion` from\nthe card", text)
         self.assertIn("add to the card's `## Verification`, on your branch", text)
-        self.assertNotIn("The verification session's verdict decides whether you close", text)
+        self.assertNotIn("The verify session's verdict decides whether you close", text)
         self.assertIn("The close review\n   is the only gate", cloud)
         self.assertIn(
-            "The verification session and the session on the user's machine do not decide the close",
+            "The verify session and the session on the user's machine do not decide the close",
             review,
         )
 
@@ -101,10 +105,105 @@ class OrchestrateSkillTest(unittest.TestCase):
         self.assertIn("the session runs it in its own checkout and reads its brief", text)
         self.assertNotIn("send it as the session's first message, unedited", text)
         self.assertNotIn("a first message you write", text)
-        for role in ("work", "verify", "discussion", "planning", "consolidation"):
+        for role in ("pm", "verify", "plan", "research"):
             self.assertIn(f"| `{role}` |", text)
-        # The consolidation session's rules live in its brief, not in the skill.
+        for gone in ("work", "discussion", "planning", "consolidation"):
+            self.assertNotIn(f"| `{gone}` |", text)
+            self.assertNotIn(f"--role {gone}", text)
+        self.assertIn("--po-session <this-session-id>", text)
+        self.assertNotIn("--main-session", text)
+        # A session's rules live in its brief, not in the skill.
         self.assertNotIn("first_message_must_say", text)
+
+    def test_the_user_talks_with_the_po_session_only(self) -> None:
+        """DE-00000103: the talk stays in one session; plan drafts, the PO registers."""
+        text = read("stage-orchestrate")
+        flat = " ".join(text.split())
+
+        self.assertIn("The user talks with one session, the PO session", text)
+        self.assertIn("in this session's conversation and nowhere else", flat)
+        self.assertIn("- send the user to another session to answer or to talk", text)
+        self.assertIn("- a session that exists to talk with the user", text)
+        self.assertNotIn("start a discussion session", text)
+        # The digest carries the user's words; the plan session drafts; the PO registers.
+        self.assertIn("## Start a plan session", text)
+        self.assertIn("with the user's words quoted exactly", flat)
+        self.assertIn("then send the digest as one message to that session", flat)
+        self.assertIn("Register each card draft yourself (`stage-work`)", flat)
+        self.assertIn("the plan session registers nothing", flat)
+        self.assertIn("register from this session only; no other session of this project registers", flat)
+        # Research returns options and never chooses.
+        self.assertIn("## Start a research session", text)
+        self.assertIn("The user chooses; the research session does not.", flat)
+
+    def test_every_decision_is_made_at_the_po_session(self) -> None:
+        text = read("stage-orchestrate")
+        section = text.split("## Decide here\n", 1)[1].split("\n## ", 1)[0]
+        flat = " ".join(section.split())
+        brief = (SKILLS.parent / "scripts" / "subsession_brief.py").read_text(encoding="utf-8")
+
+        self.assertIn("Every decision is made at the PO session (DE-00000103).", section)
+        self.assertIn("it sends you the options and the one it recommends, and waits", flat)
+        self.assertIn("`subsession_brief.py` owns that list", flat)
+        self.assertIn("record the decision as made by you on that delegation", flat)
+        self.assertIn("ask the user to choose", flat)
+        self.assertIn("a session's recommendation is not a decision", flat)
+        self.assertIn("- make every decision: the user decides, or you decide on a delegation", text)
+        self.assertIn("DECISION_RULE = (", brief)
+
+    def test_sessions_tags_and_sub_agents_follow_the_naming_rule(self) -> None:
+        """DE-00000103, "네이밍 룰": titles, tags, and the specialists' names."""
+        text = read("stage-orchestrate")
+        flat = " ".join(text.split())
+
+        for title in (
+            'po: "PO <project>"',
+            'plan: "Plan <topic>"',
+            'pm: "PM <W-id> <short title>"',
+            'verify: "Verify <W-id> <short title>"',
+            'research: "Research <question>"',
+        ):
+            self.assertIn(title, text)
+        for title in (
+            "`PM <W-id> <short title>`", "`Verify <W-id> <short title>`", "`Plan <topic>`",
+            "`Research <question>`",
+        ):
+            self.assertIn(f"| {title} |", text)
+        self.assertIn("`<project-tag>`, `stage-role:<role>`, and `stage-po:<this-session-id>`", flat)
+        self.assertIn("tag this session `<project-tag>` and `stage-role:po`", flat)
+        self.assertIn("title it `PO <project>`", flat)
+        self.assertIn("name: one profession noun (`developer`, `designer`, `planner`, `writer`, `tester`)", text)
+        self.assertIn('run_description: "<profession> <W-id> <piece>"', text)
+        self.assertIn("no number in a name", text)
+
+    def test_a_new_po_finds_sessions_that_carry_the_earlier_tags(self) -> None:
+        text = read("stage-orchestrate")
+        take_over = text.split("## Take over from the records\n", 1)[1].split("\n## ", 1)[0]
+        flat = " ".join(take_over.split())
+
+        self.assertIn("a kept row's `stage-po:<id>` tag, or of its earlier `stage-main-session:<id>` tag", flat)
+        self.assertIn("tagged `stage-role:po` or, from before DE-00000103, `stage-orchestrator`", flat)
+        one_po = text.split("## One PO session at a time\n", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("on a session of before DE-00000103 `stage-orchestrator`", one_po)
+
+    def test_gathering_rule_candidates_is_a_research_task(self) -> None:
+        text = read("stage-orchestrate")
+        operations = SKILLS.parent / "operations"
+        retrospective = (operations / "retrospective.md").read_text(encoding="utf-8")
+        promotion = (SKILLS / "stage-retrospective" / "rule-promotion.md").read_text(encoding="utf-8")
+
+        self.assertIn("### The rule-candidates task\n", text)
+        self.assertIn("`--role research --task rule-candidates --branch <its own branch>`", text)
+        self.assertIn("the only file a research session ever writes", text)
+        self.assertIn("`Rule candidates are due`", text)
+        for name, document in (
+            ("skill", text), ("retrospective", retrospective), ("promotion", promotion),
+            ("closing skill", read("stage-retrospective")),
+        ):
+            with self.subTest(document=name):
+                self.assertNotIn("consolidation session", document)
+        for document in (retrospective, promotion):
+            self.assertIn('("The rule-candidates task")', document)
 
     def test_the_close_procedure_covers_the_paths_made_up_by_hand(self) -> None:
         text = read("stage-orchestrate")
@@ -162,7 +261,7 @@ class OrchestrateSkillTest(unittest.TestCase):
             "    then: method is unable and the verdict is FAIL, as before\n",
             section,
         )
-        self.assertIn("never_written_by: the work session that built the card", section)
+        self.assertIn("never_written_by: the PM session that built the card", section)
         self.assertIn("a statement in the executor report, the work log", section)
         # The procedures that write the lines point at the section that owns their form.
         for document in (cloud, text):
@@ -177,8 +276,22 @@ class OrchestrateSkillTest(unittest.TestCase):
         for moved in ("subsession_brief.py", "--reserve-for", "split_when", "start_work.py <W-id>"):
             self.assertNotIn(moved, text)
 
-    def test_the_driver_skill_states_its_boundary_with_the_orchestrator(self) -> None:
-        self.assertIn("`stage-orchestrate`", read("stage-drive"))
+    def test_the_driver_skill_states_its_boundary_with_the_po_session(self) -> None:
+        self.assertIn("PO session (`stage-orchestrate`)", read("stage-drive"))
+
+    def test_the_operations_name_the_sessions_as_the_decision_does(self) -> None:
+        operations = SKILLS.parent / "operations"
+        cloud = (operations / "cloud-execution.md").read_text(encoding="utf-8")
+        review = (operations / "review.md").read_text(encoding="utf-8")
+
+        self.assertIn("## Close a PM session's card\n", cloud)
+        self.assertIn("its role: `po`, `plan`, `pm`, `verify`, or `research`", cloud)
+        self.assertIn("`- Observed <date> by verify session <session-id> ...`", review)
+        for name, document in (("cloud", cloud), ("review", review)):
+            flat = " ".join(document.split()).lower()
+            with self.subTest(document=name):
+                for gone in ("main session", "sub-session", "work session", "orchestrator, from"):
+                    self.assertNotIn(gone, flat)
 
 
 if __name__ == "__main__":

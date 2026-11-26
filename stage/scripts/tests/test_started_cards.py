@@ -98,6 +98,21 @@ class StartedCardsTest(unittest.TestCase):
         self.assertIn("next action: (empty)", proc.stdout)
         self.assertIn(f"Project tag: stage-project:{self.root.name}", proc.stdout)
 
+    def test_the_output_names_the_role_tags_and_the_earlier_ones(self) -> None:
+        """DE-00000103: a new PO session also finds sessions tagged before that decision."""
+        lines = self.run_script().stdout.splitlines()
+
+        self.assertEqual(
+            "Role tags: stage-role:po on the PO session; stage-role:<plan|pm|verify|research> and "
+            "stage-po:<PO session id> on each session it creates",
+            lines[2],
+        )
+        self.assertEqual(
+            "Earlier tags: stage-orchestrator (a PO session), stage-main-session:<id> (a session "
+            "under the PO session <id>)",
+            lines[3],
+        )
+
     def test_the_project_tag_is_the_owner_and_name_of_the_remote(self) -> None:
         for url in (
             "https://github.com/acme/widgets.git",
@@ -129,7 +144,7 @@ class StartedCardsTest(unittest.TestCase):
         self.branch("work")
         self.card("W-00000001")
         self.commit("start")
-        git(self.root, "checkout", "-q", "-b", "zz-orchestrator", "work")
+        git(self.root, "checkout", "-q", "-b", "zz-po", "work")
         self.card("W-00000001", next_action="- Waiting on user: pick A or B\n- Close after the answer")
         self.commit("record the report")
         git(self.root, "checkout", "-q", "work")
@@ -139,7 +154,7 @@ class StartedCardsTest(unittest.TestCase):
 
         out = self.run_script().stdout
 
-        self.assertIn("on `zz-orchestrator`", out)
+        self.assertIn("on `zz-po`", out)
         self.assertIn("other copies: `work`", out)
         self.assertIn("## Waiting in the records: 1", out)
         self.assertIn("- W-00000001: Waiting on user: pick A or B", out)

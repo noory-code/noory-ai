@@ -24,7 +24,8 @@ Retrospectives archived before this contract keep their older sections and stay 
 ## Rule candidates across retrospectives
 
 ```yaml
-who_gathers_candidates: a consolidation session the orchestrator starts, never the closing session
+who_gathers_candidates: a research session the PO session gives the rule-candidates task, never
+  the closing session
 when:
   - before a milestone is closed
   - when 20 or more retrospectives are newer than the list's `through:` id
@@ -34,5 +35,5 @@ promotion: the session proposes; a person chooses; a card amends the rule file
 ```
 
 `stage-retrospective/rule-promotion.md` ("Consolidating candidates") owns the list's format, and
-the `stage-orchestrate` skill ("Start a consolidation session") owns starting the session
-(DE-00000100).
+the `stage-orchestrate` skill ("The rule-candidates task") owns giving a research session that
+task (DE-00000100, DE-00000103).
