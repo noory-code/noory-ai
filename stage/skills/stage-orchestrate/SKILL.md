@@ -405,10 +405,25 @@ give_it_to_none_when:
 brief: "`--role research --task rule-candidates --branch <its own branch>`, and no `--topic`"
 on_its_report:
   - merge the list through a card of kind `chore` that you register and close
-  - show the user each `proposed: promote` line with the retrospectives it cites; the user
-    chooses which become rules
-  - for each one the user chooses: register a card that amends the rule file; the research
-    session does not write it
+  - for_each_proposed_promote_line:  # DE-00000104
+      - if: its `seen` count is 2 or more
+        then: register a card that amends the rule file; do not ask the user
+      - if: its `seen` count is 1
+        then: put it in the table and wait for the user's verdict
+  - show_the_user_only:
+      - one table of the `proposed: promote` lines seen once; columns are the behavior, the
+        retrospective, and who caught it
+      - one tally line; how many lines seen twice became rule cards, how many lines seen once
+        are in the table, and how many lines are `proposed: hold`
+      - nothing else from the list
+  - for_each_line_of_the_table:
+      - if: the user chooses it
+        then: register a card that amends the rule file
+      - if: the user declines it
+        then: change its bullet to `proposed: hold` and write `user declined <date>` inside its
+          parentheses (DE-00000104, W-00000421). Commit that in the `chore` card that merges the
+          list while that card is open; after it closed, through a new `chore` card.
+  - the research session writes no rule file and no `user declined` mark
 ```
 
 ## Start a verify session

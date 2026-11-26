@@ -21,8 +21,9 @@ it sends the options and its recommendation to the PO session before building:
 - `--role research`: the session looks into the question in `--topic` and returns
   options with their evidence; it decides nothing and writes nothing. With
   `--task rule-candidates` its task is instead to group the retrospectives' rule
-  candidates into `.stage/state/rule-candidates.md` and propose which to promote
-  (DE-00000100); that task is the only one in which a research session writes a file.
+  candidates into `.stage/state/rule-candidates.md` and mark each one promote or hold
+  (DE-00000100, DE-00000104); that task is the only one in which a research session
+  writes a file.
 
 The role names are the ones a session's `stage-role:<role>` tag and a card's
 `## Sessions` line use (`operations/cloud-execution.md`, "Sessions on the card").
@@ -603,12 +604,14 @@ def rule_candidates_brief(project_root: Path, po_session: str, branch: str) -> l
     return [
         f"You are a research session of the PO session `{po_session}`. Your task is to gather",
         "rule candidates: you group the candidates the retrospectives state into one list and",
-        "propose which to promote. You promote nothing (DE-00000100, DE-00000103).",
+        "mark each one `proposed: promote` or `proposed: hold`. You edit no rule file",
+        "(DE-00000100, DE-00000103, DE-00000104).",
         "",
         "Read first, in order:",
         "- the project's `CLAUDE.md` or `AGENTS.md`, whichever exists",
         f"- `{promotion_doc}`;",
-        '  its "Consolidating candidates" section owns the list\'s place and format',
+        '  its "When a candidate becomes a rule" section owns the two tests, and its',
+        '  "Consolidating candidates" section owns the list\'s place and format',
         f"- `{RULE_CANDIDATES}`, when it exists",
         "- every retrospective newer than that list's `through:` id; with no list, every",
         "  retrospective that has a `## Rule candidate` section",
@@ -620,7 +623,14 @@ def rule_candidates_brief(project_root: Path, po_session: str, branch: str) -> l
         f"- Write only `{RULE_CANDIDATES}`: a research session writes a file in this task only.",
         f"  Commit and push it only to your own branch{f' `{branch}`' if branch else ''}.",
         "- Do not edit a retrospective, a decision record, a rule file, a skill, or a card.",
-        "- Do not promote anything: mark a candidate `proposed: promote` and stop there.",
+        "- Mark a candidate `proposed: promote` only when one of the two tests in that document",
+        "  holds; else `proposed: hold`. Stop there: the PO session registers the rule cards.",
+        "- Count a candidate whose retrospective states its second occurrence as `seen 2`.",
+        "- For a candidate seen once, write who caught it inside the parentheses after the R-id.",
+        "  Mark it `proposed: hold` when the close reviewer or CI caught it, and when the",
+        "  retrospective does not name who caught it.",
+        "- Keep a bullet marked `user declined` at `proposed: hold` until a second occurrence is",
+        "  seen. Never write that mark yourself: the PO session writes it.",
         LIFECYCLE_RULE,
         "- Do not open or merge a pull request.",
         "",
@@ -629,12 +639,17 @@ def rule_candidates_brief(project_root: Path, po_session: str, branch: str) -> l
         f"When the list is pushed, send the PO session `{po_session}` one message with:",
         "- branch and head commit",
         "- how many retrospectives you read and how many candidates the list holds",
-        "- each `proposed: promote` line with the retrospectives it cites",
+        "- each `proposed: promote` line seen twice or more, with the retrospectives it cites:",
+        "  these become rules without the user's verdict",
+        "- one table of the `proposed: promote` lines seen once: the behavior, the retrospective,",
+        "  who caught it",
+        "- how many lines are `proposed: hold`",
         "- each candidate left out because a rule file already states it, and that file",
         f"- {INDEX_REPORT_ITEM}",
         "- anything that needs the user's confirmation",
         "",
-        "Then wait. The PO session merges the list and shows the user each proposal.",
+        "Then wait. The PO session merges the list, registers a rule card for each line seen",
+        "twice, and shows the user the table of lines seen once.",
     ]
 
 

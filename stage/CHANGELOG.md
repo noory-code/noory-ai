@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- A rule candidate seen twice becomes a rule without the user's verdict, and one seen once reaches
+  the user only when a person caught it or it surfaced after merge or release (W-00000421,
+  DE-00000104). Before, one occurrence "caught outside the harness" was enough to propose
+  promotion and every proposal waited for the user: this repository's list held 14 proposals and
+  none had a verdict.
+  - `rule-promotion.md`: the second test names a person's catch or a find after merge or release.
+    What the close reviewer or CI caught is `proposed: hold`, and so is a once-seen candidate
+    whose retrospective does not say who caught it. A retrospective that states its own second
+    occurrence counts as seen twice.
+  - `stage-orchestrate`, "The rule-candidates task": the PO session registers a card for each
+    promote line seen twice without asking, and shows the user one table of the promote lines
+    seen once and one tally line. A line the user declines goes to `proposed: hold` with
+    `user declined <date>` and stays there until a second occurrence.
+  - The research brief for `--task rule-candidates` reports the lines seen twice, a table of the
+    lines seen once with who caught each, and the count of hold lines.
+  - The session index lists only the `proposed: promote` candidates and counts the others on one
+    line that is never shortened. Before, it listed the hold candidates after the promote ones.
 - The user talks with one session, the PO session; the sessions under it and their sub-agents
   work under fixed names and seats (W-00000420, DE-00000103). Before, discussion and planning
   sessions talked with the user themselves, so the user answered in several windows and the

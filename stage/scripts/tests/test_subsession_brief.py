@@ -474,8 +474,54 @@ class SubsessionBriefTest(unittest.TestCase):
         )
         self.assertIn("branch `claude/candidates`", out)
         self.assertIn("Do not edit a retrospective, a decision record, a rule file, a skill, or a card", out)
-        self.assertIn("mark a candidate `proposed: promote` and stop there", out)
-        self.assertIn("- each `proposed: promote` line with the retrospectives it cites", out)
+        self.assertNotIn("Do not promote anything", out)
+        self.assertNotIn("shows the user each proposal", out)
+
+    def test_the_rule_candidates_task_marks_by_the_two_tests_of_de_104(self) -> None:
+        """DE-00000104: seen twice is automatic; seen once needs a named catcher."""
+        proc = brief(
+            self.root, "--role", "research", "--task", "rule-candidates", "--branch", "claude/candidates"
+        )
+
+        self.assertEqual(0, proc.returncode, proc.stderr)
+        out = proc.stdout
+        self.assertIn("You edit no rule file\n(DE-00000100, DE-00000103, DE-00000104).", out)
+        self.assertIn('its "When a candidate becomes a rule" section owns the two tests', out)
+        self.assertIn(
+            "- Mark a candidate `proposed: promote` only when one of the two tests in that document\n"
+            "  holds; else `proposed: hold`. Stop there: the PO session registers the rule cards.",
+            out,
+        )
+        self.assertIn(
+            "- Count a candidate whose retrospective states its second occurrence as `seen 2`.", out
+        )
+        self.assertIn(
+            "- For a candidate seen once, write who caught it inside the parentheses after the R-id.\n"
+            "  Mark it `proposed: hold` when the close reviewer or CI caught it, and when the\n"
+            "  retrospective does not name who caught it.",
+            out,
+        )
+        self.assertIn(
+            "- Keep a bullet marked `user declined` at `proposed: hold` until a second occurrence is\n"
+            "  seen. Never write that mark yourself: the PO session writes it.",
+            out,
+        )
+        self.assertIn(
+            "- each `proposed: promote` line seen twice or more, with the retrospectives it cites:\n"
+            "  these become rules without the user's verdict",
+            out,
+        )
+        self.assertIn(
+            "- one table of the `proposed: promote` lines seen once: the behavior, the retrospective,\n"
+            "  who caught it",
+            out,
+        )
+        self.assertIn("- how many lines are `proposed: hold`", out)
+        self.assertIn(
+            "Then wait. The PO session merges the list, registers a rule card for each line seen\n"
+            "twice, and shows the user the table of lines seen once.",
+            out,
+        )
 
     def test_the_task_takes_no_card_no_topic_and_no_other_role(self) -> None:
         self.card()
