@@ -23,4 +23,4 @@
 | DE-00000100 | 세션 시작의 맨 위 층에 무엇을 싣고 기억을 어떻게 꺼내 쓰는가 | decided | [W-00000400](../official/work/archive/items/W-00000400/_story.md) | archived | [pending/DE-00000100.md](pending/DE-00000100.md) |
 | DE-00000101 | 닫기 판정을 누가 하고, 실행을 어떻게 강제하고, 사람의 판정과 어떻게 맞춰 보는가 | decided | [W-00000401](../official/work/archive/items/W-00000401/_story.md) | archived | [pending/DE-00000101.md](pending/DE-00000101.md) |
 | DE-00000102 | 후속 작업 후보는 지금 깨져 있거나 열린 마일스톤의 완료 기준 한 줄을 지목할 때만 카드가 된다 | decided | [W-00000419](../official/work/archive/items/W-00000419/_story.md) | archived | [pending/DE-00000102.md](pending/DE-00000102.md) |
-| DE-00000103 | 사용자는 PO 세션하고만 이야기하고, 하위 세션은 PM, 서브에이전트는 전문가다 | decided | [W-00000420](../work/current/W-00000420/_story.md) | active | [pending/DE-00000103.md](pending/DE-00000103.md) |
+| DE-00000103 | 사용자는 PO 세션하고만 이야기하고, 하위 세션은 PM, 서브에이전트는 전문가다 | decided | [W-00000420](../official/work/archive/items/W-00000420/_story.md) | archived | [pending/DE-00000103.md](pending/DE-00000103.md) |
