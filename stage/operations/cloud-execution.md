@@ -234,6 +234,12 @@ starts at the PO session's start commit, so its diff is exactly the card's chang
          (`operations/review.md`, "A check recorded on the card"). When the check ran and only
          prose records it, write the line from that prose and commit it first. When no check ran,
          take "Merge a card that waits for the user's machine" or ask the user.
+     - if: a criterion states a trial of a changed procedure or a new path
+         (`operations/verification.md`, "Rules")
+       then: confirm `## Verification` has a `- Observed` or `- Checked` line for it. When the
+         trial can run before the merge and no line exists, run the trial and write the line
+         first. When it can run only after the merge, take "Merge a card that waits for the
+         user's machine".
      - always: confirm the card's `## Progress` has the line
          `Follow-up candidates: registered <n>, discarded <m>` (`stage-orchestrate`, "Close and
          merge"). A candidate is registered only with evidence that it is broken now or with one
@@ -297,18 +303,32 @@ recorded on the card (`operations/review.md`, "A check recorded on the card") an
 no check is recorded. Such a card's code may be merged while the card stays open and the check is
 outstanding (W-00000372, W-00000407).
 
+The same path applies to a success criterion that states a trial of a changed procedure or a new
+path (`operations/verification.md`, "Rules") when the trial can run only after this card's change
+is merged: a changed close procedure whose first real use is the next card's close, a new brief
+that only the next session receives (R-00000404, R-00000418, R-00000420).
+
 ```yaml
 take_this_path_when:
   - every criterion still open after step 3 names something only the user's machine can show,
-    and its check is not recorded on the card yet
-  - and the user has said to merge without waiting for that check
+    or states a trial that can run only after this card's change is merged, and its check or
+    trial is not recorded on the card yet
+  - and, for each open criterion that only the user's machine can show, the user has said to
+    merge without waiting for that check
+  - an open criterion that states such a trial needs no word from the user for this card: the
+    rule itself lets the code merge while the card stays open (`operations/verification.md`,
+    "Rules")
 otherwise:
-  - if: the user has not said so
+  - if: an open criterion names something only the user's machine can show, and the user has not
+      said to merge without waiting for its check
     then: ask the user: wait for the check, or merge with the card open
   - if: an open criterion can be judged by a command the reviewer can run
     then: this path does not apply; close as in step 4
-  - if: every such criterion already has its `- Checked` or `- User verdict` line on the card
+  - if: every such criterion already has its `- Checked` or `- User verdict` line on the card,
+      or for a trial its `- Observed` or `- Checked` line
     then: this path does not apply; close as in step 4
+  - if: an open criterion states a trial that can run before the merge
+    then: this path does not apply; run the trial, record its line, and close as in step 4
 before_the_merge:
   - steps 1 to 3 as written
   - no close review runs, and no report is imported, no retrospective is written, and the card
@@ -316,8 +336,14 @@ before_the_merge:
 written_on_the_card:
   - under `## Progress` — which checks the PO session re-ran at the squash commit, and the
     sentence `This change was merged without a close review.`
-  - under `## Next action` — one line per open criterion:
+  - under `## Progress` — for an open criterion that states a trial, one sentence more: the code
+    merged with the card open under the trial rule of `operations/verification.md`, and the user
+    was not asked for this card
+  - under `## Next action` — one line per open criterion that only the user's machine can show:
     `Waiting on user: <what to run or look at, and on which machine> (<which criterion>)`
+  - under `## Next action` — for an open criterion that states a trial, the next step in words:
+    which work will run the trial and which session does it (<which criterion>). It is not a
+    `Waiting on user:` line, because the trial does not wait for the user.
 written_outside_the_card:
   - one unchecked line per open criterion, with the card id, in the project's open observation
     that collects checks deferred to the user's machine; open that observation when none exists
@@ -330,10 +356,17 @@ when_the_users_check_arrives:
     `Waiting on user:` line and check the observation's line
   - if: the check does not match the criterion's words and the user says how to judge it
     then: add a `- User verdict` line with the user's words under the `- Checked` line
+  - if: the open criterion states a trial
+    then: what arrives is the trial, not the user's check. When the work that runs it is done,
+      write one line for the criterion on the card's `## Verification`: the `- Observed` line
+      when a verify session did the work (`stage-orchestrate`, "Start a verify session", owns
+      the form), else a `- Checked` line in the form above. Remove the criterion's
+      `## Next action` line and check the observation's line.
   - close from a worktree at the squash commit as in step 4; that close review is the card's
     first, and it judges every criterion: the ones a command can show by running, the ones
-    only the user's machine or the user can show with method `read` from those lines
-  - if: the check shows a criterion does not hold, and no user verdict says it holds
+    only a whole session, the user's machine, or the user can show with method `read` from
+    those lines
+  - if: the check or trial shows a criterion does not hold, and no user verdict says it holds
     then: the card goes back to a PM session; its fix merges through a new pull request
 ```
 
