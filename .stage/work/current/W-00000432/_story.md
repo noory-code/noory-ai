@@ -65,6 +65,13 @@ decision_refs:
 
 ## Sessions
 
+- session_018VXR6QxH1occgTRY9kC2uH — pm — 2026-11-26 — opened from the index: none
+
 ## Progress
 
+- 2026-11-26 PO 세션 session_018VXR6NxmjDnZJNGb3TZWco 가 등록하고 시작했다. 에픽 W-00000424 를 닫다가 본 고장이고 증거는 `## User value` 에 있다(DE-00000102).
+- 2026-11-26 PM 세션 session_018VXR6QxH1occgTRY9kC2uH 가 만들기 전에 결정 넷을 올렸다. 에픽의 닫기 리뷰는 에픽 카드의 성공 기준만 판정하고 스토리의 성공 기준은 판정하지 않는다고 알렸다.
+  - 결정 1(고치는 자리): A 도구, 리뷰가 pending 인 에픽을 시작하면 스토리도 pending 이 된다. 리뷰가 스토리 수 + 1 번 돈다 / B 문서, 스토리는 리뷰 없이 닫고 에픽을 닫을 때 한 번 본다. 사용자가 A 를 골랐다("권장으로 진행").
+  - PO 세션이 사용자의 위임으로 정한 셋: 스토리는 리뷰 표시와 에픽의 환경, 그 환경의 venue 를 물려받고, 스토리가 다른 venue 를 적어 두었으면 시작을 거절한다. 에픽 바로 아래 스토리까지만 적용한다. `register_work.py --parent` 도 같은 표시를 준다.
+- 이 카드는 도구를 고치므로 절차를 바꾸는 카드가 아니다. W-00000430 의 시험이 되지 않는다.
 ## Verification
