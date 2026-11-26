@@ -197,6 +197,32 @@ and why it is unaffected; bare `none` is not evidence. Use the findings to corre
 `## Scope`, `## Risks`, and `## Success criteria` answers. Do not add a duplicate section to the
 card.
 
+**A change that moves a record or changes the layout it is stored in counts its readers first.**
+A record is a file Stage keeps under `.stage/`: a card, a retrospective, a decision, an
+observation. Its place is the path it is stored at and the headings and frontmatter fields inside
+it.
+
+```yaml
+if_any:
+  - a record file, or a set of them, is stored at another path, folder, or file name
+  - a section heading or frontmatter field of a record is added, removed, renamed, or split
+then_before_the_four_checks:
+  - search the repository for the path, the heading text, and the field name; do not list
+    readers from memory
+  - list every piece of code that reads or writes that place, and record the count
+  - list every test of a screen that shows the record (the session-start text, the session
+    index, derived views, audit output, the unattended driver), and record the count
+  - in the same change, write or rewrite those tests so they use the new place
+```
+
+A test that builds only the old layout keeps passing after the move and proves nothing. Splitting
+the retrospective section `## Next changes` in two touched five places, two of them in the driver
+that writes retrospectives during unattended runs; uncounted, those runs would have broken
+without a message. When cards moved from single files into folders, the session-start text
+stopped showing the selected cards, and its test still passed because it built only the old
+single-file layout (R-00000241, R-00000373). `stage-decision`, "Count where it applies", owns the
+wider six-kind count for a decision.
+
 Show this table during confirmation:
 
 | Check | Count | Concrete places and effect | Checked but unaffected |

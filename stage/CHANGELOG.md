@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `stage-work`, "Count affected places before drafting": a change that stores a record at another
+  path or changes its headings or frontmatter fields now starts by searching for and counting the
+  code that reads that place and the tests of the screens that show it, and rewrites those tests
+  for the new place in the same change (W-00000425, R-00000241, R-00000373). Before, the four
+  checks did not name readers, and a test that built only the old layout kept passing after the
+  move.
 - A rule candidate seen twice becomes a rule without the user's verdict, and one seen once reaches
   the user only when a person caught it or it surfaced after merge or release (W-00000421,
   DE-00000104). Before, one occurrence "caught outside the harness" was enough to propose
