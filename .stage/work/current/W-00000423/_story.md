@@ -15,7 +15,7 @@ promotion: pending
 review: pending
 scope: .stage/state/rule-candidates.md
 promotes:
-decision_refs: DE-00000104
+decision_refs:
 ---
 
 # W-00000423 규칙 후보 목록을 R-00000421 까지 따라잡고 DE-00000104 의 문턱으로 다시 매긴다
