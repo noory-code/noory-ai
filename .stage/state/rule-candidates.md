@@ -8,12 +8,6 @@ through: R-00000421
 `proposed: promote` 줄은 사용자에게 묻지 않고 규칙이 되고, 한 번 본 `proposed: promote` 줄은 사용자가 판정한다
 (DE-00000104). 규칙 파일이 이미 말하는 후보는 여기에 없다.
 
-- **기록의 자리나 배치를 바꾸는 변경은 그 자리를 읽는 코드와 화면의 테스트부터 센다.** (seen 2: R-00000241, R-00000373) — proposed: promote
-- **사용자에게 묻거나 토론할 때는 질문 하나에 답 하나(표 하나)만 두고, 큰 그림부터 말한다.** (seen 2: R-00000371, R-00000402; O-00000061 도 적었다) — proposed: promote
-- **acceptance 명령에 한 사람의 기기 경로를 저장하지 않고 저장소 기준 상대 경로만 쓴다.** (seen 2: R-00000282; R-00000282 states its second occurrence) — proposed: promote
-- **숫자에서 개선 제안을 낼 때 그 자리를 지금 모양으로 만든 커밋이나 주석을 먼저 읽는다.** (seen 2: R-00000334; R-00000334 states its second occurrence) — proposed: promote
-- **리뷰어에게 허용하는 규칙을 바꾸면 실제 `claude` 로 허용되는 경우와 거절되는 경우를 모두 실행해 본다.** (seen 2: R-00000374; R-00000374 states its second occurrence) — proposed: promote
-- **절차를 바꾸거나 다른 세션이 따를 새 길을 적은 카드는 그 길로 실제 일을 한 번 해 본 뒤에 닫는다.** (seen 3: R-00000404, R-00000418, R-00000420. O-00000061 도 적었다) — proposed: promote
 - **병렬 실행의 출력을 `tail -N` 같은 것으로 자르지 않는다.** (seen 1: R-00000246; caught by a person: 감독이 결과를 찾다 알아챘다; user declined 2026-11-26) — proposed: hold
 - **관측에 "통과했다"를 적을 때는 막힌 쪽과 같은 무게로 증거를 남긴다.** (seen 1: R-00000247) — proposed: hold
 - **알림이나 오류 문구를 새로 지을 때 그 말이 이미 다른 뜻으로 쓰이고 있는지 본다.** (seen 1: R-00000255; caught by the close reviewer) — proposed: hold
