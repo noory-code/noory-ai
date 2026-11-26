@@ -333,7 +333,10 @@ A cloud session cannot reserve record ids on the remote, because its proxy refus
 its own branch, so you hold the ids its card may need (DE-00000094).
 
 1. `git fetch origin`, then start the card: `start_work.py <W-id> --scope "<paths>"
-   --environment cloud --review`. Starting an epic starts its stories with it. `start_work.py`
+   --environment cloud --review`. Starting an epic starts its stories with it, and each story
+   takes the epic's `review: pending`, its `environment`, and that environment's venue, so every
+   story closes with its own review (`operations/cloud-execution.md`, "Register or start").
+   `start_work.py` refuses the start when a story names another venue or environment, and
    refuses a card another fetched branch already started or archived.
 2. When the card may create records with new ids (a decision, an observation), hold a block:
    `stage_record_ids.py --project-root . --reserve-for <W-id> --count <n> <PREFIX>`. It writes the

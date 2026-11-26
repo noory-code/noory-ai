@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- An epic that closes with a review now hands that review to its stories (W-00000432). Before,
+  `start_work.py <epic> --environment cloud --review` set `review: pending` on the epic only, so
+  `close_work.py <story> --review-commit <commit>` was refused and the five stories of W-00000424
+  closed on their checks alone.
+  - `start_work.py`: when the started epic's `review` is `pending`, each story whose `review` is
+    `not_required` becomes `pending`, and takes the epic's `environment` and that environment's
+    venue. A story that names another venue or environment refuses the start; nothing is moved.
+    Rejected stories and actions are left as they are.
+  - `register_work.py --parent <epic>`: a story registered under a started epic whose `review` is
+    `pending` takes the same three, and a differing `--venue` or `--environment` is refused.
+  - An epic of n stories runs n + 1 close reviews. A `fix` or `development` story of a cloud epic
+    is now recorded with the venue that ran it instead of the routed one.
+
 ## 0.70.0 — 2026-11-26
 
 - A card that changes a procedure a session follows (an `operations/` document, a skill, a brief
