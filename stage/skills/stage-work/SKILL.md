@@ -308,6 +308,24 @@ next free number, writes the card, and updates the owning index:
   a change that breaks something elsewhere passes every round and surfaces only at close — before
   the human commits, which is what makes the trade safe.
 
+  Never store a path of one person's machine in an `acceptance` command (R-00000282).
+  `close_work.py` and the driver re-run the stored command on whatever machine closes the card —
+  a cloud session, CI, another person — and a path that exists on one machine fails there. Two
+  cards were blocked at close for this.
+
+  ```yaml
+  stored_acceptance_command:
+    - if: the command names a path
+      then: write the path relative to the repository root; the command runs from that root
+      never_store:
+        - an absolute path
+        - a home-folder path (`~`, `/home/<name>`, `/Users/<name>`, `C:\Users\<name>`)
+        - a path into another checkout on one machine
+    - if: the check belongs to another repository
+      then: do not store it on this card; that repository's card owns it. Run it in that
+        repository and write only the result under this card's `## Verification`
+  ```
+
 - Write the card so it stands on its own. **An identifier is not a meaning.** "Carry what
   DE-00000046 decided into the docs" tells a reader nothing until they open two other files; write
   what was decided, then cite the record. The same holds for audit codes, field names, and sibling

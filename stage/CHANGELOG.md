@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `stage-work`, "Draft the item": a stored `acceptance` command now names only paths relative to
+  the repository root, and a check of another repository stays off the card — that repository's
+  card owns it, and this card records only the result (W-00000427, R-00000282). Before, nothing
+  barred a path of one person's machine, and two cards could not be closed from another machine.
 - `operations/output.md`: a response that asks the user to choose or decide, or that is a turn in
   a discussion with the user, now opens with the big picture, asks one question that one answer
   settles, and holds at most one table, the one with that question's options (W-00000426,
