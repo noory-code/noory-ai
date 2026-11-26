@@ -183,6 +183,32 @@ when_you_see_a_warning:
 The Claude stand-in also adds these rules to every prompt (`REVIEWER_RULES`): leave a changed file
 in place and name it, do not restore it, and do not read the session record folder or GitHub.
 
+### A change to what the reviewer may do
+
+```yaml
+reviewer_permission_change:
+  if: a change touches the allow or deny rules a reviewer command passes to `claude` — in
+    `scripts/claude_review_companion.py` the `Edit(<verdict file>)` rule, `shell_tools`,
+    `DENIED_COMMANDS`, `denied_rules`, or the `--allowedTools` and `--disallowedTools` lists of
+    `claude_command` — or the same two options in a project's own reviewer command
+  then: before the card closes, run the real `claude` under the new rules on each platform whose
+    rules changed, once on a call they must allow and once on a call they must refuse
+  read_from: the output of `claude -p --output-format stream-json --verbose`, where each `tool_use`
+    block names the tool the reviewer called and `permission_denials` in the `result` event
+    names the calls that were refused
+  record: both results on the card's `## Verification`, with the command line of each run
+  platform_the_session_cannot_run: both results are a `- Checked` line from that machine
+    ("A check recorded on the card")
+  not_enough: a unit test of the lists, which checks the text of the rules and not how `claude`
+    matches them
+```
+
+The verdict-file write rule in W-00000359 and the Windows PowerShell rule in W-00000374 were each
+checked by running `claude` (R-00000374; first occurrence W-00000359).
+`LiveReviewerWriteProbeTest` in `scripts/tests/test_claude_review_guard.py` is such a run for the
+file-edit rule alone: a `Write` call is refused and shell commands run. It is skipped unless
+`STAGE_LIVE_REVIEW_PROBE=1` is set and `claude` is on `PATH`.
+
 Not held back, and not seen:
 
 | What | Why |

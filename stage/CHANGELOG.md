@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `operations/review.md`, "A change to what the reviewer may do": a card that changes the allow or
+  deny rules a reviewer command passes to `claude` now closes only after the real `claude` ran
+  under the new rules on each changed platform, once on a call they must allow and once on a call
+  they must refuse, with both results on the card (W-00000429, R-00000374). Before, no rule asked
+  for the run; a unit test of the lists checks their text, not how `claude` matches them.
 - `stage-work`, "Run the premise before turning an observation into a card": a proposal that
   comes from a number — a size, a count, a duration, a cost, a limit — now starts by reading the
   commits, the comment, and the decision record that gave the place its present shape, and is
