@@ -12,7 +12,6 @@ through: R-00000421
 - **사용자에게 묻거나 토론할 때는 질문 하나에 답 하나(표 하나)만 두고, 큰 그림부터 말한다.** (seen 2: R-00000371, R-00000402; O-00000061 도 적었다) — proposed: promote
 - **acceptance 명령에 한 사람의 기기 경로를 저장하지 않고 저장소 기준 상대 경로만 쓴다.** (seen 2: R-00000282; R-00000282 states its second occurrence) — proposed: promote
 - **숫자에서 개선 제안을 낼 때 그 자리를 지금 모양으로 만든 커밋이나 주석을 먼저 읽는다.** (seen 2: R-00000334; R-00000334 states its second occurrence) — proposed: promote
-- **닫기 전에는 코드 커밋 뒤에 기록만 고친 커밋을 올리지 않는다.** (seen 2: R-00000368; R-00000368 states its second occurrence) — proposed: promote
 - **리뷰어에게 허용하는 규칙을 바꾸면 실제 `claude` 로 허용되는 경우와 거절되는 경우를 모두 실행해 본다.** (seen 2: R-00000374; R-00000374 states its second occurrence) — proposed: promote
 - **절차를 바꾸거나 다른 세션이 따를 새 길을 적은 카드는 그 길로 실제 일을 한 번 해 본 뒤에 닫는다.** (seen 3: R-00000404, R-00000418, R-00000420. O-00000061 도 적었다) — proposed: promote
 - **병렬 실행의 출력을 `tail -N` 같은 것으로 자르지 않는다.** (seen 1: R-00000246; caught by a person: 감독이 결과를 찾다 알아챘다) — proposed: promote
@@ -20,7 +19,7 @@ through: R-00000421
 - **알림이나 오류 문구를 새로 지을 때 그 말이 이미 다른 뜻으로 쓰이고 있는지 본다.** (seen 1: R-00000255; caught by the close reviewer) — proposed: hold
 - **카드에 "이것이 첫 판단이다"라고 쓰기 전에 그 질문을 이미 소유한 문서가 있는지 연다.** (seen 1: R-00000258) — proposed: hold
 - **대신 쓰는 경로를 고를 때는 바뀌기 전 경로가 다루던 경우를 모두 실측한다.** (seen 1: R-00000326; caught by the close reviewer) — proposed: hold
-- **결정을 정하는 카드는 닫을 때 그 결정을 지금 올릴지 나중에 올릴지 정하고, 나중이면 이유를 Follow-up 에 적는다.** (seen 1: R-00000337) — proposed: hold
+- **결정을 정하는 카드는 닫을 때 그 결정을 지금 올릴지 나중에 올릴지 정하고, 나중이면 이유를 Follow-up 에 적는다.** (seen 1: R-00000337. 회고는 같은 날 한 번에 찾은 다섯 건을 센다) — proposed: hold
 - **텍스트를 출력하는 Stage 스크립트는 `main()` 에서 stdout 을 UTF-8 로 맞춘다.** (seen 1: R-00000393; caught by CI) — proposed: hold
 - **출력 디코딩을 바꾸기 전에 `test_subprocess_text_encoding.py` 가 지키는 계약을 읽고 그 시험을 먼저 돌린다.** (seen 1: R-00000394; caught by CI. O-00000061 도 적었다) — proposed: hold
 - **함수를 다른 파일로 옮기기 전에 시험이 그 이름을 가로채는 자리를 센다.** (seen 1: R-00000243) — proposed: hold
