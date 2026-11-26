@@ -215,6 +215,34 @@ def started_fields(
     return fields
 
 
+def inherit_epic_review(story: dict[str, Any], *, environment: str, venue: str) -> str:
+    """Give a story the close review of its epic, and the epic's environment with the venue
+    that runs there. Return '' when done, or why the story contradicts the epic.
+
+    A story's `review` changes only from `not_required`. A story that names another
+    environment or another venue than the epic's is refused, never overwritten."""
+
+    if environment:
+        story_environment = (story.get("environment") or "").strip().lower()
+        if story_environment and story_environment != environment:
+            return (
+                f"the story names environment `{story_environment}`, but its epic runs in "
+                f"`{environment}`; remove the story's `environment` or make it `{environment}`"
+            )
+        story_venue = (story.get("venue") or "").strip()
+        if story_venue and story_venue != venue:
+            return (
+                f"the story names venue `{story_venue}`, but its epic's environment "
+                f"`{environment}` runs venue `{venue}`; remove the story's `venue` or make "
+                f"it `{venue}`"
+            )
+        story["environment"] = environment
+        story["venue"] = venue
+    if (story.get("review") or "not_required").strip().lower() == "not_required":
+        story["review"] = "pending"
+    return ""
+
+
 def fill_missing_tier(
     fields: dict[str, Any], config: TierConfig, planned_dir: Path, path: Path
 ) -> dict[str, Any]:
@@ -437,6 +465,13 @@ def main() -> int:
         if (parse_frontmatter(path).get("status") or "").strip().lower()
         == "rejected"
     }
+    # An epic that closes with a review hands that review to each of its stories, so a story
+    # is judged on its own success criteria when it closes (W-00000432).
+    epic_review_pending = (
+        source_unit.is_dir()
+        and work_record_scale(planned_dir, source_path) == "epic"
+        and (fields.get("review") or "").strip().lower() == "pending"
+    )
     started_records: dict[Path, tuple[dict[str, Any], str]] = {
         source_path.relative_to(source_unit): (
             fields,
@@ -454,6 +489,19 @@ def main() -> int:
             child_fields["status"] = "rejected"
         child_kind = (child_fields.get("kind") or "").strip().lower()
         child_venue = (child_fields.get("venue") or "").strip()
+        child_id = (child_fields.get("id") or child_path.stem).strip()
+        if (
+            epic_review_pending
+            and (child_fields.get("status") or "").strip().lower() != "rejected"
+            and work_record_scale(planned_dir, child_path) == "story"
+        ):
+            inherit_error = inherit_epic_review(
+                child_fields, environment=fields.get("environment") or "", venue=venue
+            )
+            if inherit_error:
+                print(f"refusing: {child_id}: {inherit_error}", file=sys.stderr)
+                return 1
+            child_venue = (child_fields.get("venue") or "").strip()
         child_routed = routing.get(child_kind, "")
         if not child_venue and child_routed and child_routed != VENUE_SPLIT_TOKEN:
             child_fields["venue"] = child_routed

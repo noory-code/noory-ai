@@ -46,6 +46,7 @@ from stage_work import (  # noqa: E402
     VENUE_SPLIT_TOKEN,
     format_yaml_string_list,
     join_scope_args,
+    parse_frontmatter,
     environment_venue_error,
     venue_exception_error,
 )
@@ -202,6 +203,43 @@ def create_hierarchy_item_atomic(
         except FileExistsError:
             candidate += 1
     raise RuntimeError("could not allocate a free work-item id")
+
+
+def inherit_epic_review(args: argparse.Namespace, items_dir: Path) -> str:
+    """Give a story registered under a started epic that closes with a review the same
+    review, and the epic's environment with the venue that runs there (W-00000432).
+    `start_work.py` does the same for the stories an epic has when it starts.
+
+    Return '' when done or when the epic asks for no review, else why the story's own
+    `--environment` or `--venue` contradicts the epic. A missing parent is reported by
+    the later parent lookup."""
+
+    parent_path = record_path(items_dir, args.parent)
+    if not parent_path.is_file() or work_record_scale(items_dir, parent_path) != "epic":
+        return ""
+    epic = parse_frontmatter(parent_path)
+    if (epic.get("review") or "").strip().lower() != "pending":
+        return ""
+    environment = (epic.get("environment") or "").strip().lower()
+    if environment:
+        venue = (epic.get("venue") or "").strip()
+        own_environment = args.environment.strip().lower()
+        if own_environment and own_environment != environment:
+            return (
+                f"--environment `{own_environment}` differs from the environment "
+                f"`{environment}` of the epic {args.parent}; omit it or pass `{environment}`"
+            )
+        if args.venue and args.venue != venue:
+            return (
+                f"--venue `{args.venue}` differs from the venue `{venue}` that the "
+                f"environment `{environment}` of the epic {args.parent} runs; omit it or "
+                f"pass `{venue}`"
+            )
+        args.environment = environment
+        args.venue = venue
+    args.review = True
+    print(f"review: pending inherited from the epic {args.parent}")
+    return ""
 
 
 def fill_item(
@@ -678,6 +716,12 @@ def main() -> int:
             )
             return 1
         return register_backlog_card(stage_root, args)
+
+    if hierarchy_paths is not None and args.scale == "story" and args.parent:
+        inherit_error = inherit_epic_review(args, items_dir)
+        if inherit_error:
+            print(f"refusing: {inherit_error}", file=sys.stderr)
+            return 1
 
     # Role policy (DE-00000004/DE-00000005): derive an omitted venue from the
     # declared kind -> venue routing. A split-marked kind or a

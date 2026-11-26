@@ -11,7 +11,7 @@ verification: pending
 retrospective: pending
 retrospective_ref:
 promotion: pending
-review: not_required
+review: pending
 scope: stage/operations,stage/skills,.stage/operations,stage/docs,stage/scripts/tests,stage/hooks/tests,stage/CHANGELOG.md
 promotes:
 decision_refs:
@@ -58,4 +58,6 @@ decision_refs:
 - 2026-11-26 PM 세션 session_018VXR6PryFiaEHvhp1FXFX4 가 커밋 둘(1386a78, 8a74c32)을 보고했고, PO 세션이 `356f41f`, `3c404e8` 로 가져왔다. 규칙은 `stage/operations/verification.md` 의 "Rules" 에 있고, `cloud-execution.md`, `review.md`, PO 스킬이 따라간다. 결정은 에픽 W-00000424 의 `## Progress` 에 있다.
 - 2026-11-26 사용자가 이 카드를 지금 닫지 않고 자기 규칙에 따라 병합하고 열어 두라고 했다("추천대로 하죠"). PO 세션이 위의 성공 기준 한 줄을 더했다.
 - 2026-11-26 PO 세션이 가져온 커밋의 끝에서 훅 시험과 스크립트 시험, `audit_stage.py`(오류 0)를 다시 돌렸다. This change was merged without a close review. 코드는 시험 규칙에 따라 카드를 열어 둔 채 병합하고, 이 카드에 대해 사용자에게 따로 묻지 않았다.
+- 2026-11-26 PO 세션이 이 카드의 `review` 를 `not_required` 에서 `pending` 으로 바꿨다. 에픽을 리뷰와 함께 시작했는데 스토리에는 그 표시가 닿지 않았던 것을 W-00000432 가 고쳤고, 이미 시작된 스토리는 소급해서 바뀌지 않기 때문이다. 이 카드는 닫힐 때 닫기 리뷰를 받는다.
+
 ## Verification

@@ -36,7 +36,33 @@ python3 stage/scripts/start_work.py --project-root . W-00000001 --scope "..." \
   --environment cloud --review
 ```
 
-`--environment` fills an omitted `--venue` with the environment's venue. Take
+`--environment` fills an omitted `--venue` with the environment's venue.
+
+An epic that closes with a review hands that review to its stories (W-00000432), so each story
+is judged on its own success criteria when it closes:
+
+```yaml
+when:
+  - `start_work.py` starts an epic whose `review` is `pending` after the start (`--review`, or
+    the value already on the planned epic)
+  - `register_work.py --parent <epic>` registers a story under a started epic whose `review` is
+    `pending`
+each_story_gets:
+  - `review: pending`, when its `review` is `not_required`
+  - if: the epic has an `environment`
+    then: that `environment` and the venue declared for it
+refused, nothing_written:
+  - a story that names another `venue` than the environment's venue
+  - a story that names another `environment` than the epic's
+not_touched:
+  - a rejected story
+  - an action under a story
+  - a story of an epic whose `review` is not `pending`
+```
+
+An epic of n stories therefore runs n + 1 close reviews: one per story and one for the epic.
+
+Take
 decision and other record numbers from `stage/scripts/stage_record_ids.py`; parallel
 sessions work on parallel branches. That command, `register_work.py`, and
 `manage_roadmap.py` reserve each new id on the remote as `refs/stage-ids/<id>`
@@ -259,8 +285,10 @@ starts at the PO session's start commit, so its diff is exactly the card's chang
 
 A PM session that managed an epic leaves one commit per story, each with that story's executor
 report. Bring them over one by one instead of squashing (`git cherry-pick <story-commit>`, oldest
-first), and run steps 3 and 4 for each story at its commit. Close the stories without `--archive`,
-then close and archive the epic.
+first), and run steps 3 and 4 for each story at its commit. Each story of an epic started with
+`--review` is `review: pending` ("Register or start"), so its close runs the review and accepts
+`--review-commit <story-commit>`. Close the stories without `--archive`, then close and archive
+the epic.
 
 ### Import again after a rejected close review
 
