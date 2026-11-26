@@ -9,8 +9,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000432
 promotion: pending
 review: pending
 scope: stage/scripts/start_work.py,stage/skills/stage-work/register_work.py,stage/scripts/tests,stage/operations/cloud-execution.md,stage/skills/stage-orchestrate/SKILL.md,stage/CHANGELOG.md
@@ -61,6 +61,8 @@ decision_refs:
 
 ## Next action
 
+닫기 리뷰를 받고 닫는다.
+
 ## Related truth
 
 ## Sessions
@@ -74,4 +76,10 @@ decision_refs:
   - 결정 1(고치는 자리): A 도구, 리뷰가 pending 인 에픽을 시작하면 스토리도 pending 이 된다. 리뷰가 스토리 수 + 1 번 돈다 / B 문서, 스토리는 리뷰 없이 닫고 에픽을 닫을 때 한 번 본다. 사용자가 A 를 골랐다("권장으로 진행").
   - PO 세션이 사용자의 위임으로 정한 셋: 스토리는 리뷰 표시와 에픽의 환경, 그 환경의 venue 를 물려받고, 스토리가 다른 venue 를 적어 두었으면 시작을 거절한다. 에픽 바로 아래 스토리까지만 적용한다. `register_work.py --parent` 도 같은 표시를 준다.
 - 이 카드는 도구를 고치므로 절차를 바꾸는 카드가 아니다. W-00000430 의 시험이 되지 않는다.
+- 2026-11-26 PM 세션이 117558c2 를 보고했다. `start_work.py` 와 `register_work.py` 가 리뷰가 pending 인 에픽의 스토리에 리뷰 표시와 환경과 venue 를 준다. 새 시험 파일의 13개 가운데 하나는 실제로 에픽을 `--environment cloud --review` 로 시작하고 스토리에 `close_work.py --review-commit HEAD` 를 돌려 거절되지 않고 리뷰어가 실행되는 것을 본다고 했다. 범위 밖 변경은 없다고 했다.
+- 2026-11-26 PO 세션이 squash 커밋 1629091f 에서 훅 시험, 스크립트 시험, `audit_stage.py`(오류 0)를 다시 돌렸다.
+- Follow-up candidates: registered 0, discarded 0
+
 ## Verification
+
+2026-11-26 PO 세션이 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 squash 커밋 `1629091f` 의 것이다.
