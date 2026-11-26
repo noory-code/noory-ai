@@ -176,6 +176,20 @@ the very record the observation cites, and the observation still reads as if not
 card was registered, started, and rejected on exactly that (R-00000245); the decision it meant to
 write had shipped the previous day.
 
+**When a proposal comes from a number — a size, a count, a duration, a cost, a limit that looks
+missing, too high, or too low ("this text is N characters, cap it"; "this list has no limit, add
+one") — read how the place got its present shape before proposing it to the user, as a card, or as
+a follow-up candidate.** The number shows the present shape, not the reason for it, and running the
+behavior does not show a reason either. Run `git blame <path>` and
+`git log -L <start>,<end>:<path>` on the lines the number measures; read the messages of the
+commits that last changed them, the comment beside the code, and the decision record or card those
+commits name. If one of them states a reason for the present shape, the proposal says what has
+changed since that reason was written, or it is withdrawn. A cap on the open-observation list of
+the session-start text was proposed from the text's size alone; commit `db9f74f1` had removed that
+cap on purpose, because with it 6 of 17 open observations did not reach the session, and the
+proposal was withdrawn. The day before, a release card's completion criteria were written before
+checking where the plugin is read from, and the file they named did not change (R-00000334).
+
 An observation's `## Next action` is a claim from the day it was written, not a work order. Confirm
 it is still true — that is what makes the card's purpose the human's, not the record's.
 
@@ -196,6 +210,32 @@ For each row, list concrete places and record the count. When the count is zero,
 and why it is unaffected; bare `none` is not evidence. Use the findings to correct the existing
 `## Scope`, `## Risks`, and `## Success criteria` answers. Do not add a duplicate section to the
 card.
+
+**A change that moves a record or changes the layout it is stored in counts its readers first.**
+A record is a file Stage keeps under `.stage/`: a card, a retrospective, a decision, an
+observation. Its place is the path it is stored at and the headings and frontmatter fields inside
+it.
+
+```yaml
+if_any:
+  - a record file, or a set of them, is stored at another path, folder, or file name
+  - a section heading or frontmatter field of a record is added, removed, renamed, or split
+then_before_the_four_checks:
+  - search the repository for the path, the heading text, and the field name; do not list
+    readers from memory
+  - list every piece of code that reads or writes that place, and record the count
+  - list every test of a screen that shows the record (the session-start text, the session
+    index, derived views, audit output, the unattended driver), and record the count
+  - in the same change, write or rewrite those tests so they use the new place
+```
+
+A test that builds only the old layout keeps passing after the move and proves nothing. Splitting
+the retrospective section `## Next changes` in two touched five places, two of them in the driver
+that writes retrospectives during unattended runs; uncounted, those runs would have broken
+without a message. When cards moved from single files into folders, the session-start text
+stopped showing the selected cards, and its test still passed because it built only the old
+single-file layout (R-00000241, R-00000373). `stage-decision`, "Count where it applies", owns the
+wider six-kind count for a decision.
 
 Show this table during confirmation:
 
@@ -281,6 +321,24 @@ next free number, writes the card, and updates the owning index:
   This buys speed with lateness. A narrow command watches this card's result and nothing else, so
   a change that breaks something elsewhere passes every round and surfaces only at close — before
   the human commits, which is what makes the trade safe.
+
+  Never store a path of one person's machine in an `acceptance` command (R-00000282).
+  `close_work.py` and the driver re-run the stored command on whatever machine closes the card —
+  a cloud session, CI, another person — and a path that exists on one machine fails there. Two
+  cards were blocked at close for this.
+
+  ```yaml
+  stored_acceptance_command:
+    - if: the command names a path
+      then: write the path relative to the repository root; the command runs from that root
+      never_store:
+        - an absolute path
+        - a home-folder path (`~`, `/home/<name>`, `/Users/<name>`, `C:\Users\<name>`)
+        - a path into another checkout on one machine
+    - if: the check belongs to another repository
+      then: do not store it on this card; that repository's card owns it. Run it in that
+        repository and write only the result under this card's `## Verification`
+  ```
 
 - Write the card so it stands on its own. **An identifier is not a meaning.** "Carry what
   DE-00000046 decided into the docs" tells a reader nothing until they open two other files; write

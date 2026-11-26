@@ -183,6 +183,32 @@ when_you_see_a_warning:
 The Claude stand-in also adds these rules to every prompt (`REVIEWER_RULES`): leave a changed file
 in place and name it, do not restore it, and do not read the session record folder or GitHub.
 
+### A change to what the reviewer may do
+
+```yaml
+reviewer_permission_change:
+  if: a change touches the allow or deny rules a reviewer command passes to `claude` — in
+    `scripts/claude_review_companion.py` the `Edit(<verdict file>)` rule, `shell_tools`,
+    `DENIED_COMMANDS`, `denied_rules`, or the `--allowedTools` and `--disallowedTools` lists of
+    `claude_command` — or the same two options in a project's own reviewer command
+  then: before the card closes, run the real `claude` under the new rules on each platform whose
+    rules changed, once on a call they must allow and once on a call they must refuse
+  read_from: the output of `claude -p --output-format stream-json --verbose`, where each `tool_use`
+    block names the tool the reviewer called and `permission_denials` in the `result` event
+    names the calls that were refused
+  record: both results on the card's `## Verification`, with the command line of each run
+  platform_the_session_cannot_run: both results are a `- Checked` line from that machine
+    ("A check recorded on the card")
+  not_enough: a unit test of the lists, which checks the text of the rules and not how `claude`
+    matches them
+```
+
+The verdict-file write rule in W-00000359 and the Windows PowerShell rule in W-00000374 were each
+checked by running `claude` (R-00000374; first occurrence W-00000359).
+`LiveReviewerWriteProbeTest` in `scripts/tests/test_claude_review_guard.py` is such a run for the
+file-edit rule alone: a `Write` call is refused and shell commands run. It is skipped unless
+`STAGE_LIVE_REVIEW_PROBE=1` is set and `claude` is on `PATH`.
+
 Not held back, and not seen:
 
 | What | Why |
@@ -209,14 +235,15 @@ else. The line is written before the close and committed with the card.
 | What the criterion needs | Line on `## Verification` | Who writes it |
 |---|---|---|
 | a whole session doing the thing (a new cloud session takes a role and does something) | `- Observed <date> by verify session <session-id> ...`; `stage-orchestrate`, "Start a verify session", owns its form | the PO session, from the verify session's observation |
-| the user's machine: another OS, an installed plugin, a device | `- Checked <date> on <machine> at <commit>: <criterion> — <held\|did not hold>; <the command or action> — <what it showed>` | the session that ran the check on that machine, or the PO session from what the user or that session reported |
+| the user's machine: another OS, an installed plugin, a device; or a trial of a changed procedure or a new path (`operations/verification.md`, "Rules"), done by a session other than the PM session that built the card | `- Checked <date> on <machine> at <commit>: <criterion> — <held\|did not hold>; <the command or action> — <what it showed>` | the session that ran the check on that machine, or the PO session from what the user or that session reported; for a trial, the session that did the trial, or the PO session from that session's report |
 | the user's own judgment, or the user's reading of a check that does not match the criterion's words | `- User verdict <date>: <criterion> — <held\|did not hold>; "<the user's words>"; rests on <the `- Checked` line's date and machine, or what the user looked at>` | the PO session, from the user's message |
 
 ```yaml
 line_parts:
   date: the day the check ran or the user answered, as YYYY-MM-DD
   machine: the OS and what else decides the result there — architecture, locale, the installed
-    version of the thing checked
+    version of the thing checked; for a trial, the environment the session ran in (for example
+    a cloud session's container)
   commit: the commit the checked tree was at
   criterion: the card's criterion, copied, or its number in `## Success criteria`
   command_or_action: what was run or done, exactly; for a command, the command line

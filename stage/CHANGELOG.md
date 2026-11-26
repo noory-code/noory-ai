@@ -2,6 +2,50 @@
 
 ## Unreleased
 
+- A card that changes a procedure a session follows (an `operations/` document, a skill, a brief
+  a script prints), or writes a new path other sessions will follow, now closes only after real
+  work was done once along that path (W-00000430, R-00000404, R-00000418, R-00000420). Before, a
+  test that pinned the document's sentences and a review that read it were enough to close, and
+  three cards' gaps surfaced only when a session first followed the new text.
+  - `operations/verification.md`, "Rules": the card states the trial as a success criterion, and
+    stays open until a `- Observed` or `- Checked` line for it is on `## Verification`. A card
+    that adds one rule sentence and no step to walk is not under the rule.
+  - `operations/cloud-execution.md`, "Merge a card that waits for the user's machine": the path
+    now also covers a trial that can run only after the card's change is merged. For such a
+    trial the PO session does not ask the user per card; it writes on the card that the code
+    merged open under the rule, and says in words under `## Next action` which work runs the
+    trial. Step 4 of "Close a PM session's card" routes a trial criterion there.
+  - `operations/review.md`, "A check recorded on the card": a `- Checked` line may also record
+    such a trial, done by a session other than the PM session that built the card; its machine
+    part is the environment that session ran in.
+  - `stage-orchestrate`, "Close and merge", names the trial case beside the user's-machine case.
+- `operations/review.md`, "A change to what the reviewer may do": a card that changes the allow or
+  deny rules a reviewer command passes to `claude` now closes only after the real `claude` ran
+  under the new rules on each changed platform, once on a call they must allow and once on a call
+  they must refuse, with both results on the card (W-00000429, R-00000374). Before, no rule asked
+  for the run; a unit test of the lists checks their text, not how `claude` matches them.
+- `stage-work`, "Run the premise before turning an observation into a card": a proposal that
+  comes from a number — a size, a count, a duration, a cost, a limit — now starts by reading the
+  commits, the comment, and the decision record that gave the place its present shape, and is
+  withdrawn unless it says what has changed since their reason was written (W-00000428,
+  R-00000334). Before, the section covered only observations, and a cap was proposed for a list
+  whose cap a commit had removed on purpose.
+- `stage-work`, "Draft the item": a stored `acceptance` command now names only paths relative to
+  the repository root, and a check of another repository stays off the card — that repository's
+  card owns it, and this card records only the result (W-00000427, R-00000282). Before, nothing
+  barred a path of one person's machine, and two cards could not be closed from another machine.
+- `operations/output.md`: a response that asks the user to choose or decide, or that is a turn in
+  a discussion with the user, now opens with the big picture, asks one question that one answer
+  settles, and holds at most one table, the one with that question's options (W-00000426,
+  R-00000371, R-00000402). Before, the rules did not limit how many questions or tables one
+  response held, and the user twice said they could not follow a response that laid out several
+  issues at once.
+- `stage-work`, "Count affected places before drafting": a change that stores a record at another
+  path or changes its headings or frontmatter fields now starts by searching for and counting the
+  code that reads that place and the tests of the screens that show it, and rewrites those tests
+  for the new place in the same change (W-00000425, R-00000241, R-00000373). Before, the four
+  checks did not name readers, and a test that built only the old layout kept passing after the
+  move.
 - A rule candidate seen twice becomes a rule without the user's verdict, and one seen once reaches
   the user only when a person caught it or it surfaced after merge or release (W-00000421,
   DE-00000104). Before, one occurrence "caught outside the harness" was enough to propose

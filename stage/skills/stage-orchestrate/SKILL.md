@@ -468,8 +468,8 @@ Close from this session: `operations/cloud-execution.md`, "Close a PM session's 
 step tells the PM session that the review starts and that it pushes nothing more until you
 answer. Archive a session once its card is merged. The same document owns the second import after
 a rejected close review ("Import again after a rejected close review") and merging code while
-its card stays open for a check on the user's machine
-("Merge a card that waits for the user's machine").
+its card stays open for a check on the user's machine, or for a trial of a changed procedure
+that can run only after the merge ("Merge a card that waits for the user's machine").
 
 Before `close_work.py` runs:
 
