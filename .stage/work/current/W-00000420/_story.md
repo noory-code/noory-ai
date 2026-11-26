@@ -9,8 +9,8 @@ autonomous: false
 acceptance: []
 status: active
 verification: pending
-retrospective: pending
-retrospective_ref:
+retrospective: completed
+retrospective_ref: R-00000420
 promotion: pending
 review: pending
 scope: stage/skills/stage-orchestrate/SKILL.md,stage/scripts/subsession_brief.py,stage/scripts/started_cards.py,stage/operations/cloud-execution.md,stage/operations/review.md,stage/operations/retrospective.md,stage/skills/stage-retrospective,stage/skills/stage-handoff/SKILL.md,stage/skills/stage-drive/SKILL.md,stage/skills/README.md,stage/hooks/stage_memory_index.py,stage/hooks/tests,stage/scripts/tests,stage/docs/BLUEPRINT.md,stage/README.md,stage/CHANGELOG.md
@@ -53,7 +53,7 @@ decision_refs: DE-00000103
 
 ## Next action
 
-사용자가 이어서 하자고 하면 `claude/w420-po-pm-roles` 의 4cca1ac 를 "Close a sub-session's card" 대로 가져온다. 커밋이 둘이라 `git merge --squash` 하나로 합치고 실행 보고는 4cca1ac 의 것을 쓴다. 검사하고 닫기 리뷰를 돌린다. 이 카드가 병합된 뒤에 띄우는 세션부터 새 브리핑(`--po-session`, `--role pm`)과 새 이름을 쓴다.
+닫기 리뷰를 받고 닫는다.
 
 ## Related truth
 
@@ -72,5 +72,10 @@ decision_refs: DE-00000103
 - 2026-11-25 지휘 세션이 작업 세션의 세 질문을 사용자의 위임으로 정했다: 사용자의 말에 목적과 성공 기준이 다 있으면 PO 가 바로 등록하고 아니면 계획 세션을 거친다. 비교할 선택지가 있는 조사는 리서치 세션, 답이 하나인 찾아보기는 서브에이전트. 옛 이름의 호환은 두지 않는다. 사용자가 보고 뒤집을 수 있다.
 - 2026-11-25 지휘 세션이 일곱째 성공 기준("의사결정은 PO 에서")이 b5d4ee33 에 없어서 작업 세션에 둘째 커밋을 요청했다. 사용자가 같은 날 오늘 작업을 여기서 마무리하자고 했다.
 - 2026-11-25 작업 세션 session_018VXR6Rki1nPLNsnanfTae9 가 둘째 커밋 4cca1ac 를 보고했다(앞 커밋 b5d4ee33 위). 일곱째 성공 기준을 채웠다고 했다: 다섯 브리핑 모두가 정할 것을 스스로 정하지 말고 만들기 전에 선택지와 추천을 PO 세션에 올리라고 하고, 스킬에 "Decide here" 가 생겼다. 스크립트 시험 1037, 훅 시험 489 통과, audit 오류 0 이라고 했다. 첫 커밋이 이미 만든 선택 넷(옛 이름의 호환 없음, PO 가 바로 등록하는 조건, 리서치 세션과 서브에이전트의 경계, 갈무리를 메시지로 넘김)을 선택지와 함께 다시 올렸다. 앞의 셋은 지휘 세션이 위임으로 정했고 사용자가 같은 날 "동의해요"라고 했다. 넷째도 지은 대로 둔다(위임). 닫기 리뷰는 시작하지 않았다. 사용자가 오늘 작업을 마무리했다.
+- 2026-11-26 사용자가 작업을 이어가자고 했다. 지휘 세션이 두 커밋을 squash 커밋 3b88e47 로 가져와 훅 시험(489 통과), 스크립트 시험(1037 통과), `audit_stage.py`(오류 0)를 다시 돌렸다.
+- 2026-11-26 지휘 세션이 스킬의 "Decide here" 가 더한 두 문장(이미 지은 결정은 정해지지 않은 것으로 본다, 위임이 없으면 PO 도 같은 목록에 묶인다)을 사용자의 위임으로 받았다.
+- Follow-up candidates: registered 0, discarded 0
 
 ## Verification
+
+2026-11-26 지휘 세션 session_018VXR6NxmjDnZJNGb3TZWco 가 닫기 리뷰를 돌린다. 이 리뷰는 같은 모델의 대역 리뷰이고 다른 venue 의 리뷰가 아니다. 리뷰가 받는 경로는 squash 커밋 `3b88e47` 의 것이다.
