@@ -66,7 +66,7 @@ index made from the records (DE-00000100). A cloud session has no hook, so
 | what is being done now | an active milestone, a current card, an open observation, an open question, a selected planned card | the record the line names |
 | decisions | a decision's id and title, newest first | `.stage/decisions/pending/<id>.md` or `.stage/official/decisions/records/<id>.md` |
 | where rules live | the path of a project instruction file or a `.stage/operations/` file | that file |
-| rule candidates | a candidate from `.stage/state/rule-candidates.md` with how often it was seen | that list, then the retrospectives it cites |
+| rule candidates | a `proposed: promote` candidate from `.stage/state/rule-candidates.md` with how often it was seen; the other candidates are one line that counts them | that list, then the retrospectives it cites |
 | how to find a record | where decision bodies and retrospectives are | — |
 
 The index never carries a record's body. A title says the topic and not what was chosen, so open
@@ -79,9 +79,9 @@ limit:
 over_the_limit:
   never_shortened: what is being done now, and the rules or the brief itself
   shortened_in_this_order:
-    - rule candidates, from the end of the shown list. The index shows `proposed: promote`
-      candidates first and `proposed: hold` ones after them, each group in the list's order,
-      so the hold ones are left out first.
+    - rule candidates, from the end of the shown list. The index lists only the
+      `proposed: promote` candidates, in the list's order. The line that counts the other
+      candidates is never shortened.
     - decision titles, from the oldest
     - the previous session's handoff
     - the list of project instruction files

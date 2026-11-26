@@ -187,13 +187,13 @@ class RuleCandidateIndexTest(SessionIndexFixture):
         self.assertEqual(([], []), stage_memory_index.rule_candidate_lines(self.stage_root))
         self.assertNotIn("### Rule candidates", stage_context.session_context(self.root))
 
-    def test_the_list_gives_one_line_per_candidate_and_says_when_the_candidates_are_due(self):
+    def test_the_list_gives_one_line_per_promote_candidate_and_says_when_candidates_are_due(self):
         self.write_retrospectives(25, candidate="- Something.")
         (self.stage_root / "state" / "rule-candidates.md").write_text(
             "---\nthrough: R-00000005\n---\n# Rule candidates\n\n"
             "- **Count every place a contract lands.** (seen 2: R-00000001, R-00000004)\n"
-            "  A continuation line that is not a candidate of its own.\n"
-            "- **Name the session.** (seen 1: R-00000002)\n",
+            "  A continuation line that is not a candidate of its own — proposed: promote\n"
+            "- **Name the session.** (seen 2: R-00000002, R-00000003) — proposed: promote\n",
             encoding="utf-8",
         )
 
@@ -203,10 +203,13 @@ class RuleCandidateIndexTest(SessionIndexFixture):
         self.assertEqual(
             [
                 "- **Count every place a contract lands.** (seen 2: R-00000001, R-00000004)",
-                "- **Name the session.** (seen 1: R-00000002)",
+                "- **Name the session.** (seen 2: R-00000002, R-00000003) — proposed: promote",
             ],
             candidates,
         )
+        # Every candidate is listed, so no line counts unlisted ones.
+        self.assertEqual(1, len(status))
+        self.assertNotIn("are not listed", context)
         self.assertIn("through R-00000005; 20 are newer.", status[0])
         self.assertIn("Rule candidates are due (20 or more): give a research session", status[0])
         self.assertNotIn("consolidation session", status[0])
@@ -218,10 +221,11 @@ class RuleCandidateIndexTest(SessionIndexFixture):
             "---\nthrough: R-00000005\n---\n- **One.** (seen 1: R-00000001)\n", encoding="utf-8"
         )
 
-        _candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
+        candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
 
-        self.assertIn("19 are newer.", status[0])
-        self.assertNotIn("due", status[0])
+        self.assertEqual([], candidates)
+        self.assertIn("19 are newer.", status[-1])
+        self.assertNotIn("due", status[-1])
 
 
 def candidate_list(count: int, promote_every: int = 0) -> str:
@@ -239,6 +243,12 @@ def candidate_list(count: int, promote_every: int = 0) -> str:
     return "---\nthrough: R-00000399\n---\n# Rule candidates\n\n" + "".join(bullets)
 
 
+HOLD_COUNT_LINE = (
+    "- {count} more candidates are `proposed: hold` and are not listed — read "
+    "`.stage/state/rule-candidates.md`."
+)
+
+
 class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
     """W-00000413: 39 candidates had left the index with no decision title at all."""
 
@@ -247,14 +257,27 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
             candidate_list(count, promote_every), encoding="utf-8"
         )
 
-    def test_promote_proposals_come_before_hold_ones_in_the_lists_order(self):
+    def test_only_promote_proposals_are_listed_and_the_rest_are_counted(self):
+        """DE-00000104: a candidate below the threshold stays in the list, not in the index."""
         self.write_candidates(6, promote_every=3)
 
-        candidates, _status = stage_memory_index.rule_candidate_lines(self.stage_root)
+        candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
+        index = stage_context.session_index(self.root)
 
         self.assertEqual(
-            [3, 6, 1, 2, 4, 5],
+            [3, 6],
             [int(line.split("number ")[1].split()[0]) for line in candidates],
+        )
+        self.assertEqual(
+            [
+                HOLD_COUNT_LINE.format(count=4),
+                "- `.stage/state/rule-candidates.md` covers retrospectives through R-00000399; "
+                "0 are newer.",
+            ],
+            status,
+        )
+        self.assertIn(
+            "### Rule candidates (not yet rules)\n" + "\n".join(candidates + status), index
         )
 
     def test_a_bullet_without_a_proposal_counts_as_hold(self):
@@ -264,17 +287,41 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
             encoding="utf-8",
         )
 
-        candidates, _status = stage_memory_index.rule_candidate_lines(self.stage_root)
+        candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
 
-        self.assertEqual(
-            ["- **Second.** (seen 2: R-00000001,", "- **First.** (seen 1: R-00000001)"],
-            candidates,
+        self.assertEqual(["- **Second.** (seen 2: R-00000001,"], candidates)
+        self.assertEqual(HOLD_COUNT_LINE.format(count=1), status[0])
+
+    def test_a_list_of_hold_candidates_alone_still_shows_their_count(self):
+        self.write_candidates(4)
+
+        candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
+        index = stage_context.session_index(self.root)
+
+        self.assertEqual([], candidates)
+        self.assertEqual(2, len(status))
+        self.assertIn(
+            "### Rule candidates (not yet rules)\n" + HOLD_COUNT_LINE.format(count=4) + "\n"
+            "- `.stage/state/rule-candidates.md` covers retrospectives through",
+            index,
         )
+        self.assertNotIn("- **Candidate", index)
+
+    def test_a_list_without_a_through_id_still_counts_the_unlisted_candidates(self):
+        (self.stage_root / "state" / "rule-candidates.md").write_text(
+            "- **First.** (seen 1: R-00000001) — proposed: hold\n", encoding="utf-8"
+        )
+
+        candidates, status = stage_memory_index.rule_candidate_lines(self.stage_root)
+
+        self.assertEqual([], candidates)
+        self.assertEqual(HOLD_COUNT_LINE.format(count=1), status[0])
+        self.assertIn("declares no `through: R-<id>`", status[1])
 
     def test_thirty_nine_candidates_leave_the_decision_titles_in_the_index(self):
         self.write_decisions(82)
         self.write_active_card()
-        self.write_candidates(39, promote_every=5)
+        self.write_candidates(39, promote_every=1)
 
         context = stage_context.session_context(self.root)
 
@@ -286,7 +333,9 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
         # Decisions lose a title only after every candidate line is gone.
         if "older decisions not shown" in context:
             self.assertEqual([], shown)
-            self.assertIn("- …39 candidates not shown — read `.stage/state/rule-candidates.md`", context)
+            self.assertIn(
+                "- …39 candidates not shown — read `.stage/state/rule-candidates.md`", context
+            )
         else:
             self.assertEqual(82, len(listed))
 
@@ -313,7 +362,7 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
             )
         for name in ("CLAUDE.md", "AGENTS.md"):
             (self.root / name).write_text("# Instructions\n", encoding="utf-8")
-        self.write_candidates(39, promote_every=5)
+        self.write_candidates(39, promote_every=1)
 
         context = stage_context.session_context(self.root)
 
@@ -338,19 +387,26 @@ class CandidatesGiveWayToDecisionsTest(SessionIndexFixture):
         for line in rules.splitlines()[1:]:
             self.assertTrue(line.startswith("- "), line)
 
-    def test_the_candidates_left_out_first_are_the_hold_ones(self):
+    def test_listed_candidates_are_left_out_from_the_end_and_the_hold_count_stays(self):
         self.write_decisions(3)
         self.write_candidates(39, promote_every=5)
         full = stage_context.session_index(self.root)
         self.assertNotIn("not shown", full)
+        self.assertEqual(7, sum(line.startswith("- **Candidate") for line in full.splitlines()))
 
-        index = stage_context.session_index(self.root, len(full) - 2_500)
+        index = stage_context.session_index(self.root, len(full) - 300)
 
         shown = [line for line in index.splitlines() if line.startswith("- **Candidate")]
         numbers = [int(line.split("number ")[1].split()[0]) for line in shown]
-        self.assertEqual([5, 10, 15, 20, 25, 30, 35], numbers[:7])
-        self.assertLess(len(shown), 39)
-        self.assertIn("candidates not shown — read `.stage/state/rule-candidates.md`", index)
+        self.assertTrue(numbers, "no promote candidate is shown")
+        self.assertLess(len(numbers), 7)
+        self.assertEqual([5, 10, 15, 20, 25, 30, 35][: len(numbers)], numbers)
+        # The line that counts what was left out counts promote lines only.
+        self.assertIn(
+            f"- …{7 - len(numbers)} candidates not shown — read "
+            "`.stage/state/rule-candidates.md`\n" + HOLD_COUNT_LINE.format(count=32),
+            index,
+        )
         self.assertEqual(
             3, sum(1 for line in index.splitlines() if line.startswith("- DE-"))
         )

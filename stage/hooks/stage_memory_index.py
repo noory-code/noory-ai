@@ -199,25 +199,15 @@ def candidate_bullets(list_text: str) -> list[tuple[str, bool]]:
     return found
 
 
-def promote_first(bullets: list[tuple[str, bool]]) -> list[str]:
-    """Candidate lines with the `proposed: promote` ones first, each group in the list's order.
-
-    The index gives up candidates from the end (`fit_blocks`), so the ones a person is asked
-    to decide on are the last to go.
-    """
-    return [line for line, promote in bullets if promote] + [
-        line for line, promote in bullets if not promote
-    ]
-
-
 def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
     """The open rule candidates, and the fixed lines that say how current they are.
 
     Returns `(candidates, status)`. `candidates` are the top-level bullets of the
-    consolidated list, one bounded line each: the `proposed: promote` ones first, then the
-    rest, each group in the list's order. `status` says how many
-    retrospectives are newer than the list and whether the rule-candidates task is due; with
-    no list it says how many retrospectives carry a candidate and where they are.
+    consolidated list that say `proposed: promote`, one bounded line each, in the list's
+    order (DE-00000104). The other bullets are never listed: `status` opens with one line
+    that counts them when there are any. `status` then says how many retrospectives are
+    newer than the list and whether the rule-candidates task is due; with no list it says
+    how many retrospectives carry a candidate and where they are.
     """
     if active_topology(stage_root) != ACTIVE_TOPOLOGY_V4:
         return [], []
@@ -239,7 +229,17 @@ def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
         text = list_path.read_text(encoding="utf-8")
     except OSError:
         text = ""
-    candidates = promote_first(candidate_bullets(text))
+    bullets = candidate_bullets(text)
+    candidates = [line for line, promote in bullets if promote]
+    held = len(bullets) - len(candidates)
+    counted = (
+        [
+            f"- {held} more candidates are `proposed: hold` and are not listed — read "
+            f"`.stage/{list_relative}`."
+        ]
+        if held
+        else []
+    )
     if re.fullmatch(r"R-\d{3,}", through):
         covered = id_sort_key(through)
         newer = sum(1 for record_id, _path in retrospectives if id_sort_key(record_id) > covered)
@@ -258,7 +258,7 @@ def rule_candidate_lines(stage_root: Path) -> tuple[list[str], list[str]]:
             f"- `.stage/{list_relative}` declares no `through: R-<id>`, so how many "
             "retrospectives are newer than it is unknown."
         )
-    return candidates, [status]
+    return candidates, counted + [status]
 
 
 def find_lines(stage_root: Path) -> list[str]:

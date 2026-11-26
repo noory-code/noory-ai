@@ -47,14 +47,20 @@ the retrospective. Register it as a planned card or a `state/` record, where it 
 `## Rule candidate` holds how work is done from now on, in any card. It expires only when something
 supersedes it. Leave it empty when the work taught nothing durable, which is most of the time.
 
-Two tests promote a candidate into a rule file, and nothing else does: **it happened twice**, or
-**something outside the harness had to catch it**. Read
-[rule-promotion.md](rule-promotion.md) before writing the section or lifting a candidate — it owns
-the tests, where the rule goes, and why amending an existing rule usually beats adding a new one.
+Two tests promote a candidate into a rule file, and nothing else does (DE-00000104). **It was
+seen twice**: two retrospectives state it, or one retrospective states that this is its second
+occurrence. Or **it was seen once, and a person caught it or it surfaced after merge or
+release**: what the close reviewer or CI caught does not count. Write who caught it and whether
+this is its second occurrence in the section; a candidate seen once that does not say who caught
+it is held. Read [rule-promotion.md](rule-promotion.md) before writing the section or lifting a
+candidate — it owns the tests, where the rule goes, and why amending an existing rule usually
+beats adding a new one.
 
 A closing session does not gather candidates across retrospectives. A research session given
-the rule-candidates task does, into `.stage/state/rule-candidates.md`, and it only proposes
-([rule-promotion.md](rule-promotion.md), "Consolidating candidates").
+the rule-candidates task does, into `.stage/state/rule-candidates.md`, and it edits no rule file.
+A candidate seen twice becomes a rule through a card the PO session registers without asking the
+user; one seen once waits for the user's verdict ([rule-promotion.md](rule-promotion.md),
+"Consolidating candidates").
 
 Mixing the queue and the rule under one heading is what buried the earlier pile: 217 retrospectives carried a lesson
 and no rule file cited any of them.
