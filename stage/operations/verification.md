@@ -26,9 +26,7 @@ project's `.stage/operations/verification.md`.
         or a skill, or a brief a script prints
       - or the card writes a new path that other sessions will follow
     does_not_apply_when:
-      - the card adds or amends one rule sentence and no step to walk: there is no path to try.
-        The five cards that each added one rule sentence beside this one are of this kind
-        (W-00000425 to W-00000429).
+      - the card adds or amends one rule sentence and no step to walk: there is no path to try
     at_registration:
       - the card carries a success criterion that names the real work done once along the
         changed path, for example "one real card was closed by the changed close path", "one
