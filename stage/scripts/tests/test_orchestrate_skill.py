@@ -205,6 +205,44 @@ class OrchestrateSkillTest(unittest.TestCase):
         for document in (retrospective, promotion):
             self.assertIn('("The rule-candidates task")', document)
 
+    def test_the_promotion_threshold_is_the_one_de_104_decided(self) -> None:
+        text = read("stage-orchestrate")
+        closing = " ".join(read("stage-retrospective").split())
+        promotion = (SKILLS / "stage-retrospective" / "rule-promotion.md").read_text(encoding="utf-8")
+        flat = " ".join(promotion.split())
+
+        self.assertIn(
+            "**It was seen once, and a person caught it or it surfaced after merge or release.**", flat
+        )
+        self.assertIn("What the close reviewer or CI caught does not count", flat)
+        self.assertIn("itself states that this is its second occurrence counts as seen twice", flat)
+        self.assertIn("if: its retrospective says the close reviewer or CI caught it", promotion)
+        self.assertIn("if: its retrospective does not say who caught it", promotion)
+        self.assertIn("if_who_caught_it_is_not_stated: a candidate seen once is held", promotion)
+        self.assertIn("then: it becomes a rule without the user's verdict", promotion)
+        self.assertIn("carries the count of the other candidates", flat)
+        self.assertIn("a wrong merge of two different behaviors makes a one-time occurrence", flat)
+        self.assertIn("user declined 2026-11-26) — proposed: hold", promotion)
+        self.assertNotIn("Something outside the harness had to catch it", promotion)
+        self.assertNotIn("it proposes; the PO session shows the proposal", promotion)
+
+        self.assertIn("what the close reviewer or CI caught does not count", closing)
+        self.assertNotIn("it only proposes", closing)
+
+        task = text.split("### The rule-candidates task\n", 1)[1].split("\n## ", 1)[0]
+        report = " ".join(task.split("on_its_report:\n", 1)[1].split())
+        self.assertIn(
+            "- if: its `seen` count is 2 or more then: register a card that amends the rule file; "
+            "do not ask the user",
+            report,
+        )
+        self.assertIn("- if: its `seen` count is 1 then: put it in the table", report)
+        self.assertIn("- one table of the `proposed: promote` lines seen once", report)
+        self.assertIn("- one tally line", report)
+        self.assertIn("- nothing else from the list", report)
+        self.assertIn("write `user declined <date>` inside its parentheses", report)
+        self.assertNotIn("the user chooses which become rules", report)
+
     def test_the_close_procedure_covers_the_paths_made_up_by_hand(self) -> None:
         text = read("stage-orchestrate")
         cloud = (SKILLS.parent / "operations" / "cloud-execution.md").read_text(encoding="utf-8")

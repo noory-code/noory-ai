@@ -31,7 +31,11 @@ when:
   - when 20 or more retrospectives are newer than the list's `through:` id
 writes: `.stage/state/rule-candidates.md` only
 never_edits: retrospectives, decision records, rule files
-promotion: the session proposes; a person chooses; a card amends the rule file
+promotion:  # DE-00000104; `stage-retrospective/rule-promotion.md` owns the two tests
+  - if: the session marks a candidate `proposed: promote` and it was seen twice
+    then: the PO session registers a card that amends the rule file, without asking the user
+  - if: the session marks a candidate `proposed: promote` and it was seen once
+    then: the user chooses; for a chosen line the PO session registers that card
 ```
 
 `stage-retrospective/rule-promotion.md` ("Consolidating candidates") owns the list's format, and

@@ -278,11 +278,11 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
 
     What the session is doing now is never shortened. Over the limit, lines go in this
     order, each block leaving one line that counts what it left out and names where to read
-    it: rule candidates from the end of their list (`proposed: hold` before
-    `proposed: promote`), then decision titles from the oldest, then the previous session's
-    handoff, then the two lists of rule files. Candidates go first because a decision binds
-    work and a candidate is not yet a rule (W-00000413: 39 candidates had pushed every
-    decision title out).
+    it: rule candidates from the end of their list, then decision titles from the oldest,
+    then the previous session's handoff, then the two lists of rule files. Candidates go
+    first because a decision binds work and a candidate is not yet a rule (W-00000413: 39
+    candidates had pushed every decision title out). Only `proposed: promote` candidates
+    are listed; one line that is never shortened counts the rest (DE-00000104).
     """
     stage_root = workspace_root / ".stage"
     if not stage_root.exists():
