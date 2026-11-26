@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `operations/output.md`: a response that asks the user to choose or decide, or that is a turn in
+  a discussion with the user, now opens with the big picture, asks one question that one answer
+  settles, and holds at most one table, the one with that question's options (W-00000426,
+  R-00000371, R-00000402). Before, the rules did not limit how many questions or tables one
+  response held, and the user twice said they could not follow a response that laid out several
+  issues at once.
 - `stage-work`, "Count affected places before drafting": a change that stores a record at another
   path or changes its headings or frontmatter fields now starts by searching for and counting the
   code that reads that place and the tests of the screens that show it, and rewrites those tests
