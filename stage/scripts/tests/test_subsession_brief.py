@@ -603,7 +603,9 @@ class SubsessionBriefTest(unittest.TestCase):
                 self.assertEqual(2, proc.returncode)
                 self.assertEqual("", proc.stdout)
                 self.assertIn("invalid choice", proc.stderr)
-                self.assertIn("'pm', 'verify', 'plan', 'research'", proc.stderr)
+                # argparse quotes the choices on some Python versions and not on others.
+                choices = proc.stderr.split("choose from", 1)[-1].replace("'", "")
+                self.assertIn("pm, verify, plan, research", choices)
 
     def test_a_card_that_is_not_started_has_no_brief(self) -> None:
         proc = brief(self.root, "W-00000099")
