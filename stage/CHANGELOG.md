@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `stage-work`, "Run the premise before turning an observation into a card": a proposal that
+  comes from a number — a size, a count, a duration, a cost, a limit — now starts by reading the
+  commits, the comment, and the decision record that gave the place its present shape, and is
+  withdrawn unless it says what has changed since their reason was written (W-00000428,
+  R-00000334). Before, the section covered only observations, and a cap was proposed for a list
+  whose cap a commit had removed on purpose.
 - `stage-work`, "Draft the item": a stored `acceptance` command now names only paths relative to
   the repository root, and a check of another repository stays off the card — that repository's
   card owns it, and this card records only the result (W-00000427, R-00000282). Before, nothing
