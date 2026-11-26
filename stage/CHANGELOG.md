@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- A card that changes a procedure a session follows (an `operations/` document, a skill, a brief
+  a script prints), or writes a new path other sessions will follow, now closes only after real
+  work was done once along that path (W-00000430, R-00000404, R-00000418, R-00000420). Before, a
+  test that pinned the document's sentences and a review that read it were enough to close, and
+  three cards' gaps surfaced only when a session first followed the new text.
+  - `operations/verification.md`, "Rules": the card states the trial as a success criterion, and
+    stays open until a `- Observed` or `- Checked` line for it is on `## Verification`. A card
+    that adds one rule sentence and no step to walk is not under the rule.
+  - `operations/cloud-execution.md`, "Merge a card that waits for the user's machine": the path
+    now also covers a trial that can run only after the card's change is merged. For such a
+    trial the PO session does not ask the user per card; it writes on the card that the code
+    merged open under the rule, and says in words under `## Next action` which work runs the
+    trial. Step 4 of "Close a PM session's card" routes a trial criterion there.
+  - `operations/review.md`, "A check recorded on the card": a `- Checked` line may also record
+    such a trial, done by a session other than the PM session that built the card; its machine
+    part is the environment that session ran in.
+  - `stage-orchestrate`, "Close and merge", names the trial case beside the user's-machine case.
 - `operations/review.md`, "A change to what the reviewer may do": a card that changes the allow or
   deny rules a reviewer command passes to `claude` now closes only after the real `claude` ran
   under the new rules on each changed platform, once on a call they must allow and once on a call
