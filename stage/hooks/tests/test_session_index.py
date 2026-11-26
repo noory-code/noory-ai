@@ -187,7 +187,7 @@ class RuleCandidateIndexTest(SessionIndexFixture):
         self.assertEqual(([], []), stage_memory_index.rule_candidate_lines(self.stage_root))
         self.assertNotIn("### Rule candidates", stage_context.session_context(self.root))
 
-    def test_the_list_gives_one_line_per_candidate_and_says_when_consolidation_is_due(self):
+    def test_the_list_gives_one_line_per_candidate_and_says_when_the_candidates_are_due(self):
         self.write_retrospectives(25, candidate="- Something.")
         (self.stage_root / "state" / "rule-candidates.md").write_text(
             "---\nthrough: R-00000005\n---\n# Rule candidates\n\n"
@@ -208,7 +208,8 @@ class RuleCandidateIndexTest(SessionIndexFixture):
             candidates,
         )
         self.assertIn("through R-00000005; 20 are newer.", status[0])
-        self.assertIn("A consolidation session is due", status[0])
+        self.assertIn("Rule candidates are due (20 or more): give a research session", status[0])
+        self.assertNotIn("consolidation session", status[0])
         self.assertIn("### Rule candidates (not yet rules)\n" + candidates[0], context)
 
     def test_fewer_than_twenty_new_retrospectives_is_not_due(self):

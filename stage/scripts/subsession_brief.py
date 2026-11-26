@@ -1,39 +1,43 @@
 #!/usr/bin/env python3
-"""Print the brief that gives a session of the main session its role.
+"""Print the brief that gives a session of the PO session its role.
 
-DE-00000094 splits the work: the main session (the orchestrator) starts the card,
-holds record ids for it, and later closes it. DE-00000099 gives every other session
-its role through its first message instead of a skill:
+DE-00000103 names the layers. The PO session is the one session the user talks with:
+it registers and starts cards, holds record ids for them, and later closes and merges
+them (DE-00000094). Every session under it gets its role through its first message
+instead of a skill. It never asks the user anything itself, and it makes no decision:
+it sends the options and its recommendation to the PO session before building:
 
-- `--role work` (default): the session builds the card, commits, pushes, and reports.
-  When the card is an epic, its stories run in sub-agents inside that session and
-  each story gets its own commit.
+- `--role pm` (default): the session manages one card. A card that splits into two or
+  more pieces goes to specialist sub-agents and the session inspects what they return;
+  a card that is one piece the session does itself. When the card is an epic, each
+  story runs in a specialist sub-agent and gets its own commit.
 - `--role verify`: the session observes the success criteria that only a whole
   session can observe, named with `--criterion`, and reports what it saw. It changes
-  nothing and is not the gate on closing (DE-00000101): the main session writes the
+  nothing and is not the gate on closing (DE-00000101): the PO session writes the
   observation on the card's `## Verification`, where the close reviewer reads it.
+- `--role plan`: the session turns the PO session's digest of its talk with the user
+  into card drafts for `--topic` (purposes, success criteria, where to cut the work),
+  never how. The PO session registers them.
+- `--role research`: the session looks into the question in `--topic` and returns
+  options with their evidence; it decides nothing and writes nothing. With
+  `--task rule-candidates` its task is instead to group the retrospectives' rule
+  candidates into `.stage/state/rule-candidates.md` and propose which to promote
+  (DE-00000100); that task is the only one in which a research session writes a file.
 
-- `--role discussion`: the session holds a long talk with the user about `--topic`
-  and reports what the user chose and which cards the talk proposes.
-- `--role planning`: the session designs what to achieve for `--topic` (purposes,
-  success criteria, where to cut the work), never how, and reports the cards.
-- `--role consolidation`: the session groups the retrospectives' rule candidates
-  into `.stage/state/rule-candidates.md` and proposes which to promote (DE-00000100).
+The role names are the ones a session's `stage-role:<role>` tag and a card's
+`## Sessions` line use (`operations/cloud-execution.md`, "Sessions on the card").
+`pm` and `verify` need a started card. `plan` and `research` take one when the topic
+is about a started card; the rule-candidates task takes none. `plan` and `research`
+write no card and no decision record: the PO session registers what they report.
 
-The role names are the ones a card's `## Sessions` line uses
-(`operations/cloud-execution.md`, "Sessions on the card"). `work` and `verify` need a
-started card. `discussion` and `planning` take one when the talk is about a started
-card. `consolidation` takes none. The last three write no card and no decision
-record: the main session registers what they report.
-
-This prints the session's whole instruction from the records, so the main session
+This prints the session's whole instruction from the records, so the PO session
 never writes the rules into a prompt by hand. A session receives it in one of two ways:
 
 - The session prints it itself. `--first-message` prints a short first message that
   names the role and this same command without that flag; the session runs the
   command in its own checkout and reads its brief. The brief and its index together
   run to the hook's limit, more than a first message carries well.
-- The main session pastes stdout as the session's first message, when the session's
+- The PO session pastes stdout as the session's first message, when the session's
   host cannot run this script.
 
 Every brief ends with the session index a SessionStart hook gives a session on the
@@ -43,14 +47,17 @@ shortened so the whole brief stays within the hook's limit.
 
 Usage:
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
-        --main-session session_0123 --branch claude/w1-feature
+        --po-session session_0123 --branch claude/w1-feature
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
-        --main-session session_0123 --branch claude/w1-feature --role verify --commit <sha> \
+        --po-session session_0123 --branch claude/w1-feature --role verify --commit <sha> \
         --criterion "<a success criterion copied from the card>"
     python3 stage/scripts/subsession_brief.py --project-root . \
-        --main-session session_0123 --branch claude/talk --role discussion --topic "<topic>"
+        --po-session session_0123 --role research --topic "<question>"
+    python3 stage/scripts/subsession_brief.py --project-root . \
+        --po-session session_0123 --branch claude/candidates --role research \
+        --task rule-candidates
     python3 stage/scripts/subsession_brief.py --project-root . W-00000001 \
-        --main-session session_0123 --branch claude/w1-feature --first-message
+        --po-session session_0123 --branch claude/w1-feature --first-message
 """
 
 from __future__ import annotations
@@ -72,10 +79,13 @@ from stage_work import WORK_FINAL_STATUSES, parse_frontmatter, parse_string_list
 import stage_context  # noqa: E402
 from stage_memory_index import SESSION_CONTEXT_CHAR_LIMIT  # noqa: E402
 
-CARD_ROLES = ("work", "verify")
-TALK_ROLES = ("discussion", "planning")
-ROLES = (*CARD_ROLES, *TALK_ROLES, "consolidation")
-ROLE_NAMES = {"verify": "verification"}
+CARD_ROLES = ("pm", "verify")
+TOPIC_ROLES = ("plan", "research")
+ROLES = (*CARD_ROLES, *TOPIC_ROLES)
+ROLE_NAMES = {"pm": "PM"}
+RULE_CANDIDATES_TASK = "rule-candidates"
+TASKS = (RULE_CANDIDATES_TASK,)
+SPECIALISTS = ("developer", "designer", "planner", "writer", "tester")
 RULE_CANDIDATES = ".stage/state/rule-candidates.md"
 INDEX_REPORT_ITEM = (
     "the ids of the records you opened because the session index below listed them, or `none`"
@@ -83,12 +93,30 @@ INDEX_REPORT_ITEM = (
 FOLLOW_UP_REPORT_ITEM = (
     "follow-up work candidates (do not register them), each with its evidence: the command that "
     "reproduces what is broken now and what it prints, or one line quoted from an open "
-    "milestone's `## Completion criteria` with that milestone's id. The main session registers "
+    "milestone's `## Completion criteria` with that milestone's id. The PO session registers "
     "only a candidate that carries one of the two and discards the rest unrecorded "
     "(DE-00000102); write `none` when there is no candidate"
 )
 LIFECYCLE_RULE = (
     "- Do not run `start_work.py`, `register_work.py`, `close_work.py`, or `archive_work.py`."
+)
+USER_RULE = (
+    "- Do not ask the user anything in this session's conversation: the user talks with the PO",
+    "  session only (DE-00000103). Put every question for the user in your report to the PO",
+    "  session; it asks the user and sends you the answer.",
+    "- When the user writes in this session anyway, send the user's words, quoted, to the PO",
+    "  session in your next message.",
+)
+DECISION_RULE = (
+    "- Do not make a decision yourself: every decision is made at the PO session (DE-00000103).",
+    "  A decision is a choice that selects between two or more viable options, that would need",
+    "  more than one file edited to reverse, that sets a value another card depends on (a name,",
+    "  a path, a schema, an interface), that changes a file under `official/`, or that changes a",
+    "  card's scope or leaves a success criterion unmet.",
+    "- Before you build what depends on a decision, send the PO session the options and the one",
+    "  you recommend, and wait for its answer. Send the decisions you can see ahead in one",
+    "  message, and continue with the parts that do not depend on them.",
+    "- A how-detail that touches one file and is undone by undoing that file is yours to settle.",
 )
 RECORD_FIELDS = ("status", "verification", "review", "retrospective", "retrospective_ref", "promotion")
 REPORT_ITEMS = (
@@ -130,7 +158,7 @@ def with_session_index(project_root: Path, lines: list[str]) -> str:
 
 
 def stage_path(project_root: Path, relative: str) -> str:
-    """Name a file in the Stage plugin as the sub-session will find it."""
+    """Name a file in the Stage plugin as the session will find it."""
 
     target = STAGE_ROOT / relative
     try:
@@ -198,9 +226,12 @@ def story_lines(project_root: Path, stories: list[Path]) -> list[str]:
 def read_first_entries(
     project_root: Path, card: Path | None, decisions: list[str], last: str
 ) -> list[str]:
+    """What a session reads first; `last` is a Stage document, or empty for none."""
+
     read_first = ["the project's `CLAUDE.md` or `AGENTS.md`, whichever exists"]
+    closing = [f"`{stage_path(project_root, last)}`"] if last else []
     if card is None:
-        return [*read_first, f"`{stage_path(project_root, last)}`"]
+        return [*read_first, *closing]
     stage_root = project_root / ".stage"
     ancestors = [
         parent_card.relative_to(project_root).as_posix()
@@ -218,12 +249,28 @@ def read_first_entries(
     read_first += [f"`{path}` (ancestor)" for path in ancestors]
     read_first.append(f"`{card.relative_to(project_root).as_posix()}`")
     read_first += [f"`{path}`" for path in decisions]
-    read_first.append(f"`{stage_path(project_root, last)}`")
-    return read_first
+    return [*read_first, *closing]
 
 
-def work_brief(
-    project_root: Path, card: Path, fields: dict[str, object], main_session: str, branch: str
+def specialist_lines(item_id: str, unit: str) -> list[str]:
+    """How a PM session names a specialist sub-agent and inspects it (DE-00000103)."""
+
+    return [
+        f"- Name a specialist by one profession noun: `{'`, `'.join(SPECIALISTS)}`;",
+        "  use another single lowercase noun when none of these fits. Put no number in the name.",
+        "- Describe each run as `<profession> <card id> <piece>`, for example",
+        f"  `developer {item_id} parser`.",
+        f"- Hand a specialist its {unit}, that {unit}'s completion condition (what must be true, and",
+        "  the command or the reading that shows it), the card, and the rules below.",
+        f"- Inspect each {unit} yourself against its completion condition: run its checks and read",
+        "  its diff. A specialist's summary is a claim.",
+        "- A specialist decides nothing either: it returns a decision to you, and you send it to",
+        "  the PO session as the rules below say.",
+    ]
+
+
+def pm_brief(
+    project_root: Path, card: Path, fields: dict[str, object], po_session: str, branch: str
 ) -> list[str]:
     item_id = str(fields.get("id") or "").strip()
     scope = str(fields.get("scope") or "").strip()
@@ -234,15 +281,17 @@ def work_brief(
 
     if stories:
         lines = [
-            f"You are a work session of the main session `{main_session}`. You build one Stage epic;",
-            "its stories run in sub-agents inside this session. The main session started the epic and",
-            "will close and merge it, and the close review judges each story",
-            "(DE-00000094, DE-00000099, DE-00000101).",
+            f"You are a PM session of the PO session `{po_session}`. You manage one Stage epic;",
+            "its stories run in specialist sub-agents inside this session and you inspect what they",
+            "return. The PO session started the epic and will close and merge it, and the close",
+            "review judges each story (DE-00000094, DE-00000101, DE-00000103).",
         ]
     else:
         lines = [
-            f"You are a sub-session of the main session `{main_session}`. You build one Stage card;",
-            "the main session started it and will review, close, and merge it (DE-00000094).",
+            f"You are a PM session of the PO session `{po_session}`. You manage one Stage card:",
+            "a card of several pieces goes to specialist sub-agents and you inspect what they",
+            "return; a card of one piece you do yourself. The PO session started the card and will",
+            "review, close, and merge it (DE-00000094, DE-00000103).",
         ]
     lines += [
         "",
@@ -271,19 +320,29 @@ def work_brief(
             *story_lines(project_root, stories),
             "",
             f"- Build every story whose status is not one of `{'`, `'.join(sorted(WORK_FINAL_STATUSES))}`.",
-            "- Give each story to a sub-agent of this session, in this working folder. Do not create",
-            "  another cloud session for a story. Hand the sub-agent the story card, this epic card,",
-            "  and the rules below.",
+            "- Give each story to a specialist sub-agent of this session, in this working folder. Do",
+            "  not create another cloud session for a story. Hand it the story card too.",
+            *specialist_lines(item_id, "story"),
             "- Run two stories at the same time only when their scopes share no path; otherwise run",
             "  them one after another in id order.",
-            "- Run each story's checks yourself after its sub-agent finishes; a sub-agent's summary",
-            "  is a claim.",
             "- Commit each story as its own commit, with the story's id in the commit message.",
+        ]
+    else:
+        lines += [
+            "",
+            "## Pieces and specialists",
+            "",
+            "- if: the card's change splits into two or more pieces that can each be finished and",
+            "  checked on its own",
+            "  then: give each piece to a specialist sub-agent of this session, in this working",
+            "  folder, and inspect what it returns. Do not create another cloud session for a piece.",
+            "- else: do the card yourself, and start no sub-agent for it.",
+            *specialist_lines(item_id, "piece"),
         ]
     lines += ["", "## Record ids", ""]
     if reserved:
         lines += [
-            f"The main session reserved `{reserved}` for this card. Take each id with",
+            f"The PO session reserved `{reserved}` for this card. Take each id with",
             f"`python3 {stage_path(project_root, 'scripts/stage_record_ids.py')} --project-root . "
             f"--from-card {item_id} <PREFIX>` and never pick a number any other way.",
         ]
@@ -297,9 +356,11 @@ def work_brief(
         "",
         "## Rules",
         "",
+        *USER_RULE,
+        *DECISION_RULE,
         LIFECYCLE_RULE,
         f"- Do not edit {card_word} `{'`, `'.join(RECORD_FIELDS)}` fields.",
-        f"- Do not edit {card_word} `## Progress` or `## Next action` section; the main session writes",
+        f"- Do not edit {card_word} `## Progress` or `## Next action` section; the PO session writes",
         "  them from your report.",
         "- Do not open or merge a pull request.",
         f"- Commit and push only to your own branch{f' `{branch}`' if branch else ''}.",
@@ -320,22 +381,22 @@ def work_brief(
         "- Name every path you changed outside the scope, and why, in that report's `Decisions made:`",
         "  line too. The reviewer reads only the commit's report, not your message (W-00000382).",
         "- Checks that must run on another OS (for example Windows) are not yours to run: say which",
-        "  ones in your report. The main session opens the pull request and reads its CI jobs.",
+        "  ones in your report. The PO session opens the pull request and reads its CI jobs.",
         "- Do not write a `- Checked` or `- User verdict` line on the card's `## Verification`; the",
         f"  close reviewer judges from them (`{stage_path(project_root, 'operations/review.md')}`,",
         "  \"A check recorded on the card\").",
         "",
         "## Report",
         "",
-        f"When the change is pushed, send the main session `{main_session}` one message with:",
+        f"When the change is pushed, send the PO session `{po_session}` one message with:",
     ]
     if stories:
         lines.append("- each story's id and the commit that carries its executor report")
     lines += [
         *[f"- {item}" for item in REPORT_ITEMS],
         "",
-        "Then wait, and push no commit until the main session answers: it reviews the commit you",
-        "reported. The main session answers with a review result or a user decision.",
+        "Then wait, and push no commit until the PO session answers: it reviews the commit you",
+        "reported. The PO session answers with a review result or a user decision.",
     ]
     return lines
 
@@ -344,7 +405,7 @@ def verify_brief(
     project_root: Path,
     card: Path,
     fields: dict[str, object],
-    main_session: str,
+    po_session: str,
     branch: str,
     commit: str,
     criteria: list[str],
@@ -362,11 +423,11 @@ def verify_brief(
         )
 
     lines = [
-        f"You are a verification session of the main session `{main_session}`. For {unit} you",
-        "observe what only a whole session can observe; you change nothing. A work session built",
-        "it, and the main session closes and merges it (DE-00000099).",
+        f"You are a verify session of the PO session `{po_session}`. For {unit} you",
+        "observe what only a whole session can observe; you change nothing. A PM session built",
+        "it, and the PO session closes and merges it (DE-00000103).",
         "",
-        "You are not the gate on closing (DE-00000101). The main session writes what you observed",
+        "You are not the gate on closing (DE-00000101). The PO session writes what you observed",
         "on the card's `## Verification`; the close reviewer reads it there and judges every",
         "success criterion.",
         "",
@@ -397,14 +458,16 @@ def verify_brief(
         "",
         *[f"- {' '.join(criterion.split())}" for criterion in criteria],
         "",
-        "- Do what each criterion describes yourself, in this session. The work session's",
+        "- Do what each criterion describes yourself, in this session. The PM session's",
         "  transcript and the `### Executor report` in the commit body are claims.",
-        "- Keep each command or action and what it showed; the main session copies them onto the",
+        "- Keep each command or action and what it showed; the PO session copies them onto the",
         "  card.",
         "- Leave the card's other success criteria alone: the close reviewer judges them.",
         "",
         "## Rules",
         "",
+        *USER_RULE,
+        *DECISION_RULE,
         "- Do not edit, commit, or push anything. When a command writes files, restore the working",
         "  tree (`git status --short` prints nothing) before you report.",
         "- Do not fix what you find. A criterion that did not hold goes into your observation.",
@@ -416,81 +479,98 @@ def verify_brief(
         "",
         "## Observation",
         "",
-        f"Send the main session `{main_session}` one message with:",
+        f"Send the PO session `{po_session}` one message with:",
         *[f"- {item}" for item in OBSERVATION_ITEMS],
         "",
-        "Then wait. The main session answers with a new commit to observe or a user decision.",
+        "Then wait. The PO session answers with a new commit to observe or a user decision.",
     ]
     return lines
 
 
-TALK_PARTS = {
-    "discussion": {
+TOPIC_PARTS = {
+    "plan": {
         "opening": (
-            "You hold a long talk with the user about new work or a change of direction, so that",
-            "the main session's context does not carry it (DE-00000099). You build nothing; the",
-            "talk ends in what the user chose and the cards it proposes.",
+            "The PO session talks with the user and sends you its digest of that talk, with the",
+            "user's words quoted. From the digest you write card drafts: purposes, success criteria,",
+            "and where to cut the work into cards (DE-00000103). You never design how a card is",
+            "executed; its executor chooses that. You build nothing and register nothing: the PO",
+            "session registers your drafts.",
         ),
-        "last": "operations/before.md",
-        "rules": (
-            "- Talk with the user in this session's own conversation. For each choice the user",
-            "  makes, keep the user's words.",
-        ),
-        "when": "When the user says the talk is finished",
-        "report": (
-            "each decision the talk reached: the question, the options that were weighed, and what "
-            "the user chose, in the user's words",
-            "each card the talk proposes: title, purpose, success criteria, what is included and "
-            "excluded, and the user's words that back it",
-            "what the user left undecided",
-        ),
-    },
-    "planning": {
-        "opening": (
-            "You design what to achieve: purposes, success criteria, and where to cut the work",
-            "into cards (DE-00000099). You never design how a card is executed; its executor",
-            "chooses that. You build nothing.",
+        "heading": "Topic",
+        "after_topic": (
+            "",
+            "The digest arrives as a message from the PO session in this conversation. When you",
+            "have this brief and no digest, ask the PO session for it and wait.",
         ),
         "last": "docs/PHILOSOPHY.md",
         "rules": (
-            "- A proposed card carries a purpose, success criteria that someone independent can",
+            "- A card draft carries a purpose, success criteria that someone independent can",
             "  judge, what is included and excluded, and the user's choices. It carries no steps,",
             "  no file-level design, and no method.",
+            "- Take every purpose and success criterion from the user's words in the digest or from",
+            "  the records. When neither states one, do not invent it: leave it empty in the draft",
+            "  and name the gap in your report.",
         ),
-        "when": "When the plan is complete",
+        "when": "When the drafts are complete",
         "report": (
-            "each card you propose, in the order to run them and why that order: title, kind, "
-            "purpose, success criteria, what is included and excluded",
+            "each card draft, in the order to run them and why that order: title, kind, purpose, "
+            "success criteria, what is included and excluded",
+            "for each purpose and success criterion, the user's words that back it, quoted from "
+            "the digest",
+            "each purpose or success criterion that no user's words back; the PO session asks the "
+            "user before it registers that card",
             "each success criterion that only the user's machine or a whole session can observe",
-            "each purpose or success criterion the user stated or confirmed, in the user's words",
         ),
+        "then": "The PO session answers with what it registered or a question.",
+    },
+    "research": {
+        "opening": (
+            "You look into one question that came up while the PO session talked with the user,",
+            "and return the options and the evidence for each (DE-00000103). You decide nothing and",
+            "build nothing. Keep the work as small as the question.",
+        ),
+        "heading": "Question",
+        "after_topic": (),
+        "last": "",
+        "rules": (
+            "- Do not choose among the options; the user chooses, through the PO session.",
+            "- Back each statement with where it comes from: a file path and line, a command and",
+            "  what it printed, or a URL. Say so when something could not be found out.",
+        ),
+        "when": "When the question is answered",
+        "report": (
+            "the question, copied",
+            "each option, with the evidence for and against it and where each piece of evidence "
+            "comes from",
+            "what you could not find out",
+        ),
+        "then": "The PO session answers with a further question or tells you the research is done.",
     },
 }
 NO_RECORD_RULES = (
     "- Do not edit, commit, or push anything, and do not create a card, a decision record, or",
-    "  any record that needs a new id: the main session registers what you report.",
-    "- Do not invent a purpose or a success criterion. When the records and the user do not",
-    "  state one, ask the user in this session.",
+    "  any record that needs a new id: the PO session registers what you report.",
     LIFECYCLE_RULE,
     "- Do not open or merge a pull request.",
 )
 
 
-def talk_brief(
-    project_root: Path, role: str, card: Path | None, main_session: str, topic: str
+def topic_brief(
+    project_root: Path, role: str, card: Path | None, po_session: str, topic: str
 ) -> list[str]:
-    """The brief of a discussion or planning session; `card` only adds what to read."""
+    """The brief of a plan or research session; `card` only adds what to read."""
 
-    parts = TALK_PARTS[role]
+    parts = TOPIC_PARTS[role]
     fields = parse_frontmatter(card) if card else {}
     decisions = decision_paths(project_root / ".stage", str(fields.get("decision_refs") or ""))
     return [
-        f"You are a {role} session of the main session `{main_session}`.",
+        f"You are a {role} session of the PO session `{po_session}`.",
         *parts["opening"],
         "",
-        "## Topic",
+        f"## {parts['heading']}",
         "",
         topic,
+        *parts["after_topic"],
         "",
         "Read first, in order:",
         *[
@@ -500,26 +580,30 @@ def talk_brief(
         "",
         "## Rules",
         "",
+        *USER_RULE,
+        *DECISION_RULE,
         *parts["rules"],
         *NO_RECORD_RULES,
         "",
         "## Report",
         "",
-        f"{parts['when']}, send the main session `{main_session}` one message with:",
+        f"{parts['when']}, send the PO session `{po_session}` one message with:",
         *[f"- {item}" for item in parts["report"]],
         f"- {INDEX_REPORT_ITEM}",
         "- anything that needs the user's confirmation",
         "",
-        "Then wait. The main session answers with what it registered or a question.",
+        f"Then wait. {parts['then']}",
     ]
 
 
-def consolidation_brief(project_root: Path, main_session: str, branch: str) -> list[str]:
+def rule_candidates_brief(project_root: Path, po_session: str, branch: str) -> list[str]:
+    """A research session's brief for the one task in which it writes a file."""
+
     promotion_doc = stage_path(project_root, "skills/stage-retrospective/rule-promotion.md")
     return [
-        f"You are a consolidation session of the main session `{main_session}`. You group the rule",
-        "candidates the retrospectives state into one list and propose which to promote. You",
-        "promote nothing (DE-00000100).",
+        f"You are a research session of the PO session `{po_session}`. Your task is to gather",
+        "rule candidates: you group the candidates the retrospectives state into one list and",
+        "propose which to promote. You promote nothing (DE-00000100, DE-00000103).",
         "",
         "Read first, in order:",
         "- the project's `CLAUDE.md` or `AGENTS.md`, whichever exists",
@@ -531,8 +615,10 @@ def consolidation_brief(project_root: Path, main_session: str, branch: str) -> l
         "",
         "## Rules",
         "",
-        f"- Write only `{RULE_CANDIDATES}`. Commit and push it only to your own",
-        f"  branch{f' `{branch}`' if branch else ''}.",
+        *USER_RULE,
+        *DECISION_RULE,
+        f"- Write only `{RULE_CANDIDATES}`: a research session writes a file in this task only.",
+        f"  Commit and push it only to your own branch{f' `{branch}`' if branch else ''}.",
         "- Do not edit a retrospective, a decision record, a rule file, a skill, or a card.",
         "- Do not promote anything: mark a candidate `proposed: promote` and stop there.",
         LIFECYCLE_RULE,
@@ -540,7 +626,7 @@ def consolidation_brief(project_root: Path, main_session: str, branch: str) -> l
         "",
         "## Report",
         "",
-        f"When the list is pushed, send the main session `{main_session}` one message with:",
+        f"When the list is pushed, send the PO session `{po_session}` one message with:",
         "- branch and head commit",
         "- how many retrospectives you read and how many candidates the list holds",
         "- each `proposed: promote` line with the retrospectives it cites",
@@ -548,25 +634,25 @@ def consolidation_brief(project_root: Path, main_session: str, branch: str) -> l
         f"- {INDEX_REPORT_ITEM}",
         "- anything that needs the user's confirmation",
         "",
-        "Then wait. The main session merges the list and shows the user each proposal.",
+        "Then wait. The PO session merges the list and shows the user each proposal.",
     ]
 
 
-def first_message(project_root: Path, role: str, main_session: str, arguments: list[str]) -> str:
+def first_message(project_root: Path, role: str, po_session: str, arguments: list[str]) -> str:
     """The short first message that has a session print its own brief with this script."""
 
     script = stage_path(project_root, "scripts/subsession_brief.py")
     installed = script.startswith("<")
     command = f"python3 {script if installed else shlex.quote(script)} --project-root . "
     lines = [
-        f"You are a {ROLE_NAMES.get(role, role)} session of the main session `{main_session}`. Your",
+        f"You are a {ROLE_NAMES.get(role, role)} session of the PO session `{po_session}`. Your",
         "brief is what this command prints. Run it in the root of the checkout you were created",
         "in, read all of its output, and follow it:",
         "",
         f"    {command}{shlex.join(arguments)}",
         "",
         "Use `python` where the host has no `python3`. When the command fails, send its error",
-        f"text to the main session `{main_session}` and wait; do not start without the brief.",
+        f"text to the PO session `{po_session}` and wait; do not start without the brief.",
     ]
     if installed:
         lines.append(
@@ -578,30 +664,39 @@ def first_message(project_root: Path, role: str, main_session: str, arguments: l
 def build_brief(
     project_root: Path,
     item_id: str,
-    main_session: str,
+    po_session: str,
     branch: str,
-    role: str = "work",
+    role: str = "pm",
     commit: str = "",
     criteria: list[str] | None = None,
     topic: str = "",
+    task: str = "",
 ) -> str:
     if role not in ROLES:
         raise LookupError(f"{role}: unknown role; use one of {', '.join(ROLES)}")
-    if role == "consolidation":
+    if task and task not in TASKS:
+        raise LookupError(f"{task}: unknown task; use one of {', '.join(TASKS)}")
+    if task and role != "research":
+        raise LookupError(f"--task {task} is a research session's task: pass --role research")
+    topic = " ".join(topic.split())
+    if task:
         if item_id:
-            raise LookupError("a consolidation session reads retrospectives, not a card: pass no W-id")
-        return with_session_index(project_root, consolidation_brief(project_root, main_session, branch))
+            raise LookupError(f"--task {task} reads retrospectives, not a card: pass no W-id")
+        if topic:
+            raise LookupError(f"--task {task} is the whole task: pass no --topic")
+        return with_session_index(
+            project_root, rule_candidates_brief(project_root, po_session, branch)
+        )
     if role in CARD_ROLES and not item_id:
         raise LookupError(f"--role {role} needs the started card's W-id")
     card = current_card_path(project_root / ".stage", item_id) if item_id else None
     if item_id and card is None:
         raise LookupError(f"{item_id}: no started card in .stage/work/current; start it first")
-    if role in TALK_ROLES:
-        topic = " ".join(topic.split())
+    if role in TOPIC_ROLES:
         if not topic:
             raise LookupError(f"--role {role} needs --topic: one sentence that says what it is about")
         return with_session_index(
-            project_root, talk_brief(project_root, role, card, main_session, topic)
+            project_root, topic_brief(project_root, role, card, po_session, topic)
         )
     assert card is not None
     fields = parse_frontmatter(card)
@@ -609,7 +704,7 @@ def build_brief(
         criteria = criteria or []
         if not criteria:
             raise LookupError(
-                "a verification session is started only for success criteria that only a whole "
+                "a verify session is started only for success criteria that only a whole "
                 "session can observe (DE-00000101): name each with --criterion, copied from the "
                 "card. The close review judges every other criterion without one"
             )
@@ -619,40 +714,53 @@ def build_brief(
                 f"{item_id}: not under `## Success criteria` of the card or its stories: "
                 + "; ".join(repr(criterion) for criterion in unknown)
             )
-        lines = verify_brief(project_root, card, fields, main_session, branch, commit, criteria)
+        lines = verify_brief(project_root, card, fields, po_session, branch, commit, criteria)
     else:
-        lines = work_brief(project_root, card, fields, main_session, branch)
+        lines = pm_brief(project_root, card, fields, po_session, branch)
     return with_session_index(project_root, lines)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--project-root", default=".")
-    parser.add_argument("--main-session", required=True, help="Session id the report goes to.")
+    parser.add_argument(
+        "--po-session", required=True, help="The PO session's id: every report goes to it."
+    )
     parser.add_argument(
         "--branch",
         default="",
         help=(
-            "Work and consolidation roles: the session's own branch. Verify role: the branch "
-            "that holds the change."
+            "PM role and the rule-candidates task: the session's own branch. Verify role: the "
+            "branch that holds the change."
         ),
     )
     parser.add_argument(
         "--role",
         choices=ROLES,
-        default="work",
+        default="pm",
         help=(
-            "work: build the card (an epic runs its stories in sub-agents). "
+            "pm: manage the card; pieces and an epic's stories go to specialist sub-agents. "
             "verify: observe the --criterion items only. "
-            "discussion: talk with the user about --topic. "
-            "planning: design what to achieve for --topic. "
-            "consolidation: group the retrospectives' rule candidates into one list."
+            "plan: write card drafts for --topic from the PO session's digest. "
+            "research: return options and evidence for the question in --topic."
         ),
     )
     parser.add_argument(
         "--topic",
         default="",
-        help="Discussion and planning roles, required: one sentence that says what it is about.",
+        help=(
+            "Plan and research roles, required: one sentence that says what it is about; for "
+            "research, the question. Refused with --task."
+        ),
+    )
+    parser.add_argument(
+        "--task",
+        choices=TASKS,
+        default="",
+        help=(
+            "Research role only. rule-candidates: group the retrospectives' rule candidates "
+            "into one list, the one task in which a research session writes a file."
+        ),
     )
     parser.add_argument(
         "--first-message",
@@ -677,8 +785,8 @@ def main() -> int:
         nargs="?",
         default="",
         help=(
-            "The started card's W-id. Required for work and verify, optional for discussion "
-            "and planning, refused for consolidation."
+            "The started card's W-id. Required for pm and verify, optional for plan and "
+            "research, refused with --task."
         ),
     )
     args = parser.parse_args()
@@ -687,24 +795,30 @@ def main() -> int:
         brief = build_brief(
             project_root,
             args.item,
-            args.main_session,
+            args.po_session,
             args.branch,
             args.role,
             args.commit,
             args.criterion,
             args.topic,
+            args.task,
         )
     except LookupError as exc:
         print(str(exc), file=sys.stderr)
         return 1
     if args.first_message:
         arguments = [args.item] if args.item else []
-        arguments += ["--main-session", args.main_session, "--role", args.role]
-        for flag, value in (("--branch", args.branch), ("--commit", args.commit), ("--topic", args.topic)):
+        arguments += ["--po-session", args.po_session, "--role", args.role]
+        for flag, value in (
+            ("--branch", args.branch),
+            ("--commit", args.commit),
+            ("--topic", args.topic),
+            ("--task", args.task),
+        ):
             arguments += [flag, value] if value else []
         for criterion in args.criterion:
             arguments += ["--criterion", criterion]
-        brief = first_message(project_root, args.role, args.main_session, arguments)
+        brief = first_message(project_root, args.role, args.po_session, arguments)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     sys.stdout.write(brief)

@@ -14,10 +14,10 @@ on to the next number. Ids already reserved there are counted too. When there is
 no remote, it cannot be reached, or it refuses the push, the id is chosen as
 before and one line on stderr says it was not reserved.
 
-A main session that hands a started card to a sub-session can also hand it a
+A PO session that hands a started card to a PM session can also hand it a
 block of numbers (DE-00000094): `--reserve-for <W-id> --count N` picks N free ids
 and writes them to that card's `reserved_ids:` frontmatter, which every other
-session counts as used once the card is pushed and fetched. The sub-session then
+session counts as used once the card is pushed and fetched. The PM session then
 takes its next unused id from the block with `--from-card <W-id>`, so it never
 picks a number of its own.
 
@@ -100,7 +100,7 @@ def local_record_numbers(stage_root: Path, prefix: str) -> set[int]:
 
 
 def reserved_numbers(text: str, prefix: str) -> set[int]:
-    """Numbers a card's `reserved_ids:` line holds back for a sub-session."""
+    """Numbers a card's `reserved_ids:` line holds back for a PM session."""
 
     id_re = re.compile(rf"\b{re.escape(prefix)}-(\d{{8}})(?![\d])")
     numbers: set[int] = set()
@@ -408,7 +408,7 @@ def main() -> int:
     parser.add_argument(
         "--reserve-for",
         metavar="W-ID",
-        help="Main session: hold a block of ids on this started card for its sub-session.",
+        help="PO session: hold a block of ids on this started card for its PM session.",
     )
     parser.add_argument(
         "--count", type=int, default=1, help="How many ids --reserve-for holds (default 1)."
@@ -445,7 +445,7 @@ def main() -> int:
             if record_id is None:
                 print(
                     f"{card_id}: no unused {args.prefix} id left in its reserved_ids; "
-                    "ask the main session for more",
+                    "ask the PO session for more",
                     file=sys.stderr,
                 )
                 return 1

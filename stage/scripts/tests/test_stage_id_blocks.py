@@ -1,4 +1,4 @@
-"""Blocks of record ids a main session holds on a card for a sub-session (DE-00000094).
+"""Blocks of record ids a PO session holds on a card for a PM session (DE-00000094).
 
 Every remote here is a bare repository in a temporary directory; no test reaches
 a network remote.
@@ -113,7 +113,7 @@ class IdBlockTest(unittest.TestCase):
         )
         exhausted = ids_cli(self.main, "--from-card", "W-00000002", "DE")
         self.assertEqual(1, exhausted.returncode)
-        self.assertIn("ask the main session for more", exhausted.stderr)
+        self.assertIn("ask the PO session for more", exhausted.stderr)
 
     def test_a_second_reservation_adds_to_the_block(self) -> None:
         ids_cli(self.main, "--reserve-for", "W-00000002", "DE")

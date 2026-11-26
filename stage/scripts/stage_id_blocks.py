@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Hold blocks of record ids on a started card for the sub-session that works it.
+"""Hold blocks of record ids on a started card for the PM session that works it.
 
-A main session hands a started card to a cloud sub-session (DE-00000094). The
-sub-session cannot reserve ids on the remote (the session proxy refuses pushes
-outside its own branch), so the main session picks the ids it may need before
+A PO session hands a started card to a cloud PM session (DE-00000094, DE-00000103).
+The PM session cannot reserve ids on the remote (the session proxy refuses pushes
+outside its own branch), so the PO session picks the ids it may need before
 handing the card over and writes them to the card's `reserved_ids:` frontmatter.
 `stage_record_ids.py` counts those numbers as used here and on every fetched
-branch, so no other session picks them; the sub-session takes its next unused id
+branch, so no other session picks them; the PM session takes its next unused id
 from the block. The command-line entry points live in `stage_record_ids.py`.
 """
 
