@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.70.0 — 2026-11-26
+
 - A card that changes a procedure a session follows (an `operations/` document, a skill, a brief
   a script prints), or writes a new path other sessions will follow, now closes only after real
   work was done once along that path (W-00000430, R-00000404, R-00000418, R-00000420). Before, a
