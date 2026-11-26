@@ -50,8 +50,6 @@ Unreleased 에 쌓인 변경(PO·PM·전문가 구조, 후속 후보와 규칙 �
 
 기기에서의 확인을 기다린다. 확인이 오면 `## Verification` 에 `- Checked` 줄로 적고 닫는다.
 
-Waiting on user: 맥북에서 Stage 를 0.70.0 으로 올린 뒤 `claude plugin list` 가 `Version: 0.70.0` 과 저장소 폴더에서 읽는다는 줄을 보여 주는지 본다 (둘째 기준)
-
 ## Related truth
 
 ## Sessions
@@ -65,5 +63,6 @@ Waiting on user: 맥북에서 Stage 를 0.70.0 으로 올린 뒤 `claude plugin 
 
 ## Verification
 
-- Checked 2026-11-26 on Korean Windows 11 (ARM64, cp949, Python 3.14.10) at 1e585fd9: 3 — held; `claude plugin marketplace update noory-ai` 와 `claude plugin update stage@noory-ai` 로 0.69.0 에서 0.70.0 으로 올린 뒤 저장소에서 `claude -p` 로 새 세션을 열어 실행 기록을 봤다 — `claude plugin list` 가 `stage@noory-ai` 에 `Version: 0.70.0` 을 보여 줬고, 그 세션은 Stage 를 `plugins\cache\noory-ai\stage\0.70.0` 에서 불러왔다. `SessionStart:startup` 훅이 실행돼 `## Stage context` 를 넣었고, `PreToolUse:Bash` 훅이 `python -c "print('.stage probe')"` 를 "Stage guard cannot verify what opaque inline interpreter code writes" 로 거부했고, `Stop` 훅이 성공으로 끝났다
+- Checked 2026-11-26 on Korean Windows 11 (ARM64, cp949, Python 3.14.10) at 1e585fd9: Windows 세션이 0.70.0 에서 훅이 실행되는 것을 확인했다 — held; `claude plugin marketplace update noory-ai` 와 `claude plugin update stage@noory-ai` 로 0.69.0 에서 0.70.0 으로 올린 뒤 저장소에서 `claude -p` 로 새 세션을 열어 실행 기록을 봤다 — `claude plugin list` 가 `stage@noory-ai` 에 `Version: 0.70.0` 을 보여 줬고, 그 세션은 Stage 를 `plugins\cache\noory-ai\stage\0.70.0` 에서 불러왔다. `SessionStart:startup` 훅이 실행돼 `## Stage context` 를 넣었고, `PreToolUse:Bash` 훅이 `python -c "print('.stage probe')"` 를 "Stage guard cannot verify what opaque inline interpreter code writes" 로 거부했고, `Stop` 훅이 성공으로 끝났다
 - 같은 날 같은 기기의 `1e585fd9` 에서 `python -m unittest discover -s stage/hooks/tests -q` 는 491개가 통과했고(44개 건너뜀), `python -m unittest discover -s stage/scripts/tests -q` 는 1039개가 통과했다(6개 건너뜀, 529초). `python -m unittest discover -s plainly/tests -q` 는 22개가 통과했다.
+- Checked 2026-11-26 on macOS 27.2.1 (arm64, Claude Code 2.1.321, Stage 설치본 0.70.0) at 1e585fd9: 맥북의 claude plugin list 가 0.70.0 과 저장소 폴더에서 읽는다는 줄을 보여 준다 — held; `claude plugin list` — `stage@noory-ai` 아래에 `Version: 0.70.0` 과 `Read from: /Users/woogis/Workspace/repo/noory-ai/stage` 가 나왔다
