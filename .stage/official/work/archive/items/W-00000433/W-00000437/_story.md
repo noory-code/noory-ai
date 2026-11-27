@@ -8,11 +8,12 @@ autonomous: false
 acceptance:
   - "python3 -m unittest discover -s tests -q"
   - "python3 -m unittest stage/scripts/tests/test_orchestrate_skill.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000437
+promotion: not_applicable
 review: not_required
 scope: stage/skills/stage-work/,stage/skills/stage-drive/,stage/skills/stage-orchestrate/,stage/scripts/tests/test_orchestrate_skill.py,tests/test_plugin_contracts.py,stage/CHANGELOG.md
 promotes:
@@ -60,3 +61,6 @@ Keep every Stage SKILL.md body at or below 24000 bytes so Antigravity loads ever
 
 
 ## Verification
+
+- Checks at close 2026-11-27: 2 passed — `python3 -m unittest discover -s tests -q`; `python3 -m unittest stage/scripts/tests/test_orchestrate_skill.py`
+- Load at close 2026-11-27: attempts 1, review FAIL rounds 0, repeated findings 0, driver rounds 0, driver failures 0 (timed out 0)

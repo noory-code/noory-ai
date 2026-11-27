@@ -6,11 +6,12 @@ venue: claude
 milestone:
 autonomous: false
 acceptance: []
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000433
+promotion: not_applicable
 review: not_required
 scope: stage/,tests/test_plugin_contracts.py,.github/workflows/plugin-contracts.yml,README.md,CLAUDE.md
 promotes:
@@ -59,3 +60,6 @@ Run Stage natively as an Antigravity plugin and venue with the same gates, relea
 
 
 ## Verification
+
+- Checks at close 2026-11-27: 2 passed — `python3 -m unittest discover -s tests -q`; `python3 -m unittest discover -s stage/hooks/tests -q`
+- Load at close 2026-11-27: attempts 1, review FAIL rounds 0, repeated findings 0, driver rounds 0, driver failures 0 (timed out 0)

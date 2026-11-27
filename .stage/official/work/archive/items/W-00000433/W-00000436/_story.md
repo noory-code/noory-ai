@@ -6,12 +6,14 @@ venue: codex
 milestone:
 autonomous: false
 acceptance:
-  - "python3 -m unittest stage/scripts/tests/test_agy_review_companion.py stage/scripts/tests/test_review_containment.py"
-status: active
-verification: pending
-retrospective: pending
-retrospective_ref:
-promotion: pending
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_agy_review_companion.py"
+  - "python3 -m unittest discover -s stage/scripts/tests -p test_review_containment.py"
+status: archived
+terminal_disposition: accepted
+verification: passed
+retrospective: completed
+retrospective_ref: R-00000436
+promotion: not_applicable
 review: not_required
 scope: stage/scripts/agy_review_companion.py,stage/skills/stage-retrospective/review_containment.py,stage/scripts/tests/test_agy_review_companion.py,stage/scripts/tests/test_review_containment.py,stage/docs/BLUEPRINT.md,stage/docs/SCHEMA_V5.md,stage/CHANGELOG.md
 promotes:
@@ -59,3 +61,6 @@ Enable Stage close reviews and drivers to run agy -p headlessly while recording 
 
 
 ## Verification
+
+- Checks at close 2026-11-27: 2 passed — `python3 -m unittest discover -s stage/scripts/tests -p test_agy_review_companion.py`; `python3 -m unittest discover -s stage/scripts/tests -p test_review_containment.py`
+- Load at close 2026-11-27: attempts 1, review FAIL rounds 0, repeated findings 0, driver rounds 0, driver failures 0 (timed out 0)

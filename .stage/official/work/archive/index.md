@@ -353,3 +353,4 @@
 | W-00000422 | rejected | [items/W-00000422/_story.md](items/W-00000422/_story.md) | 이 저장소의 클라우드 브리핑에 proposed: promote 규칙 후보가 한 줄도 실리지 않는다 |
 | W-00000432 | completed | [items/W-00000432/_story.md](items/W-00000432/_story.md) | 리뷰를 요구하며 시작한 에픽의 스토리가 리뷰 없이 닫힌다 |
 | W-00000431 | completed | [items/W-00000431/_story.md](items/W-00000431/_story.md) | Stage 0.70.0 을 릴리스하고 기기에서 시험한다 |
+| W-00000433 | completed | [items/W-00000433/_epic.md](items/W-00000433/_epic.md) | Add native Antigravity (agy) support for Stage |
