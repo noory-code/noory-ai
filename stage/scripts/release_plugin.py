@@ -24,6 +24,7 @@ RELEASE_HEADING_RE = re.compile(
 MANIFEST_PATHS = (
     Path(".claude-plugin/plugin.json"),
     Path(".codex-plugin/plugin.json"),
+    Path(".antigravity-plugin/plugin.json"),
 )
 
 

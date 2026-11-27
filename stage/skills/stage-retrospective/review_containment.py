@@ -43,6 +43,7 @@ from driver_repository import (  # noqa: E402
 # the close with nothing to read.
 TOOL_CALLS_ENV = "STAGE_REVIEW_TOOL_CALLS_FILE"
 SESSION_RECORDS = "the session record folder (~/.claude)"
+AGY_SESSION_RECORDS = "the Antigravity session record folder (~/.gemini/antigravity*)"
 GITHUB = "GitHub"
 LISTED = 10
 
@@ -176,7 +177,7 @@ def _input_text(tool_input: object) -> str:
 
     if not isinstance(tool_input, dict):
         return ""
-    command = tool_input.get("command")
+    command = tool_input.get("command") or tool_input.get("CommandLine")
     if isinstance(command, str):
         return command
     return "\n".join(value for value in tool_input.values() if isinstance(value, str))
@@ -230,6 +231,18 @@ def _home_spellings(home: Path, environ: dict[str, str]) -> list[str]:
     return spellings
 
 
+def _agy_home_spellings(home: Path) -> list[str]:
+    """Every way a command can write Antigravity's session record folder paths."""
+
+    spellings: list[str] = []
+    for suffix in (".gemini/antigravity", ".gemini/antigravity-cli"):
+        folder = (home / suffix).as_posix()
+        spellings.append(folder)
+        if len(home.drive) == 2 and home.drive[1] == ":":
+            spellings.append("/" + home.drive[0].lower() + folder[2:])
+    return spellings
+
+
 def outside_reach(
     calls: list[str], home: Path, environ: dict[str, str] | None = None
 ) -> dict[str, list[str]]:
@@ -247,12 +260,20 @@ def outside_reach(
         rf"|{literal})(?![\w-])",
         re.IGNORECASE,
     )
+    agy_literal = "|".join(re.escape(spelling) for spelling in _agy_home_spellings(home))
+    agy_session = re.compile(
+        r"(?:(?:~|\$\{?HOME\}?|\$env:USERPROFILE|\$USERPROFILE|%USERPROFILE%)/\.gemini/antigravity(?:-cli)?"
+        rf"|{agy_literal})(?![\w-])",
+        re.IGNORECASE,
+    )
     github = re.compile(r"(?<![\w./-])gh(?:\.exe)?\s+[a-z]|api\.github\.com", re.IGNORECASE)
     found: dict[str, list[str]] = {}
     for text in calls:
         normalized = text.replace("\\", "/")
         if session.search(normalized):
             found.setdefault(SESSION_RECORDS, []).append(text)
+        if agy_session.search(normalized):
+            found.setdefault(AGY_SESSION_RECORDS, []).append(text)
         if github.search(normalized):
             found.setdefault(GITHUB, []).append(text)
     return found

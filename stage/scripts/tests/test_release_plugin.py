@@ -456,6 +456,39 @@ class ReleasePluginCliTest(unittest.TestCase):
         self.assertIn("not allowed with argument", result.stderr)
         self.assertEqual(before, after)
 
+    def test_three_host_plugin_bumps_and_validates_antigravity_manifest(self):
+        temporary_directory, repository_root = self.make_repository()
+        with temporary_directory:
+            plugin_root = repository_root / "stage"
+            agy_dir = plugin_root / ".antigravity-plugin"
+            agy_dir.mkdir(parents=True)
+            agy_manifest_path = agy_dir / "plugin.json"
+            self.write_manifest(agy_manifest_path, "0.54.3")
+
+            drift = self.run_cli(repository_root, "patch")
+            self.assertNotEqual(0, drift.returncode)
+            self.assertIn("plugin manifest versions do not match", drift.stderr)
+
+            self.write_manifest(agy_manifest_path, "0.54.4")
+            ok = self.run_cli(repository_root, "patch")
+            self.assertEqual(0, ok.returncode, ok.stderr)
+            self.assertEqual(
+                "0.54.5",
+                json.loads(agy_manifest_path.read_text(encoding="utf-8"))["version"],
+            )
+            self.assertEqual(
+                "0.54.5",
+                json.loads((plugin_root / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))[
+                    "version"
+                ],
+            )
+            self.assertEqual(
+                "0.54.5",
+                json.loads((plugin_root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))[
+                    "version"
+                ],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Add native Antigravity (`agy`) support for Stage (`W-00000433`, `W-00000434`, `W-00000435`,
+  `W-00000436`):
+  - Package `stage/.antigravity-plugin/plugin.json` and plugin-root `stage/hooks.json`, and
+    extend `scripts/release_plugin.py` so Claude, Codex, and Antigravity manifests release
+    together.
+  - Add `hooks/agy_adapter.py` translating Antigravity `SessionStart`, `PreInvocation`,
+    `PreToolUse`, `PostToolUse`, and `Stop` hook payloads into `stage_guard.py`, and index
+    `GEMINI.md` and `.agents/rules` in `hooks/stage_context.py`.
+  - Add `scripts/agy_review_companion.py` for headless `agy --print=... --output-format
+    stream-json` reviews, and extend `skills/stage-retrospective/review_containment.py` to flag
+    commands referencing `~/.gemini/antigravity` or `~/.gemini/antigravity-cli`.
 - An epic that closes with a review now hands that review to its stories (W-00000432). Before,
   `start_work.py <epic> --environment cloud --review` set `review: pending` on the epic only, so
   `close_work.py <story> --review-commit <commit>` was refused and the five stories of W-00000424

@@ -291,6 +291,31 @@ class OutsideReachTest(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertEqual([review_containment.GITHUB], self.reach(command))
 
+    def test_every_spelling_of_antigravity_session_record_folders(self):
+        for command in (
+            "ls ~/.gemini/antigravity",
+            "cat $HOME/.gemini/antigravity-cli/brain/x/transcript.jsonl",
+            "ls /home/me/.gemini/antigravity/brain",
+            "dir %USERPROFILE%\\.gemini\\antigravity-cli",
+        ):
+            with self.subTest(command=command):
+                self.assertEqual([review_containment.AGY_SESSION_RECORDS], self.reach(command))
+
+    def test_antigravity_windows_home_and_commandline_dict(self):
+        for command in (
+            "type C:\\Users\\me\\.gemini\\antigravity\\x",
+            "cat /c/Users/me/.gemini/antigravity-cli/x",
+        ):
+            with self.subTest(command=command):
+                self.assertEqual(
+                    [review_containment.AGY_SESSION_RECORDS],
+                    self.reach(command, "C:\\Users\\me"),
+                )
+        self.assertEqual(
+            "ls ~/.gemini/antigravity",
+            review_containment._input_text({"CommandLine": "ls ~/.gemini/antigravity"}),
+        )
+
     def test_commands_inside_the_project_are_not_named(self):
         for command in (
             "cat .claude/settings.json",

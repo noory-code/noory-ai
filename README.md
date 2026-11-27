@@ -1,6 +1,6 @@
 # noory-ai
 
-Plugin collection for Claude Code and Codex — MCP servers, lifecycle hooks, and skill packs.
+Plugin collection for Claude Code, Codex, and Antigravity — MCP servers, lifecycle hooks, and skill packs.
 
 ## Packages
 
@@ -101,9 +101,9 @@ Portable `.stage/` harness for LLM-led long-running projects. Stage separates ar
 
 - Global artifact time: `past` / `present` / `future`
 - Local work lifecycle: `before` / `during` / `after` / `retrospective`
-- Plain Markdown templates for Codex, Claude, Windows, Linux, and macOS
+- Plain Markdown templates for Antigravity, Codex, Claude, Windows, Linux, and macOS
 
-**Install:** Claude Code: `/plugin install stage@noory-ai` · Codex: `codex plugin add stage@noory-ai`
+**Install:** Claude Code: `/plugin install stage@noory-ai` · Codex: `codex plugin add stage@noory-ai` · Antigravity: `agy plugin install https://github.com/noory-code/noory-ai/tree/main/stage` (or `agy plugin install ./stage` locally)
 
 ## Development
 

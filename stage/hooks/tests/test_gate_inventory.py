@@ -65,9 +65,15 @@ class GateInventoryTest(unittest.TestCase):
         )
 
     def test_readme_table_names_every_gate_and_its_next_step(self):
+        section_match = re.search(
+            r"^## Every gate, and what to do when one fires\n(.*?)(?=^## |\Z)",
+            README.read_text(encoding="utf-8"),
+            re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(section_match, "Every gate section missing from hooks/README.md")
         rows = [
             line
-            for line in README.read_text(encoding="utf-8").splitlines()
+            for line in section_match.group(1).splitlines()
             if line.startswith("| ") and line.count("|") == 5
         ]
         # One header row, one separator row, then one row per gate.

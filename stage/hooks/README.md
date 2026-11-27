@@ -107,19 +107,23 @@ Governance settings are fail-closed: when `.stage/settings.json` exists but is u
 
 ## Host contract
 
-Both hosts consume the same `hooks/hooks.json` (Claude hook schema) and send Claude-compatible JSON on stdin (`tool_name`, `tool_input`, `cwd`, `hook_event_name`). Host differences the hook absorbs:
+Claude Code and Codex consume `hooks/hooks.json` (Claude hook schema) and send Claude-compatible JSON on stdin (`tool_name`, `tool_input`, `cwd`, `hook_event_name`). Antigravity loads plugin-root `hooks.json` and routes through `hooks/agy_adapter.py` into the same `stage_guard.py` core. Host differences the hook absorbs:
 
-| Concern | Claude | Codex |
-|---|---|---|
-| File edits | `Write`/`Edit`/`MultiEdit` with `file_path` | `apply_patch` with `tool_input.command` = patch body |
-| Other write tools (MCP, host-specific) | registered per project via `settings.json` `extra_write_tools` (§Limits) | same |
-| Shell | `Bash` with `command` | `Bash` (canonical name) with `command` |
-| Question tool | `AskUserQuestion` | `request_user_input` |
-| PostToolUse | delivered after the tool ran (completes two-phase intent claims) | same — measured on 0.144.0 (`tool_response`, `tool_use_id` included) |
-| Workspace root | `CLAUDE_PROJECT_DIR` env | no env var — hook cwd and payload `cwd` are the workspace |
-| Allow output | exit 0 with empty stdout = no opinion; an allowed scope crossing sends a one-line `systemMessage` to the user and `hookSpecificOutput.additionalContext` to Claude, without a permission decision (an explicit `allow` would bypass permission prompts entirely) | same; `systemMessage` is a UI warning and `additionalContext` is added to the model context (an explicit `permissionDecision: "allow"` without `updatedInput` is rejected as unsupported output) |
-| Deny output | `hookSpecificOutput.permissionDecision: "deny"` + reason | same |
-| Stop output | `systemMessage` only | same (`decision` is accepted only as the literal `"block"`) |
+| Concern | Claude | Codex | Antigravity (`agy_adapter.py`) |
+|---|---|---|---|
+| Hook config | `hooks/hooks.json` | same (auto-discovered) | plugin-root `hooks.json` (`"stage-guard"` group) |
+| File edits | `Write`/`Edit`/`MultiEdit` with `file_path` | `apply_patch` with `tool_input.command` = patch body | `write_to_file`/`write_file` → `Write`, `edit_file`/`replace_file_content`/`multi_replace_file_content`/`sed_file` → `Edit`, `notebook_edit` → `NotebookEdit` (`TargetFile`/`Path`/`NotebookPath` → `file_path`) |
+| Other write tools (MCP, host-specific) | registered per project via `settings.json` `extra_write_tools` (§Limits) | same | same (forwarded with `Path`/`TargetFile` copied to `file_path`) |
+| Shell | `Bash` with `command` | `Bash` (canonical name) with `command` | `run_command` (`CommandLine` → `Bash` `command`) |
+| Question tool | `AskUserQuestion` | `request_user_input` | `ask_question` → `AskUserQuestion` |
+| Purpose context | `PreToolUse` `additionalContext` on boundary/deny | same | `PreInvocation` `injectSteps` (`systemMessage`) + `PreToolUse` `deny.reason` |
+| PostToolUse | delivered after the tool ran (completes two-phase intent claims) | same — measured on 0.144.0 (`tool_response`, `tool_use_id` included) | same (`toolCall.id` → `tool_use_id`), returns `{}` |
+| SubagentStop | records actual subagent model/effort | same | unsupported in Antigravity (no-op) |
+| Workspace root | `CLAUDE_PROJECT_DIR` env | no env var — hook cwd and payload `cwd` are the workspace | `payload.cwd` or `workspacePaths[0]` |
+| Session slot | `session_id` | same | `conversationId` → `session_id` |
+| Allow output | exit 0 with empty stdout = no opinion; an allowed scope crossing sends a one-line `systemMessage` to the user and `hookSpecificOutput.additionalContext` to Claude, without a permission decision (an explicit `allow` would bypass permission prompts entirely) | same; `systemMessage` is a UI warning and `additionalContext` is added to the model context (an explicit `permissionDecision: "allow"` without `updatedInput` is rejected as unsupported output) | `{"decision": "allow"}` (Antigravity denies when `PreToolUse` returns `{}`) |
+| Deny output | `hookSpecificOutput.permissionDecision: "deny"` + reason | same | `{"decision": "deny", "reason": ...}` |
+| Stop output | `systemMessage` only | same (`decision` is accepted only as the literal `"block"`) | `{}` after saving `.stage/.runtime/sessions/<conversationId>.md` |
 
 ### Codex hook trust
 

@@ -7,7 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Python monorepo of independent plugins/servers. Python packages carry their own `pyproject.toml`, `uv.lock`, and `tests/` (rag's uv project lives in `rag/server/`); `flutter-cask/`, `pencil_m3_flutter/`, and `stage/` are not uv projects. Novel's open plugin stack is maintained in the separate public [`noory-code/novel-ai`](https://github.com/noory-code/novel-ai) repository.
 
 Five local plugins ship both `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, and the
-repository lists them in both the Claude Code and Codex marketplace files. `plainly/` targets
+repository lists them in both the Claude Code and Codex marketplace files. `stage/` also ships
+`.antigravity-plugin/plugin.json` and plugin-root `hooks.json` for Antigravity (`agy plugin install`
+from a repo URL or local path, since Antigravity's `marketplace.json` requires archive `sha256`
+checksums rather than relative local paths), and `release_plugin.py` bumps all present host manifests
+together. `plainly/` targets
 Claude Code only — it ships output styles, which Codex has no equivalent for — so it carries the
 Claude manifest alone and appears only in the Claude Code marketplace.
 

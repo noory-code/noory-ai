@@ -23,6 +23,19 @@ CODEX_PLUGIN_DIRECTORIES = {
     for name, directory in PLUGIN_DIRECTORIES.items()
     if name not in CLAUDE_ONLY_PLUGINS
 }
+ANTIGRAVITY_PLUGIN_DIRECTORIES = {"stage": "stage"}
+ANTIGRAVITY_ALLOWED_FIELDS = {
+    "name",
+    "displayName",
+    "version",
+    "description",
+    "logo",
+    "suggestedPrompts",
+    "author",
+    "homepage",
+    "repository",
+    "disabled",
+}
 SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 
 
@@ -106,6 +119,27 @@ class PluginContractTest(unittest.TestCase):
         for host in (".claude-plugin", ".codex-plugin"):
             manifest = load_json(REPOSITORY_ROOT / "evonest" / host / "plugin.json")
             self.assertEqual(manifest["version"], version)
+
+    def test_antigravity_plugins_keep_their_manifest_in_step(self) -> None:
+        for plugin_name, directory in ANTIGRAVITY_PLUGIN_DIRECTORIES.items():
+            with self.subTest(plugin=plugin_name):
+                plugin_root = REPOSITORY_ROOT / directory
+                claude = load_json(plugin_root / ".claude-plugin" / "plugin.json")
+                agy = load_json(plugin_root / ".antigravity-plugin" / "plugin.json")
+                self.assertEqual(agy["name"], plugin_name)
+                self.assertEqual(claude["version"], agy["version"])
+                self.assertRegex(str(agy["version"]), SEMVER)
+                self.assertTrue(set(agy) <= ANTIGRAVITY_ALLOWED_FIELDS)
+
+    def test_antigravity_plugins_place_hooks_at_plugin_root(self) -> None:
+        for plugin_name, directory in ANTIGRAVITY_PLUGIN_DIRECTORIES.items():
+            with self.subTest(plugin=plugin_name):
+                hooks = load_json(REPOSITORY_ROOT / directory / "hooks.json")
+                self.assertIn("stage-guard", hooks)
+                guard = hooks["stage-guard"]
+                self.assertIsInstance(guard, dict)
+                for event in ("SessionStart", "PreInvocation", "PreToolUse", "PostToolUse", "Stop"):
+                    self.assertIn(event, guard)
 
 
 if __name__ == "__main__":

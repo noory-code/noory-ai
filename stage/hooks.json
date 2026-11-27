@@ -1,0 +1,49 @@
+{
+  "stage-guard": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python3 ./hooks/agy_adapter.py session-start || python ./hooks/agy_adapter.py session-start",
+        "timeout": 10
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "python3 ./hooks/agy_adapter.py pre-invocation || python ./hooks/agy_adapter.py pre-invocation",
+        "timeout": 10
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./hooks/agy_adapter.py pre-tool-use || python ./hooks/agy_adapter.py pre-tool-use",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./hooks/agy_adapter.py post-tool-use || python ./hooks/agy_adapter.py post-tool-use",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python3 ./hooks/agy_adapter.py stop || python ./hooks/agy_adapter.py stop",
+        "timeout": 10
+      }
+    ]
+  }
+}

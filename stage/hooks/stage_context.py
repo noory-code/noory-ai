@@ -392,12 +392,14 @@ def session_index(workspace_root: Path, limit: int = SESSION_CONTEXT_CHAR_LIMIT)
 CONSUMER_CONTEXT_FILES: tuple[str, ...] = (
     "CLAUDE.md",
     ".claude/CLAUDE.md",
+    "GEMINI.md",
     ".cursorrules",
     ".github/copilot-instructions.md",
 )
 CONSUMER_CONTEXT_DIRS: tuple[str, ...] = (
     ".claude/rules",
     ".claude/skills",
+    ".agents/rules",
     ".agents/skills",
 )
 CONSUMER_CONTEXT_MAX_LINES = 10
