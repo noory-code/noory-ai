@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Add native Antigravity (`agy`) support for Stage (`W-00000433`, `W-00000434`, `W-00000435`,
-  `W-00000436`):
+  `W-00000436`, `W-00000437`):
   - Package `stage/.antigravity-plugin/plugin.json` and plugin-root `stage/hooks.json`, and
     extend `scripts/release_plugin.py` so Claude, Codex, and Antigravity manifests release
     together.
@@ -13,6 +13,9 @@
   - Add `scripts/agy_review_companion.py` for headless `agy --print=... --output-format
     stream-json` reviews, and extend `skills/stage-retrospective/review_containment.py` to flag
     commands referencing `~/.gemini/antigravity` or `~/.gemini/antigravity-cli`.
+  - Split oversized `stage-work`, `stage-drive`, and `stage-orchestrate` `SKILL.md` sections into
+    sibling reference files so every Stage `SKILL.md` body stays within Antigravity's 24,000-byte
+    limit (`W-00000437`).
 - An epic that closes with a review now hands that review to its stories (W-00000432). Before,
   `start_work.py <epic> --environment cloud --review` set `review: pending` on the epic only, so
   `close_work.py <story> --review-commit <commit>` was refused and the five stories of W-00000424

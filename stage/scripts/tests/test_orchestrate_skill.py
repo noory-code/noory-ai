@@ -13,7 +13,12 @@ SKILLS = Path(__file__).resolve().parents[2] / "skills"
 
 
 def read(skill: str) -> str:
-    return (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8")
+    skill_dir = SKILLS / skill
+    parts = [(skill_dir / "SKILL.md").read_text(encoding="utf-8")]
+    for path in sorted(skill_dir.glob("*.md")):
+        if path.name != "SKILL.md":
+            parts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(parts)
 
 
 class OrchestrateSkillTest(unittest.TestCase):

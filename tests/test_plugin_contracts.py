@@ -141,6 +141,16 @@ class PluginContractTest(unittest.TestCase):
                 for event in ("SessionStart", "PreInvocation", "PreToolUse", "PostToolUse", "Stop"):
                     self.assertIn(event, guard)
 
+    def test_antigravity_skill_bodies_fit_24kb_limit(self) -> None:
+        max_body_bytes = 24000
+        for plugin_name, directory in ANTIGRAVITY_PLUGIN_DIRECTORIES.items():
+            skills_dir = REPOSITORY_ROOT / directory / "skills"
+            for skill_md in sorted(skills_dir.glob("*/SKILL.md")):
+                with self.subTest(plugin=plugin_name, skill=skill_md.parent.name):
+                    text = skill_md.read_text(encoding="utf-8")
+                    body = text.split("\n---\n", 1)[1] if text.startswith("---\n") else text
+                    self.assertLessEqual(len(body.encode("utf-8")), max_body_bytes)
+
 
 if __name__ == "__main__":
     unittest.main()
